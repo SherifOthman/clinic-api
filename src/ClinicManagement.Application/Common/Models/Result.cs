@@ -1,30 +1,54 @@
 namespace ClinicManagement.Application.Common.Models;
 
+public class ErrorItem
+{
+    public string Field { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    
+}
 public class Result
 {
-    public bool IsSuccess { get; }
+    public bool IsSuccess { get; protected set; }
     public bool IsFailure => !IsSuccess;
-    public string Error { get; }
-    
-    protected Result(bool isSuccess, string error)
-    {
-        IsSuccess = isSuccess;
-        Error = error;
-    }
-    
-    public static Result Success() => new(true, string.Empty);
-    public static Result Failure(string error) => new(false, error);
+    public IEnumerable<ErrorItem>? Errors { get; protected set; }
+    public string? Error { get; protected set; }
+
+
+    public static Result Success() => new Result { IsSuccess = true };
+    public static Result Failure(string error)
+        => new Result {
+            IsSuccess = false,
+            Error = error};
+    public static Result Failure(params IEnumerable<ErrorItem> errors) =>
+        new Result {
+            IsSuccess = false,
+            Error = "Validation Error",
+            Errors = errors};
+
 }
 
 public class Result<T> : Result
 {
-    public T Value { get; }
-    
-    protected Result(T value, bool isSuccess, string error) : base(isSuccess, error)
+    public T? Value { get; private set; }
+
+    public static Result<T> Success(T value) => 
+        new Result<T> { IsSuccess = true, Value = value };
+
+    public new static Result<T> Failure(string error) =>
+        new Result<T> {
+            IsSuccess = false,
+            Error = error };
+
+    public static Result<T> Failure(params List<ErrorItem> errors) =>
+     new Result<T>
+     {
+         IsSuccess = false,
+         Error = "Validation Error",
+         Errors = errors
+     };
+
+    public static implicit operator Result<T>(T value)
     {
-        Value = value;
+        return Result<T>.Success(value);
     }
-    
-    public static Result<T> Success(T value) => new(value, true, string.Empty);
-    public static new Result<T> Failure(string error) => new(default!, false, error);
 }

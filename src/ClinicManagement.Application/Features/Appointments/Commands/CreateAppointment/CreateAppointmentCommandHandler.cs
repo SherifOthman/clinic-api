@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 
@@ -9,12 +10,12 @@ namespace ClinicManagement.Application.Features.Appointments.Commands.CreateAppo
 
 public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointmentCommand, Result<AppointmentDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public CreateAppointmentCommandHandler(IApplicationDbContext context, IMapper mapper)
+    public CreateAppointmentCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -37,8 +38,8 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
                 Status = Domain.Common.Enums.AppointmentStatus.Scheduled
             };
 
-            _context.UnitOfWork.Appointments.Add(appointment);
-            await _context.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Appointments.Add(appointment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
             return Result<AppointmentDto>.Success(appointmentDto);

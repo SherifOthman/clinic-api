@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
@@ -9,44 +10,42 @@ namespace ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<AuthResponseDto>>
 {
     private readonly IIdentityService _identityService;
+    private readonly ITokenService _tokenService;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public RefreshTokenCommandHandler(IIdentityService identityService, IMapper mapper)
+    public RefreshTokenCommandHandler(IIdentityService identityService,
+        ITokenService tokenService,
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _identityService = identityService;
+        _tokenService = tokenService;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<Result<AuthResponseDto>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        try
+        var oldToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(request.RefreshToken, cancellationToken);
+        if (oldToken == null || !oldToken.IsActive)
+            return Result<AuthResponseDto>.Failure("Invalid refresh token");
+
+        var user = await _unitOfWork.Users.GetByIdAsync(oldToken.Id);
+
+        var userRoles = await _identityService.GetUserRolesAsync(user!);
+        await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
+
+        var accessToken = _tokenService.GenerateAccessToken(user!, userRoles);
+        var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user!);
+
+        var response = new AuthResponseDto
         {
-            var isValid = await _identityService.ValidateRefreshTokenAsync(request.RefreshToken);
-            if (!isValid)
-                return Result<AuthResponseDto>.Failure("Invalid refresh token");
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            User = _mapper.Map<UserDto>(user)
+        };
 
-            // Get user from refresh token (implementation depends on your token service)
-            // For now, we'll need to modify the IIdentityService to return user from refresh token
-            var user = await _identityService.GetUserByEmailAsync(""); // This needs to be implemented properly
-            
-            if (user == null)
-                return Result<AuthResponseDto>.Failure("User not found");
-
-            var accessToken = await _identityService.GenerateAccessTokenAsync(user);
-            var refreshToken = await _identityService.GenerateRefreshTokenAsync(user);
-
-            var response = new AuthResponseDto
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                User = _mapper.Map<UserDto>(user)
-            };
-
-            return Result<AuthResponseDto>.Success(response);
-        }
-        catch (Exception ex)
-        {
-            return Result<AuthResponseDto>.Failure(ex.Message);
-        }
+        return response;
     }
 }

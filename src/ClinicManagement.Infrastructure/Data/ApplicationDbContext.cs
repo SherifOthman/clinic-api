@@ -1,5 +1,3 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -7,17 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<User, Microsoft.AspNetCore.Identity.IdentityRole<int>, int>, IApplicationDbContext
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
-    private IUnitOfWork? _unitOfWork;
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-    }
-
-    public IUnitOfWork UnitOfWork => _unitOfWork ??= new UnitOfWork(this);
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
     }
 

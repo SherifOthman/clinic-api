@@ -26,8 +26,8 @@ public interface IUnitOfWork : IDisposable
     IRepository<VisitAttributes> VisitAttributes { get; }
     IRepository<SpecializationAttribute> SpecializationAttributes { get; }
     IRepository<VisitAttributeValue> VisitAttributeValues { get; }
-    IRepository<RefreshToken> RefreshTokens { get; }
-    
+    IRefreshTokenRepository RefreshTokens { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

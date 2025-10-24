@@ -3,7 +3,7 @@ using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Patient : BaseEntity
+public class Patient : AuditableEntity
 {
     public int ClinicId { get; set; }
     public string? Avatar { get; set; }

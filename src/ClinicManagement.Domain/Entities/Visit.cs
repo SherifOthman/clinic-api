@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Visit : BaseEntity
+public class Visit : AuditableEntity
 {
     public int AppointmentId { get; set; }
     public DateTime? StartTime { get; set; }

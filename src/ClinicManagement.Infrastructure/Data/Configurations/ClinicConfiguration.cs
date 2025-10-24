@@ -13,7 +13,7 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
         builder.Property(e => e.Phone).HasMaxLength(20);
         builder.Property(e => e.StartDate).HasDefaultValueSql("GETDATE()");
         builder.HasOne(d => d.Owner)
-            .WithMany(p => p.OwnedClinics)
+            .WithMany()
             .HasForeignKey(d => d.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(d => d.SubscriptionPlan)

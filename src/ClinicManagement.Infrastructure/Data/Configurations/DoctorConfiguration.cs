@@ -11,7 +11,7 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
         builder.ToTable("Doctors");
         builder.Property(e => e.Bio).HasMaxLength(300);
         builder.HasOne(d => d.User)
-            .WithMany(p => p.DoctorProfiles)
+            .WithMany()
             .HasForeignKey(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(d => d.Specialization)

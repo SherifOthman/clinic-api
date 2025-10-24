@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class ClinicBranch : BaseEntity
+public class ClinicBranch : AuditableEntity
 {
     public int ClinicId { get; set; }
     public int? CityId { get; set; }

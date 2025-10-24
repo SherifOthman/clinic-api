@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +11,12 @@ namespace ClinicManagement.Application.Features.Clinics.Queries.GetClinics;
 
 public class GetClinicsQueryHandler : IRequestHandler<GetClinicsQuery, Result<List<ClinicDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public GetClinicsQueryHandler(IApplicationDbContext context, IMapper mapper)
+    public GetClinicsQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -27,15 +28,15 @@ public class GetClinicsQueryHandler : IRequestHandler<GetClinicsQuery, Result<Li
 
             if (request.OwnerId.HasValue)
             {
-                clinics = await _context.UnitOfWork.Clinics.GetByOwnerIdAsync(request.OwnerId.Value, cancellationToken);
+                clinics = await _unitOfWork.Clinics.GetByOwnerIdAsync(request.OwnerId.Value, cancellationToken);
             }
             else if (request.IsActive.HasValue)
             {
-                clinics = await _context.UnitOfWork.Clinics.GetActiveClinicsAsync(cancellationToken);
+                clinics = await _unitOfWork.Clinics.GetActiveClinicsAsync(cancellationToken);
             }
             else
             {
-                clinics = await _context.UnitOfWork.Clinics.GetAllAsync(cancellationToken);
+                clinics = await _unitOfWork.Clinics.GetAllAsync(cancellationToken);
             }
 
             var pagedClinics = clinics

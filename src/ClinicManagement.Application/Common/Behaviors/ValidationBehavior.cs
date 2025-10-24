@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 
@@ -21,20 +22,41 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         }
 
         var context = new ValidationContext<TRequest>(request);
-
-        var validationResults = await Task.WhenAll(
-            _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-
-        var failures = validationResults
-            .Where(r => !r.IsValid)
+        var failures =
+            _validators.Select(v => v.Validate(context))
             .SelectMany(r => r.Errors)
             .ToList();
 
-        if (failures.Count != 0)
+        if (!failures.Any())
+            return await next();
+
+        if (IsResultType(typeof(TResponse)))
+            return CreateFailureResult(failures);
+
+        throw new ValidationException(failures);
+
+    }
+
+    private static bool IsResultType(Type type) =>
+     typeof(Result).IsAssignableFrom(type) ||
+     (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Result<>));
+
+    private static TResponse CreateFailureResult(IEnumerable<FluentValidation.Results.ValidationFailure> failures)
+    {
+        var errorList = failures.Select(e => new ErrorItem
         {
-            throw new ValidationException(failures);
+            Field = e.PropertyName,
+            Message = e.ErrorMessage
+        }).ToList();
+
+        if (typeof(TResponse).IsGenericType)
+        {
+            var innerType = typeof(TResponse).GetGenericArguments()[0];
+            var genericResultType = typeof(Result<>).MakeGenericType(innerType);
+            var failureMethod = genericResultType.GetMethod("Failure", new[] { typeof(List<ErrorItem>) });
+            return (TResponse)failureMethod!.Invoke(null, new object[] { errorList })!;
         }
 
-        return await next();
+        return (TResponse)(object)Result.Failure(errorList);
     }
 }

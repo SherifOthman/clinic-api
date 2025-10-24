@@ -1,15 +1,15 @@
 using ClinicManagement.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface IIdentityService
 {
-    Task<int> CreateUserAsync(User user, string password);
-    Task<bool> ValidateUserAsync(string email, string password);
+    Task<(bool IsSuccess, string error)> CreateUserAsync(User user, string password);
+    Task<bool> CheckPasswordAsync(User user, string password);
+    Task<IEnumerable<string>> GetUserRolesAsync(User user);
     Task<User?> GetUserByEmailAsync(string email);
+    Task<User?> GetByUsernameAsync(string username);
     Task<User?> GetUserByIdAsync(int id);
-    Task<string> GenerateAccessTokenAsync(User user);
-    Task<string> GenerateRefreshTokenAsync(User user);
-    Task<bool> ValidateRefreshTokenAsync(string refreshToken);
-    Task RevokeRefreshTokenAsync(string refreshToken);
+
 }

@@ -3,7 +3,7 @@ using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Appointment : BaseEntity
+public class Appointment : AuditableEntity
 {
     public int BranchId { get; set; }
     public int PatientId { get; set; }

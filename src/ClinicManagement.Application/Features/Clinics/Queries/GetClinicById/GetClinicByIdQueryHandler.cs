@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,12 +10,12 @@ namespace ClinicManagement.Application.Features.Clinics.Queries.GetClinicById;
 
 public class GetClinicByIdQueryHandler : IRequestHandler<GetClinicByIdQuery, Result<ClinicDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public GetClinicByIdQueryHandler(IApplicationDbContext context, IMapper mapper)
+    public GetClinicByIdQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -22,7 +23,7 @@ public class GetClinicByIdQueryHandler : IRequestHandler<GetClinicByIdQuery, Res
     {
         try
         {
-            var clinic = await _context.UnitOfWork.Clinics.GetByIdAsync(request.Id, cancellationToken);
+            var clinic = await _unitOfWork.Clinics.GetByIdAsync(request.Id, cancellationToken);
 
             if (clinic == null)
                 return Result<ClinicDto>.Failure("Clinic not found");

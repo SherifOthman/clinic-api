@@ -2,6 +2,7 @@ using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Xml;
 
 namespace ClinicManagement.Infrastructure.Data;
 
@@ -10,7 +11,7 @@ public class UnitOfWork : IUnitOfWork
     private readonly ApplicationDbContext _context;
     private IDbContextTransaction? _transaction;
 
-    private IUserRepository? _users;
+    //private IUserRepository? _users;
     private IClinicRepository? _clinics;
     private IPatientRepository? _patients;
     private IAppointmentRepository? _appointments;
@@ -32,14 +33,17 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<VisitAttributes>? _visitAttributes;
     private IRepository<SpecializationAttribute>? _specializationAttributes;
     private IRepository<VisitAttributeValue>? _visitAttributeValues;
-    private IRepository<RefreshToken>? _refreshTokens;
+    private IRefreshTokenRepository? _refreshTokens;
 
     public UnitOfWork(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    public IUserRepository Users => _users ??= new UserRepository(_context);
+
+    //public IUserRepository Users => _users ??= new UserRepository(_context);
+    public IUserRepository Users => field ?? new UserRepository(_context);
+
     public IClinicRepository Clinics => _clinics ??= new ClinicRepository(_context);
     public IPatientRepository Patients => _patients ??= new PatientRepository(_context);
     public IAppointmentRepository Appointments => _appointments ??= new AppointmentRepository(_context);
@@ -61,7 +65,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<VisitAttributes> VisitAttributes => _visitAttributes ??= new Repository<VisitAttributes>(_context);
     public IRepository<SpecializationAttribute> SpecializationAttributes => _specializationAttributes ??= new Repository<SpecializationAttribute>(_context);
     public IRepository<VisitAttributeValue> VisitAttributeValues => _visitAttributeValues ??= new Repository<VisitAttributeValue>(_context);
-    public IRepository<RefreshToken> RefreshTokens => _refreshTokens ??= new Repository<RefreshToken>(_context);
+    public IRefreshTokenRepository RefreshTokens => _refreshTokens ??= new RefreshTokenRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

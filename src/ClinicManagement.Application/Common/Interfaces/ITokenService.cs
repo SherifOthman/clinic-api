@@ -1,11 +1,13 @@
 using ClinicManagement.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface ITokenService
 {
-    string GenerateAccessToken(User user);
-    string GenerateRefreshToken();
-    int? ValidateAccessToken(string token);
-    Task<RefreshToken?> ValidateRefreshTokenAsync(string token, CancellationToken cancellationToken = default);
+    string GenerateAccessToken(User user, IEnumerable<string> roles);
+    Task<string> GenerateRefreshTokenAsync(User user, CancellationToken cancellationToken = default);
+    public Task RevokeRefreshTokenAsync(string refreshTokens, CancellationToken cancellationToken = default);
+
+
 }

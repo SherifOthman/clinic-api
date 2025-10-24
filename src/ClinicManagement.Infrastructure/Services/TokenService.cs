@@ -1,7 +1,9 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Options;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,97 +14,73 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class TokenService : ITokenService
 {
-    private readonly IConfiguration _configuration;
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly JwtOption _jwtOption;
 
-    public TokenService(IConfiguration configuration, IApplicationDbContext context)
+    public TokenService(IConfiguration configuration,
+        IUnitOfWork unitOfWork,
+        IOptions<JwtOption> options)
     {
-        _configuration = configuration;
-        _context = context;
+        _unitOfWork = unitOfWork;
+        _jwtOption = options.Value;
     }
 
-    public string GenerateAccessToken(User user)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles)
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOption.Key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-            new Claim(ClaimTypes.Name, $"{user.FirstName} {user.ThirdName}")
-        };
-
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60")),
+            issuer: _jwtOption.Issuer,
+            audience: _jwtOption.Audience,
+            claims: GetClaims(user, roles),
+            expires: DateTime.UtcNow.AddMinutes(_jwtOption.AccessTokenExpirationMinutes),
             signingCredentials: credentials
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public string GenerateRefreshToken()
+    public async Task<string> GenerateRefreshTokenAsync(User user,CancellationToken cancellationToken = default)
     {
-        var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        var refreshToken = new RefreshToken
+        {
+            Token = token,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOption.RefreshTokenExpirationDays),
+            UserId = user.Id,
+        };
+
+        _unitOfWork.RefreshTokens.Add(refreshToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return token;
     }
 
-    public int? ValidateAccessToken(string token)
+    public async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(token))
-            return null;
+        var token = await _unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken);
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
+        if (token == null)
+            return;
 
-        try
-        {
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidateAudience = true,
-                ValidAudience = _configuration["Jwt:Audience"],
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
+        token.IsRevoked = true;
+        _unitOfWork.RefreshTokens.Update(token!);
 
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
-            var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
-            {
-                return userId;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
+       await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<RefreshToken?> ValidateRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
+    private List<Claim> GetClaims(User user, IEnumerable<string> roles)
     {
-        if (string.IsNullOrEmpty(token))
-            return null;
+        List<Claim> claims = new List<Claim>();
 
-        var refreshToken = await _context.UnitOfWork.RefreshTokens
-            .GetByCondition(rt => rt.Token == token)
-            .Include(rt => rt.User)
-            .FirstOrDefaultAsync(cancellationToken);
+        claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
-        if (refreshToken == null || !refreshToken.IsActive)
-            return null;
-
-        return refreshToken;
+        return claims;
     }
 }

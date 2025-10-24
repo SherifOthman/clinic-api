@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 
@@ -9,12 +10,12 @@ namespace ClinicManagement.Application.Features.Clinics.Commands.CreateClinic;
 
 public class CreateClinicCommandHandler : IRequestHandler<CreateClinicCommand, Result<ClinicDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public CreateClinicCommandHandler(IApplicationDbContext context, IMapper mapper)
+    public CreateClinicCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -32,8 +33,8 @@ public class CreateClinicCommandHandler : IRequestHandler<CreateClinicCommand, R
                 IsActive = true
             };
 
-            _context.UnitOfWork.Clinics.Add(clinic);
-            await _context.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Clinics.Add(clinic);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var clinicDto = _mapper.Map<ClinicDto>(clinic);
             return Result<ClinicDto>.Success(clinicDto);

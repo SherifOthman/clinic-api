@@ -25,7 +25,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .MaximumLength(100).WithMessage("Password cannot exceed 100 characters");
 
         RuleFor(x => x.PhoneNumber)
-            .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters")
-            .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+            .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters");
+ 
     }
 }

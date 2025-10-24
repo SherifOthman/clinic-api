@@ -1,20 +1,19 @@
 using AutoMapper;
-using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Appointments.Queries.GetAppointmentById;
 
 public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentByIdQuery, Result<AppointmentDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public GetAppointmentByIdQueryHandler(IApplicationDbContext context, IMapper mapper)
+    public GetAppointmentByIdQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -22,7 +21,7 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
     {
         try
         {
-            var appointment = await _context.UnitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
+            var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
 
             if (appointment == null)
                 return Result<AppointmentDto>.Failure("Appointment not found");

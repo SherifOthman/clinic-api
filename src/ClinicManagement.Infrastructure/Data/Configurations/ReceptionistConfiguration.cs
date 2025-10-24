@@ -10,7 +10,7 @@ public class ReceptionistConfiguration : IEntityTypeConfiguration<Receptionist>
     {
         builder.ToTable("Receptionists");
         builder.HasOne(d => d.User)
-            .WithMany(p => p.ReceptionistProfiles)
+            .WithMany()
             .HasForeignKey(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(d => d.Branch)

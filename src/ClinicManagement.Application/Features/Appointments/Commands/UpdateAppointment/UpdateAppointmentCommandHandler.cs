@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,12 +10,12 @@ namespace ClinicManagement.Application.Features.Appointments.Commands.UpdateAppo
 
 public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointmentCommand, Result<AppointmentDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public UpdateAppointmentCommandHandler(IApplicationDbContext context, IMapper mapper)
+    public UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -22,7 +23,7 @@ public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointment
     {
         try
         {
-            var appointment = await _context.UnitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
+            var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
             if (appointment == null)
                 return Result<AppointmentDto>.Failure("Appointment not found");
 
@@ -49,8 +50,8 @@ public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointment
 
             appointment.UpdatedAt = DateTime.UtcNow;
 
-            _context.UnitOfWork.Appointments.Update(appointment);
-            await _context.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Appointments.Update(appointment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
             return Result<AppointmentDto>.Success(appointmentDto);

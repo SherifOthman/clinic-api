@@ -1,5 +1,6 @@
 using AutoMapper;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Common.Mappings;
@@ -11,6 +12,7 @@ public class MappingProfile : Profile
         CreateMap<User, UserDto>();
         CreateMap<CreateUserDto, User>();
         CreateMap<UpdateUserDto, User>();
+        CreateMap<RegisterCommand, User>();
         
         CreateMap<Country, CountryDto>();
         CreateMap<CreateCountryDto, Country>();

@@ -1,3 +1,5 @@
+using Azure;
+using FluentValidation;
 using System.Net;
 using System.Text.Json;
 
@@ -30,7 +32,7 @@ public class GlobalExceptionMiddleware
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
-        
+
         var response = new ErrorResponse();
 
         switch (exception)
@@ -40,20 +42,20 @@ public class GlobalExceptionMiddleware
                 response.Message = "Unauthorized access";
                 response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 break;
-            
+
             case KeyNotFoundException:
                 context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 response.Message = exception.Message;
                 response.StatusCode = (int)HttpStatusCode.NotFound;
                 break;
-            
+
             case ArgumentException:
             case InvalidOperationException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 response.Message = exception.Message;
                 response.StatusCode = (int)HttpStatusCode.BadRequest;
                 break;
-            
+
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 response.Message = "An internal server error occurred";
@@ -69,6 +71,8 @@ public class GlobalExceptionMiddleware
 
         return context.Response.WriteAsync(jsonResponse);
     }
+
+ 
 }
 
 public class ErrorResponse

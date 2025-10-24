@@ -13,39 +13,27 @@ namespace ClinicManagement.Infrastructure.Services;
 public class IdentityService : IIdentityService
 {
     private readonly UserManager<User> _userManager;
-    private readonly SignInManager<User> _signInManager;
-    private readonly IConfiguration _configuration;
-    private readonly IApplicationDbContext _context;
 
     public IdentityService(
-        UserManager<User> userManager,
-        SignInManager<User> signInManager,
-        IConfiguration configuration,
-        IApplicationDbContext context)
+        UserManager<User> userManager)
     {
         _userManager = userManager;
-        _signInManager = signInManager;
-        _configuration = configuration;
-        _context = context;
     }
 
-    public async Task<int> CreateUserAsync(User user, string password)
+    public async Task<(bool IsSuccess, string error)> CreateUserAsync(User user, string password)
     {
         var result = await _userManager.CreateAsync(user, password);
         if (!result.Succeeded)
         {
-            throw new InvalidOperationException($"User creation failed: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            return (true, $"User creation failed:" +
+                  $" {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
-        return user.Id;
+        return (false, string.Empty);
     }
 
-    public async Task<bool> ValidateUserAsync(string email, string password)
+    public Task<bool> CheckPasswordAsync(User user, string password)
     {
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null) return false;
-
-        var result = await _signInManager.CheckPasswordSignInAsync(user, password, false);
-        return result.Succeeded;
+        return _userManager.CheckPasswordAsync(user, password);
     }
 
     public async Task<User?> GetUserByEmailAsync(string email)
@@ -53,67 +41,18 @@ public class IdentityService : IIdentityService
         return await _userManager.FindByEmailAsync(email);
     }
 
+    public Task<User?> GetByUsernameAsync(string username)
+    {
+        return _userManager.FindByNameAsync(username);
+    }
+
     public async Task<User?> GetUserByIdAsync(int id)
     {
         return await _userManager.FindByIdAsync(id.ToString());
     }
 
-    public async Task<string> GenerateAccessTokenAsync(User user)
+    public async Task<IEnumerable<string>> GetUserRolesAsync(User user)
     {
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email ?? ""),
-            new(ClaimTypes.Name, $"{user.FirstName} {user.ThirdName}"),
-            new("FirstName", user.FirstName),
-            new("ThirdName", user.ThirdName)
-        };
-
-        var roles = await _userManager.GetRolesAsync(user);
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? ""));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "15")),
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    public async Task<string> GenerateRefreshTokenAsync(User user)
-    {
-        var refreshToken = Guid.NewGuid().ToString();
-        
-        // Store refresh token in database (you might want to create a separate table for this)
-        // For now, we'll use a simple approach
-        user.SecurityStamp = refreshToken;
-        await _userManager.UpdateAsync(user);
-        
-        return refreshToken;
-    }
-
-    public async Task<bool> ValidateRefreshTokenAsync(string refreshToken)
-    {
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.SecurityStamp == refreshToken);
-        return user != null;
-    }
-
-    public async Task RevokeRefreshTokenAsync(string refreshToken)
-    {
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.SecurityStamp == refreshToken);
-        if (user != null)
-        {
-            user.SecurityStamp = null;
-            await _userManager.UpdateAsync(user);
-        }
+        return await _userManager.GetRolesAsync(user);
     }
 }

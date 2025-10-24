@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Clinic : BaseEntity
+public class Clinic : AuditableEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }

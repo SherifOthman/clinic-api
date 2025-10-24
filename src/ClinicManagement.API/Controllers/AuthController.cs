@@ -1,3 +1,4 @@
+using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Auth.Commands.Login;
 using ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
@@ -18,78 +19,41 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterCommand command)
+    public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command);
-        
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-        
-        return BadRequest(result.Error);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? NoContent()
+            : BadRequest(result);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginCommand command)
+    public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command);
-        
-        if (result.IsSuccess)
-        {
-            // Set refresh token as HTTP-only cookie
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-            
-            Response.Cookies.Append("refreshToken", result.Value.RefreshToken, cookieOptions);
-            
-            return Ok(new { 
-                AccessToken = result.Value.AccessToken,
-                User = result.Value.User 
-            });
-        }
-        
-        return BadRequest(result.Error);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        return CreateTokenResponse(result.Value);
     }
 
     [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken()
+    public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
     {
         var refreshToken = Request.Cookies["refreshToken"];
-        
         if (string.IsNullOrEmpty(refreshToken))
-        {
             return Unauthorized("Refresh token not found");
-        }
 
-        var command = new RefreshTokenCommand { RefreshToken = refreshToken };
-        var result = await _mediator.Send(command);
-        
-        if (result.IsSuccess)
-        {
-            // Update refresh token cookie
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-            
-            Response.Cookies.Append("refreshToken", result.Value.RefreshToken, cookieOptions);
-            
-            return Ok(new { 
-                AccessToken = result.Value.AccessToken,
-                User = result.Value.User 
-            });
-        }
-        
-        return Unauthorized(result.Error);
+        var result = await _mediator.Send(new RefreshTokenCommand { RefreshToken = refreshToken }, cancellationToken);
+
+        if (!result.IsSuccess)
+            return Unauthorized(result.Error);
+
+        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        return CreateTokenResponse(result.Value);
     }
 
     [HttpPost("logout")]
@@ -97,5 +61,27 @@ public class AuthController : ControllerBase
     {
         Response.Cookies.Delete("refreshToken");
         return Ok(new { message = "Logged out successfully" });
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        Response.Cookies.Append("refreshToken", refreshToken, options);
+    }
+
+    private IActionResult CreateTokenResponse(AuthResponseDto auth)
+    {
+        return Ok(new
+        {
+            AccessToken = auth.AccessToken,
+            User = auth.User
+        });
     }
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,12 +10,12 @@ namespace ClinicManagement.Application.Features.Patients.Commands.UpdatePatient;
 
 public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand, Result<PatientDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public UpdatePatientCommandHandler(IApplicationDbContext context, IMapper mapper)
+    public UpdatePatientCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -22,7 +23,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
     {
         try
         {
-            var patient = await _context.UnitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
+            var patient = await _unitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
             if (patient == null)
                 return Result<PatientDto>.Failure("Patient not found");
 
@@ -39,8 +40,8 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
             patient.GeneralNotes = request.GeneralNotes;
             patient.UpdatedAt = DateTime.UtcNow;
 
-            _context.UnitOfWork.Patients.Update(patient);
-            await _context.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Patients.Update(patient);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var patientDto = _mapper.Map<PatientDto>(patient);
             return Result<PatientDto>.Success(patientDto);
