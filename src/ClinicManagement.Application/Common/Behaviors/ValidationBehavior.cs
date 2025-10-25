@@ -1,4 +1,6 @@
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Extensions;
+using ClinicManagement.Application.Utils;
 using FluentValidation;
 using MediatR;
 
@@ -43,20 +45,16 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
     private static TResponse CreateFailureResult(IEnumerable<FluentValidation.Results.ValidationFailure> failures)
     {
-        var errorList = failures.Select(e => new ErrorItem
-        {
-            Field = e.PropertyName,
-            Message = e.ErrorMessage
-        }).ToList();
+        var errorList = failures.ToErrorItemList();
 
         if (typeof(TResponse).IsGenericType)
         {
             var innerType = typeof(TResponse).GetGenericArguments()[0];
             var genericResultType = typeof(Result<>).MakeGenericType(innerType);
-            var failureMethod = genericResultType.GetMethod("Failure", new[] { typeof(List<ErrorItem>) });
+            var failureMethod = genericResultType.GetMethod("Fail", new[] { typeof(List<ErrorItem>) });
             return (TResponse)failureMethod!.Invoke(null, new object[] { errorList })!;
         }
 
-        return (TResponse)(object)Result.Failure(errorList);
+        return (TResponse)(object)Result.Fail(errorList);
     }
 }

@@ -25,7 +25,7 @@ public class UpdateClinicCommandHandler : IRequestHandler<UpdateClinicCommand, R
         {
             var clinic = await _unitOfWork.Clinics.GetByIdAsync(request.Id, cancellationToken);
             if (clinic == null)
-                return Result<ClinicDto>.Failure("Clinic not found");
+                return Result<ClinicDto>.Fail("Clinic not found");
 
             clinic.Name = request.Name;
             clinic.Phone = request.Phone;
@@ -35,11 +35,11 @@ public class UpdateClinicCommandHandler : IRequestHandler<UpdateClinicCommand, R
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var clinicDto = _mapper.Map<ClinicDto>(clinic);
-            return Result<ClinicDto>.Success(clinicDto);
+            return Result<ClinicDto>.Ok(clinicDto);
         }
         catch (Exception ex)
         {
-            return Result<ClinicDto>.Failure(ex.Message);
+            return Result<ClinicDto>.Fail(ex.Message);
         }
     }
 }

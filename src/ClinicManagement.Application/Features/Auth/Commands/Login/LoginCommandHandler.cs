@@ -25,7 +25,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
 
     public async Task<Result<AuthResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        bool isEmail = CheckEmail.IsEmail(request.Email);
+        bool isEmail = StringUtils.IsEmail(request.Email);
 
         var user = isEmail
             ? await _identityService.GetUserByEmailAsync(request.Email)
@@ -33,7 +33,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
 
         if (user == null ||
             !await _identityService.CheckPasswordAsync(user, request.Password))
-            return Result<AuthResponseDto>.Failure("Invalid username or password");
+            return Result<AuthResponseDto>.Fail("Invalid username or password");
 
         var userRoles = await _identityService.GetUserRolesAsync(user);
         var accessToken = _tokenService.GenerateAccessToken(user, userRoles);
@@ -46,6 +46,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
             User = _mapper.Map<UserDto>(user)
         };
 
-        return Result<AuthResponseDto>.Success(response);
+        return Result<AuthResponseDto>.Ok(response);
     }
 }

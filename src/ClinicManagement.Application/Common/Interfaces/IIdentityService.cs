@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -5,7 +6,7 @@ namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface IIdentityService
 {
-    Task<(bool IsSuccess, string error)> CreateUserAsync(User user, string password);
+    Task<(bool IsSuccess,IEnumerable<ErrorItem>? Errors)> CreateUserAsync(User user, string password);
     Task<bool> CheckPasswordAsync(User user, string password);
     Task<IEnumerable<string>> GetUserRolesAsync(User user);
     Task<User?> GetUserByEmailAsync(string email);

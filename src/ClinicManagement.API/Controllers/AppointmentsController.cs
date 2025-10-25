@@ -25,12 +25,12 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _mediator.Send(query);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return Ok(result.Value);
         }
         
-        return BadRequest(result.Error);
+        return BadRequest(result.Message);
     }
 
     [HttpGet("{id}")]
@@ -39,12 +39,12 @@ public class AppointmentsController : ControllerBase
         var query = new GetAppointmentByIdQuery { Id = id };
         var result = await _mediator.Send(query);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return Ok(result.Value);
         }
         
-        return NotFound(result.Error);
+        return NotFound(result.Message);
     }
 
     [HttpPost]
@@ -52,12 +52,12 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _mediator.Send(command);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return CreatedAtAction(nameof(GetAppointmentById), new { id = result.Value.Id }, result.Value);
         }
         
-        return BadRequest(result.Error);
+        return BadRequest(result.Message);
     }
 
     [HttpPut("{id}")]
@@ -66,11 +66,11 @@ public class AppointmentsController : ControllerBase
         command.Id = id;
         var result = await _mediator.Send(command);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return Ok(result.Value);
         }
         
-        return BadRequest(result.Error);
+        return BadRequest(result.Message);
     }
 }

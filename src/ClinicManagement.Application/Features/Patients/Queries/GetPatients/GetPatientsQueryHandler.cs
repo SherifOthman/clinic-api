@@ -80,11 +80,11 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             //    paginatedPatients.PageSize
             //);
 
-            return Result<PaginatedList<PatientDto>>.Failure("TES");
+            return Result<PaginatedList<PatientDto>>.Fail("TES");
         }
         catch (Exception ex)
         {
-            return Result<PaginatedList<PatientDto>>.Failure(ex.Message);
+            return Result<PaginatedList<PatientDto>>.Fail(ex.Message);
         }
     }
 }

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,15 +21,18 @@ public class IdentityService : IIdentityService
         _userManager = userManager;
     }
 
-    public async Task<(bool IsSuccess, string error)> CreateUserAsync(User user, string password)
+    public async Task<(bool IsSuccess, IEnumerable<ErrorItem>? Errors)> CreateUserAsync(User user, string password)
     {
         var result = await _userManager.CreateAsync(user, password);
         if (!result.Succeeded)
         {
-            return (true, $"User creation failed:" +
-                  $" {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            return (IsSuccess: false,
+                  Errors:result.Errors.Select(e => 
+                  new ErrorItem {
+                      Field= e.Code,
+                      Message = e.Description}));
         }
-        return (false, string.Empty);
+        return (IsSuccess: true, Errors: null);
     }
 
     public Task<bool> CheckPasswordAsync(User user, string password)

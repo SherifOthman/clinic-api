@@ -43,11 +43,11 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var patientDto = _mapper.Map<PatientDto>(patient);
-            return Result<PatientDto>.Success(patientDto);
+            return Result<PatientDto>.Ok(patientDto);
         }
         catch (Exception ex)
         {
-            return Result<PatientDto>.Failure(ex.Message);
+            return Result<PatientDto>.Fail(ex.Message);
         }
     }
 }

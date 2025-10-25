@@ -2,14 +2,12 @@ namespace ClinicManagement.Application.DTOs;
 
 public class UserDto
 {
-    public int Id { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string? SecondName { get; set; }
     public string ThirdName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? Avatar { get; set; }
     public string? PhoneNumber { get; set; }
-    public DateTime CreatedAt { get; set; }
 }
 
 public class CreateUserDto

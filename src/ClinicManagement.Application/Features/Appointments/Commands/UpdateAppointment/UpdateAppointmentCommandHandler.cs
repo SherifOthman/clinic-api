@@ -25,7 +25,7 @@ public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointment
         {
             var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
             if (appointment == null)
-                return Result<AppointmentDto>.Failure("Appointment not found");
+                return Result<AppointmentDto>.Fail("Appointment not found");
 
             if (request.Status.HasValue)
                 appointment.Status = request.Status.Value;
@@ -54,11 +54,11 @@ public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointment
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
-            return Result<AppointmentDto>.Success(appointmentDto);
+            return Result<AppointmentDto>.Ok(appointmentDto);
         }
         catch (Exception ex)
         {
-            return Result<AppointmentDto>.Failure(ex.Message);
+            return Result<AppointmentDto>.Fail(ex.Message);
         }
     }
 }

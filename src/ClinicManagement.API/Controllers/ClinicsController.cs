@@ -21,17 +21,18 @@ public class ClinicsController : ControllerBase
         _mediator = mediator;
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetClinics([FromQuery] GetClinicsQuery query)
     {
         var result = await _mediator.Send(query);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return Ok(result.Value);
         }
         
-        return BadRequest(result.Error);
+        return BadRequest(result.Message);
     }
 
     [HttpGet("{id}")]
@@ -40,12 +41,12 @@ public class ClinicsController : ControllerBase
         var query = new GetClinicByIdQuery { Id = id };
         var result = await _mediator.Send(query);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return Ok(result.Value);
         }
         
-        return NotFound(result.Error);
+        return NotFound(result.Message);
     }
 
     [HttpPost]
@@ -53,12 +54,12 @@ public class ClinicsController : ControllerBase
     {
         var result = await _mediator.Send(command);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return CreatedAtAction(nameof(GetClinicById), new { id = result.Value.Id }, result.Value);
         }
         
-        return BadRequest(result.Error);
+        return BadRequest(result.Message);
     }
 
     [HttpPut("{id}")]
@@ -67,11 +68,11 @@ public class ClinicsController : ControllerBase
         command.Id = id;
         var result = await _mediator.Send(command);
         
-        if (result.IsSuccess)
+        if (result.Success)
         {
             return Ok(result.Value);
         }
         
-        return BadRequest(result.Error);
+        return BadRequest(result.Message);
     }
 }

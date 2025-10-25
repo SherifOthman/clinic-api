@@ -26,14 +26,14 @@ public class GetClinicByIdQueryHandler : IRequestHandler<GetClinicByIdQuery, Res
             var clinic = await _unitOfWork.Clinics.GetByIdAsync(request.Id, cancellationToken);
 
             if (clinic == null)
-                return Result<ClinicDto>.Failure("Clinic not found");
+                return Result<ClinicDto>.Fail("Clinic not found");
 
             var clinicDto = _mapper.Map<ClinicDto>(clinic);
-            return Result<ClinicDto>.Success(clinicDto);
+            return Result<ClinicDto>.Ok(clinicDto);
         }
         catch (Exception ex)
         {
-            return Result<ClinicDto>.Failure(ex.Message);
+            return Result<ClinicDto>.Fail(ex.Message);
         }
     }
 }

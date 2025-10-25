@@ -29,9 +29,9 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     {
         var oldToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(request.RefreshToken, cancellationToken);
         if (oldToken == null || !oldToken.IsActive)
-            return Result<AuthResponseDto>.Failure("Invalid refresh token");
+            return Result<AuthResponseDto>.Fail("Invalid refresh token");
 
-        var user = await _unitOfWork.Users.GetByIdAsync(oldToken.Id);
+        var user = await _unitOfWork.Users.GetByIdAsync(oldToken.UserId);
 
         var userRoles = await _identityService.GetUserRolesAsync(user!);
         await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);

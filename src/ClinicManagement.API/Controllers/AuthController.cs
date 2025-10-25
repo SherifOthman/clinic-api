@@ -1,3 +1,6 @@
+using ClinicManagement.API.Extensions;
+using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Auth.Commands.Login;
 using ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
@@ -19,44 +22,56 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
 
-        return result.IsSuccess
+        return result.Success
             ? NoContent()
-            : BadRequest(result);
+            : BadRequest(result.ToApiError());
     }
 
     [HttpPost("login")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (!result.IsSuccess)
-            return BadRequest(result);
+        if (!result.Success)
+            return BadRequest(result.ToApiError());
 
         SetRefreshTokenCookie(result.Value!.RefreshToken);
         return CreateTokenResponse(result.Value);
     }
 
     [HttpPost("refresh-token")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(refreshToken))
-            return Unauthorized("Refresh token not found");
+            return Unauthorized(Result.Fail("Refresh token not found")
+                .ToApiError());
 
         var result = await _mediator.Send(new RefreshTokenCommand { RefreshToken = refreshToken }, cancellationToken);
 
-        if (!result.IsSuccess)
-            return Unauthorized(result.Error);
+        if (!result.Success)
+            return Unauthorized(result.ToApiError());
 
         SetRefreshTokenCookie(result.Value!.RefreshToken);
         return CreateTokenResponse(result.Value);
     }
 
     [HttpPost("logout")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Logout()
     {
         Response.Cookies.Delete("refreshToken");

@@ -11,7 +11,8 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Token)
-            .HasMaxLength(70);
+            .HasMaxLength(100)
+            .IsUnicode(false);
 
         builder.HasOne<User>()
             .WithMany()

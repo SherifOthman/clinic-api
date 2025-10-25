@@ -17,9 +17,11 @@ public  static class DependencyInjection
         {
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
         });
-
         services.AddAutoMapper(typeof(MappingProfile));
-        //services.Configure<JwtOption>(configuration.GetSection("Jwt"));
+
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.Configure<JwtOption>(configuration.GetSection("Jwt"));
 
         return services;
     }

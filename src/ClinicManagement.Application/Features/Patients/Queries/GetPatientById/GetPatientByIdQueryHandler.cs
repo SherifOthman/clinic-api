@@ -26,14 +26,14 @@ public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, R
             var patient = await _unitOfWork.Patients.GetWithSurgeriesAsync(request.Id, cancellationToken);
 
             if (patient == null)
-                return Result<PatientDto>.Failure("Patient not found");
+                return Result<PatientDto>.Fail("Patient not found");
 
             var patientDto = _mapper.Map<PatientDto>(patient);
-            return Result<PatientDto>.Success(patientDto);
+            return Result<PatientDto>.Ok(patientDto);
         }
         catch (Exception ex)
         {
-            return Result<PatientDto>.Failure(ex.Message);
+            return Result<PatientDto>.Fail(ex.Message);
         }
     }
 }

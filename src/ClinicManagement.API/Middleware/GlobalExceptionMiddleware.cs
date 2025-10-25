@@ -1,4 +1,6 @@
 using Azure;
+using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Models;
 using FluentValidation;
 using System.Net;
 using System.Text.Json;
@@ -33,38 +35,30 @@ public class GlobalExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        var response = new ErrorResponse();
+        var apiError = new ApiError();
 
         switch (exception)
         {
-            case UnauthorizedAccessException:
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                response.Message = "Unauthorized access";
-                response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                break;
-
-            case KeyNotFoundException:
-                context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                response.Message = exception.Message;
-                response.StatusCode = (int)HttpStatusCode.NotFound;
-                break;
-
-            case ArgumentException:
-            case InvalidOperationException:
+          
+            case ValidationException validationEx:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response.Message = exception.Message;
-                response.StatusCode = (int)HttpStatusCode.BadRequest;
+                apiError.Type = "ValidationError";
+                apiError.Message = "Validation failed.";
+                apiError.Errors = validationEx.Errors.Select(e => new ErrorItem
+                {
+                    Field = e.PropertyName,
+                    Message = e.ErrorMessage
+                });
                 break;
 
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Message = "An internal server error occurred";
-                response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Details = exception.Message;
+                apiError.Type = "ServerError";
+                apiError.Message = "An unexpected error occurred.";
                 break;
         }
 
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        var jsonResponse = JsonSerializer.Serialize(apiError, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
@@ -73,11 +67,4 @@ public class GlobalExceptionMiddleware
     }
 
  
-}
-
-public class ErrorResponse
-{
-    public int StatusCode { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string? Details { get; set; }
 }

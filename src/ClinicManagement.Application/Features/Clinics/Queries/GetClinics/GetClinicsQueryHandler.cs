@@ -45,11 +45,11 @@ public class GetClinicsQueryHandler : IRequestHandler<GetClinicsQuery, Result<Li
                 .ToList();
 
             var clinicDtos = _mapper.Map<List<ClinicDto>>(pagedClinics);
-            return Result<List<ClinicDto>>.Success(clinicDtos);
+            return Result<List<ClinicDto>>.Ok(clinicDtos);
         }
         catch (Exception ex)
         {
-            return Result<List<ClinicDto>>.Failure(ex.Message);
+            return Result<List<ClinicDto>>.Fail(ex.Message);
         }
     }
 }

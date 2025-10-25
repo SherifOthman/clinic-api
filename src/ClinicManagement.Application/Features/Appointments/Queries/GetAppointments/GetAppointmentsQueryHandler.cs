@@ -78,11 +78,11 @@ public class GetAppointmentsQueryHandler : IRequestHandler<GetAppointmentsQuery,
             //    paginatedAppointments.PageSize
             //);
 
-            return Result<PaginatedList<AppointmentDto>>.Failure("TST");
+            return Result<PaginatedList<AppointmentDto>>.Fail("TST");
         }
         catch (Exception ex)
         {
-            return Result<PaginatedList<AppointmentDto>>.Failure(ex.Message);
+            return Result<PaginatedList<AppointmentDto>>.Fail(ex.Message);
         }
     }
 }

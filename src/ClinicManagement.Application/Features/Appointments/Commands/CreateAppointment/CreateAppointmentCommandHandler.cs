@@ -42,11 +42,11 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
-            return Result<AppointmentDto>.Success(appointmentDto);
+            return Result<AppointmentDto>.Ok(appointmentDto);
         }
         catch (Exception ex)
         {
-            return Result<AppointmentDto>.Failure(ex.Message);
+            return Result<AppointmentDto>.Fail(ex.Message);
         }
     }
 }

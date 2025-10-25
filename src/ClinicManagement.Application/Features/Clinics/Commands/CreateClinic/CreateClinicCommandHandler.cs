@@ -37,11 +37,11 @@ public class CreateClinicCommandHandler : IRequestHandler<CreateClinicCommand, R
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var clinicDto = _mapper.Map<ClinicDto>(clinic);
-            return Result<ClinicDto>.Success(clinicDto);
+            return Result<ClinicDto>.Ok(clinicDto);
         }
         catch (Exception ex)
         {
-            return Result<ClinicDto>.Failure(ex.Message);
+            return Result<ClinicDto>.Fail(ex.Message);
         }
     }
 }

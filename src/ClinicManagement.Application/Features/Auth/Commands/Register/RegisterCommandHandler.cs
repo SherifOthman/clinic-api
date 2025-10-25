@@ -21,7 +21,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
     {
         var userExist  = await _identityService.GetUserByEmailAsync(request.Email);
         if (userExist != null)
-            return Result.Failure(new ErrorItem
+            return Result.Fail(new ErrorItem
             {
                 Field = "email",
                 Message = "This email address is already registered."
@@ -30,7 +30,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
         userExist = await _identityService.GetByUsernameAsync(request.Username);
         if (userExist != null)
         {
-            return Result.Failure(new ErrorItem
+            return Result.Fail(new ErrorItem
             {
                 Field = "username",
                 Message = "This username is already taken."
@@ -43,9 +43,9 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
         var result = await _identityService.CreateUserAsync(user, request.Password);
 
         if (!result.IsSuccess)
-            return Result.Failure(result.error);
+            return Result.Fail(result.Errors!);
 
-        return Result.Success();
+        return Result.Ok();
     }
 
 

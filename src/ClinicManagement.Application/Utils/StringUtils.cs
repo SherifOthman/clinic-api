@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 
 namespace ClinicManagement.Application.Utils;
-public static class CheckEmail
+public static class StringUtils
 {
     public static bool IsEmail(string input)
     {
@@ -15,5 +10,11 @@ public static class CheckEmail
 
         var pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
         return Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase);
+    }
+    public static string ToCamelCase(string input)
+    {
+        if (string.IsNullOrEmpty(input) || char.IsLower(input[0]))
+            return input;
+        return char.ToLowerInvariant(input[0]) + input.Substring(1);
     }
 }

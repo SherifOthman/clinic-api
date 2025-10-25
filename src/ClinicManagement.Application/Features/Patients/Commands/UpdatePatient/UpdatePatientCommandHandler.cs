@@ -25,7 +25,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         {
             var patient = await _unitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
             if (patient == null)
-                return Result<PatientDto>.Failure("Patient not found");
+                return Result<PatientDto>.Fail("Patient not found");
 
             patient.Avatar = request.Avatar;
             patient.FirstName = request.FirstName;
@@ -44,11 +44,11 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var patientDto = _mapper.Map<PatientDto>(patient);
-            return Result<PatientDto>.Success(patientDto);
+            return Result<PatientDto>.Ok(patientDto);
         }
         catch (Exception ex)
         {
-            return Result<PatientDto>.Failure(ex.Message);
+            return Result<PatientDto>.Fail(ex.Message);
         }
     }
 }
