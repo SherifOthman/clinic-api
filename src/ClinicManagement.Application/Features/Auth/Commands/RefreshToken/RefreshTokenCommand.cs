@@ -16,7 +16,7 @@ public class LoginCommandValidator : AbstractValidator<RefreshTokenCommand>
     public LoginCommandValidator()
     {
         RuleFor(x => x.RefreshToken)
-            .NotEmpty().WithMessage("Refresh Token is required.");
+            .NotEmpty();
 
     }
 }

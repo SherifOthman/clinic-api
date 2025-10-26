@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.OpenApi.Models;
+using System.Globalization;
 
 namespace ClinicManagement.API;
 
@@ -49,6 +51,7 @@ public static class DependencyInjection
             });
         });
 
+    
         return services;
     }
 }

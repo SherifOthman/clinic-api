@@ -1,4 +1,5 @@
 using AutoMapper;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
@@ -21,20 +22,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
     {
         var userExist  = await _identityService.GetUserByEmailAsync(request.Email);
         if (userExist != null)
-            return Result.Fail(new ErrorItem
-            {
-                Field = "email",
-                Message = "This email address is already registered."
-            });
+            return Result.FailField("email",
+                ErrorCodes.EmailAlreadyExists,
+                "This email address is already registered.");
 
         userExist = await _identityService.GetByUsernameAsync(request.Username);
         if (userExist != null)
         {
-            return Result.Fail(new ErrorItem
-            {
-                Field = "username",
-                Message = "This username is already taken."
-            });
+            return Result.FailField("username",
+                ErrorCodes.UsernameTaken,
+                "This username is already taken.");
         }
 
 

@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using FluentValidation;
@@ -16,9 +17,12 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
     public LoginCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required");
+            .NotEmpty()
+            .WithErrorCode(ErrorCodes.EmailRequired);
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required");
+            .NotEmpty()
+            .WithErrorCode(ErrorCodes.PasswordRequired);
+
     }
 }

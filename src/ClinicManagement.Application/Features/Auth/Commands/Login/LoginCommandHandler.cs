@@ -1,4 +1,5 @@
 using AutoMapper;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
@@ -33,7 +34,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
 
         if (user == null ||
             !await _identityService.CheckPasswordAsync(user, request.Password))
-            return Result<AuthResponseDto>.Fail("Invalid username or password");
+            return Result<AuthResponseDto>.Fail(ErrorCodes.InvalidCredentials,
+                "Invalid username or password");
 
         var userRoles = await _identityService.GetUserRolesAsync(user);
         var accessToken = _tokenService.GenerateAccessToken(user, userRoles);

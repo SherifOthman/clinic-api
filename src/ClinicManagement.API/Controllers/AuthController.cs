@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError),StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     [Produces("application/json")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);

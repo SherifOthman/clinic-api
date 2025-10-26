@@ -1,6 +1,8 @@
 using Azure;
 using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Extensions;
 using FluentValidation;
 using System.Net;
 using System.Text.Json;
@@ -43,12 +45,9 @@ public class GlobalExceptionMiddleware
             case ValidationException validationEx:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 apiError.Type = "ValidationError";
-                apiError.Message = "Validation failed.";
-                apiError.Errors = validationEx.Errors.Select(e => new ErrorItem
-                {
-                    Field = e.PropertyName,
-                    Message = e.ErrorMessage
-                });
+                apiError.Code = ErrorCodes.ValidationFailed;
+                apiError.Message = Result.VALIDATION_MESSAGE;
+                apiError.Errors = validationEx.Errors.ToErrorItemList();
                 break;
 
             default:
