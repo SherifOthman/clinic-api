@@ -6,13 +6,9 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
     public RegisterCommandValidator()
     {
-        RuleFor(x => x.FirstName)
+        RuleFor(x => x.Name)
             .NotEmpty().WithMessage("First name is required")
             .MaximumLength(100).WithMessage("First name cannot exceed 100 characters");
-
-        RuleFor(x => x.ThirdName)
-            .NotEmpty().WithMessage("Third name is required")
-            .MaximumLength(100).WithMessage("Third name cannot exceed 100 characters");
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")

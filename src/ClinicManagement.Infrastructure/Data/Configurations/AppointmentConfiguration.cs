@@ -18,19 +18,19 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.HasOne(d => d.Branch)
             .WithMany(p => p.Appointments)
             .HasForeignKey(d => d.BranchId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(d => d.Patient)
             .WithMany(p => p.Appointments)
             .HasForeignKey(d => d.PatientId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(d => d.Doctor)
             .WithMany(p => p.Appointments)
             .HasForeignKey(d => d.DoctorId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(d => d.Receptionist)
             .WithMany(p => p.Appointments)
             .HasForeignKey(d => d.ReceptionistId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
 

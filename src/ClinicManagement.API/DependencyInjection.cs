@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using ClinicManagement.API.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
+using Serilog;
 using System.Globalization;
 
 namespace ClinicManagement.API;
@@ -13,45 +16,37 @@ public static class DependencyInjection
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
-        {
-            options.AddSecurityDefinition(name: JwtBearerDefaults.AuthenticationScheme,
-                securityScheme: new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    Description = "Enter JWT Bearer token **_only_**",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = JwtBearerDefaults.AuthenticationScheme
-                });
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = JwtBearerDefaults.AuthenticationScheme
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-        });
+        services.AddOpenApi();
 
         // Add CORS
+        var allowedOrigins = new[] { "http://localhost:5173" }; 
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
             {
-                policy.AllowAnyOrigin()
+                policy.WithOrigins(allowedOrigins)
                       .AllowAnyMethod()
-                      .AllowAnyHeader();
+                      .AllowAnyHeader()
+                      .AllowCredentials();
             });
         });
 
     
         return services;
+    }
+
+    public static WebApplication UseAppConfigurations(this WebApplication app)
+    {
+        app.MapOpenApi();
+        app.MapScalarApiReference();
+        app.UseHttpsRedirection();
+        app.UseCors("AllowAll");
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+        app.UseMiddleware<GlobalExceptionMiddleware>();
+        app.Run();
+
+        return app;
     }
 }

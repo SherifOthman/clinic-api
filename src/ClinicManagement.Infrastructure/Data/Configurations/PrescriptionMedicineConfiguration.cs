@@ -14,12 +14,10 @@ public class PrescriptionMedicineConfiguration : IEntityTypeConfiguration<Prescr
         builder.Property(e => e.Notes).HasMaxLength(200);
         builder.HasOne(d => d.Visit)
             .WithMany(p => p.PrescriptionMedicines)
-            .HasForeignKey(d => d.VisitId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.VisitId);
         builder.HasOne(d => d.Medicine)
             .WithMany(p => p.PrescriptionMedicines)
-            .HasForeignKey(d => d.MedicineId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(d => d.MedicineId);
     }
 }
 

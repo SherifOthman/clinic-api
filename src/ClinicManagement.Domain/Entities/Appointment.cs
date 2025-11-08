@@ -8,6 +8,7 @@ public class Appointment : AuditableEntity
     public int BranchId { get; set; }
     public int PatientId { get; set; }
     public int DoctorId { get; set; }
+    public int Order { get; set; }
     public int? ReceptionistId { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
     public AppointmentType Type { get; set; }

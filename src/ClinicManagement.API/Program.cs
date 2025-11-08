@@ -1,42 +1,35 @@
 using ClinicManagement.API;
-using ClinicManagement.API.Middleware;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
-using ClinicManagement.Infrastructure.Data;
+using Serilog;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddApi();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApplication(builder.Configuration);
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-
-if (app.Environment.IsDevelopment())
+try
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Log.Information("Starting web application");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddApi();
+    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddApplication(builder.Configuration);
+
+    builder.Services.AddSerilog((services, lc) => lc
+       .ReadFrom.Configuration(builder.Configuration)
+       .ReadFrom.Services(services));
+
+    var app = builder.Build();
+    app.UseAppConfigurations();
+
 }
-
-app.UseHttpsRedirection();
-
-app.UseCors("AllowAll");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.UseMiddleware<GlobalExceptionMiddleware>();
-
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
+catch (Exception ex)
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
+    Log.Fatal(ex, "Application terminated unexpectedly");
 }
-
-app.Run();
+finally
+{
+    Log.CloseAndFlush();
+}

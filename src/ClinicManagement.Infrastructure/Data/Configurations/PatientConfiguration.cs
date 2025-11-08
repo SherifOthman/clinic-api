@@ -10,9 +10,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
     {
         builder.ToTable("Patients");
         builder.Property(e => e.Avatar).HasMaxLength(200);
-        builder.Property(e => e.FirstName).HasMaxLength(100).IsRequired();
-        builder.Property(e => e.SecondName).HasMaxLength(100);
-        builder.Property(e => e.ThirdName).HasMaxLength(100).IsRequired();
+        builder.Property(e => e.Name).HasMaxLength(100).IsRequired();
         builder.Property(e => e.City).HasMaxLength(50);
         builder.Property(e => e.PhoneNumber).HasMaxLength(20);
         builder.Property(e => e.EmergencyContactName).HasMaxLength(50);
@@ -21,7 +19,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasOne(d => d.Clinic)
             .WithMany(p => p.Patients)
             .HasForeignKey(d => d.ClinicId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
 

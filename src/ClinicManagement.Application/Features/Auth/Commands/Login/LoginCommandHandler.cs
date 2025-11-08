@@ -4,7 +4,6 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Utils;
-using ClinicManagement.Domain.Entities;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Login;

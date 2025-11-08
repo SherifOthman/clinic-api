@@ -7,9 +7,7 @@ public class Patient : AuditableEntity
 {
     public int ClinicId { get; set; }
     public string? Avatar { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string? SecondName { get; set; }
-    public string ThirdName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public string? City { get; set; }
@@ -23,15 +21,7 @@ public class Patient : AuditableEntity
     public virtual ICollection<PatientSurgery> Surgeries { get; set; } = new List<PatientSurgery>();
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     
-    // Domain methods
-    public string GetFullName()
-    {
-        var parts = new List<string> { FirstName };
-        if (!string.IsNullOrEmpty(SecondName))
-            parts.Add(SecondName);
-        parts.Add(ThirdName);
-        return string.Join(" ", parts);
-    }
+
     
     public int GetAge()
     {

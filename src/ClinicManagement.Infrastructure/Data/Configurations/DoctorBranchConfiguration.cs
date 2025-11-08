@@ -11,12 +11,11 @@ public class DoctorBranchConfiguration : IEntityTypeConfiguration<DoctorBranch>
         builder.ToTable("DoctorBranches");
         builder.HasOne(d => d.Doctor)
             .WithMany(p => p.DoctorBranches)
-            .HasForeignKey(d => d.DoctorId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.DoctorId);
+
         builder.HasOne(d => d.Branch)
             .WithMany(p => p.DoctorBranches)
-            .HasForeignKey(d => d.BranchId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.BranchId);
     }
 }
 

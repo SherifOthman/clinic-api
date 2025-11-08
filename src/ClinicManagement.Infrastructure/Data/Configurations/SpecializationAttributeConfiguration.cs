@@ -11,12 +11,10 @@ public class SpecializationAttributeConfiguration : IEntityTypeConfiguration<Spe
         builder.ToTable("SpecializationAttributes");
         builder.HasOne(d => d.Specialization)
             .WithMany(p => p.SpecializationAttributes)
-            .HasForeignKey(d => d.SpecializationId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.SpecializationId);
         builder.HasOne(d => d.VisitAttribute)
             .WithMany(p => p.SpecializationAttributes)
-            .HasForeignKey(d => d.VisitAttributeId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.VisitAttributeId);
     }
 }
 

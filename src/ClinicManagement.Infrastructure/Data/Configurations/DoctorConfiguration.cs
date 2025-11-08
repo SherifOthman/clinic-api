@@ -12,12 +12,10 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
         builder.Property(e => e.Bio).HasMaxLength(300);
         builder.HasOne(d => d.User)
             .WithMany()
-            .HasForeignKey(d => d.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.UserId);
         builder.HasOne(d => d.Specialization)
             .WithMany(p => p.Doctors)
-            .HasForeignKey(d => d.SpecializationId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(d => d.SpecializationId);
     }
 }
 

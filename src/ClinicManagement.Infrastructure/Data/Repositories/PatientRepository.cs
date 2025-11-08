@@ -21,9 +21,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     {
         var lowerSearchTerm = searchTerm.ToLower();
         return await _dbSet
-            .Where(p => p.FirstName.ToLower().Contains(lowerSearchTerm) ||
-                       (p.SecondName != null && p.SecondName.ToLower().Contains(lowerSearchTerm)) ||
-                       p.ThirdName.ToLower().Contains(lowerSearchTerm))
+            .Where(p => p.Name.ToLower().Contains(lowerSearchTerm))
             .ToListAsync(cancellationToken);
     }
 

@@ -28,10 +28,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
                 return Result<PatientDto>.Fail("Patient not found");
 
             patient.Avatar = request.Avatar;
-            patient.FirstName = request.FirstName;
-            patient.SecondName = request.SecondName;
-            patient.ThirdName = request.ThirdName;
-            patient.DateOfBirth = request.DateOfBirth;
+            patient.Name = request.FirstName;
             patient.Gender = request.Gender;
             patient.City = request.City;
             patient.PhoneNumber = request.PhoneNumber;

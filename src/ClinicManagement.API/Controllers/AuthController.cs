@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClinicManagement.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiError),StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
@@ -74,7 +74,12 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("refreshToken");
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
+
         return Ok(new { message = "Logged out successfully" });
     }
 
@@ -84,13 +89,13 @@ public class AuthController : ControllerBase
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.Strict,
+            SameSite = SameSiteMode.None,
             Expires = DateTime.UtcNow.AddDays(7)
         };
 
         Response.Cookies.Append("refreshToken", refreshToken, options);
     }
-
+              
     private IActionResult CreateTokenResponse(AuthResponseDto auth)
     {
         return Ok(new

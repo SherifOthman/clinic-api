@@ -12,12 +12,10 @@ public class VisitAttributeValueConfiguration : IEntityTypeConfiguration<VisitAt
         builder.Property(e => e.Value).HasColumnType("nvarchar(max)");
         builder.HasOne(d => d.Visit)
             .WithMany(p => p.VisitAttributeValues)
-            .HasForeignKey(d => d.VisitId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.VisitId);
         builder.HasOne(d => d.Field)
             .WithMany(p => p.VisitAttributeValues)
-            .HasForeignKey(d => d.FieldId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(d => d.FieldId);
     }
 }
 

@@ -11,12 +11,11 @@ public class ReceptionistConfiguration : IEntityTypeConfiguration<Receptionist>
         builder.ToTable("Receptionists");
         builder.HasOne(d => d.User)
             .WithMany()
-            .HasForeignKey(d => d.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.UserId);
+
         builder.HasOne(d => d.Branch)
             .WithMany(p => p.Receptionists)
-            .HasForeignKey(d => d.BranchId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.BranchId);
     }
 }
 

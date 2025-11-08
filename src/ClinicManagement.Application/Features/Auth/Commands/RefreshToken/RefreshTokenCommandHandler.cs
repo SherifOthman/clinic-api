@@ -2,8 +2,12 @@ using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Application.Options;
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
+using Microsoft.IdentityModel.Tokens;
+using System.Data;
+using System.Text;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
 
@@ -35,6 +39,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         var userRoles = await _identityService.GetUserRolesAsync(user!);
         await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
+
 
         var accessToken = _tokenService.GenerateAccessToken(user!, userRoles);
         var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user!);

@@ -16,7 +16,7 @@ public class ClinicSettingsConfiguration : IEntityTypeConfiguration<ClinicSettin
         builder.HasOne(d => d.Clinic)
             .WithMany(p => p.Settings)
             .HasForeignKey(d => d.ClinicId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
 

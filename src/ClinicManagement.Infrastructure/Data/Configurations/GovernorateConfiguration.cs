@@ -12,8 +12,7 @@ public class GovernorateConfiguration : IEntityTypeConfiguration<Governorate>
         builder.Property(e => e.Name).HasMaxLength(100).IsRequired();
         builder.HasOne(d => d.Country)
             .WithMany(p => p.Governorates)
-            .HasForeignKey(d => d.CountryId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.CountryId);
     }
 }
 

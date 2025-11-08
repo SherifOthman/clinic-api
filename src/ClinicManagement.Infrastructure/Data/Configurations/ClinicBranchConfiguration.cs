@@ -16,11 +16,11 @@ public class ClinicBranchConfiguration : IEntityTypeConfiguration<ClinicBranch>
         builder.HasOne(d => d.Clinic)
             .WithMany(p => p.Branches)
             .HasForeignKey(d => d.ClinicId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.HasOne(d => d.CityNavigation)
             .WithMany(p => p.ClinicBranches)
-            .HasForeignKey(d => d.CityId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .HasForeignKey(d => d.CityId);
     }
 }
 

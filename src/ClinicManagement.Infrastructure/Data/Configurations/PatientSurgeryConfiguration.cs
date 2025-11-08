@@ -13,8 +13,7 @@ public class PatientSurgeryConfiguration : IEntityTypeConfiguration<PatientSurge
         builder.Property(e => e.Description).HasColumnType("nvarchar(max)");
         builder.HasOne(d => d.Patient)
             .WithMany(p => p.Surgeries)
-            .HasForeignKey(d => d.PatientId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.PatientId);
     }
 }
 

@@ -13,8 +13,7 @@ public class VisitConfiguration : IEntityTypeConfiguration<Visit>
         builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
         builder.HasOne(d => d.Appointment)
             .WithMany(p => p.Visits)
-            .HasForeignKey(d => d.AppointmentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(d => d.AppointmentId);
     }
 }
 

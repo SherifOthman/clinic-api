@@ -15,11 +15,10 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
         builder.HasOne(d => d.Owner)
             .WithMany()
             .HasForeignKey(d => d.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(d => d.SubscriptionPlan)
             .WithMany(p => p.Clinics)
-            .HasForeignKey(d => d.SubscriptionPlanId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(d => d.SubscriptionPlanId);
     }
 }
 
