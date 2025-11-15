@@ -22,8 +22,8 @@ try
        .ReadFrom.Services(services));
 
     var app = builder.Build();
-    app.UseAppConfigurations();
 
+    app.UseAppConfigurations();
 }
 catch (Exception ex)
 {

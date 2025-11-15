@@ -21,31 +21,26 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
 
     public async Task<Result<PatientDto>> Handle(UpdatePatientCommand request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var patient = await _unitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
-            if (patient == null)
-                return Result<PatientDto>.Fail("Patient not found");
+        var patient = await _unitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
+        if (patient == null)
+            return Result<PatientDto>.Fail("Patient not found");
 
-            patient.Avatar = request.Avatar;
-            patient.Name = request.FirstName;
-            patient.Gender = request.Gender;
-            patient.City = request.City;
-            patient.PhoneNumber = request.PhoneNumber;
-            patient.EmergencyContactName = request.EmergencyContactName;
-            patient.EmergencyPhone = request.EmergencyPhone;
-            patient.GeneralNotes = request.GeneralNotes;
-            patient.UpdatedAt = DateTime.UtcNow;
+        patient.Avatar = request.Avatar;
+        patient.FirstName = request.FirstName;
+        patient.MiddleName = request.MiddleName;
+        patient.LastName = request.LastName;
+        patient.Gender = request.Gender;
+        patient.City = request.City;
+        patient.PhoneNumber = request.PhoneNumber;
+        patient.EmergencyContactName = request.EmergencyContactName;
+        patient.EmergencyPhone = request.EmergencyPhone;
+        patient.GeneralNotes = request.GeneralNotes;
+        patient.UpdatedAt = DateTime.UtcNow;
 
-            _unitOfWork.Patients.Update(patient);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _unitOfWork.Patients.Update(patient);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var patientDto = _mapper.Map<PatientDto>(patient);
-            return Result<PatientDto>.Ok(patientDto);
-        }
-        catch (Exception ex)
-        {
-            return Result<PatientDto>.Fail(ex.Message);
-        }
+        var patientDto = _mapper.Map<PatientDto>(patient);
+        return Result<PatientDto>.Ok(patientDto);
     }
 }

@@ -19,7 +19,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<Receptionist> Receptionists { get; }
     IRepository<PatientSurgery> PatientSurgeries { get; }
     IRepository<Visit> Visits { get; }
-    IRepository<Medicine> Medicines { get; }
+    IMedicineRepository Medicines { get; }
     IRepository<PrescriptionMedicine> PrescriptionMedicines { get; }
     IRepository<Diagnosis> Diagnoses { get; }
     IRepository<ClinicSettings> ClinicSettings { get; }
@@ -27,6 +27,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<SpecializationAttribute> SpecializationAttributes { get; }
     IRepository<VisitAttributeValue> VisitAttributeValues { get; }
     IRefreshTokenRepository RefreshTokens { get; }
+    IReviewRepository Reviews { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

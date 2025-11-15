@@ -16,7 +16,6 @@ public static class ErrorItemMapper
         return failures.Select(f => new ErrorItem
         {
             Field = StringUtils.ToCamelCase(f.PropertyName),
-            Code = f.ErrorCode,
             Message = f.ErrorMessage
         });
     }

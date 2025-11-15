@@ -22,6 +22,7 @@ public  static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.Configure<JwtOption>(configuration.GetSection("Jwt"));
+        services.Configure<SmtpOptions>(configuration.GetSection("Email"));
 
         return services;
     }

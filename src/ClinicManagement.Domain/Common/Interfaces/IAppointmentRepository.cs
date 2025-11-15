@@ -12,4 +12,5 @@ public interface IAppointmentRepository : IRepository<Appointment>
     Task<IEnumerable<Appointment>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     Task<IEnumerable<Appointment>> GetUpcomingAppointmentsAsync(int doctorId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Appointment>> GetOverdueAppointmentsAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<Appointment>> GetAppointmentsPagedAsync(int? branchId, int? patientId, int? doctorId, AppointmentStatus? status, AppointmentType? type, DateTime? fromDate, DateTime? toDate, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 }

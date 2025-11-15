@@ -1,5 +1,4 @@
 using AutoMapper;
-using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
@@ -28,15 +27,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
         bool isEmail = StringUtils.IsEmail(request.Email);
 
         var user = isEmail
-            ? await _identityService.GetUserByEmailAsync(request.Email)
-            : await _identityService.GetByUsernameAsync(request.Email);
+            ? await _identityService.GetUserByEmailAsync(request.Email, cancellationToken)
+            : await _identityService.GetByUsernameAsync(request.Email, cancellationToken);
 
         if (user == null ||
-            !await _identityService.CheckPasswordAsync(user, request.Password))
-            return Result<AuthResponseDto>.Fail(ErrorCodes.InvalidCredentials,
-                "Invalid username or password");
+            !await _identityService.CheckPasswordAsync(user, request.Password, cancellationToken))
+            return Result<AuthResponseDto>.Fail("Invalid username or password");
 
-        var userRoles = await _identityService.GetUserRolesAsync(user);
+        var userRoles = await _identityService.GetUserRolesAsync(user, cancellationToken);
         var accessToken = _tokenService.GenerateAccessToken(user, userRoles);
         var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, cancellationToken);
 

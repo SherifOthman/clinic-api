@@ -55,5 +55,8 @@ public class MappingProfile : Profile
         
         CreateMap<PrescriptionMedicine, PrescriptionMedicineDto>();
         CreateMap<CreatePrescriptionMedicineDto, PrescriptionMedicine>();
+        
+        CreateMap<Review, ReviewDto>();
+        CreateMap<CreateReviewDto, Review>();
     }
 }

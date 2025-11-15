@@ -37,12 +37,12 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         var user = await _unitOfWork.Users.GetByIdAsync(oldToken.UserId);
 
-        var userRoles = await _identityService.GetUserRolesAsync(user!);
+        var userRoles = await _identityService.GetUserRolesAsync(user!, cancellationToken);
         await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
 
 
         var accessToken = _tokenService.GenerateAccessToken(user!, userRoles);
-        var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user!);
+        var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user!, cancellationToken);
 
         var response = new AuthResponseDto
         {

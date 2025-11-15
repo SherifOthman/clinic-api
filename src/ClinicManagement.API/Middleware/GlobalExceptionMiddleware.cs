@@ -45,7 +45,6 @@ public class GlobalExceptionMiddleware
             case ValidationException validationEx:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 apiError.Type = "ValidationError";
-                apiError.Code = ErrorCodes.ValidationFailed;
                 apiError.Message = Result.VALIDATION_MESSAGE;
                 apiError.Errors = validationEx.Errors.ToErrorItemList();
                 break;

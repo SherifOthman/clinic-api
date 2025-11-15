@@ -1,10 +1,6 @@
 ﻿using ClinicManagement.API.Middleware;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.OpenApi.Models;
+using ClinicManagement.API.OpenApi;
 using Scalar.AspNetCore;
-using Serilog;
-using System.Globalization;
 
 namespace ClinicManagement.API;
 
@@ -14,12 +10,15 @@ public static class DependencyInjection
     {
         services.AddControllers();
 
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        // Add OpenAPI with Bearer authentication transformer
         services.AddEndpointsApiExplorer();
-        services.AddOpenApi();
+        services.AddOpenApi("v1", options =>
+        {
+            options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+        });
 
         // Add CORS
-        var allowedOrigins = new[] { "http://localhost:5173" }; 
+        var allowedOrigins = new[] { "http://localhost:5173", "http://localhost:3000" }; 
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
@@ -31,20 +30,31 @@ public static class DependencyInjection
             });
         });
 
-    
         return services;
     }
 
     public static WebApplication UseAppConfigurations(this WebApplication app)
     {
+        // Global exception middleware should be first
+        app.UseMiddleware<GlobalExceptionMiddleware>();
+        
+        // Map OpenAPI endpoint
         app.MapOpenApi();
-        app.MapScalarApiReference();
+        
+        // Configure Scalar UI
+        app.MapScalarApiReference(options =>
+        {
+            options
+                .WithTitle("Clinic Management API")
+                .WithTheme(ScalarTheme.Default)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        });
+
         app.UseHttpsRedirection();
         app.UseCors("AllowAll");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-        app.UseMiddleware<GlobalExceptionMiddleware>();
         app.Run();
 
         return app;

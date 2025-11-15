@@ -18,11 +18,10 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
         RuleFor(x => x.Email)
             .NotEmpty()
-            .WithErrorCode(ErrorCodes.EmailRequired);
+            .WithMessage("Email is required");
 
         RuleFor(x => x.Password)
             .NotEmpty()
-            .WithErrorCode(ErrorCodes.PasswordRequired);
-
+            .WithMessage("Password is required");
     }
 }
