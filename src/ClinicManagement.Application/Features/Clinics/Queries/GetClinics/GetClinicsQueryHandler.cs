@@ -22,14 +22,34 @@ public class GetClinicsQueryHandler : IRequestHandler<GetClinicsQuery, Result<Li
 
     public async Task<Result<List<ClinicDto>>> Handle(GetClinicsQuery request, CancellationToken cancellationToken)
     {
-        var clinics = await _unitOfWork.Clinics.GetClinicsPagedAsync(
-            request.OwnerId, 
-            request.IsActive, 
-            request.PageNumber, 
-            request.PageSize, 
-            cancellationToken);
+        try
+        {
+            IEnumerable<Clinic> clinics;
 
-        var clinicDtos = _mapper.Map<List<ClinicDto>>(clinics);
-        return Result<List<ClinicDto>>.Ok(clinicDtos);
+            if (request.OwnerId.HasValue)
+            {
+                clinics = await _unitOfWork.Clinics.GetByOwnerIdAsync(request.OwnerId.Value, cancellationToken);
+            }
+            else if (request.IsActive.HasValue)
+            {
+                clinics = await _unitOfWork.Clinics.GetActiveClinicsAsync(cancellationToken);
+            }
+            else
+            {
+                clinics = await _unitOfWork.Clinics.GetAllAsync(cancellationToken);
+            }
+
+            var pagedClinics = clinics
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+
+            var clinicDtos = _mapper.Map<List<ClinicDto>>(pagedClinics);
+            return Result<List<ClinicDto>>.Ok(clinicDtos);
+        }
+        catch (Exception ex)
+        {
+            return Result<List<ClinicDto>>.Fail(ex.Message);
+        }
     }
 }

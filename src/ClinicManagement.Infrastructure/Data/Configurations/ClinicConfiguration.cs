@@ -9,16 +9,14 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
     public void Configure(EntityTypeBuilder<Clinic> builder)
     {
         builder.ToTable("Clinics");
-        builder.Property(e => e.Name).HasMaxLength(100);
-        builder.Property(e => e.Phone).HasMaxLength(20);
-        builder.Property(e => e.StartDate).HasDefaultValueSql("GETDATE()");
-        builder.HasOne(d => d.Owner)
+        
+        builder.Property(e => e.Name).HasMaxLength(200).IsRequired();
+        
+        builder.HasOne(c => c.Owner)
             .WithMany()
-            .HasForeignKey(d => d.OwnerId)
-            .OnDelete(DeleteBehavior.NoAction);
-        builder.HasOne(d => d.SubscriptionPlan)
-            .WithMany(p => p.Clinics)
-            .HasForeignKey(d => d.SubscriptionPlanId);
+            .HasForeignKey(c => c.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+            
+        builder.HasIndex(c => c.OwnerId);
     }
 }
-

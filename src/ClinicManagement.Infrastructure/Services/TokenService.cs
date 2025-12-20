@@ -25,7 +25,7 @@ public class TokenService : ITokenService
         _jwtOption = options.Value;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOption.Key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -33,7 +33,7 @@ public class TokenService : ITokenService
         var token = new JwtSecurityToken(
             issuer: _jwtOption.Issuer,
             audience: _jwtOption.Audience,
-            claims: GetClaims(user, roles),
+            claims: GetClaims(user, roles, clinicId),
             expires: DateTime.UtcNow.AddMinutes(_jwtOption.AccessTokenExpirationMinutes),
             signingCredentials: credentials
         );
@@ -71,11 +71,17 @@ public class TokenService : ITokenService
        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private List<Claim> GetClaims(User user, IEnumerable<string> roles)
+    private List<Claim> GetClaims(User user, IEnumerable<string> roles, int? clinicId)
     {
         List<Claim> claims = new List<Claim>();
 
         claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+        
+        if (clinicId.HasValue)
+        {
+            claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));
+        }
+        
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));

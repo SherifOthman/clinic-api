@@ -21,25 +21,32 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
 
     public async Task<Result<AppointmentDto>> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
     {
-        var appointment = new Appointment
+        try
         {
-            BranchId = request.BranchId,
-            PatientId = request.PatientId,
-            DoctorId = request.DoctorId,
-            ReceptionistId = request.ReceptionistId,
-            Type = request.Type,
-            AppointmentDate = request.AppointmentDate,
-            Price = request.Price,
-            PaidPrice = request.PaidPrice ?? 0,
-            Discount = request.Discount ?? 0,
-            Notes = request.Notes,
-            Status = Domain.Common.Enums.AppointmentStatus.Scheduled
-        };
+            var appointment = new Appointment
+            {
+                BranchId = request.BranchId,
+                PatientId = request.PatientId,
+                DoctorId = request.DoctorId,
+                ReceptionistId = request.ReceptionistId,
+                Type = request.Type,
+                AppointmentDate = request.AppointmentDate,
+                Price = request.Price,
+                PaidPrice = request.PaidPrice ?? 0,
+                Discount = request.Discount ?? 0,
+                Notes = request.Notes,
+                Status = Domain.Common.Enums.AppointmentStatus.Scheduled
+            };
 
-        _unitOfWork.Appointments.Add(appointment);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Appointments.Add(appointment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
-        return Result<AppointmentDto>.Ok(appointmentDto);
+            var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
+            return Result<AppointmentDto>.Ok(appointmentDto);
+        }
+        catch (Exception ex)
+        {
+            return Result<AppointmentDto>.Fail(ex.Message);
+        }
     }
 }

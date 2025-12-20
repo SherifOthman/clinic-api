@@ -8,14 +8,16 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
 {
     public void Configure(EntityTypeBuilder<Doctor> builder)
     {
-        builder.ToTable("Doctors");
-        builder.Property(e => e.Bio).HasMaxLength(300);
+        builder.HasKey(d => d.Id);
+
         builder.HasOne(d => d.User)
             .WithMany()
-            .HasForeignKey(d => d.UserId);
-        builder.HasOne(d => d.Specialization)
-            .WithMany(p => p.Doctors)
-            .HasForeignKey(d => d.SpecializationId);
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(d => d.Clinic)
+            .WithMany()
+            .HasForeignKey(d => d.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

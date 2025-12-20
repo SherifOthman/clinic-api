@@ -7,9 +7,7 @@ public class Patient : AuditableEntity
 {
     public int ClinicId { get; set; }
     public string? Avatar { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string? MiddleName { get; set; }
-    public string LastName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public string? City { get; set; }
@@ -22,11 +20,6 @@ public class Patient : AuditableEntity
     public virtual Clinic Clinic { get; set; } = null!;
     public virtual ICollection<PatientSurgery> Surgeries { get; set; } = new List<PatientSurgery>();
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
-    
-    // Computed property for full name
-    public string FullName => string.IsNullOrWhiteSpace(MiddleName) 
-        ? $"{FirstName} {LastName}" 
-        : $"{FirstName} {MiddleName} {LastName}";
     
 
     

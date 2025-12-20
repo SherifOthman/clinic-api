@@ -55,7 +55,7 @@ public class PatientsController : ControllerBase
         
         if (result.Success)
         {
-            return CreatedAtAction(nameof(GetPatientById), new { id = result.Value?.Id }, result.Value);
+            return CreatedAtAction(nameof(GetPatientById), new { id = result.Value.Id }, result.Value);
         }
         
         return BadRequest(result.Message);

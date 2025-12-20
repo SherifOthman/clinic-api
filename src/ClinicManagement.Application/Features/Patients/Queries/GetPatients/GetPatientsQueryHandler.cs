@@ -20,26 +20,71 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
 
     public async Task<Result<PaginatedList<PatientDto>>> Handle(GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        var patients = await _unitOfWork.Patients.GetPatientsPagedAsync(
-            request.ClinicId,
-            request.SearchTerm,
-            request.Gender,
-            request.City,
-            request.MinAge,
-            request.MaxAge,
-            request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+        try
+        {
+            //var query = _unitOfWork.Patients.GetAll();
 
-        var patientDtos = _mapper.Map<List<PatientDto>>(patients);
-        
-        var result = new PaginatedList<PatientDto>(
-            patientDtos,
-            patientDtos.Count,
-            request.PageNumber,
-            request.PageSize
-        );
+            //// Apply filters
+            //if (request.ClinicId.HasValue)
+            //{
+            //    query = query.Where(p => p.ClinicId == request.ClinicId.Value);
+            //}
 
-        return Result<PaginatedList<PatientDto>>.Ok(result);
+            //if (!string.IsNullOrEmpty(request.SearchTerm))
+            //{
+            //    var searchLower = request.SearchTerm.ToLower();
+            //    query = query.Where(p => 
+            //        p.FirstName.ToLower().Contains(searchLower) ||
+            //        p.ThirdName.ToLower().Contains(searchLower) ||
+            //        (p.SecondName != null && p.SecondName.ToLower().Contains(searchLower)) ||
+            //        (p.PhoneNumber != null && p.PhoneNumber.Contains(request.SearchTerm))
+            //    );
+            //}
+
+            //if (request.Gender.HasValue)
+            //{
+            //    query = query.Where(p => p.Gender == request.Gender.Value);
+            //}
+
+            //if (!string.IsNullOrEmpty(request.City))
+            //{
+            //    query = query.Where(p => p.City == request.City);
+            //}
+
+            //// Age filters
+            //if (request.MinAge.HasValue)
+            //{
+            //    var maxBirthDate = DateTime.Today.AddYears(-request.MinAge.Value);
+            //    query = query.Where(p => p.DateOfBirth.HasValue && p.DateOfBirth <= maxBirthDate);
+            //}
+
+            //if (request.MaxAge.HasValue)
+            //{
+            //    var minBirthDate = DateTime.Today.AddYears(-request.MaxAge.Value - 1);
+            //    query = query.Where(p => p.DateOfBirth.HasValue && p.DateOfBirth >= minBirthDate);
+            //}
+
+            //// Order by name
+            //query = query.OrderBy(p => p.FirstName).ThenBy(p => p.ThirdName);
+
+            //// Create paginated result
+            //var paginatedPatients = await PaginatedList<Patient>.CreateAsync(
+            //    query, request.PageNumber, request.PageSize, cancellationToken);
+
+            //var patientDtos = _mapper.Map<List<PatientDto>>(paginatedPatients.Items);
+            
+            //var result = new PaginatedList<PatientDto>(
+            //    patientDtos,
+            //    paginatedPatients.TotalCount,
+            //    paginatedPatients.PageNumber,
+            //    paginatedPatients.PageSize
+            //);
+
+            return Result<PaginatedList<PatientDto>>.Fail("TES");
+        }
+        catch (Exception ex)
+        {
+            return Result<PaginatedList<PatientDto>>.Fail(ex.Message);
+        }
     }
 }

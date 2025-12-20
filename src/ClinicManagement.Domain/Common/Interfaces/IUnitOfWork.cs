@@ -4,30 +4,13 @@ namespace ClinicManagement.Domain.Common.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
+    // Essential repositories for Auth and Staff Inviting only
     IUserRepository Users { get; }
     IClinicRepository Clinics { get; }
-    IPatientRepository Patients { get; }
-    IAppointmentRepository Appointments { get; }
     IDoctorRepository Doctors { get; }
-    IRepository<Country> Countries { get; }
-    IRepository<Governorate> Governorates { get; }
-    IRepository<City> Cities { get; }
-    IRepository<SubscriptionPlan> SubscriptionPlans { get; }
-    IRepository<ClinicBranch> ClinicBranches { get; }
-    IRepository<Specialization> Specializations { get; }
-    IRepository<DoctorBranch> DoctorBranches { get; }
     IRepository<Receptionist> Receptionists { get; }
-    IRepository<PatientSurgery> PatientSurgeries { get; }
-    IRepository<Visit> Visits { get; }
-    IMedicineRepository Medicines { get; }
-    IRepository<PrescriptionMedicine> PrescriptionMedicines { get; }
-    IRepository<Diagnosis> Diagnoses { get; }
-    IRepository<ClinicSettings> ClinicSettings { get; }
-    IRepository<VisitAttributes> VisitAttributes { get; }
-    IRepository<SpecializationAttribute> SpecializationAttributes { get; }
-    IRepository<VisitAttributeValue> VisitAttributeValues { get; }
+    IRepository<Specialization> Specializations { get; }
     IRefreshTokenRepository RefreshTokens { get; }
-    IReviewRepository Reviews { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

@@ -2,13 +2,13 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Receptionist : BaseEntity
+public class Receptionist : AuditableEntity
 {
     public int UserId { get; set; }
-    public int BranchId { get; set; }
+    public int ClinicId { get; set; }
+    public bool IsActive { get; set; } = true;
     
     // Navigation properties
     public virtual User User { get; set; } = null!;
-    public virtual ClinicBranch Branch { get; set; } = null!;
-    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    public virtual Clinic Clinic { get; set; } = null!;
 }

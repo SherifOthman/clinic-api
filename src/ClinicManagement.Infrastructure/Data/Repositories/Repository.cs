@@ -1,6 +1,8 @@
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Common.Specifications;
+using ClinicManagement.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
 
@@ -15,15 +17,35 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
-
     public virtual async Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        // Use FindAsync for primary key lookups - it's faster and uses EF Core's cache
         return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
     }
 
     public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);
+    }
+
+    public virtual async Task<T?> GetBySpecAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
+    {
+        return await ApplySpecification(spec).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public virtual async Task<IEnumerable<T>> ListAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
+    {
+        return await ApplySpecification(spec).ToListAsync(cancellationToken);
+    }
+
+    public virtual async Task<int> CountAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
+    {
+        return await ApplySpecification(spec).CountAsync(cancellationToken);
+    }
+
+    private IQueryable<T> ApplySpecification(ISpecification<T> spec)
+    {
+        return SpecificationEvaluator.GetQuery(_dbSet.AsQueryable(), spec);
     }
 
     public virtual void Add(T entity)
@@ -48,12 +70,25 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual void Remove(T entity)
     {
-        _dbSet.Remove(entity);
+        // Soft delete if entity is AuditableEntity
+        if (entity is AuditableEntity auditableEntity)
+        {
+            auditableEntity.IsDeleted = true;
+            auditableEntity.UpdatedAt = DateTime.UtcNow;
+            _dbSet.Update(entity);
+        }
+        else
+        {
+            _dbSet.Remove(entity);
+        }
     }
 
     public virtual void RemoveRange(IEnumerable<T> entities)
     {
-        _dbSet.RemoveRange(entities);
+        foreach (var entity in entities)
+        {
+            Remove(entity); // Use soft delete for each
+        }
     }
 }
 

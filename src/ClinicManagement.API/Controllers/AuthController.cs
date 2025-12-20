@@ -1,16 +1,18 @@
 using ClinicManagement.API.Extensions;
 using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Features.Auth.Commands.ConfrimEmail;
+using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
+using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
+using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Features.Auth.Commands.Login;
 using ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
-using ClinicManagement.Application.Options;
+using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
+using ClinicManagement.Application.Features.Auth.Queries.GetCurrentUser;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -19,135 +21,180 @@ namespace ClinicManagement.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly JwtOption _options;
+    private readonly ICookieService _cookieService;
 
-    public AuthController(IMediator mediator, IOptions<JwtOption> options)
+    public AuthController(IMediator mediator, ICookieService cookieService)
     {
         _mediator = mediator;
-        _options = options.Value ;
+        _cookieService = cookieService;
     }
 
-    [HttpPost("register-owner")]
+    [HttpPost("register")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RegisterOwner(RegisterCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {
+        // Register user without clinic - they'll complete onboarding after email verification
         command.Role = Domain.Common.Enums.UserRole.ClinicOwner;
-        var result = await _mediator.Send(command, cancellationToken);
-
-
-        return result.Success
-            ? NoContent()
-            : BadRequest(result.ToApiError());
-    }
-
-    [HttpPost("login")]
-    [Produces("application/json")]
-    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken)
-    {
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
             return BadRequest(result.ToApiError());
 
-        return CreateAuthResponse(result);
+        return Ok(new { 
+            message = "Registration successful! Please check your email to verify your account before continuing with onboarding.",
+            email = command.Email
+        });
     }
 
-    [HttpPost("refresh-token")]
+    [HttpPost("login")]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        var refreshToken = Request.Cookies["refreshToken"];
-        if (string.IsNullOrEmpty(refreshToken))
-            return Unauthorized(Result.Fail("Refresh token not found")
-                .ToApiError());
-
-        var result = await _mediator.Send(new RefreshTokenCommand { RefreshToken = refreshToken }, cancellationToken);
+        var command = new LoginCommand 
+        { 
+            Email = request.Email, 
+            Password = request.Password 
+        };
+        
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
-            return Unauthorized(result.ToApiError());
+            return BadRequest(result.ToApiError());
 
-        return CreateAuthResponse(result);
+        // Set both tokens as secure HttpOnly cookies
+        _cookieService.SetAccessTokenCookie(result.Value!.AccessToken);
+        _cookieService.SetRefreshTokenCookie(result.Value!.RefreshToken);
+
+        return Ok(new { message = "Login successful" });
     }
+
+    // Refresh token endpoint removed - refresh is now handled internally by middleware
 
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Logout()
     {
-        var cookieOptions = new CookieOptions
-        {
-            Secure = true,
-            SameSite = SameSiteMode.None
-        };
-
-        Response.Cookies.Delete("refreshToken", cookieOptions);
-        Response.Cookies.Delete("accessToken", cookieOptions);
-
+        _cookieService.ClearAuthCookies();
         return Ok(new { message = "Logged out successfully" });
     }
 
-    [HttpGet("confrim-email")]
+    [HttpGet("me")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(Result.Fail("Invalid user token").ToApiError());
+
+        var query = new GetCurrentUserQuery { UserId = userId };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return result.Success
+            ? Ok(result.Value)
+            : Unauthorized(result.ToApiError());
+    }
+
+    [HttpPost("confirm-email")]
+    [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError),StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ConfirmEmail(ConfrimEmailCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> ConfirmEmail(ConfirmEmailCommand command, CancellationToken cancellationToken)
     {
        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.Success)
-            return Ok(result.Message);
+            return Ok(new { message = result.Message });
         return BadRequest(result.ToApiError());
     }
 
-    private void SetRefreshTokenCookie(string refreshToken)
+    [HttpPost("forgot-password")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordCommand command, CancellationToken cancellationToken)
     {
-        var options = new CookieOptions
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.Success)
+            return Ok(new { message = result.Message });
+        
+        return BadRequest(result.ToApiError());
+    }
+
+    [HttpPost("reset-password")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.Success)
+            return Ok(new { message = result.Message });
+        
+        return BadRequest(result.ToApiError());
+    }
+
+    [HttpPost("change-password")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.Success)
+            return Ok(new { message = result.Message });
+        
+        return BadRequest(result.ToApiError());
+    }
+
+
+    [HttpPost("switch-clinic/{clinicId}")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SwitchClinic(int clinicId, CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new ApiError("Invalid user token"));
+
+        var command = new Application.Features.Auth.Commands.SwitchClinic.SwitchClinicCommand
         {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays)
+            UserId = userId,
+            ClinicId = clinicId
         };
 
-        Response.Cookies.Append("refreshToken", refreshToken, options);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.Success)
+            return BadRequest(result.ToApiError());
+
+        // Set new tokens as secure HttpOnly cookies
+        _cookieService.SetAccessTokenCookie(result.Value!.AccessToken);
+        _cookieService.SetRefreshTokenCookie(result.Value!.RefreshToken);
+
+        return Ok(new { message = "Switched clinic successfully" });
     }
+}
 
-    private void SetAccessTokenCookie(string accessToken)
-    {
-        var options = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes) 
-        };
-
-        Response.Cookies.Append("accessToken", accessToken, options);
-    }
-    
-    private IActionResult CreateAuthResponse(Result<AuthResponseDto> result)
-    {
-        var clientType = Request.Headers["X-Client-Type"].FirstOrDefault() ?? "react";
-
-        if (clientType.Equals("nextjs", StringComparison.OrdinalIgnoreCase))
-        {
-            SetRefreshTokenCookie(result.Value!.RefreshToken);
-            SetAccessTokenCookie(result.Value!.AccessToken);
-
-            return Ok(new { User = result.Value.User });
-        }
-        else
-        {
-            SetRefreshTokenCookie(result.Value!.RefreshToken);
-            return Ok(new
-            {
-                AccessToken = result.Value.AccessToken,
-                User = result.Value.User
-            });
-        }
-    }
+// Request models
+public record LoginRequest
+{
+    public required string Email { get; init; }
+    public required string Password { get; init; }
 }

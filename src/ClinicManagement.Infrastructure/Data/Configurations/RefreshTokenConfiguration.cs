@@ -1,23 +1,33 @@
-﻿
-using ClinicManagement.Domain.Entities;
+﻿using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ClinicManagement.Infrastructure.Data.Configurations;
+
 public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)
     {
-        builder.HasKey(x => x.Id);
+        builder.HasKey(rt => rt.Id);
 
-        builder.Property(x => x.Token)
-            .HasMaxLength(100)
-            .IsUnicode(false);
+        builder.Property(rt => rt.Token)
+            .IsRequired()
+            .HasMaxLength(500);
 
-        builder.HasOne<User>()
+        builder.Property(rt => rt.ExpiresAt)
+            .IsRequired();
+
+        builder.Property(rt => rt.CreatedAt)
+            .IsRequired();
+
+        builder.HasOne(rt => rt.User)
             .WithMany()
-            .HasForeignKey(x => x.UserId);
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.NoAction);
 
-        builder.ToTable("RefreshTokens");
+        builder.HasIndex(rt => rt.Token)
+            .IsUnique();
+
+        builder.HasIndex(rt => rt.UserId);
     }
 }

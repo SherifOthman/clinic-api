@@ -1,13 +1,13 @@
-using ClinicManagement.Domain.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Country : BaseEntity
+public class Country
 {
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string? Code { get; set; }
-    public string? FlagUrl { get; set; }
-    
-    // Navigation properties
-    public virtual ICollection<Governorate> Governorates { get; set; } = new List<Governorate>();
+    public string Code { get; set; } = string.Empty;
+
 }

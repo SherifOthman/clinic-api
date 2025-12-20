@@ -21,20 +21,27 @@ public class CreateClinicCommandHandler : IRequestHandler<CreateClinicCommand, R
 
     public async Task<Result<ClinicDto>> Handle(CreateClinicCommand request, CancellationToken cancellationToken)
     {
-        var clinic = new Clinic
+        try
         {
-            Name = request.Name,
-            Phone = request.Phone,
-            OwnerId = request.OwnerId,
-            SubscriptionPlanId = request.SubscriptionPlanId,
-            StartDate = DateTime.UtcNow,
-            IsActive = true
-        };
+            var clinic = new Clinic
+            {
+                Name = request.Name,
+                Phone = request.Phone,
+                OwnerId = request.OwnerId,
+                SubscriptionPlanId = request.SubscriptionPlanId,
+                StartDate = DateTime.UtcNow,
+                IsActive = true
+            };
 
-        _unitOfWork.Clinics.Add(clinic);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Clinics.Add(clinic);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var clinicDto = _mapper.Map<ClinicDto>(clinic);
-        return Result<ClinicDto>.Ok(clinicDto);
+            var clinicDto = _mapper.Map<ClinicDto>(clinic);
+            return Result<ClinicDto>.Ok(clinicDto);
+        }
+        catch (Exception ex)
+        {
+            return Result<ClinicDto>.Fail(ex.Message);
+        }
     }
 }

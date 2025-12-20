@@ -15,4 +15,7 @@ public interface IIdentityService
     Task<User?> GetUserByIdAsync(int id, CancellationToken cancellationToken = default);
     Task SendConfirmationEmailAsync(User user, CancellationToken cancellationToken = default);
     Task<(bool IsSuccess, string Message)> ConfirmEmailAsync(User user, string token, CancellationToken cancellationToken = default);
+    Task SendPasswordResetEmailAsync(User user, CancellationToken cancellationToken = default);
+    Task<(bool IsSuccess, string Message)> ResetPasswordAsync(User user, string token, string newPassword, CancellationToken cancellationToken = default);
+    Task<(bool IsSuccess, string Message)> ChangePasswordAsync(User user, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
 }

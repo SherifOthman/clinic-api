@@ -14,6 +14,11 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .NotEmpty().WithMessage("Last name is required")
             .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters");
 
+        RuleFor(x => x.Username)
+            .NotEmpty().WithMessage("Username is required")
+            .MaximumLength(50).WithMessage("Username cannot exceed 50 characters")
+            .Matches("^[a-zA-Z0-9_-]+$").WithMessage("Username can only contain letters, numbers, underscores, and hyphens");
+
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Invalid email format")

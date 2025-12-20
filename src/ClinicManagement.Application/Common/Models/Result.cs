@@ -23,7 +23,7 @@ public class Result
         };
 
     public static Result FailField(string field, string message) =>
-        Result.Fail(new ErrorItem { Field = field, Message = message });
+        Result.Fail(new ErrorItem(field, message));
 }
 
 public class Result<T> : Result
@@ -45,7 +45,7 @@ public class Result<T> : Result
         };
 
     public new static Result<T> FailField(string field, string message) =>
-        Result<T>.Fail(new ErrorItem { Field = field, Message = message });
+        Result<T>.Fail(new ErrorItem(field, message));
 
     public static implicit operator Result<T>(T value) => Ok(value);
 }

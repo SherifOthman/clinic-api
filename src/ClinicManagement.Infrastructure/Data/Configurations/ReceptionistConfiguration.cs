@@ -8,14 +8,16 @@ public class ReceptionistConfiguration : IEntityTypeConfiguration<Receptionist>
 {
     public void Configure(EntityTypeBuilder<Receptionist> builder)
     {
-        builder.ToTable("Receptionists");
-        builder.HasOne(d => d.User)
-            .WithMany()
-            .HasForeignKey(d => d.UserId);
+        builder.HasKey(r => r.Id);
 
-        builder.HasOne(d => d.Branch)
-            .WithMany(p => p.Receptionists)
-            .HasForeignKey(d => d.BranchId);
+        builder.HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(r => r.Clinic)
+            .WithMany()
+            .HasForeignKey(r => r.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

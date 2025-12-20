@@ -1,13 +1,13 @@
-using ClinicManagement.Domain.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class City : BaseEntity
+public class City
 {
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public int GovernorateId { get; set; }
-    
-    // Navigation properties
-    public virtual Governorate Governorate { get; set; } = null!;
-    public virtual ICollection<ClinicBranch> ClinicBranches { get; set; } = new List<ClinicBranch>();
+    public int CountryId { get; set; }
+    public Country Country { get; set; } = null!;
 }

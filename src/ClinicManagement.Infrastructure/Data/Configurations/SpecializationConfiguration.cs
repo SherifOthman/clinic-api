@@ -8,9 +8,10 @@ public class SpecializationConfiguration : IEntityTypeConfiguration<Specializati
 {
     public void Configure(EntityTypeBuilder<Specialization> builder)
     {
-        builder.ToTable("Specializations");
-        builder.Property(e => e.Name).HasMaxLength(100);
-        builder.Property(e => e.Description).HasMaxLength(300);
+        builder.HasKey(s => s.Id);
+        
+        builder.Property(s => s.Name)
+            .IsRequired()
+            .HasMaxLength(100);
     }
 }
-

@@ -1,6 +1,5 @@
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Clinics.Commands.CreateClinic;
-using ClinicManagement.Application.Features.Clinics.Commands.SetupClinic;
 using ClinicManagement.Application.Features.Clinics.Commands.UpdateClinic;
 using ClinicManagement.Application.Features.Clinics.Queries.GetClinicById;
 using ClinicManagement.Application.Features.Clinics.Queries.GetClinics;
@@ -57,20 +56,7 @@ public class ClinicsController : ControllerBase
         
         if (result.Success)
         {
-            return CreatedAtAction(nameof(GetClinicById), new { id = result.Value?.Id }, result.Value);
-        }
-        
-        return BadRequest(result.Message);
-    }
-
-    [HttpPost("setup")]
-    public async Task<IActionResult> SetupClinic(SetupClinicCommand command)
-    {
-        var result = await _mediator.Send(command);
-        
-        if (result.Success)
-        {
-            return CreatedAtAction(nameof(GetClinicById), new { id = result.Value?.Id }, result.Value);
+            return CreatedAtAction(nameof(GetClinicById), new { id = result.Value.Id }, result.Value);
         }
         
         return BadRequest(result.Message);

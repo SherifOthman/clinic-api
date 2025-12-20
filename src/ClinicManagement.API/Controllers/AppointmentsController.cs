@@ -54,7 +54,7 @@ public class AppointmentsController : ControllerBase
         
         if (result.Success)
         {
-            return CreatedAtAction(nameof(GetAppointmentById), new { id = result.Value?.Id }, result.Value);
+            return CreatedAtAction(nameof(GetAppointmentById), new { id = result.Value.Id }, result.Value);
         }
         
         return BadRequest(result.Message);

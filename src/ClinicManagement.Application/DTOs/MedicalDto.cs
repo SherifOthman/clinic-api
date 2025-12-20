@@ -39,11 +39,8 @@ public class PatientDto
     public int ClinicId { get; set; }
     public string? Avatar { get; set; }
     public string FirstName { get; set; } = string.Empty;
-    public string? MiddleName { get; set; }
-    public string LastName { get; set; } = string.Empty;
-    public string FullName => string.IsNullOrWhiteSpace(MiddleName) 
-        ? $"{FirstName} {LastName}" 
-        : $"{FirstName} {MiddleName} {LastName}";
+    public string? SecondName { get; set; }
+    public string ThirdName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public string? City { get; set; }
@@ -60,8 +57,8 @@ public class CreatePatientDto
     public int ClinicId { get; set; }
     public string? Avatar { get; set; }
     public string FirstName { get; set; } = string.Empty;
-    public string? MiddleName { get; set; }
-    public string LastName { get; set; } = string.Empty;
+    public string? SecondName { get; set; }
+    public string ThirdName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public string? City { get; set; }
@@ -75,8 +72,8 @@ public class UpdatePatientDto
 {
     public string? Avatar { get; set; }
     public string FirstName { get; set; } = string.Empty;
-    public string? MiddleName { get; set; }
-    public string LastName { get; set; } = string.Empty;
+    public string? SecondName { get; set; }
+    public string ThirdName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public string? City { get; set; }

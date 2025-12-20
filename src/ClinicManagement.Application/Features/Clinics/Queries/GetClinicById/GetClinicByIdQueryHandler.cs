@@ -21,12 +21,19 @@ public class GetClinicByIdQueryHandler : IRequestHandler<GetClinicByIdQuery, Res
 
     public async Task<Result<ClinicDto>> Handle(GetClinicByIdQuery request, CancellationToken cancellationToken)
     {
-        var clinic = await _unitOfWork.Clinics.GetByIdAsync(request.Id, cancellationToken);
+        try
+        {
+            var clinic = await _unitOfWork.Clinics.GetByIdAsync(request.Id, cancellationToken);
 
-        if (clinic == null)
-            return Result<ClinicDto>.Fail("Clinic not found");
+            if (clinic == null)
+                return Result<ClinicDto>.Fail("Clinic not found");
 
-        var clinicDto = _mapper.Map<ClinicDto>(clinic);
-        return Result<ClinicDto>.Ok(clinicDto);
+            var clinicDto = _mapper.Map<ClinicDto>(clinic);
+            return Result<ClinicDto>.Ok(clinicDto);
+        }
+        catch (Exception ex)
+        {
+            return Result<ClinicDto>.Fail(ex.Message);
+        }
     }
 }

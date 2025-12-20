@@ -3,6 +3,8 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Options;
+using ClinicManagement.Application.Common.Constants;
+
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 using Microsoft.IdentityModel.Tokens;
@@ -33,24 +35,31 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     {
         var oldToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(request.RefreshToken, cancellationToken);
         if (oldToken == null || !oldToken.IsActive)
-            return Result<AuthResponseDto>.Fail("Invalid refresh token");
+            return Result<AuthResponseDto>.FailField("refreshToken", "Invalid refresh token");
 
         var user = await _unitOfWork.Users.GetByIdAsync(oldToken.UserId);
 
         var userRoles = await _identityService.GetUserRolesAsync(user!, cancellationToken);
         await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
 
+        // Get ClinicId based on user role
+        int? clinicId = await GetUserClinicIdAsync(user!.Id, userRoles, cancellationToken);
 
-        var accessToken = _tokenService.GenerateAccessToken(user!, userRoles);
+        var accessToken = _tokenService.GenerateAccessToken(user!, userRoles, clinicId);
         var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user!, cancellationToken);
 
         var response = new AuthResponseDto
         {
             AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            User = _mapper.Map<UserDto>(user)
+            RefreshToken = refreshToken
         };
 
         return response;
+    }
+
+    private async Task<int?> GetUserClinicIdAsync(int userId, IEnumerable<string> roles, CancellationToken cancellationToken)
+    {
+        // No clinic isolation in this simplified version
+        return null;
     }
 }

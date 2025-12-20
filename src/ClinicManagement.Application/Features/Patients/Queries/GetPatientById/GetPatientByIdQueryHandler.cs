@@ -21,12 +21,19 @@ public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, R
 
     public async Task<Result<PatientDto>> Handle(GetPatientByIdQuery request, CancellationToken cancellationToken)
     {
-        var patient = await _unitOfWork.Patients.GetWithSurgeriesAsync(request.Id, cancellationToken);
+        try
+        {
+            var patient = await _unitOfWork.Patients.GetWithSurgeriesAsync(request.Id, cancellationToken);
 
-        if (patient == null)
-            return Result<PatientDto>.Fail("Patient not found");
+            if (patient == null)
+                return Result<PatientDto>.Fail("Patient not found");
 
-        var patientDto = _mapper.Map<PatientDto>(patient);
-        return Result<PatientDto>.Ok(patientDto);
+            var patientDto = _mapper.Map<PatientDto>(patient);
+            return Result<PatientDto>.Ok(patientDto);
+        }
+        catch (Exception ex)
+        {
+            return Result<PatientDto>.Fail(ex.Message);
+        }
     }
 }

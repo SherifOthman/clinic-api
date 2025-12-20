@@ -19,12 +19,19 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
 
     public async Task<Result<AppointmentDto>> Handle(GetAppointmentByIdQuery request, CancellationToken cancellationToken)
     {
-        var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
+        try
+        {
+            var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.Id, cancellationToken);
 
-        if (appointment == null)
-            return Result<AppointmentDto>.Fail("Appointment not found");
+            if (appointment == null)
+                return Result<AppointmentDto>.Fail("Appointment not found");
 
-        var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
-        return Result<AppointmentDto>.Ok(appointmentDto);
+            var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
+            return Result<AppointmentDto>.Ok(appointmentDto);
+        }
+        catch (Exception ex)
+        {
+            return Result<AppointmentDto>.Fail(ex.Message);
+        }
     }
 }

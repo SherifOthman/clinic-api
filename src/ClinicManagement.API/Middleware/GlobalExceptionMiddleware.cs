@@ -37,22 +37,46 @@ public class GlobalExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        var apiError = new ApiError();
+        ApiError apiError;
 
         switch (exception)
         {
-          
             case ValidationException validationEx:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                apiError.Type = "ValidationError";
-                apiError.Message = Result.VALIDATION_MESSAGE;
-                apiError.Errors = validationEx.Errors.ToErrorItemList();
+                var fieldErrors = validationEx.Errors.ToErrorItemList().ToDictionary(e => e.Field, e => e.Message);
+                apiError = new ApiError(Result.VALIDATION_MESSAGE, fieldErrors);
+                break;
+
+            case UnauthorizedAccessException unauthorizedEx:
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                apiError = new ApiError(unauthorizedEx.Message ?? "You do not have permission to access this resource.");
+                break;
+
+            case KeyNotFoundException notFoundEx:
+                context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                apiError = new ApiError(notFoundEx.Message ?? "The requested resource was not found.");
+                break;
+
+            case InvalidOperationException invalidOpEx:
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                apiError = new ApiError(invalidOpEx.Message ?? "The operation is not valid.");
+                break;
+
+            case ArgumentException argEx:
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                apiError = new ApiError(argEx.Message ?? "Invalid argument provided.");
                 break;
 
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                apiError.Type = "ServerError";
-                apiError.Message = "An unexpected error occurred.";
+                var message = "An unexpected error occurred. Please try again later.";
+                
+                // In development, include exception details
+                #if DEBUG
+                message += $" Details: {exception.Message}";
+                #endif
+                
+                apiError = new ApiError(message);
                 break;
         }
 

@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Enums;
 using MediatR;
 using System.Text.Json.Serialization;

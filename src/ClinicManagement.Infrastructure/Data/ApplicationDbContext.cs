@@ -1,17 +1,66 @@
+using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace ClinicManagement.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>, IApplicationDbContext
 {
-    public DbSet<Review> Reviews => Set<Review>();
+    private readonly IHttpContextAccessor? _httpContextAccessor;
+
+    // Essential entities for Auth and Staff Inviting only
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Clinic> Clinics => Set<Clinic>();
+    public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
+    public DbSet<Specialization> Specializations => Set<Specialization>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
+    }
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options, 
+        IHttpContextAccessor httpContextAccessor) : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Set audit fields
+        var entries = ChangeTracker.Entries<AuditableEntity>();
+        
+        // Get current user ID from HTTP context
+        int? currentUserId = null;
+        var userIdClaim = _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        {
+            currentUserId = userId;
+        }
+        
+        foreach (var entry in entries)
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = DateTime.UtcNow;
+                entry.Entity.CreatedBy = currentUserId;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+                entry.Entity.UpdatedBy = currentUserId;
+            }
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -19,6 +68,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
         base.OnModelCreating(builder);
 
         // Rename Identity tables
+        builder.Entity<User>().ToTable("Users");
         builder.Entity<IdentityRole<int>>().ToTable("Roles");
         builder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
         builder.Entity<IdentityUserClaim<int>>().ToTable("UserClaims");
@@ -30,9 +80,32 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
 
         // Reseed identity to start after seed data
         builder.Entity<IdentityRole<int>>().Property(r => r.Id).UseIdentityColumn(7, 1);
+        builder.Entity<User>().Property(u => u.Id).UseIdentityColumn(2, 1);
 
         // Apply all configurations
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Global query filters for soft deletes and tenant isolation
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            Expression? filter = null;
+
+            // Soft delete filter
+            if (typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                var isDeletedProperty = Expression.Property(parameter, nameof(AuditableEntity.IsDeleted));
+                filter = Expression.Equal(isDeletedProperty, Expression.Constant(false));
+            }
+
+            // Tenant isolation removed for ultra minimal version
+
+            if (filter != null)
+            {
+                var lambda = Expression.Lambda(filter, parameter);
+                entityType.SetQueryFilter(lambda);
+            }
+        }
 
       
     }

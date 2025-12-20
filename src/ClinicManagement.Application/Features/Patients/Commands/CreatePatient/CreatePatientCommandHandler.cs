@@ -21,26 +21,31 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
     public async Task<Result<PatientDto>> Handle(CreatePatientCommand request, CancellationToken cancellationToken)
     {
-        var patient = new Patient
+        try
         {
-            ClinicId = request.ClinicId,
-            Avatar = request.Avatar,
-            FirstName = request.FirstName,
-            MiddleName = request.MiddleName,
-            LastName = request.LastName,
-            DateOfBirth = request.DateOfBirth,
-            Gender = request.Gender,
-            City = request.City,
-            PhoneNumber = request.PhoneNumber,
-            EmergencyContactName = request.EmergencyContactName,
-            EmergencyPhone = request.EmergencyPhone,
-            GeneralNotes = request.GeneralNotes
-        };
+            var patient = new Patient
+            {
+                ClinicId = request.ClinicId,
+                Avatar = request.Avatar,
+                Name = request.FirstName,
+                DateOfBirth = request.DateOfBirth,
+                Gender = request.Gender,
+                City = request.City,
+                PhoneNumber = request.PhoneNumber,
+                EmergencyContactName = request.EmergencyContactName,
+                EmergencyPhone = request.EmergencyPhone,
+                GeneralNotes = request.GeneralNotes
+            };
 
-        _unitOfWork.Patients.Add(patient);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Patients.Add(patient);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var patientDto = _mapper.Map<PatientDto>(patient);
-        return Result<PatientDto>.Ok(patientDto);
+            var patientDto = _mapper.Map<PatientDto>(patient);
+            return Result<PatientDto>.Ok(patientDto);
+        }
+        catch (Exception ex)
+        {
+            return Result<PatientDto>.Fail(ex.Message);
+        }
     }
 }

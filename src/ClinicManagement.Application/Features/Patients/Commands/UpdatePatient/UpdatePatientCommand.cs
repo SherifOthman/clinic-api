@@ -10,8 +10,8 @@ public record UpdatePatientCommand : IRequest<Result<PatientDto>>
     public int Id { get; set; }
     public string? Avatar { get; set; }
     public string FirstName { get; set; } = string.Empty;
-    public string? MiddleName { get; set; }
-    public string LastName { get; set; } = string.Empty;
+    public string? SecondName { get; set; }
+    public string ThirdName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public string? City { get; set; }
