@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, Result>
 {
@@ -20,15 +21,14 @@ public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, R
 
     public async Task<Result> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await _identityService.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
-            return Result.Fail($"User with {request.UserId} was not found!");
+            return Result.Fail("User not found!");
 
         var result = await _identityService.ConfirmEmailAsync(user, request.Token, cancellationToken);
+        if (result.Success)
+            return result;
 
-        if (result.IsSuccess)
-            return Result.Ok(result.Message);
-
-        return Result.Fail(result.Message);
+        return Result.Fail(result.Message ?? "Email confirmation failed.");
     }
 }

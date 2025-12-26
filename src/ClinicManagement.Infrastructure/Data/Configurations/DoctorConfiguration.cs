@@ -11,13 +11,22 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
         builder.HasKey(d => d.Id);
 
         builder.HasOne(d => d.User)
-            .WithMany()
-            .HasForeignKey(d => d.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .WithOne(u => u.Doctor)
+            .HasForeignKey<Doctor>(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(d => d.Clinic)
-            .WithMany()
+            .WithMany(c => c.Doctors)
             .HasForeignKey(d => d.ClinicId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(d => d.Appointments)
+            .WithOne(a => a.Doctor)
+            .HasForeignKey(a => a.DoctorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Indexes
+        builder.HasIndex(d => d.UserId).IsUnique();
+        builder.HasIndex(d => d.ClinicId);
     }
 }

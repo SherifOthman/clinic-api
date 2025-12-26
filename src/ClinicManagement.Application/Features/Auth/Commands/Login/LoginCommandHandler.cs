@@ -1,80 +1,42 @@
-using AutoMapper;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Utils;
-using ClinicManagement.Application.Common.Constants;
-using ClinicManagement.Domain.Common.Interfaces;
-
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Login;
 
-public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResponseDto>>
+/// <summary>
+/// Handler for LoginCommand - SIMPLIFIED for Clean Architecture.
+/// Delegates authentication logic to IAuthenticationService.
+/// Only handles command validation and cookie setting.
+/// </summary>
+public class LoginCommandHandler : IRequestHandler<LoginCommand, Result>
 {
-    private readonly IIdentityService _identityService;
-    private readonly ITokenService _tokenService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly ICookieService _cookieService;
 
     public LoginCommandHandler(
-        IIdentityService identityService,
-        ITokenService tokenService,
-        IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IAuthenticationService authenticationService,
+        ICookieService cookieService)
     {
-        _identityService = identityService;
-        _tokenService = tokenService;
-        _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _authenticationService = authenticationService;
+        _cookieService = cookieService;
     }
 
-    public async Task<Result<AuthResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        bool isEmail = StringUtils.IsEmail(request.Email);
+        // Delegate authentication logic to Application layer service
+        var loginResult = await _authenticationService.LoginAsync(request.Email, request.Password, cancellationToken);
 
-        var user = isEmail
-            ? await _identityService.GetUserByEmailAsync(request.Email, cancellationToken)
-            : await _identityService.GetByUsernameAsync(request.Email, cancellationToken);
+        if (!loginResult.Success)
+            return Result.Fail(loginResult.Message);
 
-        if (user == null ||
-            !await _identityService.CheckPasswordAsync(user, request.Password, cancellationToken))
-            return Result<AuthResponseDto>.FailField("email", "Invalid username or password");
+        var result = loginResult.Value!;
 
-        var userRoles = await _identityService.GetUserRolesAsync(user, cancellationToken);
-        
-        // Get ClinicId based on user role
-        int? clinicId = await GetUserClinicIdAsync(user.Id, userRoles, cancellationToken);
-        
-        var accessToken = _tokenService.GenerateAccessToken(user, userRoles, clinicId);
-        var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, cancellationToken);
+        // Set tokens as httpOnly cookies - NEVER return in response body
+        _cookieService.SetAccessTokenCookie(result.AccessToken);
+        _cookieService.SetRefreshTokenCookie(result.RefreshToken);
 
-        var response = new AuthResponseDto
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken
-        };
-
-        return Result<AuthResponseDto>.Ok(response);
-    }
-
-    private async Task<int?> GetUserClinicIdAsync(int userId, IEnumerable<string> roles, CancellationToken cancellationToken)
-    {
-        // Check if user is a clinic owner
-        if (roles.Contains("ClinicOwner"))
-        {
-            var clinic = await _unitOfWork.Clinics.GetByOwnerIdAsync(userId, cancellationToken);
-            return clinic?.Id;
-        }
-        
-        // Check if user is a doctor
-        if (roles.Contains("Doctor"))
-        {
-            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(userId, cancellationToken);
-            return doctor?.ClinicId;
-        }
-        
-        // For other roles, no clinic association yet
-        return null;
+        // Return success only - frontend calls /me to get user data
+        return Result.Ok("Login successful");
     }
 }

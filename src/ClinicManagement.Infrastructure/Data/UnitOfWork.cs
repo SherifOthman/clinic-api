@@ -2,7 +2,6 @@ using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Xml;
 
 namespace ClinicManagement.Infrastructure.Data;
 
@@ -11,13 +10,15 @@ public class UnitOfWork : IUnitOfWork
     private readonly ApplicationDbContext _context;
     private IDbContextTransaction? _transaction;
 
-    // Essential repositories for Auth and Staff Inviting only
+    // Core repositories
     public IUserRepository Users => field ??= new UserRepository(_context);
     public IClinicRepository Clinics => field ??= new ClinicRepository(_context);
+    public IRepository<ClinicBranch> ClinicBranches => field ??= new Repository<ClinicBranch>(_context);
     public IDoctorRepository Doctors => field ??= new DoctorRepository(_context);
-    public IRepository<Receptionist> Receptionists => field ??= new Repository<Receptionist>(_context);
-    public IRepository<Specialization> Specializations => field ??= new Repository<Specialization>(_context);
+    public IReceptionistRepository Receptionists => field ??= new ReceptionistRepository(_context);
     public IRefreshTokenRepository RefreshTokens => field ??= new RefreshTokenRepository(_context);
+    public IPatientRepository Patients => field ??= new PatientRepository(_context);
+    public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context)
     {

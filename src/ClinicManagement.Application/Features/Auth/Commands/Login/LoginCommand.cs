@@ -1,12 +1,15 @@
 using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
 using FluentValidation;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Login;
 
-public record LoginCommand : IRequest<Result<AuthResponseDto>>
+/// <summary>
+/// Command to authenticate a user.
+/// Tokens are set as httpOnly cookies - never returned in response body.
+/// </summary>
+public record LoginCommand : IRequest<Result>
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
@@ -18,7 +21,7 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
         RuleFor(x => x.Email)
             .NotEmpty()
-            .WithMessage("Email is required");
+            .WithMessage("Email or username is required");
 
         RuleFor(x => x.Password)
             .NotEmpty()

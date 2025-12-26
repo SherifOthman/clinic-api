@@ -1,16 +1,16 @@
 using ClinicManagement.API.Extensions;
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Features.Auth.Commands.Login;
-using ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
+using ClinicManagement.Application.Features.Auth.Commands.Logout;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
+using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
-using ClinicManagement.Application.Features.Auth.Queries.GetCurrentUser;
+using ClinicManagement.Application.Features.Auth.Queries.GetMe;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,12 +21,10 @@ namespace ClinicManagement.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ICookieService _cookieService;
 
-    public AuthController(IMediator mediator, ICookieService cookieService)
+    public AuthController(IMediator mediator)
     {
         _mediator = mediator;
-        _cookieService = cookieService;
     }
 
     [HttpPost("register")]
@@ -48,58 +46,63 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Authenticate user and set tokens as httpOnly cookies.
+    /// Tokens are NEVER returned in the response body - only success message is returned.
+    /// </summary>
+    /// <param name="command">Login credentials</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success message (tokens are set as httpOnly cookies)</returns>
     [HttpPost("login")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken)
     {
-        var command = new LoginCommand 
-        { 
-            Email = request.Email, 
-            Password = request.Password 
-        };
-        
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
             return BadRequest(result.ToApiError());
 
-        // Set both tokens as secure HttpOnly cookies
-        _cookieService.SetAccessTokenCookie(result.Value!.AccessToken);
-        _cookieService.SetRefreshTokenCookie(result.Value!.RefreshToken);
-
-        return Ok(new { message = "Login successful" });
+        return Ok(new { message = result.Message });
     }
 
-    // Refresh token endpoint removed - refresh is now handled internally by middleware
-
+    /// <summary>
+    /// Logout user and clear refresh token cookie
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success message</returns>
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        _cookieService.ClearAuthCookies();
-        return Ok(new { message = "Logged out successfully" });
+        var command = new LogoutCommand();
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return Ok(new { message = result.Message });
     }
 
+    /// <summary>
+    /// Get current authenticated user.
+    /// Token refresh is handled automatically by JwtCookieMiddleware.
+    /// This endpoint simply returns the current user data.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Current user data</returns>
     [HttpGet("me")]
-    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Microsoft.AspNetCore.Authorization.Authorize] // Require authentication
     [Produces("application/json")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(Result.Fail("Invalid user token").ToApiError());
-
-        var query = new GetCurrentUserQuery { UserId = userId };
+        var query = new GetMeQuery();
         var result = await _mediator.Send(query, cancellationToken);
 
-        return result.Success
-            ? Ok(result.Value)
-            : Unauthorized(result.ToApiError());
+        if (!result.Success)
+            return Unauthorized(new ApiError(result.Message));
+
+        return Ok(result.Value);
     }
 
     [HttpPost("confirm-email")]
@@ -143,6 +146,26 @@ public class AuthController : ControllerBase
         return BadRequest(result.ToApiError());
     }
 
+    [HttpPost("resend-email-verification")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResendEmailVerification(ResendEmailVerificationCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.Success)
+            return Ok(new { message = result.Message });
+        
+        return BadRequest(result.ToApiError());
+    }
+
+    /// <summary>
+    /// Change user password (requires authentication)
+    /// </summary>
+    /// <param name="command">Password change request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success message</returns>
     [HttpPost("change-password")]
     [Microsoft.AspNetCore.Authorization.Authorize]
     [Produces("application/json")]
@@ -159,42 +182,4 @@ public class AuthController : ControllerBase
         return BadRequest(result.ToApiError());
     }
 
-
-    [HttpPost("switch-clinic/{clinicId}")]
-    [Microsoft.AspNetCore.Authorization.Authorize]
-    [Produces("application/json")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> SwitchClinic(int clinicId, CancellationToken cancellationToken)
-    {
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new ApiError("Invalid user token"));
-
-        var command = new Application.Features.Auth.Commands.SwitchClinic.SwitchClinicCommand
-        {
-            UserId = userId,
-            ClinicId = clinicId
-        };
-
-        var result = await _mediator.Send(command, cancellationToken);
-
-        if (!result.Success)
-            return BadRequest(result.ToApiError());
-
-        // Set new tokens as secure HttpOnly cookies
-        _cookieService.SetAccessTokenCookie(result.Value!.AccessToken);
-        _cookieService.SetRefreshTokenCookie(result.Value!.RefreshToken);
-
-        return Ok(new { message = "Switched clinic successfully" });
-    }
-}
-
-// Request models
-public record LoginRequest
-{
-    public required string Email { get; init; }
-    public required string Password { get; init; }
 }

@@ -1,7 +1,5 @@
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Common.Specifications;
-using ClinicManagement.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
@@ -26,26 +24,6 @@ public class Repository<T> : IRepository<T> where T : class
     public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);
-    }
-
-    public virtual async Task<T?> GetBySpecAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
-    {
-        return await ApplySpecification(spec).FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public virtual async Task<IEnumerable<T>> ListAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
-    {
-        return await ApplySpecification(spec).ToListAsync(cancellationToken);
-    }
-
-    public virtual async Task<int> CountAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
-    {
-        return await ApplySpecification(spec).CountAsync(cancellationToken);
-    }
-
-    private IQueryable<T> ApplySpecification(ISpecification<T> spec)
-    {
-        return SpecificationEvaluator.GetQuery(_dbSet.AsQueryable(), spec);
     }
 
     public virtual void Add(T entity)

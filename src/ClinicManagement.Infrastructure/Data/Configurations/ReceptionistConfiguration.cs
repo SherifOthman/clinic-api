@@ -11,13 +11,22 @@ public class ReceptionistConfiguration : IEntityTypeConfiguration<Receptionist>
         builder.HasKey(r => r.Id);
 
         builder.HasOne(r => r.User)
-            .WithMany()
-            .HasForeignKey(r => r.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .WithOne(u => u.Receptionist)
+            .HasForeignKey<Receptionist>(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(r => r.Clinic)
-            .WithMany()
+            .WithMany(c => c.Receptionists)
             .HasForeignKey(r => r.ClinicId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(r => r.Appointments)
+            .WithOne(a => a.Receptionist)
+            .HasForeignKey(a => a.ReceptionistId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Indexes
+        builder.HasIndex(r => r.UserId).IsUnique();
+        builder.HasIndex(r => r.ClinicId);
     }
 }

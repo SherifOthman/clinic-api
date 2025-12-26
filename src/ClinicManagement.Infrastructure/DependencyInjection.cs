@@ -1,14 +1,16 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Options;
+using ClinicManagement.Application.Options; // Use Application layer options
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data;
+using ClinicManagement.Infrastructure.Options;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -44,8 +46,8 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        // JWT Authentication - Minimal configuration since middleware handles token validation
-        var jwtOptions = configuration.GetSection("Jwt").Get<JwtOption>() 
+        // JWT Authentication
+        var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() 
             ?? throw new InvalidOperationException("JWT configuration is missing");
 
         services.AddAuthentication(options =>
@@ -58,7 +60,6 @@ public static class DependencyInjection
             options.RequireHttpsMetadata = false;
             options.SaveToken = false;
             
-            // Minimal token validation - middleware handles the actual validation
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -67,89 +68,43 @@ public static class DependencyInjection
                 ValidIssuer = jwtOptions.Issuer,
                 ValidateAudience = true,
                 ValidAudience = jwtOptions.Audience,
-                ValidateLifetime = false, // Middleware handles lifetime validation
+                ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             };
-
-            // Disable JWT Bearer token extraction - middleware handles everything
+            
+            // Configure to read JWT from cookies AND Authorization header
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
                 {
-                    // Don't extract tokens here - let middleware handle it
-                    return Task.CompletedTask;
-                },
-                OnChallenge = context =>
-                {
-                    // Suppress default challenge response - middleware handles auth
-                    context.HandleResponse();
+                    // Try to get token from cookie first
+                    var token = context.Request.Cookies["accessToken"];
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        context.Token = token;
+                    }
+                    // If no cookie token, JwtBearer will try Authorization header automatically
                     return Task.CompletedTask;
                 }
             };
         });
 
-        // Authorization Policies
-        services.AddAuthorizationBuilder()
-            // Role-based policies
-            .AddPolicy(Application.Common.Authorization.Policies.RequireClinicOwner, policy =>
-                policy.RequireRole(Domain.Common.Enums.UserRole.ClinicOwner.ToString()))
-            .AddPolicy(Application.Common.Authorization.Policies.RequireDoctor, policy =>
-                policy.RequireRole(Domain.Common.Enums.UserRole.Doctor.ToString()))
-            .AddPolicy(Application.Common.Authorization.Policies.RequireReceptionist, policy =>
-                policy.RequireRole(Domain.Common.Enums.UserRole.Receptionist.ToString()))
-            .AddPolicy(Application.Common.Authorization.Policies.RequireSystemAdmin, policy =>
-                policy.RequireRole(Domain.Common.Enums.UserRole.SystemAdmin.ToString()))
-            .AddPolicy(Application.Common.Authorization.Policies.RequireStaffMember, policy =>
-                policy.RequireRole(
-                    Domain.Common.Enums.UserRole.Doctor.ToString(),
-                    Domain.Common.Enums.UserRole.Receptionist.ToString(),
-                    Domain.Common.Enums.UserRole.Nurse.ToString()))
-            
-            // Resource-based policies
-            .AddPolicy(Application.Common.Authorization.Policies.SameClinic, policy =>
-                policy.AddRequirements(new Application.Common.Authorization.Requirements.SameClinicRequirement()))
-            
-            // Combined policies
-            .AddPolicy(Application.Common.Authorization.Policies.ManageStaff, policy =>
-            {
-                policy.RequireRole(Domain.Common.Enums.UserRole.ClinicOwner.ToString());
-                policy.AddRequirements(new Application.Common.Authorization.Requirements.ClinicOwnerRequirement());
-            })
-            .AddPolicy(Application.Common.Authorization.Policies.ManagePatients, policy =>
-            {
-                policy.RequireRole(
-                    Domain.Common.Enums.UserRole.Doctor.ToString(),
-                    Domain.Common.Enums.UserRole.Receptionist.ToString(),
-                    Domain.Common.Enums.UserRole.ClinicOwner.ToString());
-                policy.AddRequirements(new Application.Common.Authorization.Requirements.SameClinicRequirement());
-            })
-            .AddPolicy(Application.Common.Authorization.Policies.ManageSubscription, policy =>
-            {
-                policy.RequireRole(Domain.Common.Enums.UserRole.ClinicOwner.ToString());
-                policy.AddRequirements(new Application.Common.Authorization.Requirements.ClinicOwnerRequirement());
-            })
-            .AddPolicy(Application.Common.Authorization.Policies.ViewReports, policy =>
-            {
-                policy.RequireRole(
-                    Domain.Common.Enums.UserRole.Doctor.ToString(),
-                    Domain.Common.Enums.UserRole.ClinicOwner.ToString());
-                policy.AddRequirements(new Application.Common.Authorization.Requirements.SameClinicRequirement());
-            });
+        // Basic Authorization - Role-based only
+        services.AddAuthorization();
 
         // Core Services - Essential for Auth and Staff Inviting only
         services.AddHttpContextAccessor();
         services.AddScoped<IIdentityService, IdentityService>();
-        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ICookieService, CookieService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
-        services.AddScoped<ICookieService, CookieService>();
 
-        // Options & Validation
-        services.AddOptions<SmtpOptions>()
-            .Bind(configuration.GetSection("Smtp"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        // Options - Simple binding without validation
+        services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
+        services.Configure<CookieSettings>(configuration.GetSection("Cookie"));
 
         return services;
     }

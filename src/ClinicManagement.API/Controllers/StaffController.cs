@@ -1,33 +1,28 @@
-using Asp.Versioning;
 using ClinicManagement.API.Extensions;
 using ClinicManagement.Application.Features.Staff.Commands.AcceptInvitation;
 using ClinicManagement.Application.Features.Staff.Commands.InviteStaff;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ClinicManagement.API.Controllers;
 
 [ApiController]
-[Route("api/v{version:apiVersion}/[controller]")]
-[ApiVersion("1.0")]
+[Route("api/[controller]")]
 public class StaffController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ILogger<StaffController> _logger;
 
-    public StaffController(IMediator mediator, ILogger<StaffController> logger)
+    public StaffController(IMediator mediator)
     {
         _mediator = mediator;
-        _logger = logger;
     }
 
     /// <summary>
     /// Get all staff members for the current clinic
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = Application.Common.Authorization.Policies.RequireStaffMember)]
+    [Authorize(Roles = "Doctor,Receptionist,Nurse")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -45,7 +40,7 @@ public class StaffController : ControllerBase
     /// Only clinic owners can invite staff
     /// </summary>
     [HttpPost("invite")]
-    [Authorize(Policy = Application.Common.Authorization.Policies.ManageStaff)]
+    [Authorize(Roles = "ClinicOwner")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -55,14 +50,10 @@ public class StaffController : ControllerBase
         // ClinicId and UserId are now injected in the handler from ICurrentUserService
         // No need to manually set them here
         
-        _logger.LogInformation("Inviting {Email} as {Role}", command.Email, command.Role);
-
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
         {
-            _logger.LogWarning("Staff invitation failed: {Errors}", 
-                string.Join(", ", result.Errors.Select(e => e.Message)));
             return BadRequest(result.ToApiError());
         }
 
@@ -79,14 +70,10 @@ public class StaffController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AcceptInvitation([FromBody] AcceptInvitationCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Processing invitation acceptance for user {UserId}", command.UserId);
-
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.Success)
         {
-            _logger.LogWarning("Invitation acceptance failed: {Errors}", 
-                string.Join(", ", result.Errors.Select(e => e.Message)));
             return BadRequest(result.ToApiError());
         }
 
@@ -98,7 +85,7 @@ public class StaffController : ControllerBase
     /// Only clinic owners can resend invitations
     /// </summary>
     [HttpPost("resend-invitation/{userId}")]
-    [Authorize(Policy = Application.Common.Authorization.Policies.ManageStaff)]
+    [Authorize(Roles = "ClinicOwner")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -114,7 +101,7 @@ public class StaffController : ControllerBase
     /// Only clinic owners can cancel invitations
     /// </summary>
     [HttpDelete("cancel-invitation/{userId}")]
-    [Authorize(Policy = Application.Common.Authorization.Policies.ManageStaff)]
+    [Authorize(Roles = "ClinicOwner")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -57,7 +57,7 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
         return await _dbSet
             .Where(a => a.DoctorId == doctorId && 
                        a.AppointmentDate >= now && 
-                       (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed))
+                       a.Status == AppointmentStatus.Scheduled)
             .OrderBy(a => a.AppointmentDate)
             .ToListAsync(cancellationToken);
     }

@@ -6,9 +6,9 @@ internal class ConfirmEmailCommandValidator : AbstractValidator<ConfirmEmailComm
 {
     public ConfirmEmailCommandValidator()
     {
-        RuleFor(x => x.UserId)
+        RuleFor(x => x.Email)
             .NotEmpty()
-            .GreaterThan(0);
+            .EmailAddress();
 
         RuleFor(x => x.Token)
             .NotEmpty();

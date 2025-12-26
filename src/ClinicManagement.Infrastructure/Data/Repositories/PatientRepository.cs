@@ -32,10 +32,10 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Patient?> GetWithSurgeriesAsync(int patientId, CancellationToken cancellationToken = default)
+    public async Task<Patient?> GetWithAppointmentsAsync(int patientId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Include(p => p.Surgeries)
+            .Include(p => p.Appointments)
             .FirstOrDefaultAsync(p => p.Id == patientId, cancellationToken);
     }
 }

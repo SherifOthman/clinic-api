@@ -5,13 +5,15 @@ namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
-    // Essential DbSets for Auth and Staff Inviting only
+    // Core DbSets
     DbSet<User> Users { get; }
     DbSet<Clinic> Clinics { get; }
+    DbSet<ClinicBranch> ClinicBranches { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Doctor> Doctors { get; }
     DbSet<Receptionist> Receptionists { get; }
-    DbSet<Specialization> Specializations { get; }
+    DbSet<Patient> Patients { get; }
+    DbSet<Appointment> Appointments { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

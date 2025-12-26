@@ -29,23 +29,18 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         
         if (!userId.HasValue)
         {
-            return Result.FailField("", "User not authenticated");
+            return Result.Fail("User not authenticated");
         }
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, cancellationToken);
         
         if (user == null)
         {
-            return Result.FailField("", "User not found");
+            return Result.Fail("User not found");
         }
 
         var result = await _identityService.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword, cancellationToken);
 
-        if (result.IsSuccess)
-        {
-            return Result.Ok(result.Message);
-        }
-
-        return Result.Fail(result.Message);
+        return result;
     }
 }

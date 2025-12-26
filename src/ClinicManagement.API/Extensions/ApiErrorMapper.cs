@@ -9,13 +9,8 @@ public static class ApiErrorMapper
     {
         var message = result.Message ?? "An error occurred";
         
-        // Group errors by field and take the first message for each field to avoid duplicate keys
-        var fieldErrors = result.Errors?
-            .GroupBy(e => e.Field)
-            .ToDictionary(g => g.Key, g => g.First().Message);
-        
-        return fieldErrors?.Any() == true 
-            ? new ApiError(message, fieldErrors)
+        return result.Errors?.Any() == true 
+            ? new ApiError(message, result.Errors.ToList())
             : new ApiError(message);
     }
 }

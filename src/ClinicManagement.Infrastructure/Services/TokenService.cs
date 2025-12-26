@@ -2,7 +2,6 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Options;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,26 +14,24 @@ namespace ClinicManagement.Infrastructure.Services;
 public class TokenService : ITokenService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly JwtOption _jwtOption;
+    private readonly JwtOptions _jwtOptions;
 
-    public TokenService(IConfiguration configuration,
-        IUnitOfWork unitOfWork,
-        IOptions<JwtOption> options)
+    public TokenService(IUnitOfWork unitOfWork, IOptions<JwtOptions> options)
     {
         _unitOfWork = unitOfWork;
-        _jwtOption = options.Value;
+        _jwtOptions = options.Value;
     }
 
     public string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null)
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOption.Key));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _jwtOption.Issuer,
-            audience: _jwtOption.Audience,
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: GetClaims(user, roles, clinicId),
-            expires: DateTime.UtcNow.AddMinutes(_jwtOption.AccessTokenExpirationMinutes),
+            expires: DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
             signingCredentials: credentials
         );
 
@@ -48,7 +45,7 @@ public class TokenService : ITokenService
         var refreshToken = new RefreshToken
         {
             Token = token,
-            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOption.RefreshTokenExpirationDays),
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
             UserId = user.Id,
         };
 
@@ -69,6 +66,56 @@ public class TokenService : ITokenService
         _unitOfWork.RefreshTokens.Update(token!);
 
        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public ClaimsPrincipal? ValidateAccessToken(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            return null;
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
+
+        try
+        {
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _jwtOptions.Issuer,
+                ValidAudience = _jwtOptions.Audience,
+                IssuerSigningKey = securityKey,
+                ClockSkew = TimeSpan.Zero // No tolerance for expiration
+            };
+
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+            return principal;
+        }
+        catch (SecurityTokenExpiredException)
+        {
+            // Token is expired - return null to trigger refresh
+            return null;
+        }
+        catch (Exception)
+        {
+            // Token is invalid
+            return null;
+        }
+    }
+
+    public async Task<RefreshToken?> ValidateRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(token))
+            return null;
+
+        var refreshToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(token, cancellationToken);
+
+        if (refreshToken == null || !refreshToken.IsActive)
+            return null;
+
+        return refreshToken;
     }
 
     private List<Claim> GetClaims(User user, IEnumerable<string> roles, int? clinicId)

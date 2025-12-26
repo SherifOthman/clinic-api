@@ -11,4 +11,5 @@ public class Receptionist : AuditableEntity
     // Navigation properties
     public virtual User User { get; set; } = null!;
     public virtual Clinic Clinic { get; set; } = null!;
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

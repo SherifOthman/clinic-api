@@ -12,21 +12,33 @@ public class AcceptInvitationCommandValidator : AbstractValidator<AcceptInvitati
         RuleFor(x => x.Token)
             .NotEmpty().WithMessage("Invitation token is required");
 
-        RuleFor(x => x.Username)
-            .NotEmpty().WithMessage("Username is required")
-            .MinimumLength(3).WithMessage("Username must be at least 3 characters")
-            .MaximumLength(50).WithMessage("Username must not exceed 50 characters");
+        RuleFor(x => x.FirstName)
+            .NotEmpty().WithMessage("First name is required")
+            .MinimumLength(2).WithMessage("First name must be at least 2 characters")
+            .MaximumLength(50).WithMessage("First name must be less than 50 characters")
+            .Matches(@"^[a-zA-Z\s'-]+$").WithMessage("First name can only contain letters, spaces, hyphens, and apostrophes");
+
+        RuleFor(x => x.LastName)
+            .NotEmpty().WithMessage("Last name is required")
+            .MinimumLength(2).WithMessage("Last name must be at least 2 characters")
+            .MaximumLength(50).WithMessage("Last name must be less than 50 characters")
+            .Matches(@"^[a-zA-Z\s'-]+$").WithMessage("Last name can only contain letters, spaces, hyphens, and apostrophes");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required")
             .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
-            .Matches(@"[0-9]").WithMessage("Password must contain at least one number")
-            .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one special character");
+            .MaximumLength(128).WithMessage("Password must be less than 128 characters")
+            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithMessage("Password must contain at least one uppercase letter, one lowercase letter, and one number")
+            .Must(password => !password.Contains(" ")).WithMessage("Password cannot contain spaces");
 
         RuleFor(x => x.PhoneNumber)
-            .MaximumLength(20).When(x => !string.IsNullOrEmpty(x.PhoneNumber))
-            .WithMessage("Phone number must not exceed 20 characters");
+            .Matches(@"^\+?[\d\s\-\(\)]+$").WithMessage("Please enter a valid phone number")
+            .Must(phone => 
+            {
+                if (string.IsNullOrEmpty(phone)) return true; // Optional field
+                var digitsOnly = System.Text.RegularExpressions.Regex.Replace(phone, @"\D", "");
+                return digitsOnly.Length >= 10 && digitsOnly.Length <= 15;
+            }).WithMessage("Phone number must contain 10-15 digits")
+            .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
     }
 }

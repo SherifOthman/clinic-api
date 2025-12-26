@@ -22,13 +22,8 @@ public class InviteStaffCommandValidator : AbstractValidator<InviteStaffCommand>
 
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage("Invalid role")
-            .Must(role => role == UserRole.Doctor || role == UserRole.Receptionist || role == UserRole.Nurse)
-            .WithMessage("Only Doctor, Receptionist, or Nurse roles can be invited");
-
-        RuleFor(x => x.SpecializationId)
-            .NotNull().WithMessage("Specialization is required for doctors")
-            .GreaterThan(0).WithMessage("Invalid specialization")
-            .When(x => x.Role == UserRole.Doctor);
+            .Must(role => role == UserRole.Doctor || role == UserRole.Receptionist)
+            .WithMessage("Only Doctor or Receptionist roles can be invited");
 
         RuleFor(x => x.PhoneNumber)
             .Matches(@"^\+?[1-9]\d{1,14}$").WithMessage("Phone number is not valid")

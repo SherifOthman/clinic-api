@@ -8,19 +8,31 @@ public class ClinicBranchConfiguration : IEntityTypeConfiguration<ClinicBranch>
 {
     public void Configure(EntityTypeBuilder<ClinicBranch> builder)
     {
-        builder.ToTable("ClinicBranches");
-        builder.Property(e => e.City).HasMaxLength(50);
-        builder.Property(e => e.Address).HasMaxLength(200);
-        builder.Property(e => e.Phone).HasMaxLength(20);
-        builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-        builder.HasOne(d => d.Clinic)
-            .WithMany(p => p.Branches)
-            .HasForeignKey(d => d.ClinicId)
-            .OnDelete(DeleteBehavior.NoAction);
+        builder.HasKey(cb => cb.Id);
 
-        builder.HasOne(d => d.CityNavigation)
-            .WithMany(p => p.ClinicBranches)
-            .HasForeignKey(d => d.CityId);
+        builder.Property(cb => cb.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(cb => cb.Address)
+            .HasMaxLength(500);
+
+        builder.Property(cb => cb.PhoneNumber)
+            .HasMaxLength(20);
+
+        // Relationships
+        builder.HasOne(cb => cb.Clinic)
+            .WithMany(c => c.Branches)
+            .HasForeignKey(cb => cb.ClinicId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(cb => cb.Appointments)
+            .WithOne(a => a.Branch)
+            .HasForeignKey(a => a.BranchId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Indexes
+        builder.HasIndex(cb => cb.ClinicId);
+        builder.HasIndex(cb => cb.Name);
     }
 }
-

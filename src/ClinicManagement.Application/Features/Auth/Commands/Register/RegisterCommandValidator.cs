@@ -8,29 +8,44 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
     {
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("First name is required")
-            .MaximumLength(50).WithMessage("First name cannot exceed 50 characters");
+            .MinimumLength(2).WithMessage("First name must be at least 2 characters")
+            .MaximumLength(50).WithMessage("First name must be less than 50 characters")
+            .Matches(@"^[a-zA-Z\s'-]+$").WithMessage("First name can only contain letters, spaces, hyphens, and apostrophes");
 
         RuleFor(x => x.LastName)
             .NotEmpty().WithMessage("Last name is required")
-            .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters");
+            .MinimumLength(2).WithMessage("Last name must be at least 2 characters")
+            .MaximumLength(50).WithMessage("Last name must be less than 50 characters")
+            .Matches(@"^[a-zA-Z\s'-]+$").WithMessage("Last name can only contain letters, spaces, hyphens, and apostrophes");
 
         RuleFor(x => x.Username)
             .NotEmpty().WithMessage("Username is required")
-            .MaximumLength(50).WithMessage("Username cannot exceed 50 characters")
-            .Matches("^[a-zA-Z0-9_-]+$").WithMessage("Username can only contain letters, numbers, underscores, and hyphens");
+            .MinimumLength(3).WithMessage("Username must be at least 3 characters")
+            .MaximumLength(30).WithMessage("Username must be less than 30 characters")
+            .Matches("^[a-zA-Z0-9_]+$").WithMessage("Username can only contain letters, numbers, and underscores")
+            .Must(username => !username.StartsWith("_") && !username.EndsWith("_"))
+            .WithMessage("Username cannot start or end with underscore");
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Invalid email format")
-            .MaximumLength(100).WithMessage("Email cannot exceed 100 characters");
+            .EmailAddress().WithMessage("Please enter a valid email address")
+            .MaximumLength(254).WithMessage("Email address is too long");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required")
-            .MinimumLength(6).WithMessage("Password must be at least 6 characters")
-            .MaximumLength(100).WithMessage("Password cannot exceed 100 characters");
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters")
+            .MaximumLength(128).WithMessage("Password must be less than 128 characters")
+            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithMessage("Password must contain at least one uppercase letter, one lowercase letter, and one number")
+            .Must(password => !password.Contains(" ")).WithMessage("Password cannot contain spaces");
 
         RuleFor(x => x.PhoneNumber)
-            .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters");
- 
+            .NotEmpty().WithMessage("Phone number is required")
+            .Matches(@"^\+?[\d\s\-\(\)]+$").WithMessage("Please enter a valid phone number")
+            .Must(phone => 
+            {
+                if (string.IsNullOrEmpty(phone)) return false;
+                var digitsOnly = System.Text.RegularExpressions.Regex.Replace(phone, @"\D", "");
+                return digitsOnly.Length >= 10 && digitsOnly.Length <= 15;
+            }).WithMessage("Phone number must contain 10-15 digits");
     }
 }

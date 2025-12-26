@@ -4,6 +4,7 @@ using ClinicManagement.Application.Common.Mappings;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Application.Options;
 using FluentValidation;
+using Mapster;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,12 +18,15 @@ public  static class DependencyInjection
         {
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
         });
-        services.AddAutoMapper(typeof(MappingProfile));
+        
+        // Mapster
+        services.AddMapster();
+        MappingConfig.RegisterMappings();
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         
-        services.Configure<JwtOption>(configuration.GetSection("Jwt"));
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<SmtpOptions>(configuration.GetSection("Email"));
 
         return services;

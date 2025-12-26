@@ -17,7 +17,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return int.TryParse(userIdClaim, out var userId) ? userId : null;
         }
     }
@@ -26,25 +26,42 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirstValue("ClinicId");
+            var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("ClinicId")?.Value;
             return int.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
         }
     }
 
-    public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+    public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
+
+    public IEnumerable<string> Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)?.Select(x => x.Value) ?? Enumerable.Empty<string>();
 
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
-    public IEnumerable<string> Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)
-        .Select(c => c.Value) ?? Enumerable.Empty<string>();
-
-    public int GetUserId()
+    public int GetRequiredUserId()
     {
-        return UserId ?? throw new UnauthorizedAccessException("User is not authenticated");
+        if (!UserId.HasValue)
+            throw new UnauthorizedAccessException("User ID is required but not available");
+
+        return UserId.Value;
     }
 
-    public int? GetClinicId()
+    public int GetRequiredClinicId()
     {
-        return ClinicId;
+        if (!ClinicId.HasValue)
+            throw new UnauthorizedAccessException("Clinic ID is required but not available. User may need to complete onboarding.");
+
+        return ClinicId.Value;
+    }
+
+    public void EnsureAuthenticated()
+    {
+        if (!IsAuthenticated)
+            throw new UnauthorizedAccessException("User must be authenticated");
+    }
+
+    public void EnsureClinicAccess()
+    {
+        EnsureAuthenticated();
+        GetRequiredClinicId(); // This will throw if no clinic access
     }
 }

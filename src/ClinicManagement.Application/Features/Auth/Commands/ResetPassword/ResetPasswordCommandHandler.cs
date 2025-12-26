@@ -9,14 +9,11 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 
 public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, Result>
 {
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IIdentityService _identityService;
 
     public ResetPasswordCommandHandler(
-        IUnitOfWork unitOfWork,
         IIdentityService identityService)
     {
-        _unitOfWork = unitOfWork;
         _identityService = identityService;
     }
 
@@ -31,11 +28,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
         var result = await _identityService.ResetPasswordAsync(user, request.Token, request.NewPassword, cancellationToken);
 
-        if (result.IsSuccess)
-        {
-            return Result.Ok(result.Message);
-        }
-
-        return Result.Fail(result.Message);
+   
+        return result;
     }
 }
