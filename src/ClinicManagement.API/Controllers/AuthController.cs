@@ -12,6 +12,7 @@ using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerificatio
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 using ClinicManagement.Application.Features.Auth.Queries.GetMe;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
@@ -28,6 +29,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [AllowAnonymous]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
@@ -54,6 +56,7 @@ public class AuthController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success message (tokens are set as httpOnly cookies)</returns>
     [HttpPost("login")]
+    [AllowAnonymous]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
@@ -106,6 +109,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("confirm-email")]
+    [AllowAnonymous]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError),StatusCodes.Status400BadRequest)]
@@ -119,6 +123,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("forgot-password")]
+    [AllowAnonymous]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
@@ -133,6 +138,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [AllowAnonymous]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
@@ -147,6 +153,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("resend-email-verification")]
+    [AllowAnonymous]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]

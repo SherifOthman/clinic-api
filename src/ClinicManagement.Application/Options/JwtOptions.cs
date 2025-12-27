@@ -2,7 +2,7 @@ namespace ClinicManagement.Application.Options;
 
 /// <summary>
 /// JWT configuration options for the application.
-/// Contains all JWT-related settings including token expiration, signing keys, and public paths.
+/// Contains all JWT-related settings including token expiration and signing keys.
 /// </summary>
 public class JwtOptions
 {
@@ -30,21 +30,4 @@ public class JwtOptions
     /// Refresh token expiration time in days (default: 7 days)
     /// </summary>
     public int RefreshTokenExpirationDays { get; set; } = 7;
-    
-    /// <summary>
-    /// Public paths that don't require authentication
-    /// </summary>
-    public string[] PublicPaths { get; set; } = new[]
-    {
-        "/api/auth/register",
-        "/api/auth/login",
-        "/api/auth/forgot-password",
-        "/api/auth/reset-password",
-        "/api/auth/confirm-email",
-        "/api/auth/resend-email-verification",
-        "/api/staff/accept-invitation",
-        "/api/subscriptionplans",
-        "/swagger",
-        "/health"
-    };
 }

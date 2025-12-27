@@ -6,108 +6,74 @@ using Microsoft.Extensions.Options;
 namespace ClinicManagement.API.Middleware;
 
 /// <summary>
-/// JWT Cookie Middleware - Handles token refresh for cookie-based authentication.
-/// Works in conjunction with JWT Bearer authentication.
+/// JWT Cookie Middleware - Handles automatic token refresh for cookie-based authentication.
+/// 
+/// Purpose: Refresh expired (but valid) access tokens BEFORE JWT Bearer authentication runs.
+/// This ensures users with expired tokens get seamless re-authentication.
+/// 
+/// Security: Only refreshes tokens that are expired, NOT invalid/malformed tokens.
 /// </summary>
 public class JwtCookieMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<JwtCookieMiddleware> _logger;
-    private readonly JwtOptions _jwtOptions;
 
-    public JwtCookieMiddleware(RequestDelegate next, ILogger<JwtCookieMiddleware> logger, IOptions<JwtOptions> jwtOptions)
+    public JwtCookieMiddleware(RequestDelegate next, ILogger<JwtCookieMiddleware> logger)
     {
         _next = next;
         _logger = logger;
-        _jwtOptions = jwtOptions.Value;
     }
 
-    public async Task InvokeAsync(HttpContext context, IAuthenticationService authService, ICookieService cookieService)
+    public async Task InvokeAsync(HttpContext context, ITokenService tokenService, IAuthenticationService authService, ICookieService cookieService)
     {
-        // Skip middleware for public endpoints
-        if (IsPublicEndpoint(context))
+        // Skip token validation and refresh for endpoints marked with [AllowAnonymous]
+        var endpoint = context.GetEndpoint();
+        if (endpoint?.Metadata.GetMetadata<IAllowAnonymous>() != null)
         {
             await _next(context);
             return;
         }
 
-        try
+        var accessToken = cookieService.GetAccessTokenFromCookie();
+        var refreshToken = cookieService.GetRefreshTokenFromCookie();
+
+        // Only attempt refresh if we have both tokens and access token is expired
+        if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(refreshToken))
         {
-            await HandleTokenRefreshAsync(context, authService, cookieService);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in JWT Cookie Middleware");
+            var (principal, isExpired) = tokenService.ValidateAccessTokenWithExpiry(accessToken);
+            
+            // Only refresh if token is EXPIRED (not invalid)
+            // This is a security check - we don't refresh malformed/tampered tokens
+            if (principal == null && isExpired)
+            {
+                await TryRefreshTokenAsync(authService, cookieService, refreshToken);
+            }
         }
 
         await _next(context);
     }
 
-    private async Task HandleTokenRefreshAsync(HttpContext context, IAuthenticationService authService, ICookieService cookieService)
+    private async Task TryRefreshTokenAsync(IAuthenticationService authService, ICookieService cookieService, string refreshToken)
     {
-        // Only handle token refresh if we have cookies but no valid access token
-        var accessToken = cookieService.GetAccessTokenFromCookie();
-        var refreshToken = cookieService.GetRefreshTokenFromCookie();
-
-        // If no cookies, let JWT Bearer handle Authorization header
-        if (string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(refreshToken))
-        {
-            return;
-        }
-
-        // Try to validate access token
-        var principal = authService.ValidateAccessToken(accessToken);
-        if (principal != null)
-        {
-            // Access token is valid, no need to refresh
-            return;
-        }
-
-        // Access token is invalid/expired, try refresh token
-        if (!string.IsNullOrEmpty(refreshToken))
+        try
         {
             var refreshResult = await authService.RefreshTokenAsync(refreshToken);
+            
             if (refreshResult.Success && refreshResult.Value != null)
             {
-                // Refresh successful - set new cookies
                 var result = refreshResult.Value;
                 cookieService.SetAccessTokenCookie(result.AccessToken);
                 cookieService.SetRefreshTokenCookie(result.RefreshToken);
                 
-                _logger.LogInformation("Token refreshed successfully for user {UserId}", 
-                    result.UserPrincipal.FindFirst("sub")?.Value);
+                _logger.LogDebug("Access token refreshed successfully");
             }
-            else
-            {
-                // Refresh failed - clear cookies
-                cookieService.ClearAuthCookies();
-                _logger.LogDebug("Token refresh failed - clearing cookies");
-            }
+            // If refresh fails, don't clear cookies - let JWT Bearer return 401
+            // The frontend will handle the 401 and redirect to login
         }
-        else
+        catch (Exception ex)
         {
-            // No refresh token - clear cookies
-            cookieService.ClearAuthCookies();
-            _logger.LogDebug("No refresh token available - clearing cookies");
+            _logger.LogError(ex, "Error refreshing token");
+            // Don't clear cookies on error - let the request continue
         }
-    }
-
-    private bool IsPublicEndpoint(HttpContext context)
-    {
-        var endpoint = context.GetEndpoint();
-        if (endpoint == null) return true;
-
-        // Check if endpoint allows anonymous access
-        var allowAnonymous = endpoint.Metadata.GetMetadata<AllowAnonymousAttribute>();
-        if (allowAnonymous != null) return true;
-
-        // Check if endpoint requires authorization
-        var authorizeData = endpoint.Metadata.GetMetadata<AuthorizeAttribute>();
-        if (authorizeData == null) return true; // No authorization required
-
-        // Use public paths from JWT options (Application layer)
-        var path = context.Request.Path.Value?.ToLowerInvariant();
-        return _jwtOptions.PublicPaths.Any(publicPath => 
-            path?.StartsWith(publicPath.ToLowerInvariant()) == true);
     }
 }

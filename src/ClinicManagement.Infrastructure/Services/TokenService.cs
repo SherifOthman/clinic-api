@@ -70,8 +70,20 @@ public class TokenService : ITokenService
 
     public ClaimsPrincipal? ValidateAccessToken(string token)
     {
+        var (principal, _) = ValidateAccessTokenWithExpiry(token);
+        return principal;
+    }
+
+    public bool IsTokenExpired(string token)
+    {
+        var (_, isExpired) = ValidateAccessTokenWithExpiry(token);
+        return isExpired;
+    }
+
+    public (ClaimsPrincipal? principal, bool isExpired) ValidateAccessTokenWithExpiry(string token)
+    {
         if (string.IsNullOrEmpty(token))
-            return null;
+            return (null, false); // Missing token is not "expired"
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
@@ -91,17 +103,15 @@ public class TokenService : ITokenService
             };
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
-            return principal;
+            return (principal, false); // Token is valid, not expired
         }
         catch (SecurityTokenExpiredException)
         {
-            // Token is expired - return null to trigger refresh
-            return null;
+            return (null, true); // Token is expired (but structurally valid)
         }
         catch (Exception)
         {
-            // Token is invalid
-            return null;
+            return (null, false); // Token is invalid (not expired)
         }
     }
 

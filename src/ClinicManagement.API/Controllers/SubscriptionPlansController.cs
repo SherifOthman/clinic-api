@@ -1,4 +1,5 @@
 using ClinicManagement.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
@@ -11,6 +12,7 @@ public class SubscriptionPlansController : ControllerBase
     /// Get all available subscription plans
     /// </summary>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken cancellationToken)
     {
