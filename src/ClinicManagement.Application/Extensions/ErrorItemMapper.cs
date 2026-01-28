@@ -10,7 +10,7 @@ public static class ErrorItemMapper
         return failures.Select(f => new ErrorItem
         {
             Field = ToCamelCase(f.PropertyName),
-            Message = f.ErrorMessage
+            Code = !string.IsNullOrEmpty(f.ErrorCode) ? f.ErrorCode : f.ErrorMessage
         });
     }
 

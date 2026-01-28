@@ -36,7 +36,7 @@ public class ResendEmailVerificationCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.UserWithEmailNotFound("test@example.com"), result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.UserWithEmailNotFound("test@example.com"), result.Code);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class ResendEmailVerificationCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.EMAIL_ALREADY_CONFIRMED, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.EMAIL_ALREADY_CONFIRMED, result.Code);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ResendEmailVerificationCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal("Failed to send confirmation email: SMTP error", result.Message);
+        Assert.Equal("Failed to send confirmation email: SMTP error", result.Code);
     }
 
     [Fact]

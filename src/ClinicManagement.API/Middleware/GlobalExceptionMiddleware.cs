@@ -30,7 +30,7 @@ public class GlobalExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        var (statusCode, message) = exception switch
+        var (statusCode, code) = exception switch
         {
             ValidationException => (400, MessageCodes.Exception.VALIDATION_ERROR),
             UnauthorizedAccessException => (403, MessageCodes.Exception.UNAUTHORIZED_ACCESS),
@@ -42,7 +42,7 @@ public class GlobalExceptionMiddleware
 
         context.Response.StatusCode = statusCode;
 
-        var response = new { message };
+        var response = new { code };
         var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase

@@ -84,7 +84,7 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("exceeds maximum", result.Message);
+        Assert.Contains("exceeds maximum", result.Code);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("Invalid file type", result.Message);
+        Assert.Contains("Invalid file type", result.Code);
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.File.FILE_NOT_FOUND, result.Message);
+        Assert.Equal(ApplicationErrors.File.FILE_NOT_FOUND, result.Code);
     }
 
     [Theory]

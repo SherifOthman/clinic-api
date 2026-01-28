@@ -4,18 +4,18 @@ namespace ClinicManagement.API.Models;
 
 public class ApiError
 {
-    public string Message { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
 
     public List<ErrorItem>? Errors { get; set; }
 
-    public ApiError(string message)
+    public ApiError(string code)
     {
-        Message = message;
+        Code = code;
     }
 
-    public ApiError(string message, List<ErrorItem> errors)
+    public ApiError(string code, List<ErrorItem> errors)
     {
-        Message = message;
+        Code = code;
         Errors = errors;
     }
 }

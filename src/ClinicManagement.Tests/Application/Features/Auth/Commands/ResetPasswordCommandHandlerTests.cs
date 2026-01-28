@@ -49,7 +49,7 @@ public class ResetPasswordCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.INVALID_RESET_TOKEN, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.INVALID_RESET_TOKEN, result.Code);
     }
 
     [Fact]

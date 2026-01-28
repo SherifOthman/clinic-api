@@ -155,7 +155,7 @@ public class AuthenticationIntegrationTests : ApiTestBase
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Invalid username or password");
+        result.Code.Should().Be("Invalid username or password");
     }
 
     [Fact]
@@ -172,7 +172,7 @@ public class AuthenticationIntegrationTests : ApiTestBase
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("verify your email");
+        result.Code.Should().Contain("verify your email");
     }
 
     [Fact]
@@ -183,6 +183,6 @@ public class AuthenticationIntegrationTests : ApiTestBase
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Invalid username or password");
+        result.Code.Should().Be("Invalid username or password");
     }
 }

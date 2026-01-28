@@ -82,10 +82,10 @@ public class UserManagementServiceTests
         Assert.Equal(2, result.Errors.Count());
         
         var passwordError = result.Errors.First(e => e.Field == "Password");
-        Assert.Equal("Password is too short", passwordError.Message);
+        Assert.Equal("Password is too short", passwordError.Code);
         
         var emailError = result.Errors.First(e => e.Field == "Email");
-        Assert.Equal("Email already exists", emailError.Message);
+        Assert.Equal("Email already exists", emailError.Code);
     }
 
     [Fact]
@@ -242,6 +242,6 @@ public class UserManagementServiceTests
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors);
         Assert.Equal(expectedField, result.Errors.First().Field);
-        Assert.Equal("Test error", result.Errors.First().Message);
+        Assert.Equal("Test error", result.Errors.First().Code);
     }
 }

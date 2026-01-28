@@ -64,7 +64,7 @@ public class EmailConfirmationService : IEmailConfirmationService
 
         var errors = identityResult.Errors.Select(e => new ErrorItem(
             field: GetFieldNameFromErrorCode(e.Code),
-            message: e.Description
+            code: e.Description
         )).ToList();
 
         return Result.Fail(errors);

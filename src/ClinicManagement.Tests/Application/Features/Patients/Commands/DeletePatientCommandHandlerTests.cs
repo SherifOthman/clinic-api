@@ -84,7 +84,7 @@ public class DeletePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
+        result.Code.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
     }
 
     [Fact]
@@ -101,6 +101,6 @@ public class DeletePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+        result.Code.Should().Be(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
     }
 }

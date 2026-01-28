@@ -65,8 +65,8 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
 
             if (!uploadResult.Success)
             {
-                _logger.LogError("Failed to upload profile image for user {UserId}: {Error}", userId, uploadResult.Message ?? "Unknown error");
-                return Result<UpdateProfileImageResponse>.Fail(uploadResult.Message ?? "Failed to upload image");
+                _logger.LogError("Failed to upload profile image for user {UserId}: {Error}", userId, uploadResult.Code ?? "Unknown error");
+                return Result<UpdateProfileImageResponse>.Fail(uploadResult.Code ?? "Failed to upload image");
             }
 
             // Update user profile

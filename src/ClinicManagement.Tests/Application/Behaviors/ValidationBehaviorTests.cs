@@ -86,10 +86,10 @@ public class ValidationBehaviorTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Validation.GENERAL_VALIDATION_ERROR);
+        result.Code.Should().Be(MessageCodes.Validation.GENERAL_VALIDATION_ERROR);
         result.Errors.Should().HaveCount(2);
-        result.Errors.Should().Contain(e => e.Field == "value" && e.Message == "Value is required");
-        result.Errors.Should().Contain(e => e.Field == "value" && e.Message == "Value must be at least 5 characters");
+        result.Errors.Should().Contain(e => e.Field == "value" && e.Code == "Value is required");
+        result.Errors.Should().Contain(e => e.Field == "value" && e.Code == "Value must be at least 5 characters");
         
         _nextMock.Verify(x => x(), Times.Never);
     }

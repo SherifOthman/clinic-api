@@ -79,6 +79,6 @@ public class UpdateSubscriptionPlanCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
+        result.Code.Should().Be(MessageCodes.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
     }
 }

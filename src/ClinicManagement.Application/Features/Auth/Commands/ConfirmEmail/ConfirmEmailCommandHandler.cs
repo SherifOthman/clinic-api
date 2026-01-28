@@ -50,6 +50,6 @@ public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, R
         }
 
         _logger.LogWarning("Email confirmation failed for user: {Email}", request.Email);
-        return Result.Fail(result.Message ?? "Email confirmation failed.");
+        return Result.Fail(result.Code ?? "EMAIL.CONFIRMATION.FAILED");
     }
 }

@@ -46,7 +46,7 @@ public class ConfirmEmailCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(ApplicationErrors.Authentication.USER_NOT_FOUND);
+        result.Code.Should().Be(ApplicationErrors.Authentication.USER_NOT_FOUND);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class ConfirmEmailCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Invalid token");
+        result.Code.Should().Be("Invalid token");
     }
 
     [Fact]
@@ -133,6 +133,6 @@ public class ConfirmEmailCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Email confirmation failed.");
+        result.Code.Should().Be("EMAIL.CONFIRMATION.FAILED");
     }
 }

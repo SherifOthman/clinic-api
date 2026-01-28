@@ -23,7 +23,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result>
         var loginResult = await _authenticationService.LoginAsync(request.Email, request.Password, cancellationToken);
 
         if (!loginResult.Success)
-            return Result.Fail(loginResult.Message!);
+            return Result.Fail(loginResult.Code!);
 
         var result = loginResult.Value!;
 

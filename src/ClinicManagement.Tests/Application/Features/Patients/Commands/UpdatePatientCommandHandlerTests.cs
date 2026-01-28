@@ -112,7 +112,7 @@ public class UpdatePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
+        result.Code.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class UpdatePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
+        result.Code.Should().Be(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
     }
 
     [Fact]
@@ -162,6 +162,6 @@ public class UpdatePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
+        result.Code.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
     }
 }

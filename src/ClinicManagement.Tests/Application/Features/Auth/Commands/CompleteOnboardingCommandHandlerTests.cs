@@ -47,7 +47,7 @@ public class CompleteOnboardingCommandHandlerTests
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED, result.Code);
     }
 
     [Fact]

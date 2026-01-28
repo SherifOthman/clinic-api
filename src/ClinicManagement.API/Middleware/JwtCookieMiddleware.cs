@@ -91,7 +91,7 @@ public class JwtCookieMiddleware
             }
             else
             {
-                _logger.LogWarning("Token refresh failed: {Message}", refreshResult.Message);
+                _logger.LogWarning("Token refresh failed: {Code}", refreshResult.Code);
                 return false;
             }
         }

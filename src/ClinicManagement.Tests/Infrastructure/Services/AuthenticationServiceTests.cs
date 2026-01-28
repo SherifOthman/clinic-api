@@ -90,7 +90,7 @@ public class AuthenticationServiceTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Invalid username or password");
+        result.Code.Should().Be("Invalid username or password");
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class AuthenticationServiceTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Please verify your email address before signing in. Check your inbox for the verification link.");
+        result.Code.Should().Be("Please verify your email address before signing in. Check your inbox for the verification link.");
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class AuthenticationServiceTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Invalid username or password");
+        result.Code.Should().Be("Invalid username or password");
     }
 
     [Fact]

@@ -39,7 +39,7 @@ public class ChangePasswordCommandHandlerTests
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED, result.Code);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class ChangePasswordCommandHandlerTests
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_FOUND, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_FOUND, result.Code);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class ChangePasswordCommandHandlerTests
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.INVALID_PASSWORD, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.INVALID_PASSWORD, result.Code);
     }
 
     [Fact]

@@ -69,7 +69,7 @@ public class GetMeQueryHandlerTests
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Message.Should().Be(ApplicationErrors.Authentication.USER_NOT_FOUND);
+        result.Code.Should().Be(ApplicationErrors.Authentication.USER_NOT_FOUND);
     }
 
     private static User CreateTestUser(int id)

@@ -175,7 +175,7 @@ public class EmailConfirmationServiceTests
         Assert.False(result.Success);
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors);
-        Assert.Equal("Invalid token", result.Errors.First().Message);
+        Assert.Equal("Invalid token", result.Errors.First().Code);
     }
 
     [Fact]
@@ -282,6 +282,6 @@ public class EmailConfirmationServiceTests
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors);
         Assert.Equal(expectedField, result.Errors.First().Field);
-        Assert.Equal("Test error", result.Errors.First().Message);
+        Assert.Equal("Test error", result.Errors.First().Code);
     }
 }

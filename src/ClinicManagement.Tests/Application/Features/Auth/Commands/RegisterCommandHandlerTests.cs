@@ -90,7 +90,7 @@ public class RegisterCommandHandlerTests
         // Assert
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNull();
-        result.Errors!.Should().Contain(e => e.Field == "email" && e.Message == MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
+        result.Errors!.Should().Contain(e => e.Field == "email" && e.Code == MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
         _userManagementServiceMock.Verify(x => x.CreateUserAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -121,7 +121,7 @@ public class RegisterCommandHandlerTests
         // Assert
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNull();
-        result.Errors!.Should().Contain(e => e.Field == "username" && e.Message == MessageCodes.Validation.USERNAME_ALREADY_TAKEN);
+        result.Errors!.Should().Contain(e => e.Field == "username" && e.Code == MessageCodes.Validation.USERNAME_ALREADY_TAKEN);
         _userManagementServiceMock.Verify(x => x.CreateUserAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

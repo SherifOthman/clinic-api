@@ -44,12 +44,12 @@ public class OnboardingController : BaseApiController
         if (result.Errors?.Any() == true)
         {
             return BadRequest(new { 
-                message = result.Message,
-                errors = result.Errors.Select(e => new { field = e.Field, message = e.Message })
+                code = result.Code,
+                errors = result.Errors.Select(e => new { field = e.Field, code = e.Code })
             });
         }
         
-        return BadRequest(new { message = result.Message });
+        return BadRequest(new { code = result.Code });
     }
 }
 

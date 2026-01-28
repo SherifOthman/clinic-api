@@ -67,7 +67,7 @@ public class LoginCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Invalid credentials");
+        result.Code.Should().Be("Invalid credentials");
         _cookieServiceMock.Verify(x => x.SetAccessTokenCookie(It.IsAny<string>()), Times.Never);
         _cookieServiceMock.Verify(x => x.SetRefreshTokenCookie(It.IsAny<string>()), Times.Never);
     }

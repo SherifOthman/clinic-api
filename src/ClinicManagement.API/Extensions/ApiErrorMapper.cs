@@ -7,10 +7,10 @@ public static class ApiErrorMapper
 {
     public static ApiError ToApiError(this Result result)
     {
-        var message = result.Message ?? "An error occurred";
+        var code = result.Code ?? "GENERAL.ERROR";
         
         return result.Errors?.Any() == true 
-            ? new ApiError(message, result.Errors.ToList())
-            : new ApiError(message);
+            ? new ApiError(code, result.Errors.ToList())
+            : new ApiError(code);
     }
 }

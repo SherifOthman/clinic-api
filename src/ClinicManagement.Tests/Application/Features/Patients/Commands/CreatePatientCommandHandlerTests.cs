@@ -309,7 +309,7 @@ public class CreatePatientCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeFalse();
-        result.Message.Should().NotBeNull();
-        result.Message.Should().Be(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+        result.Code.Should().NotBeNull();
+        result.Code.Should().Be(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
     }
 }

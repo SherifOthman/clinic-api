@@ -53,7 +53,7 @@ public class UpdateProfileImageCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal("User not authenticated", result.Message);
+        Assert.Equal("User not authenticated", result.Code);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class UpdateProfileImageCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_FOUND, result.Message);
+        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_FOUND, result.Code);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class UpdateProfileImageCommandHandlerTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal("Upload failed", result.Message);
+        Assert.Equal("Upload failed", result.Code);
     }
 
     [Fact]
