@@ -1,24 +1,31 @@
 ﻿using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Options;
-using MailKit.Net.Smtp;
+using ClinicManagement.Infrastructure.Common.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-internal class SmtpEmailSender : IEmailSender
+public class SmtpEmailSender : IEmailSender
 {
     private readonly SmtpOptions _options;
+    private readonly IEmailSmtpClient _smtpClient;
+    private readonly ILogger<SmtpEmailSender> _logger;
 
-    public SmtpEmailSender(IOptions<SmtpOptions> options)
+    public SmtpEmailSender(IOptions<SmtpOptions> options, IEmailSmtpClient smtpClient, ILogger<SmtpEmailSender> logger)
     {
         _options = options.Value;
+        _smtpClient = smtpClient;
+        _logger = logger;
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage, CancellationToken cancellationToken = default)
     {
         try
         {
+            _logger.LogInformation("Sending email to {Email} with subject: {Subject}", toEmail, subject);
+
             // Replace frontend URL placeholder in email template
             htmlMessage = htmlMessage.Replace("{{FRONTEND_URL}}", _options.FrontendUrl);
 
@@ -33,23 +40,24 @@ internal class SmtpEmailSender : IEmailSender
             };
             email.Body = bodyBuilder.ToMessageBody();
 
-            using var smtp = new SmtpClient();
-            
             // Connect to SMTP server
-            await smtp.ConnectAsync(_options.Host, _options.Port,
+            await _smtpClient.ConnectAsync(_options.Host, _options.Port,
                 MailKit.Security.SecureSocketOptions.StartTls, cancellationToken);
             
             // Authenticate
-            await smtp.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
+            await _smtpClient.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
             
             // Send email
-            await smtp.SendAsync(email, cancellationToken);
+            await _smtpClient.SendAsync(email, cancellationToken);
             
             // Disconnect
-            await smtp.DisconnectAsync(true, cancellationToken);
+            await _smtpClient.DisconnectAsync(true, cancellationToken);
+
+            _logger.LogInformation("Email sent successfully to {Email}", toEmail);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
             throw new InvalidOperationException($"Failed to send email: {ex.Message}", ex);
         }
     }

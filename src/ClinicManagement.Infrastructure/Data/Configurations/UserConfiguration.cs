@@ -26,24 +26,26 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
-        // Relationships - User can own only one clinic
-        builder.HasOne(u => u.OwnedClinic)
-            .WithOne(c => c.Owner)
-            .HasForeignKey<Clinic>(c => c.OwnerId)
+        // User location from onboarding
+        builder.Property(u => u.Country)
+            .HasMaxLength(100);
+
+        builder.Property(u => u.City)
+            .HasMaxLength(100);
+
+        // Relationships
+        builder.HasOne(u => u.Clinic)
+            .WithMany(c => c.Users)
+            .HasForeignKey(u => u.ClinicId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(u => u.Doctor)
-            .WithOne(d => d.User)
-            .HasForeignKey<Doctor>(d => d.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(u => u.Specialization)
+            .WithMany(s => s.Users)
+            .HasForeignKey(u => u.SpecializationId)
+            .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(u => u.Receptionist)
-            .WithOne(r => r.User)
-            .HasForeignKey<Receptionist>(r => r.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Indexes
         builder.HasIndex(u => u.Email);
         builder.HasIndex(u => u.UserName);
+        builder.HasIndex(u => u.ClinicId);
     }
 }

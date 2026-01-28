@@ -1,14 +1,9 @@
-using ClinicManagement.Application.Common.Interfaces;
+﻿using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Login;
 
-/// <summary>
-/// Handler for LoginCommand - SIMPLIFIED for Clean Architecture.
-/// Delegates authentication logic to IAuthenticationService.
-/// Only handles command validation and cookie setting.
-/// </summary>
 public class LoginCommandHandler : IRequestHandler<LoginCommand, Result>
 {
     private readonly IAuthenticationService _authenticationService;
@@ -28,7 +23,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result>
         var loginResult = await _authenticationService.LoginAsync(request.Email, request.Password, cancellationToken);
 
         if (!loginResult.Success)
-            return Result.Fail(loginResult.Message);
+            return Result.Fail(loginResult.Message!);
 
         var result = loginResult.Value!;
 
@@ -36,7 +31,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result>
         _cookieService.SetAccessTokenCookie(result.AccessToken);
         _cookieService.SetRefreshTokenCookie(result.RefreshToken);
 
-        // Return success only - frontend calls /me to get user data
-        return Result.Ok("Login successful");
+        // Return success only - no message needed
+        return Result.Ok();
     }
 }

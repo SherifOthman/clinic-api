@@ -5,14 +5,6 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Middleware;
 
-/// <summary>
-/// JWT Cookie Middleware - Handles automatic token refresh for cookie-based authentication.
-/// 
-/// Purpose: Refresh expired (but valid) access tokens BEFORE JWT Bearer authentication runs.
-/// This ensures users with expired tokens get seamless re-authentication.
-/// 
-/// Security: Only refreshes tokens that are expired, NOT invalid/malformed tokens.
-/// </summary>
 public class JwtCookieMiddleware
 {
     private readonly RequestDelegate _next;
@@ -37,23 +29,52 @@ public class JwtCookieMiddleware
         var accessToken = cookieService.GetAccessTokenFromCookie();
         var refreshToken = cookieService.GetRefreshTokenFromCookie();
 
-        // Only attempt refresh if we have both tokens and access token is expired
-        if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(refreshToken))
+        // Handle different token scenarios
+        if (!string.IsNullOrEmpty(accessToken))
         {
+            // We have an access token - check if it's valid or expired
             var (principal, isExpired) = tokenService.ValidateAccessTokenWithExpiry(accessToken);
             
-            // Only refresh if token is EXPIRED (not invalid)
-            // This is a security check - we don't refresh malformed/tampered tokens
-            if (principal == null && isExpired)
+            if (principal == null)
             {
-                await TryRefreshTokenAsync(authService, cookieService, refreshToken);
+                // Token is invalid or expired
+                if (isExpired && !string.IsNullOrEmpty(refreshToken))
+                {
+                    // Token is expired but we have refresh token - try to refresh
+                    var refreshSuccess = await TryRefreshTokenAsync(authService, cookieService, refreshToken);
+                    if (!refreshSuccess)
+                    {
+                        // Refresh failed - clear cookies to force re-login
+                        cookieService.ClearAuthCookies();
+                        _logger.LogWarning("Token refresh failed, cookies cleared");
+                    }
+                }
+                else
+                {
+                    // Token is invalid and no refresh token - clear cookies
+                    cookieService.ClearAuthCookies();
+                    _logger.LogWarning("Invalid access token without refresh token, cookies cleared");
+                }
+            }
+            // If token is valid, continue with request
+        }
+        else if (!string.IsNullOrEmpty(refreshToken))
+        {
+            // We have only refresh token but no access token - try to refresh
+            var refreshSuccess = await TryRefreshTokenAsync(authService, cookieService, refreshToken);
+            if (!refreshSuccess)
+            {
+                // Refresh failed - clear cookies
+                cookieService.ClearAuthCookies();
+                _logger.LogWarning("Token refresh failed with refresh token only, cookies cleared");
             }
         }
+        // If no tokens at all, let the request continue and JWT Bearer will return 401
 
         await _next(context);
     }
 
-    private async Task TryRefreshTokenAsync(IAuthenticationService authService, ICookieService cookieService, string refreshToken)
+    private async Task<bool> TryRefreshTokenAsync(IAuthenticationService authService, ICookieService cookieService, string refreshToken)
     {
         try
         {
@@ -65,15 +86,19 @@ public class JwtCookieMiddleware
                 cookieService.SetAccessTokenCookie(result.AccessToken);
                 cookieService.SetRefreshTokenCookie(result.RefreshToken);
                 
-                _logger.LogDebug("Access token refreshed successfully");
+                _logger.LogInformation("Access token refreshed successfully");
+                return true;
             }
-            // If refresh fails, don't clear cookies - let JWT Bearer return 401
-            // The frontend will handle the 401 and redirect to login
+            else
+            {
+                _logger.LogWarning("Token refresh failed: {Message}", refreshResult.Message);
+                return false;
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing token");
-            // Don't clear cookies on error - let the request continue
+            return false;
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿
 using ClinicManagement.Application.Common.Behaviors;
 using ClinicManagement.Application.Common.Mappings;
-using ClinicManagement.Application.Features.Auth.Commands.Register;
+using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.Options;
 using FluentValidation;
 using Mapster;
@@ -10,7 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ClinicManagement.Application;
-public  static class DependencyInjection
+
+public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
@@ -19,15 +20,18 @@ public  static class DependencyInjection
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
         });
         
-        // Mapster
         services.AddMapster();
         MappingConfig.RegisterMappings();
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         
+        // Register phone number validation service
+        services.AddScoped<IPhoneNumberValidationService, PhoneNumberValidationService>();
+        
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
-        services.Configure<SmtpOptions>(configuration.GetSection("Email"));
+        services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
 
         return services;
     }

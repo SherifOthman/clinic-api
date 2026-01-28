@@ -1,4 +1,4 @@
-namespace ClinicManagement.Application.Common.Templates;
+﻿namespace ClinicManagement.Application.Common.Templates;
 
 public static class EmailTemplates
 {
@@ -35,7 +35,7 @@ public static class EmailTemplates
         <body>
             <div class='container'>
                 <div class='header'>
-                    <h1 style='margin: 0;'>🔐 Password Reset Request</h1>
+                    <h1 style='margin: 0;'>ðŸ” Password Reset Request</h1>
                 </div>
                 <div class='content'>
                     <p>Hello <strong>{firstName}</strong>,</p>
@@ -44,7 +44,7 @@ public static class EmailTemplates
                         <a href='{resetLink}' class='button' style='color: white !important;'>Reset My Password</a>
                     </div>
                     <div class='warning'>
-                        <strong>⏰ Important:</strong> This link will expire in <strong>1 hour</strong> for security reasons.
+                        <strong>â° Important:</strong> This link will expire in <strong>1 hour</strong> for security reasons.
                     </div>
                     <p>If the button doesn't work, copy and paste this link into your browser:</p>
                     <p style='word-break: break-all; color: #667eea;'>{resetLink}</p>
@@ -52,7 +52,7 @@ public static class EmailTemplates
                     <p style='color: #6b7280; font-size: 14px;'>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
                 </div>
                 <div class='footer'>
-                    <p>© 2025 ClinicFlow. All rights reserved.</p>
+                    <p>Â© 2025 ClinicFlow. All rights reserved.</p>
                     <p>Streamline your healthcare practice with confidence.</p>
                 </div>
             </div>
@@ -77,12 +77,12 @@ public static class EmailTemplates
                 <p>Or copy and paste this link into your browser:</p>
                 <p style='color: #666; word-break: break-all;'>{invitationLink}</p>
                 <div style='background-color: #fef3c7; padding: 15px; border-radius: 5px; border-left: 4px solid #f59e0b; margin: 20px 0;'>
-                    <p style='margin: 0; color: #92400e;'><strong>⏰ Important:</strong> This invitation will expire on <strong>{expiryDate:MMMM dd, yyyy}</strong> at <strong>{expiryDate:HH:mm}</strong> UTC.</p>
+                    <p style='margin: 0; color: #92400e;'><strong>â° Important:</strong> This invitation will expire on <strong>{expiryDate:MMMM dd, yyyy}</strong> at <strong>{expiryDate:HH:mm}</strong> UTC.</p>
                 </div>
                 <p style='color: #6b7280; font-size: 14px;'>If you didn't expect this invitation, you can safely ignore this email.</p>
             </div>
             <div style='text-align: center; padding: 20px; color: #6b7280; font-size: 12px;'>
-                <p>© 2025 ClinicFlow. All rights reserved.</p>
+                <p>Â© 2025 ClinicFlow. All rights reserved.</p>
             </div>
         </body>
         </html>";

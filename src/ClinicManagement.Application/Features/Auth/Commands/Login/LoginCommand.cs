@@ -1,14 +1,10 @@
-using ClinicManagement.Application.Common.Constants;
+﻿using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Login;
 
-/// <summary>
-/// Command to authenticate a user.
-/// Tokens are set as httpOnly cookies - never returned in response body.
-/// </summary>
 public record LoginCommand : IRequest<Result>
 {
     public string Email { get; set; } = string.Empty;

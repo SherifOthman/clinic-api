@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,26 +8,42 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)
     {
-        builder.HasKey(rt => rt.Id);
+        builder.ToTable("RefreshTokens");
 
-        builder.Property(rt => rt.Token)
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Token)
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.Property(rt => rt.ExpiresAt)
+        builder.Property(x => x.UserId)
             .IsRequired();
 
-        builder.Property(rt => rt.CreatedAt)
+        builder.Property(x => x.ExpiryTime)
             .IsRequired();
 
-        builder.HasOne(rt => rt.User)
-            .WithMany()
-            .HasForeignKey(rt => rt.UserId)
-            .OnDelete(DeleteBehavior.NoAction);
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
 
-        builder.HasIndex(rt => rt.Token)
-            .IsUnique();
+        builder.Property(x => x.CreatedByIp)
+            .HasMaxLength(45);
 
-        builder.HasIndex(rt => rt.UserId);
+        builder.Property(x => x.RevokedByIp)
+            .HasMaxLength(45);
+
+        builder.Property(x => x.ReplacedByToken)
+            .HasMaxLength(500);
+
+        // Foreign key relationship with User
+        builder.HasOne(x => x.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Indexes for performance
+        builder.HasIndex(x => x.Token).IsUnique();
+        builder.HasIndex(x => x.UserId);
+        builder.HasIndex(x => x.ExpiryTime);
+        builder.HasIndex(x => new { x.UserId, x.IsRevoked });
     }
 }

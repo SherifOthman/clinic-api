@@ -1,34 +1,25 @@
+﻿using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.Common.Constants;
-
-using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 
 public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, Result>
 {
-    private readonly IIdentityService _identityService;
+    private readonly IUserManagementService _userManagementService;
 
-    public ResetPasswordCommandHandler(
-        IIdentityService identityService)
+    public ResetPasswordCommandHandler(IUserManagementService userManagementService)
     {
-        _identityService = identityService;
+        _userManagementService = userManagementService;
     }
 
     public async Task<Result> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _identityService.GetUserByEmailAsync(request.Email, cancellationToken);
-        
+        var user = await _userManagementService.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
-        {
-            return Result.FailField("token", "Invalid or expired reset token");
-        }
+            return Result.Fail(ApplicationErrors.Authentication.INVALID_RESET_TOKEN);
 
-        var result = await _identityService.ResetPasswordAsync(user, request.Token, request.NewPassword, cancellationToken);
-
-   
-        return result;
+        return Result.Ok();
     }
 }

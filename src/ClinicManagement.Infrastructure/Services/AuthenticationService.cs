@@ -1,32 +1,31 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Utils;
-using ClinicManagement.Domain.Common.Enums;
-using ClinicManagement.Domain.Common.Interfaces;
-using Mapster;
+using ClinicManagement.Application.Common.Services;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Authentication service that encapsulates all authentication business logic.
-/// Implements complete authentication flows following Clean Architecture principles.
-/// </summary>
 public class AuthenticationService : IAuthenticationService
 {
     private readonly ITokenService _tokenService;
-    private readonly IIdentityService _identityService;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserManagementService _userManagementService;
+    private readonly IEmailConfirmationService _emailConfirmationService;
+    private readonly IRefreshTokenService _refreshTokenService;
+    private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         ITokenService tokenService,
-        IIdentityService identityService,
-        IUnitOfWork unitOfWork)
+        IUserManagementService userManagementService,
+        IEmailConfirmationService emailConfirmationService,
+        IRefreshTokenService refreshTokenService,
+        ILogger<AuthenticationService> logger)
     {
         _tokenService = tokenService;
-        _identityService = identityService;
-        _unitOfWork = unitOfWork;
+        _userManagementService = userManagementService;
+        _emailConfirmationService = emailConfirmationService;
+        _refreshTokenService = refreshTokenService;
+        _logger = logger;
     }
 
     public ClaimsPrincipal? ValidateAccessToken(string? accessToken)
@@ -38,87 +37,63 @@ public class AuthenticationService : IAuthenticationService
     {
         if (string.IsNullOrEmpty(refreshToken))
         {
-            return Result<TokenRefreshResult>.Fail("No refresh token provided");
+            _logger.LogWarning("Refresh token attempt with empty token");
+            return Result<TokenRefreshResult>.Fail("Invalid refresh token");
         }
 
-        // Validate refresh token
-        var refreshTokenEntity = await _tokenService.ValidateRefreshTokenAsync(refreshToken, cancellationToken);
-        if (refreshTokenEntity == null)
+        var tokenEntity = await _refreshTokenService.GetActiveRefreshTokenAsync(refreshToken, cancellationToken);
+        if (tokenEntity == null)
         {
-            return Result<TokenRefreshResult>.Fail("Invalid or expired refresh token");
+            _logger.LogWarning("Invalid refresh token used");
+            return Result<TokenRefreshResult>.Fail("Invalid refresh token");
         }
-
-        // Get user
-        var user = await _unitOfWork.Users.GetByIdAsync(refreshTokenEntity.UserId, cancellationToken);
-        if (user == null)
-        {
-            await _tokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
-            return Result<TokenRefreshResult>.Fail("User not found");
-        }
-
-        // Get user roles and clinic ID
-        var userRoles = await _identityService.GetUserRolesAsync(user, cancellationToken);
-        var clinicId = await GetUserClinicIdAsync(user.Id, userRoles, cancellationToken);
 
         // Generate new tokens
-        var newAccessToken = _tokenService.GenerateAccessToken(user, userRoles, clinicId);
-        var newRefreshToken = await _tokenService.GenerateRefreshTokenAsync(user, cancellationToken);
+        var userRoles = await _userManagementService.GetUserRolesAsync(tokenEntity.User, cancellationToken);
+        var newAccessToken = _tokenService.GenerateAccessToken(tokenEntity.User, userRoles, tokenEntity.User.ClinicId);
+        var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(tokenEntity.UserId, null, cancellationToken);
 
-        // Revoke old refresh token (security best practice)
-        await _tokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
+        // Revoke old refresh token
+        await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, null, newRefreshToken.Token, cancellationToken);
 
-        // Create user principal for the new access token
-        var userPrincipal = _tokenService.ValidateAccessToken(newAccessToken);
-        if (userPrincipal == null)
-        {
-            return Result<TokenRefreshResult>.Fail("Failed to create user principal");
-        }
+        _logger.LogInformation("Tokens refreshed for user {UserId}", tokenEntity.UserId);
 
         return Result<TokenRefreshResult>.Ok(new TokenRefreshResult
         {
             AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken,
-            UserPrincipal = userPrincipal
+            RefreshToken = newRefreshToken.Token
         });
     }
 
     public async Task<Result<LoginResult>> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
-        // Validate credentials
-        bool isEmail = StringUtils.IsEmail(email);
+        bool isEmail = email.Contains('@');
         var user = isEmail
-            ? await _identityService.GetUserByEmailAsync(email, cancellationToken)
-            : await _identityService.GetByUsernameAsync(email, cancellationToken);
+            ? await _userManagementService.GetUserByEmailAsync(email, cancellationToken)
+            : await _userManagementService.GetByUsernameAsync(email, cancellationToken);
 
-        if (user == null || !await _identityService.CheckPasswordAsync(user, password, cancellationToken))
+        if (user == null || !await _userManagementService.CheckPasswordAsync(user, password, cancellationToken))
         {
+            _logger.LogWarning("Failed login attempt for: {Email}", email);
             return Result<LoginResult>.Fail("Invalid username or password");
         }
 
-        // Enforce email verification
-        if (!await _identityService.IsEmailConfirmedAsync(user, cancellationToken))
+        if (!await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
         {
-            return Result<LoginResult>.FailField("email", "Please verify your email address before signing in. Check your inbox for the verification link.");
+            _logger.LogWarning("Login attempt with unconfirmed email: {Email}", email);
+            return Result<LoginResult>.Fail("Please verify your email address before signing in. Check your inbox for the verification link.");
         }
 
-        // Get user roles and clinic ID
-        var userRoles = await _identityService.GetUserRolesAsync(user, cancellationToken);
-        var clinicId = await GetUserClinicIdAsync(user.Id, userRoles, cancellationToken);
+        var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
+        var accessToken = _tokenService.GenerateAccessToken(user, userRoles, user.ClinicId);
+        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
-        // Generate tokens
-        var accessToken = _tokenService.GenerateAccessToken(user, userRoles, clinicId);
-        var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, cancellationToken);
-
-        // Build user DTO
-        var userDto = user.Adapt<UserDto>();
-        userDto.Roles = userRoles.ToList();
-        userDto.ClinicId = clinicId;
+        _logger.LogInformation("User {UserId} logged in successfully", user.Id);
 
         return Result<LoginResult>.Ok(new LoginResult
         {
             AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            User = userDto
+            RefreshToken = refreshToken.Token
         });
     }
 
@@ -126,31 +101,10 @@ public class AuthenticationService : IAuthenticationService
     {
         if (!string.IsNullOrEmpty(refreshToken))
         {
-            await _tokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
+            await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, null, null, cancellationToken);
+            _logger.LogInformation("User logged out and refresh token revoked");
         }
+        
         return Result<bool>.Ok(true);
-    }
-
-    private async Task<int?> GetUserClinicIdAsync(int userId, IEnumerable<string> roles, CancellationToken cancellationToken)
-    {
-        if (roles.Contains(UserRole.ClinicOwner.ToString()))
-        {
-            var clinic = await _unitOfWork.Clinics.GetByOwnerIdAsync(userId, cancellationToken);
-            return clinic?.Id;
-        }
-
-        if (roles.Contains(UserRole.Doctor.ToString()))
-        {
-            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(userId, cancellationToken);
-            return doctor?.ClinicId;
-        }
-
-        if (roles.Contains(UserRole.Receptionist.ToString()))
-        {
-            var receptionist = await _unitOfWork.Receptionists.GetByUserIdAsync(userId, cancellationToken);
-            return receptionist?.ClinicId;
-        }
-
-        return null;
     }
 }

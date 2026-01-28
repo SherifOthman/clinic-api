@@ -1,11 +1,15 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Options; // Use Application layer options
+using ClinicManagement.Application.Common.Services;
+using ClinicManagement.Application.Options;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Infrastructure.Common.Interfaces;
 using ClinicManagement.Infrastructure.Data;
+using ClinicManagement.Infrastructure.Data.Repositories;
 using ClinicManagement.Infrastructure.Options;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,19 +24,21 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Memory Cache (required for caching service and rate limiting)
         services.AddMemoryCache();
 
-        // Database
         services.AddDbContext<ApplicationDbContext>(options =>
+        {
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
+            
+            // Suppress the pending model changes warning for EF Core 10 Named Query Filters
+            options.ConfigureWarnings(warnings => 
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
         
-        // Register IApplicationDbContext
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
-        // Identity
         services.AddIdentity<User, IdentityRole<int>>(options =>
         {
             options.Password.RequireDigit = true;
@@ -46,7 +52,6 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        // JWT Authentication
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() 
             ?? throw new InvalidOperationException("JWT configuration is missing");
 
@@ -72,39 +77,53 @@ public static class DependencyInjection
                 ClockSkew = TimeSpan.Zero
             };
             
-            // Configure to read JWT from cookies AND Authorization header
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
                 {
-                    // Try to get token from cookie first
                     var token = context.Request.Cookies["accessToken"];
                     if (!string.IsNullOrEmpty(token))
                     {
                         context.Token = token;
                     }
-                    // If no cookie token, JwtBearer will try Authorization header automatically
                     return Task.CompletedTask;
                 }
             };
         });
 
-        // Basic Authorization - Role-based only
         services.AddAuthorization();
 
-        // Core Services - Essential for Auth and Staff Inviting only
         services.AddHttpContextAccessor();
-        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<IFileSystem, FileSystemService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();
+        services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
 
-        // Options - Simple binding without validation
+        services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
+        services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
+
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
         services.Configure<CookieSettings>(configuration.GetSection("Cookie"));
+        services.Configure<GeoNamesOptions>(configuration.GetSection("GeoNames"));
+        services.Configure<LocationCacheOptions>(configuration.GetSection(LocationCacheOptions.SectionName));
+
+        services.AddHttpClient<IGeoNamesClient, GeoNamesApiClient>();
+        services.AddScoped<ILocationsService, GeoNamesLocationService>();
+
+        services.AddScoped<IRateLimitService, RateLimitService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+        services.AddHostedService<CleanupBackgroundService>();
+        services.AddHostedService<RefreshTokenCleanupService>();
 
         return services;
     }

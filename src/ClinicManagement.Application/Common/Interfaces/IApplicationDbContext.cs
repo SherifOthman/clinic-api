@@ -1,19 +1,25 @@
-using ClinicManagement.Domain.Entities;
+﻿using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
-    // Core DbSets
     DbSet<User> Users { get; }
+    DbSet<Patient> Patients { get; }
+    DbSet<PatientPhoneNumber> PatientPhoneNumbers { get; }
     DbSet<Clinic> Clinics { get; }
     DbSet<ClinicBranch> ClinicBranches { get; }
+    DbSet<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers { get; }
+    DbSet<Specialization> Specializations { get; }
+    DbSet<SubscriptionPlan> SubscriptionPlans { get; }
+    DbSet<ChronicDisease> ChronicDiseases { get; }
+    DbSet<PatientChronicDisease> PatientChronicDiseases { get; }
+    DbSet<RateLimitEntry> RateLimitEntries { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
-    DbSet<Doctor> Doctors { get; }
-    DbSet<Receptionist> Receptionists { get; }
-    DbSet<Patient> Patients { get; }
-    DbSet<Appointment> Appointments { get; }
+    
+    DatabaseFacade Database { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

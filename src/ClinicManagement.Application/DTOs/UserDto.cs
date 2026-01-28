@@ -1,7 +1,8 @@
-namespace ClinicManagement.Application.DTOs;
+﻿namespace ClinicManagement.Application.DTOs;
 
 public class UserDto
 {
+    public int Id { get; set; }
     public string Username { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
@@ -9,10 +10,25 @@ public class UserDto
     public string? Avatar { get; set; }
     public string? PhoneNumber { get; set; }
     public List<string> Roles { get; set; } = new();
-    public int? ClinicId { get; set; }
     public bool EmailConfirmed { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    
+    // Profile image information
+    public string? ProfileImageUrl { get; set; }
+    public string? ProfileImageFileName { get; set; }
+    public DateTime? ProfileImageUpdatedAt { get; set; }
+    
+    // Onboarding and clinic information
+    public int? ClinicId { get; set; }
+    public string? ClinicName { get; set; }
+    public bool OnboardingCompleted { get; set; }
+    
+    // User location from onboarding
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     
     // Computed property for full name
     public string FullName => $"{FirstName} {LastName}".Trim();

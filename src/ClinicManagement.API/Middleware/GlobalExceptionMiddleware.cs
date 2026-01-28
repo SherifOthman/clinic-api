@@ -1,6 +1,5 @@
 using ClinicManagement.API.Models;
 using FluentValidation;
-using System.Net;
 using System.Text.Json;
 
 namespace ClinicManagement.API.Middleware;

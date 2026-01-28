@@ -1,22 +1,27 @@
+﻿using ClinicManagement.Application.Common.Services;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
 public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
-    public RegisterCommandValidator()
+    private readonly IPhoneNumberValidationService _phoneNumberValidationService;
+
+    public RegisterCommandValidator(IPhoneNumberValidationService phoneNumberValidationService)
     {
+        _phoneNumberValidationService = phoneNumberValidationService;
+
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("First name is required")
             .MinimumLength(2).WithMessage("First name must be at least 2 characters")
             .MaximumLength(50).WithMessage("First name must be less than 50 characters")
-            .Matches(@"^[a-zA-Z\s'-]+$").WithMessage("First name can only contain letters, spaces, hyphens, and apostrophes");
+            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'-]+$").WithMessage("First name can only contain letters, spaces, hyphens, and apostrophes");
 
         RuleFor(x => x.LastName)
             .NotEmpty().WithMessage("Last name is required")
             .MinimumLength(2).WithMessage("Last name must be at least 2 characters")
             .MaximumLength(50).WithMessage("Last name must be less than 50 characters")
-            .Matches(@"^[a-zA-Z\s'-]+$").WithMessage("Last name can only contain letters, spaces, hyphens, and apostrophes");
+            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'-]+$").WithMessage("Last name can only contain letters, spaces, hyphens, and apostrophes");
 
         RuleFor(x => x.Username)
             .NotEmpty().WithMessage("Username is required")
@@ -40,12 +45,14 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 
         RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage("Phone number is required")
-            .Matches(@"^\+?[\d\s\-\(\)]+$").WithMessage("Please enter a valid phone number")
-            .Must(phone => 
-            {
-                if (string.IsNullOrEmpty(phone)) return false;
-                var digitsOnly = System.Text.RegularExpressions.Regex.Replace(phone, @"\D", "");
-                return digitsOnly.Length >= 10 && digitsOnly.Length <= 15;
-            }).WithMessage("Phone number must contain 10-15 digits");
+            .Must(BeValidPhoneNumber).WithMessage("Please enter a valid phone number");
+    }
+
+    private bool BeValidPhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrEmpty(phoneNumber))
+            return false;
+
+        return _phoneNumberValidationService.IsValidPhoneNumber(phoneNumber);
     }
 }

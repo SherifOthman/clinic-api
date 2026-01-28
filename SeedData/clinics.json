@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1,
+    "name": "City Medical Center",
+    "subscriptionPlanId": 2,
+    "isActive": true,
+    "createdAt": "2024-01-02T00:00:00Z",
+    "branches": [
+      {
+        "id": 1,
+        "name": "Main Branch",
+        "address": "123 Main Street, Downtown",
+        "geoNameId": 360630,
+        "phoneNumbers": [
+          {
+            "phoneNumber": "+1234567800",
+            "label": "Reception"
+          },
+          {
+            "phoneNumber": "+1234567801",
+            "label": "Emergency"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "North Branch",
+        "address": "456 North Avenue, Uptown",
+        "geoNameId": 360630,
+        "phoneNumbers": [
+          {
+            "phoneNumber": "+1234567802",
+            "label": "Reception"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Family Health Clinic",
+    "subscriptionPlanId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-06T00:00:00Z",
+    "branches": [
+      {
+        "id": 3,
+        "name": "Main Office",
+        "address": "789 Family Street, Suburbs",
+        "geoNameId": 361058,
+        "phoneNumbers": [
+          {
+            "phoneNumber": "+1234567803",
+            "label": "Reception"
+          }
+        ]
+      }
+    ]
+  }
+]

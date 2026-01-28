@@ -1,85 +1,57 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace ClinicManagement.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>, IApplicationDbContext
 {
-    private readonly IHttpContextAccessor? _httpContextAccessor;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    // Core entities
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<PatientPhoneNumber> PatientPhoneNumbers => Set<PatientPhoneNumber>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<ClinicBranch> ClinicBranches => Set<ClinicBranch>();
-    public DbSet<Doctor> Doctors => Set<Doctor>();
-    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
-    public DbSet<Patient> Patients => Set<Patient>();
-    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers => Set<ClinicBranchPhoneNumber>();
+    public DbSet<Specialization> Specializations => Set<Specialization>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
+    public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
+    public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider) : base(options)
     {
-    }
-
-    public ApplicationDbContext(
-        DbContextOptions<ApplicationDbContext> options, 
-        IHttpContextAccessor httpContextAccessor) : base(options)
-    {
-        _httpContextAccessor = httpContextAccessor;
+        _currentUserService = currentUserService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        try
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
-            // Set audit fields
-            var entries = ChangeTracker.Entries<AuditableEntity>();
-            
-            // Get current user ID from HTTP context
-            int? currentUserId = null;
-            var userIdClaim = _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            if (entry.State == EntityState.Added)
             {
-                currentUserId = userId;
+                entry.Entity.CreatedAt = _dateTimeProvider.UtcNow;
             }
-            
-            foreach (var entry in entries)
+            else if (entry.State == EntityState.Modified)
             {
-                if (entry.State == EntityState.Added)
-                {
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = currentUserId;
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = currentUserId;
-                }
+                entry.Entity.UpdatedAt = _dateTimeProvider.UtcNow;
             }
+        }
 
-            return await base.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            // Log the concurrency exception for debugging
-            // In a real application, you'd use proper logging here
-            System.Diagnostics.Debug.WriteLine($"Concurrency exception in SaveChangesAsync: {ex.Message}");
-            
-            // Re-throw the exception to let the caller handle it
-            throw;
-        }
+        return await base.SaveChangesAsync(cancellationToken);   
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        // Rename Identity tables
         builder.Entity<User>().ToTable("Users");
         builder.Entity<IdentityRole<int>>().ToTable("Roles");
         builder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
@@ -88,54 +60,34 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
         builder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
         builder.Entity<IdentityUserToken<int>>().ToTable("UserTokens");
 
-        builder.Entity<IdentityRole<int>>().HasData(GetRolesSeed());
-
-        // Apply all configurations
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // Global query filters for soft deletes
-        foreach (var entityType in builder.Model.GetEntityTypes())
-        {
-            var parameter = Expression.Parameter(entityType.ClrType, "e");
-            Expression? filter = null;
-
-            // Soft delete filter
-            if (typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType))
-            {
-                var isDeletedProperty = Expression.Property(parameter, nameof(AuditableEntity.IsDeleted));
-                filter = Expression.Equal(isDeletedProperty, Expression.Constant(false));
-            }
-
-            if (filter != null)
-            {
-                var lambda = Expression.Lambda(filter, parameter);
-                entityType.SetQueryFilter(lambda);
-            }
-        }
+        // Configure EF Core 10 Named Query Filters for Multi-Tenancy
+        // Named filters allow selective disabling of specific filters while keeping others active
+        ConfigureQueryFilters(builder);
     }
 
-    private List<IdentityRole<int>> GetRolesSeed()
+    private void ConfigureQueryFilters(ModelBuilder builder)
     {
-        return new List<IdentityRole<int>>()
-        {
-            new IdentityRole<int>("ClinicOwner") 
-            { 
-                Id = 1, 
-                NormalizedName = "CLINICOWNER",
-                ConcurrencyStamp = "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
-            },
-            new IdentityRole<int>("Doctor") 
-            { 
-                Id = 2, 
-                NormalizedName = "DOCTOR",
-                ConcurrencyStamp = "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"
-            },
-            new IdentityRole<int>("Receptionist") 
-            { 
-                Id = 3, 
-                NormalizedName = "RECEPTIONIST",
-                ConcurrencyStamp = "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
-            }
-        };
+        // Patient entity - both soft delete and tenant filtering
+        builder.Entity<Patient>()
+            .HasQueryFilter("SoftDeleteFilter", p => !p.IsDeleted)
+            .HasQueryFilter("TenantFilter", p => p.ClinicId == _currentUserService.ClinicId);
+
+        // ClinicBranch entity - tenant filtering
+        builder.Entity<ClinicBranch>()
+            .HasQueryFilter("TenantFilter", cb => cb.ClinicId == _currentUserService.ClinicId);
+
+        // ClinicBranchPhoneNumber entity - tenant filtering through ClinicBranch
+        builder.Entity<ClinicBranchPhoneNumber>()
+            .HasQueryFilter("TenantFilter", cbp => cbp.ClinicBranch.ClinicId == _currentUserService.ClinicId);
+
+        // PatientPhoneNumber entity - tenant filtering through Patient
+        builder.Entity<PatientPhoneNumber>()
+            .HasQueryFilter("TenantFilter", pp => pp.Patient.ClinicId == _currentUserService.ClinicId);
+
+        // PatientChronicDisease entity - tenant filtering through Patient
+        builder.Entity<PatientChronicDisease>()
+            .HasQueryFilter("TenantFilter", pcd => pcd.Patient.ClinicId == _currentUserService.ClinicId);
     }
 }

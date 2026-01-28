@@ -10,22 +10,35 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
     {
         builder.ToTable("Patients");
         
-        builder.Property(e => e.Name).HasMaxLength(100).IsRequired();
-        builder.Property(e => e.PhoneNumber).HasMaxLength(20);
+        builder.Property(e => e.FullName)
+            .HasMaxLength(200)
+            .IsRequired();
         
-        builder.HasOne(d => d.Clinic)
-            .WithMany(p => p.Patients)
-            .HasForeignKey(d => d.ClinicId)
+        // Location fields
+        builder.Property(e => e.Address)
+            .HasMaxLength(500);
+        builder.Property(e => e.GeoNameId);
+
+        // Relationships
+        builder.HasOne(p => p.Clinic)
+            .WithMany(c => c.Patients)
+            .HasForeignKey(p => p.ClinicId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(p => p.Appointments)
-            .WithOne(a => a.Patient)
-            .HasForeignKey(a => a.PatientId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(p => p.PhoneNumbers)
+            .WithOne(pn => pn.Patient)
+            .HasForeignKey(pn => pn.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(p => p.ChronicDiseases)
+            .WithOne(pcd => pcd.Patient)
+            .HasForeignKey(pcd => pcd.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
+        builder.HasIndex(p => p.FullName);
         builder.HasIndex(p => p.ClinicId);
-        builder.HasIndex(p => p.Name);
+        builder.HasIndex(p => p.GeoNameId);
     }
 }
 

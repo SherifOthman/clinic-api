@@ -1,7 +1,5 @@
-using ClinicManagement.Application.DTOs;
+﻿using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
-using ClinicManagement.Application.Features.Onboarding.Commands.CompleteOnboarding;
-using ClinicManagement.Application.Features.Staff.Commands.InviteStaff;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 
@@ -11,40 +9,44 @@ public static class MappingConfig
 {
     public static void RegisterMappings()
     {
-        // Only configure mappings where property names differ or custom logic is needed
-        
-        // User → UserDto: UserName → Username (different property names)
+        // Mappings for properties with different names
         TypeAdapterConfig<User, UserDto>
             .NewConfig()
             .Map(dest => dest.Username, src => src.UserName);
         
-        // RegisterCommand → User: Username → UserName (different property names)
         TypeAdapterConfig<RegisterCommand, User>
             .NewConfig()
             .Map(dest => dest.UserName, src => src.Username);
 
-        // InviteStaffCommand → User: Custom logic for email and defaults
-        TypeAdapterConfig<InviteStaffCommand, User>
+        // Mappings that need custom logic
+        TypeAdapterConfig<Patient, PatientDto>
             .NewConfig()
-            .Map(dest => dest.UserName, src => src.Email)
-            .Map(dest => dest.EmailConfirmed, src => false)
-            .Map(dest => dest.CreatedAt, src => DateTime.UtcNow);
+            .Map(dest => dest.Age, src => src.GetAge());
 
-        // CompleteOnboardingCommand → Clinic: Property name differences and defaults
-        TypeAdapterConfig<CompleteOnboardingCommand, Clinic>
+        TypeAdapterConfig<Clinic, ClinicDto>
             .NewConfig()
-            .Map(dest => dest.Name, src => src.ClinicName)
-            .Map(dest => dest.PhoneNumber, src => src.ClinicPhone)
-            .Map(dest => dest.OnboardingCompleted, src => true)
-            .Map(dest => dest.OnboardingStep, src => "completed")
-            .Map(dest => dest.IsActive, src => true)
-            .Map(dest => dest.CreatedAt, src => DateTime.UtcNow);
+            .Map(dest => dest.SubscriptionPlanName, src => src.SubscriptionPlan.Name)
+            .Map(dest => dest.UserCount, src => src.Users.Count)
+            .Map(dest => dest.PatientCount, src => src.Patients.Count);
+
+        // GeoNames mappings - simplified without hardcoded phone codes
+        TypeAdapterConfig<GeoNamesLocationDto, CountryDto>
+            .NewConfig()
+            .Map(dest => dest.Id, src => src.GeoNameId)
+            .Map(dest => dest.Code, src => src.CountryCode)
+            .Map(dest => dest.PhoneCode, src => ""); // Will be populated from external API if needed
+
+        TypeAdapterConfig<GeoNamesLocationDto, StateDto>
+            .NewConfig()
+            .Map(dest => dest.Id, src => src.GeoNameId)
+            .Map(dest => dest.Name, src => src.AdminName1 ?? src.Name);
+
+        TypeAdapterConfig<GeoNamesLocationDto, CityDto>
+            .NewConfig()
+            .Map(dest => dest.Id, src => src.GeoNameId)
+            .Map(dest => dest.StateId, src => string.IsNullOrEmpty(src.AdminName1) ? (int?)null : src.AdminName1.GetHashCode());
         
-        // All other mappings use Mapster's convention-based mapping:
-        // - Clinic → ClinicDto (all properties match by name)
-        // - Patient → PatientDto (all properties match by name)  
-        // - Doctor → DoctorDto (all properties match by name)
-        // - Appointment → AppointmentDto (all properties match by name)
-        // No explicit configuration needed - Mapster handles these automatically!
+        // All other DTOs (ChronicDisease, SubscriptionPlan, etc.) 
+        // will be mapped automatically since properties have the same names
     }
 }

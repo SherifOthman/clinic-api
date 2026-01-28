@@ -4,15 +4,15 @@ namespace ClinicManagement.Domain.Common.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
-    // Core repositories
     IUserRepository Users { get; }
+    IPatientRepository Patients { get; }
+    IChronicDiseaseRepository ChronicDiseases { get; }
     IClinicRepository Clinics { get; }
     IRepository<ClinicBranch> ClinicBranches { get; }
-    IDoctorRepository Doctors { get; }
-    IReceptionistRepository Receptionists { get; }
+    IRepository<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers { get; }
+    ISubscriptionPlanRepository SubscriptionPlans { get; }
+    IRateLimitRepository RateLimitEntries { get; }
     IRefreshTokenRepository RefreshTokens { get; }
-    IPatientRepository Patients { get; }
-    IAppointmentRepository Appointments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

@@ -1,4 +1,4 @@
-namespace ClinicManagement.Application.Common.Models;
+﻿namespace ClinicManagement.Application.Common.Models;
 
 public class Result
 {
@@ -9,7 +9,9 @@ public class Result
     public string? Message { get; protected set; }
     public IEnumerable<ErrorItem>? Errors { get; protected set; }
 
-    public static Result Ok(string? message = null) => new() { Success = true,Message = message };
+    public bool IsFailure => !Success;
+
+    public static Result Ok() => new() { Success = true };
 
     public static Result Fail(string message) =>
         new() { Success = false, Message = message };
@@ -30,8 +32,8 @@ public class Result<T> : Result
 {
     public T? Value { get; private set; }
 
-    public static Result<T> Ok(T value, string? message = null) =>
-        new() { Success = true, Value = value, Message = message };
+    public static Result<T> Ok(T value) =>
+        new() { Success = true, Value = value };
 
     public new static Result<T> Fail(string message) =>
         new() { Success = false, Message = message };

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Common.Constants;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -26,12 +27,33 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("ClinicId")?.Value;
+            var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimConstants.ClinicId)?.Value;
             return int.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
         }
     }
 
     public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
+
+    public string IpAddress
+    {
+        get
+        {
+            var context = _httpContextAccessor.HttpContext;
+            if (context == null) return "unknown";
+
+            var xForwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(xForwardedFor))
+                return xForwardedFor.Split(',')[0].Trim();
+
+            var xRealIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(xRealIp))
+                return xRealIp;
+
+            return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+    }
+
+    public string? UserAgent => _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].FirstOrDefault();
 
     public IEnumerable<string> Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)?.Select(x => x.Value) ?? Enumerable.Empty<string>();
 
@@ -48,20 +70,35 @@ public class CurrentUserService : ICurrentUserService
     public int GetRequiredClinicId()
     {
         if (!ClinicId.HasValue)
-            throw new UnauthorizedAccessException("Clinic ID is required but not available. User may need to complete onboarding.");
+            throw new UnauthorizedAccessException("Clinic ID is required but not available. User may not be associated with a clinic.");
 
         return ClinicId.Value;
     }
 
-    public void EnsureAuthenticated()
+    public bool TryGetUserId(out int userId)
     {
-        if (!IsAuthenticated)
-            throw new UnauthorizedAccessException("User must be authenticated");
+        userId = 0;
+        if (UserId.HasValue)
+        {
+            userId = UserId.Value;
+            return true;
+        }
+        return false;
     }
 
-    public void EnsureClinicAccess()
+    public bool TryGetClinicId(out int clinicId)
     {
-        EnsureAuthenticated();
-        GetRequiredClinicId(); // This will throw if no clinic access
+        clinicId = 0;
+        if (ClinicId.HasValue)
+        {
+            clinicId = ClinicId.Value;
+            return true;
+        }
+        return false;
+    }
+
+    public bool HasClinicAccess()
+    {
+        return IsAuthenticated && ClinicId.HasValue;
     }
 }

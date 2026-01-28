@@ -1,0 +1,278 @@
+[
+  {
+    "id": 1,
+    "firstName": "Sarah",
+    "lastName": "Johnson",
+    "email": "sarah.johnson@email.com",
+    "dateOfBirth": "1985-03-15T00:00:00Z",
+    "gender": "Female",
+    "address": "123 Oak Street, Downtown",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-10T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0101",
+        "label": "Mobile"
+      },
+      {
+        "phoneNumber": "+1555-0102",
+        "label": "Work"
+      }
+    ],
+    "chronicDiseases": [1, 3]
+  },
+  {
+    "id": 2,
+    "firstName": "Michael",
+    "lastName": "Rodriguez",
+    "email": "michael.rodriguez@email.com",
+    "dateOfBirth": "1978-07-22T00:00:00Z",
+    "gender": "Male",
+    "address": "456 Pine Avenue, Midtown",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-11T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0201",
+        "label": "Mobile"
+      }
+    ],
+    "chronicDiseases": [2, 4]
+  },
+  {
+    "id": 3,
+    "firstName": "Emily",
+    "lastName": "Chen",
+    "email": "emily.chen@email.com",
+    "dateOfBirth": "1992-11-08T00:00:00Z",
+    "gender": "Female",
+    "address": "789 Maple Drive, Uptown",
+    "geoNameId": 361058,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-12T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0301",
+        "label": "Mobile"
+      },
+      {
+        "phoneNumber": "+1555-0302",
+        "label": "Home"
+      }
+    ],
+    "chronicDiseases": []
+  },
+  {
+    "id": 4,
+    "firstName": "James",
+    "lastName": "Thompson",
+    "email": "james.thompson@email.com",
+    "dateOfBirth": "1965-05-30T00:00:00Z",
+    "gender": "Male",
+    "address": "321 Elm Street, Westside",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-13T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0401",
+        "label": "Mobile"
+      },
+      {
+        "phoneNumber": "+1555-0402",
+        "label": "Work"
+      },
+      {
+        "phoneNumber": "+1555-0403",
+        "label": "Home"
+      }
+    ],
+    "chronicDiseases": [1, 2, 5]
+  },
+  {
+    "id": 5,
+    "firstName": "Maria",
+    "lastName": "Garcia",
+    "email": "maria.garcia@email.com",
+    "dateOfBirth": "1990-09-12T00:00:00Z",
+    "gender": "Female",
+    "address": "654 Cedar Lane, Eastside",
+    "geoNameId": 361058,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-14T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0501",
+        "label": "Mobile"
+      }
+    ],
+    "chronicDiseases": [3]
+  },
+  {
+    "id": 6,
+    "firstName": "Robert",
+    "lastName": "Anderson",
+    "email": "robert.anderson@email.com",
+    "dateOfBirth": "1955-12-03T00:00:00Z",
+    "gender": "Male",
+    "address": "987 Birch Road, Northside",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-15T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0601",
+        "label": "Home"
+      },
+      {
+        "phoneNumber": "+1555-0602",
+        "label": "Mobile"
+      }
+    ],
+    "chronicDiseases": [1, 4, 5]
+  },
+  {
+    "id": 7,
+    "firstName": "Jessica",
+    "lastName": "Williams",
+    "email": "jessica.williams@email.com",
+    "dateOfBirth": "1988-04-18T00:00:00Z",
+    "gender": "Female",
+    "address": "147 Willow Street, Central",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-16T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0701",
+        "label": "Mobile"
+      },
+      {
+        "phoneNumber": "+1555-0702",
+        "label": "Work"
+      }
+    ],
+    "chronicDiseases": [2]
+  },
+  {
+    "id": 8,
+    "firstName": "David",
+    "lastName": "Lee",
+    "email": "david.lee@email.com",
+    "dateOfBirth": "1972-08-25T00:00:00Z",
+    "gender": "Male",
+    "address": "258 Spruce Avenue, Southside",
+    "geoNameId": 361058,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-17T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0801",
+        "label": "Mobile"
+      }
+    ],
+    "chronicDiseases": [1, 3, 4]
+  },
+  {
+    "id": 9,
+    "firstName": "Amanda",
+    "lastName": "Martinez",
+    "email": "amanda.martinez@email.com",
+    "dateOfBirth": "1995-01-07T00:00:00Z",
+    "gender": "Female",
+    "address": "369 Poplar Drive, Riverside",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-18T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-0901",
+        "label": "Mobile"
+      },
+      {
+        "phoneNumber": "+1555-0902",
+        "label": "Emergency"
+      }
+    ],
+    "chronicDiseases": []
+  },
+  {
+    "id": 10,
+    "firstName": "Christopher",
+    "lastName": "Brown",
+    "email": "christopher.brown@email.com",
+    "dateOfBirth": "1980-10-14T00:00:00Z",
+    "gender": "Male",
+    "address": "741 Hickory Lane, Hillside",
+    "geoNameId": 361058,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-19T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-1001",
+        "label": "Mobile"
+      },
+      {
+        "phoneNumber": "+1555-1002",
+        "label": "Work"
+      }
+    ],
+    "chronicDiseases": [2, 5]
+  },
+  {
+    "id": 11,
+    "firstName": "Lisa",
+    "lastName": "Davis",
+    "email": "lisa.davis@email.com",
+    "dateOfBirth": "1963-06-29T00:00:00Z",
+    "gender": "Female",
+    "address": "852 Ash Street, Lakeside",
+    "geoNameId": 360630,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-20T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-1101",
+        "label": "Home"
+      },
+      {
+        "phoneNumber": "+1555-1102",
+        "label": "Mobile"
+      }
+    ],
+    "chronicDiseases": [1, 4]
+  },
+  {
+    "id": 12,
+    "firstName": "Kevin",
+    "lastName": "Wilson",
+    "email": "kevin.wilson@email.com",
+    "dateOfBirth": "1987-02-11T00:00:00Z",
+    "gender": "Male",
+    "address": "963 Chestnut Road, Parkside",
+    "geoNameId": 361058,
+    "clinicId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-21T00:00:00Z",
+    "phoneNumbers": [
+      {
+        "phoneNumber": "+1555-1201",
+        "label": "Mobile"
+      }
+    ],
+    "chronicDiseases": [3, 5]
+  }
+]

@@ -1,39 +1,70 @@
-using ClinicManagement.API.Extensions;
-using ClinicManagement.Application.Features.Onboarding.Commands.CompleteOnboarding;
+using ClinicManagement.Application.Features.Auth.Commands.CompleteOnboarding;
+using ClinicManagement.Application.Features.SubscriptionPlans.Queries.GetSubscriptionPlans;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Mapster;
 
 namespace ClinicManagement.API.Controllers;
 
-[ApiController]
-[Route("api/onboarding")]
+[Route("api/[controller]")]
 [Authorize]
-public class OnboardingController : ControllerBase
+public class OnboardingController : BaseApiController
 {
-    private readonly IMediator _mediator;
-
-    public OnboardingController(IMediator mediator)
+    public OnboardingController(IMediator mediator) : base(mediator)
     {
-        _mediator = mediator;
     }
 
-    /// <summary>
-    /// Complete onboarding by creating a clinic for the authenticated user
-    /// </summary>
-    [HttpPost("complete")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingCommand command, CancellationToken cancellationToken)
+    [HttpGet("subscription-plans")]
+    public async Task<IActionResult> GetSubscriptionPlans()
     {
-        var result = await _mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(new GetSubscriptionPlansQuery());
+        return Ok(result);
+    }
 
-        if (!result.Success)
+    [HttpPost("complete")]
+    public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingRequest request)
+    {
+        var command = new CompleteOnboardingCommand(
+            request.ClinicName, 
+            request.SubscriptionPlanId,
+            request.BranchName,
+            request.BranchAddress,
+            request.CountryId,
+            request.StateId,
+            request.CityId,
+            request.BranchPhoneNumbers.Adapt<List<BranchPhoneNumberDto>>()
+        );
+        var result = await Mediator.Send(command);
+        
+        if (result.Success)
+            return Ok(new { ClinicId = result.Value });
+        
+        // Return detailed validation errors for frontend mapping
+        if (result.Errors?.Any() == true)
         {
-            return BadRequest(result.ToApiError());
+            return BadRequest(new { 
+                message = result.Message,
+                errors = result.Errors.Select(e => new { field = e.Field, message = e.Message })
+            });
         }
-
-        return Ok(result.Value);
+        
+        return BadRequest(new { message = result.Message });
     }
 }
+
+public record CompleteOnboardingRequest(
+    string ClinicName, 
+    int SubscriptionPlanId,
+    string BranchName,
+    string BranchAddress,
+    int CountryId,
+    int? StateId,
+    int CityId,
+    List<BranchPhoneNumberRequest> BranchPhoneNumbers
+);
+
+public record BranchPhoneNumberRequest(
+    string PhoneNumber,
+    string? Label = null
+);

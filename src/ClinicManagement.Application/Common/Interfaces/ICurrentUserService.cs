@@ -1,16 +1,19 @@
-namespace ClinicManagement.Application.Common.Interfaces;
+﻿namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface ICurrentUserService
 {
     int? UserId { get; }
     int? ClinicId { get; }
     string? Email { get; }
-    IEnumerable< string> Roles { get; }
+    string IpAddress { get; }
+    string? UserAgent { get; }
+    IEnumerable<string> Roles { get; }
     bool IsAuthenticated { get; }
     
-    // Helper methods
+    // Helper methods that return results instead of throwing exceptions
     int GetRequiredUserId();
     int GetRequiredClinicId();
-    void EnsureAuthenticated();
-    void EnsureClinicAccess();
+    bool TryGetUserId(out int userId);
+    bool TryGetClinicId(out int clinicId);
+    bool HasClinicAccess();
 }

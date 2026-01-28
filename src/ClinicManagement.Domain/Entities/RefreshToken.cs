@@ -1,16 +1,21 @@
+using ClinicManagement.Domain.Common;
+
 namespace ClinicManagement.Domain.Entities;
 
-public class RefreshToken
+public class RefreshToken : BaseEntity
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
     public string Token { get; set; } = string.Empty;
-    public DateTime ExpiresAt { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public bool IsRevoked { get; set; }
-    public string? RevokedReason { get; set; }
-    
-    public bool IsActive => !IsRevoked && ExpiresAt > DateTime.UtcNow;
+    public int UserId { get; set; }
+    public DateTime ExpiryTime { get; set; }
+    public bool IsRevoked { get; set; } = false;
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedByIp { get; set; }
+    public DateTime? RevokedAt { get; set; }
+    public string? RevokedByIp { get; set; }
+    public string? ReplacedByToken { get; set; }
     
     public User User { get; set; } = null!;
+    
+    public bool IsExpired(DateTime currentTime) => currentTime >= ExpiryTime;
+    public bool IsActive(DateTime currentTime) => !IsRevoked && !IsExpired(currentTime);
 }

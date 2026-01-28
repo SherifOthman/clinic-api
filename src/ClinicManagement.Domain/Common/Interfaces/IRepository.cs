@@ -1,13 +1,15 @@
+using ClinicManagement.Domain.Common.Models;
+
 namespace ClinicManagement.Domain.Common.Interfaces;
 
 public interface IRepository<T> where T : class
 {
     Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default);
-    void Add(T entity);
-    void AddRange(IEnumerable<T> entities);
-    void Update(T entity);
-    void UpdateRange(IEnumerable<T> entities);
-    void Remove(T entity);
-    void RemoveRange(IEnumerable<T> entities);
+    Task<PagedResult<T>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default);
+    
+    Task AddAsync(T entity, CancellationToken cancellationToken = default);
+    Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
+    Task UpdateAsync(T entity, CancellationToken cancellationToken = default);
+    Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
 }

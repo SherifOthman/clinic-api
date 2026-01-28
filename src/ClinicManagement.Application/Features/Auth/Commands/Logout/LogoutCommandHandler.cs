@@ -1,13 +1,10 @@
+﻿using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Logout;
 
-/// <summary>
-/// Handler for LogoutCommand - SIMPLIFIED for Clean Architecture.
-/// Delegates logout logic to IAuthenticationService.
-/// </summary>
 public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 {
     private readonly IAuthenticationService _authenticationService;
@@ -30,6 +27,6 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
         // Clear authentication cookies
         _cookieService.ClearAuthCookies();
         
-        return Result.Ok("Logged out successfully");
+        return Result.Ok();
     }
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "firstName": "System",
+    "lastName": "Administrator",
+    "username": "admin",
+    "email": "admin@clinicmanagement.com",
+    "password": "Admin123!",
+    "phoneNumber": "+1234567890",
+    "emailConfirmed": true,
+    "roles": ["Admin"],
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "firstName": "Dr. John",
+    "lastName": "Smith",
+    "username": "drsmith",
+    "email": "john.smith@example.com",
+    "password": "Doctor123!",
+    "phoneNumber": "+1234567891",
+    "emailConfirmed": true,
+    "roles": ["ClinicOwner"],
+    "createdAt": "2024-01-02T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "firstName": "Dr. Sarah",
+    "lastName": "Johnson",
+    "username": "drsarah",
+    "email": "sarah.johnson@example.com",
+    "password": "Doctor123!",
+    "phoneNumber": "+1234567892",
+    "emailConfirmed": true,
+    "roles": ["Doctor"],
+    "createdAt": "2024-01-03T00:00:00Z"
+  },
+  {
+    "id": 4,
+    "firstName": "Mary",
+    "lastName": "Wilson",
+    "username": "maryw",
+    "email": "mary.wilson@example.com",
+    "password": "Staff123!",
+    "phoneNumber": "+1234567893",
+    "emailConfirmed": true,
+    "roles": ["Receptionist"],
+    "createdAt": "2024-01-04T00:00:00Z"
+  },
+  {
+    "id": 5,
+    "firstName": "Dr. Ahmed",
+    "lastName": "Hassan",
+    "username": "drahmed",
+    "email": "ahmed.hassan@example.com",
+    "password": "Doctor123!",
+    "phoneNumber": "+201234567894",
+    "emailConfirmed": true,
+    "roles": ["Doctor"],
+    "createdAt": "2024-01-05T00:00:00Z"
+  }
+]

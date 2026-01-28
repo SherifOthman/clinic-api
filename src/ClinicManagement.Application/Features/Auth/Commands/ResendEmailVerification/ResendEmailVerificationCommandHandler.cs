@@ -1,3 +1,4 @@
+﻿using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using MediatR;
@@ -6,32 +7,28 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerific
 
 public class ResendEmailVerificationCommandHandler : IRequestHandler<ResendEmailVerificationCommand, Result>
 {
-    private readonly IIdentityService _identityService;
+    private readonly IUserManagementService _userManagementService;
+    private readonly IEmailConfirmationService _emailConfirmationService;
 
-    public ResendEmailVerificationCommandHandler(IIdentityService identityService)
+    public ResendEmailVerificationCommandHandler(IUserManagementService userManagementService, IEmailConfirmationService emailConfirmationService)
     {
-        _identityService = identityService;
+        _userManagementService = userManagementService;
+        _emailConfirmationService = emailConfirmationService;
     }
 
     public async Task<Result> Handle(ResendEmailVerificationCommand request, CancellationToken cancellationToken)
     {
-        // Get user by email
-        var user = await _identityService.GetUserByEmailAsync(request.Email, cancellationToken);
+        var user = await _userManagementService.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
-        {
-            // Don't reveal if email exists or not for security
-            return Result.Ok("If the email exists in our system, a verification email has been sent.");
-        }
+            return Result.Fail(ApplicationErrors.Authentication.UserWithEmailNotFound(request.Email));
 
-        // Check if email is already confirmed
-        if (await _identityService.IsEmailConfirmedAsync(user, cancellationToken))
-        {
-            return Result.Ok("Email is already verified.");
-        }
+        if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
+            return Result.Fail(ApplicationErrors.Authentication.EMAIL_ALREADY_CONFIRMED);
 
-        // Use the centralized email confirmation method - let GlobalExceptionMiddleware handle failures
-        await _identityService.SendConfirmationEmailAsync(user, cancellationToken);
+        var result = await _emailConfirmationService.SendConfirmationEmailAsync(user, cancellationToken);
+        if (!result.Success)
+            return Result.Fail($"Failed to send confirmation email: {result.Message}");
 
-        return Result.Ok("Verification email has been sent. Please check your inbox.");
+        return Result.Ok();
     }
 }

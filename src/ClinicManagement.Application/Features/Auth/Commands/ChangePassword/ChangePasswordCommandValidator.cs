@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 

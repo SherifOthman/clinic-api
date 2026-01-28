@@ -1,22 +1,17 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Infrastructure.Common.Constants;
 using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Enterprise-grade cookie service with security hardening
-/// Handles all authentication cookie operations with proper security controls
-/// </summary>
 public class CookieService : ICookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CookieSettings _cookieSettings;
-
-    // Cookie names as constants for consistency
-    private const string AccessTokenCookieName = "accessToken";
-    private const string RefreshTokenCookieName = "refreshToken";
 
     public CookieService(IHttpContextAccessor httpContextAccessor, IOptions<CookieSettings> cookieSettings)
     {
@@ -33,7 +28,12 @@ public class CookieService : ICookieService
 
         var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromMinutes(_cookieSettings.ExpiryInMinutes));
         
-        _httpContextAccessor.HttpContext?.Response.Cookies.Append(AccessTokenCookieName, accessToken, cookieOptions);
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.AccessToken, accessToken, cookieOptions);
+        
+        // Log cookie setting for debugging
+        var context = _httpContextAccessor.HttpContext;
+        var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
+        logger?.LogDebug("Access token cookie set with expiry: {Expiry} minutes", _cookieSettings.ExpiryInMinutes);
     }
 
     public void SetRefreshTokenCookie(string refreshToken)
@@ -45,17 +45,17 @@ public class CookieService : ICookieService
 
         var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays));
         
-        _httpContextAccessor.HttpContext?.Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.RefreshToken, refreshToken, cookieOptions);
     }
 
     public string? GetAccessTokenFromCookie()
     {
-        return _httpContextAccessor.HttpContext?.Request.Cookies[AccessTokenCookieName];
+        return _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.AccessToken];
     }
 
     public string? GetRefreshTokenFromCookie()
     {
-        return _httpContextAccessor.HttpContext?.Request.Cookies[RefreshTokenCookieName];
+        return _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.RefreshToken];
     }
 
     public void ClearAuthCookies()
@@ -63,12 +63,14 @@ public class CookieService : ICookieService
         var context = _httpContextAccessor.HttpContext;
         if (context == null) return;
 
-        // Create expired cookie options to clear cookies
         var expiredOptions = CreateSecureCookieOptions(TimeSpan.FromDays(-1));
         
-        // Clear both cookies
-        context.Response.Cookies.Append(AccessTokenCookieName, "", expiredOptions);
-        context.Response.Cookies.Append(RefreshTokenCookieName, "", expiredOptions);
+        context.Response.Cookies.Append(CookieConstants.AccessToken, "", expiredOptions);
+        context.Response.Cookies.Append(CookieConstants.RefreshToken, "", expiredOptions);
+        
+        // Log cookie clearing for debugging
+        var logger = context.RequestServices.GetService<ILogger<CookieService>>();
+        logger?.LogInformation("Authentication cookies cleared");
     }
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
@@ -79,7 +81,7 @@ public class CookieService : ICookieService
         return new CookieOptions
         {
             HttpOnly = true,                    // Prevents XSS attacks
-            Secure = isHttps,                   // Use HTTPS detection instead of production flag
+            Secure = _cookieSettings.IsProduction && isHttps, // Only require HTTPS in production
             SameSite = _cookieSettings.IsProduction ? SameSiteMode.None : SameSiteMode.Lax, // Cross-origin support
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",                         // Available to entire application

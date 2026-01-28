@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "name": "Diabetes Type 2",
+    "description": "A chronic condition that affects the way the body processes blood sugar (glucose)",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Hypertension",
+    "description": "High blood pressure - a condition in which the force of the blood against the artery walls is too high",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Asthma",
+    "description": "A respiratory condition marked by attacks of spasm in the bronchi of the lungs",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 4,
+    "name": "Arthritis",
+    "description": "Inflammation of one or more joints, causing pain and stiffness",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 5,
+    "name": "Heart Disease",
+    "description": "A range of conditions that affect the heart",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 6,
+    "name": "Chronic Kidney Disease",
+    "description": "A condition characterized by a gradual loss of kidney function over time",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 7,
+    "name": "COPD",
+    "description": "Chronic Obstructive Pulmonary Disease - a group of lung diseases that block airflow",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 8,
+    "name": "Depression",
+    "description": "A mental health disorder characterized by persistently depressed mood",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+]

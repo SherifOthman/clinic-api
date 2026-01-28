@@ -6,12 +6,18 @@ public class User : IdentityUser<int>
 {
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
     public int? ClinicId { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int? SpecializationId { get; set; }
     
-    // Navigation properties
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    
+    public string? ProfileImageUrl { get; set; }
+    public string? ProfileImageFileName { get; set; }
+    public DateTime? ProfileImageUpdatedAt { get; set; }
+    
     public virtual Clinic? Clinic { get; set; }
-    public virtual Clinic? OwnedClinic { get; set; }
-    public virtual Doctor? Doctor { get; set; }
-    public virtual Receptionist? Receptionist { get; set; }
+    public virtual Specialization? Specialization { get; set; }
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

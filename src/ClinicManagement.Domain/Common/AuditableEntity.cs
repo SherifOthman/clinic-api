@@ -2,7 +2,7 @@
 
 public class AuditableEntity : BaseEntity
 {
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
     public int? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
@@ -10,10 +10,10 @@ public class AuditableEntity : BaseEntity
     public DateTime? DeletedAt { get; set; }
     public int? DeletedBy { get; set; }
     
-    public void SoftDelete(int? deletedBy = null)
+    public void SoftDelete(int? deletedBy = null, DateTime? deletedAt = null)
     {
         IsDeleted = true;
-        DeletedAt = DateTime.UtcNow;
+        DeletedAt = deletedAt;
         DeletedBy = deletedBy;
     }
     

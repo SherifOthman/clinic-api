@@ -1,4 +1,4 @@
-namespace ClinicManagement.Application.Common.Interfaces;
+﻿namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface ICookieService
 {

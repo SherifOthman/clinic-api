@@ -1,6 +1,5 @@
-using ClinicManagement.Application.Common.Models;
+﻿using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Extensions;
-using ClinicManagement.Application.Utils;
 using FluentValidation;
 using MediatR;
 
@@ -24,9 +23,11 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         }
 
         var context = new ValidationContext<TRequest>(request);
-        var failures =
-            _validators.Select(v => v.Validate(context))
-            .SelectMany(r => r.Errors)
+        var validationResults = await Task.WhenAll(
+            _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+        
+        var failures = validationResults
+            .SelectMany(r => r.Errors ?? Enumerable.Empty<FluentValidation.Results.ValidationFailure>())
             .ToList();
 
         if (!failures.Any())
@@ -36,25 +37,30 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
             return CreateFailureResult(failures);
 
         throw new ValidationException(failures);
-
     }
 
     private static bool IsResultType(Type type) =>
-     typeof(Result).IsAssignableFrom(type) ||
-     (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Result<>));
+        typeof(Result).IsAssignableFrom(type) ||
+        (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Result<>));
 
     private static TResponse CreateFailureResult(IEnumerable<FluentValidation.Results.ValidationFailure> failures)
     {
         var errorList = failures.ToErrorItemList();
 
-        if (typeof(TResponse).IsGenericType)
+        // Handle Result<T> types using reflection (appropriate for generic pipeline behavior)
+        if (typeof(TResponse).IsGenericType && typeof(TResponse).GetGenericTypeDefinition() == typeof(Result<>))
         {
-            var innerType = typeof(TResponse).GetGenericArguments()[0];
-            var genericResultType = typeof(Result<>).MakeGenericType(innerType);
-            var failureMethod = genericResultType.GetMethod("Fail", new[] { typeof(List<ErrorItem>) });
-            return (TResponse)failureMethod!.Invoke(null, new object[] { errorList })!;
+            // For Result<T>, we need to call Result<T>.Fail(errorList)
+            var resultType = typeof(TResponse);
+            var failMethod = resultType.GetMethod("Fail", new[] { typeof(IEnumerable<ErrorItem>) });
+            
+            if (failMethod != null)
+            {
+                return (TResponse)failMethod.Invoke(null, new object[] { errorList })!;
+            }
         }
 
+        // Handle non-generic Result type
         return (TResponse)(object)Result.Fail(errorList);
     }
 }
