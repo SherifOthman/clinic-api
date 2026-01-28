@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
 using FluentValidation;
@@ -13,31 +14,31 @@ public class UpdatePatientCommandValidator : AbstractValidator<UpdatePatientComm
         _phoneNumberValidationService = phoneNumberValidationService;
 
         RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("Patient ID must be a positive number");
+            .GreaterThan(0).WithMessage(MessageCodes.Validation.POSITIVE_NUMBER_REQUIRED);
 
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage("Full name is required")
-            .MinimumLength(2).WithMessage("Full name must be at least 2 characters")
-            .MaximumLength(200).WithMessage("Full name must be less than 200 characters")
-            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'-]+$").WithMessage("Full name can only contain letters, spaces, hyphens, and apostrophes");
+            .NotEmpty().WithMessage(MessageCodes.Fields.FULL_NAME_REQUIRED)
+            .MinimumLength(2).WithMessage(MessageCodes.Fields.FULL_NAME_MIN_LENGTH)
+            .MaximumLength(200).WithMessage(MessageCodes.Fields.FULL_NAME_MAX_LENGTH)
+            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'-]+$").WithMessage(MessageCodes.Fields.FULL_NAME_INVALID_CHARACTERS);
 
         RuleFor(x => x.DateOfBirth)
-            .LessThan(DateTime.Today).WithMessage("Date of birth must be in the past")
-            .GreaterThan(DateTime.Today.AddYears(-150)).WithMessage("Date of birth cannot be more than 150 years ago")
+            .LessThan(DateTime.Today).WithMessage(MessageCodes.Fields.DATE_OF_BIRTH_PAST)
+            .GreaterThan(DateTime.Today.AddYears(-150)).WithMessage(MessageCodes.Fields.DATE_OF_BIRTH_TOO_OLD)
             .When(x => x.DateOfBirth.HasValue);
 
         RuleFor(x => x.Gender)
-            .IsInEnum().WithMessage("Please select a valid gender")
+            .IsInEnum().WithMessage(MessageCodes.Fields.GENDER_INVALID)
             .When(x => x.Gender.HasValue);
 
         RuleFor(x => x.PhoneNumbers)
-            .NotEmpty().WithMessage("At least one phone number is required");
+            .NotEmpty().WithMessage(MessageCodes.Fields.PHONE_NUMBERS_REQUIRED);
 
         RuleForEach(x => x.PhoneNumbers)
             .SetValidator(new UpdatePatientPhoneNumberValidator(_phoneNumberValidationService));
 
         RuleFor(x => x.ChronicDiseaseIds)
-            .Must(ids => ids.All(id => id > 0)).WithMessage("All chronic disease IDs must be positive numbers")
+            .Must(ids => ids.All(id => id > 0)).WithMessage(MessageCodes.Fields.CHRONIC_DISEASE_IDS_POSITIVE)
             .When(x => x.ChronicDiseaseIds.Any());
     }
 }
@@ -51,12 +52,12 @@ public class UpdatePatientPhoneNumberValidator : AbstractValidator<UpdatePatient
         _phoneNumberValidationService = phoneNumberValidationService;
 
         RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("Phone number ID must be a positive number")
+            .GreaterThan(0).WithMessage(MessageCodes.Validation.POSITIVE_NUMBER_REQUIRED)
             .When(x => x.Id.HasValue);
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Phone number is required")
-            .Must(BeValidPhoneNumber).WithMessage("Please enter a valid phone number");
+            .NotEmpty().WithMessage(MessageCodes.Fields.PHONE_NUMBER_REQUIRED)
+            .Must(BeValidPhoneNumber).WithMessage(MessageCodes.Fields.PHONE_NUMBER_INVALID);
     }
 
     private bool BeValidPhoneNumber(string phoneNumber)

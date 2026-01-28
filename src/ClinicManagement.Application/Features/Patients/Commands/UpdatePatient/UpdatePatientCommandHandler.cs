@@ -38,26 +38,26 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthenticated user attempted to update patient {PatientId}", request.Id);
-            return Result<PatientDto>.Fail("User not authenticated");
+            return Result<PatientDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         if (!_currentUserService.HasClinicAccess())
         {
             _logger.LogWarning("User {UserId} without clinic access attempted to update patient {PatientId}", userId, request.Id);
-            return Result<PatientDto>.Fail("User must complete onboarding first");
+            return Result<PatientDto>.Fail(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
         }
 
         if (!_currentUserService.TryGetClinicId(out var clinicId))
         {
             _logger.LogWarning("User {UserId} without clinic ID attempted to update patient {PatientId}", userId, request.Id);
-            return Result<PatientDto>.Fail(ApplicationErrors.Authorization.USER_CLINIC_NOT_FOUND);
+            return Result<PatientDto>.Fail(MessageCodes.Authorization.USER_CLINIC_NOT_FOUND);
         }
 
         var patient = await _unitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
         if (patient == null || patient.ClinicId != clinicId)
         {
             _logger.LogWarning("Patient {PatientId} not found or access denied for user {UserId} clinic {ClinicId}", request.Id, userId, clinicId);
-            return Result<PatientDto>.Fail(ApplicationErrors.Business.PATIENT_NOT_FOUND);
+            return Result<PatientDto>.Fail(MessageCodes.Business.PATIENT_NOT_FOUND);
         }
 
         // Update basic patient information

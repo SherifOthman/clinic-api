@@ -1,4 +1,5 @@
 using ClinicManagement.API.Extensions;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Admin.Commands.DeleteUser;
 using ClinicManagement.Application.Features.Admin.Commands.ToggleUserStatus;
@@ -46,7 +47,7 @@ public class AdminController : BaseApiController
     public async Task<IActionResult> UpdateUser(int id, UpdateUserCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
-            return BadRequest("ID mismatch");
+            return BadRequest(MessageCodes.Controller.ID_MISMATCH);
 
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult(result);

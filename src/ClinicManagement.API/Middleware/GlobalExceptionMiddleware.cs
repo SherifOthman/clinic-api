@@ -1,4 +1,5 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Constants;
 using FluentValidation;
 using System.Text.Json;
 
@@ -31,12 +32,12 @@ public class GlobalExceptionMiddleware
 
         var (statusCode, message) = exception switch
         {
-            ValidationException => (400, "Please check your input and try again."),
-            UnauthorizedAccessException => (403, "You don't have permission to access this resource."),
-            KeyNotFoundException => (404, "The requested item was not found."),
-            InvalidOperationException => (400, "This operation is not allowed right now."),
-            ArgumentException => (400, "Invalid information provided."),
-            _ => (500, "Something went wrong. Please try again later.")
+            ValidationException => (400, MessageCodes.Exception.VALIDATION_ERROR),
+            UnauthorizedAccessException => (403, MessageCodes.Exception.UNAUTHORIZED_ACCESS),
+            KeyNotFoundException => (404, MessageCodes.Exception.NOT_FOUND),
+            InvalidOperationException => (400, MessageCodes.Exception.OPERATION_NOT_ALLOWED),
+            ArgumentException => (400, MessageCodes.Exception.INVALID_ARGUMENT),
+            _ => (500, MessageCodes.Exception.INTERNAL_ERROR)
         };
 
         context.Response.StatusCode = statusCode;

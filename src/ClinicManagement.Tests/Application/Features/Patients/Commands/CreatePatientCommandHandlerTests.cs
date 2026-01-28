@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
@@ -309,6 +310,6 @@ public class CreatePatientCommandHandlerTests
         result.Should().NotBeNull();
         result.Success.Should().BeFalse();
         result.Message.Should().NotBeNull();
-        result.Message.Should().Contain("User not authenticated");
+        result.Message.Should().Be(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
     }
 }

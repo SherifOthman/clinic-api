@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.SubscriptionPlans.Commands.CreateSubscriptionPlan;
 using ClinicManagement.Application.Features.SubscriptionPlans.Commands.DeleteSubscriptionPlan;
@@ -51,7 +52,7 @@ public class SubscriptionPlansController : BaseApiController
     public async Task<IActionResult> UpdateSubscriptionPlan(int id, UpdateSubscriptionPlanCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
-            return BadRequest("ID mismatch");
+            return BadRequest(MessageCodes.Controller.ID_MISMATCH);
 
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult(result);

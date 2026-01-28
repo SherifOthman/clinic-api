@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Features.SubscriptionPlans.Commands.UpdateSubscriptionPlan;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
@@ -78,6 +79,6 @@ public class UpdateSubscriptionPlanCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Subscription plan not found");
+        result.Message.Should().Be(MessageCodes.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
     }
 }

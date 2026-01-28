@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.ChronicDiseases.Commands.CreateChronicDisease;
 using ClinicManagement.Application.Features.ChronicDiseases.Commands.DeleteChronicDisease;
@@ -73,7 +74,7 @@ public class ChronicDiseasesController : BaseApiController
     public async Task<IActionResult> UpdateChronicDisease(int id, UpdateChronicDiseaseCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
-            return BadRequest("ID mismatch");
+            return BadRequest(MessageCodes.Controller.ID_MISMATCH);
 
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult(result);

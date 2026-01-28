@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -91,7 +92,7 @@ public class UpdateProfileCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("User not found");
+        result.Message.Should().Be(MessageCodes.Authentication.USER_NOT_FOUND);
     }
 
     [Fact]
@@ -108,6 +109,6 @@ public class UpdateProfileCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("User not authenticated");
+        result.Message.Should().Be(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
     }
 }

@@ -1,4 +1,5 @@
-﻿using ClinicManagement.Application.Common.Interfaces;
+﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
@@ -37,7 +38,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthenticated user attempted to create patient");
-            return Result<PatientDto>.Fail("User not authenticated");
+            return Result<PatientDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
@@ -45,7 +46,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         if (user?.ClinicId == null)
         {
             _logger.LogWarning("User {UserId} without clinic attempted to create patient", userId);
-            return Result<PatientDto>.Fail("User must complete onboarding first");
+            return Result<PatientDto>.Fail(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
         }
 
         var patient = request.Adapt<Patient>();

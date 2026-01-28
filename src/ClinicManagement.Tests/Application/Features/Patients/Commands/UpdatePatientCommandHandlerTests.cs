@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
@@ -111,7 +112,7 @@ public class UpdatePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Patient not found");
+        result.Message.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
     }
 
     [Fact]
@@ -129,7 +130,7 @@ public class UpdatePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("User must complete onboarding first");
+        result.Message.Should().Be(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
     }
 
     [Fact]
@@ -161,6 +162,6 @@ public class UpdatePatientCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Patient not found");
+        result.Message.Should().Be(MessageCodes.Business.PATIENT_NOT_FOUND);
     }
 }

@@ -1,4 +1,5 @@
-﻿using ClinicManagement.Application.Common.Services;
+﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Services;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.CompleteOnboarding;
@@ -13,41 +14,41 @@ public class CompleteOnboardingCommandValidator : AbstractValidator<CompleteOnbo
 
         RuleFor(x => x.ClinicName)
             .NotEmpty()
-            .WithMessage("Clinic name is required")
+            .WithMessage(MessageCodes.Fields.CLINIC_NAME_REQUIRED)
             .MaximumLength(100)
-            .WithMessage("Clinic name must not exceed 100 characters")
+            .WithMessage(MessageCodes.Fields.CLINIC_NAME_MAX_LENGTH)
             .Matches(@"^[\u0600-\u06FFa-zA-Z0-9\s'-]+$")
-            .WithMessage("Clinic name can only contain letters, numbers, spaces, hyphens, and apostrophes");
+            .WithMessage(MessageCodes.Fields.CLINIC_NAME_INVALID_CHARACTERS);
 
         RuleFor(x => x.SubscriptionPlanId)
             .GreaterThan(0)
-            .WithMessage("Please select a valid subscription plan");
+            .WithMessage(MessageCodes.Fields.SUBSCRIPTION_PLAN_REQUIRED);
 
         RuleFor(x => x.BranchName)
             .NotEmpty()
-            .WithMessage("Branch name is required")
+            .WithMessage(MessageCodes.Fields.BRANCH_NAME_REQUIRED)
             .MaximumLength(100)
-            .WithMessage("Branch name must not exceed 100 characters")
+            .WithMessage(MessageCodes.Fields.BRANCH_NAME_MAX_LENGTH)
             .Matches(@"^[\u0600-\u06FFa-zA-Z0-9\s'-]+$")
-            .WithMessage("Branch name can only contain letters, numbers, spaces, hyphens, and apostrophes");
+            .WithMessage(MessageCodes.Fields.BRANCH_NAME_INVALID_CHARACTERS);
 
         RuleFor(x => x.BranchAddress)
             .NotEmpty()
-            .WithMessage("Branch address is required")
+            .WithMessage(MessageCodes.Fields.BRANCH_ADDRESS_REQUIRED)
             .MaximumLength(200)
-            .WithMessage("Branch address must not exceed 200 characters");
+            .WithMessage(MessageCodes.Fields.BRANCH_ADDRESS_MAX_LENGTH);
 
         RuleFor(x => x.CountryId)
             .GreaterThan(0)
-            .WithMessage("Please select a valid country");
+            .WithMessage(MessageCodes.Fields.COUNTRY_REQUIRED);
 
         RuleFor(x => x.CityId)
             .GreaterThan(0)
-            .WithMessage("Please select a valid city");
+            .WithMessage(MessageCodes.Fields.CITY_REQUIRED);
 
         RuleFor(x => x.BranchPhoneNumbers)
             .NotEmpty()
-            .WithMessage("At least one phone number is required");
+            .WithMessage(MessageCodes.Fields.BRANCH_PHONE_NUMBERS_REQUIRED);
 
         RuleForEach(x => x.BranchPhoneNumbers)
             .SetValidator(new BranchPhoneNumberValidator(_phoneValidationService));

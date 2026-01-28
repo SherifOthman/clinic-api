@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Patients.Commands.CreatePatient;
@@ -49,7 +50,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.FullName)
-            .WithErrorMessage("Full name is required");
+            .WithErrorMessage(MessageCodes.Fields.FULL_NAME_REQUIRED);
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.FullName)
-            .WithErrorMessage("Full name must be at least 2 characters");
+            .WithErrorMessage(MessageCodes.Fields.FULL_NAME_MIN_LENGTH);
     }
 
     [Fact]
@@ -87,7 +88,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.FullName)
-            .WithErrorMessage("Full name must be less than 200 characters");
+            .WithErrorMessage(MessageCodes.Fields.FULL_NAME_MAX_LENGTH);
     }
 
     [Fact]
@@ -106,7 +107,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.FullName)
-            .WithErrorMessage("Full name can only contain letters, spaces, hyphens, and apostrophes");
+            .WithErrorMessage(MessageCodes.Fields.FULL_NAME_INVALID_CHARACTERS);
     }
 
     [Fact]
@@ -136,7 +137,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.DateOfBirth)
-            .WithErrorMessage("Date of birth must be in the past");
+            .WithErrorMessage(MessageCodes.Fields.DATE_OF_BIRTH_PAST);
     }
 
     [Fact]
@@ -148,7 +149,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.DateOfBirth)
-            .WithErrorMessage("Date of birth cannot be more than 150 years ago");
+            .WithErrorMessage(MessageCodes.Fields.DATE_OF_BIRTH_TOO_OLD);
     }
 
     [Fact]
@@ -160,7 +161,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.Gender)
-            .WithErrorMessage("Please select a valid gender");
+            .WithErrorMessage(MessageCodes.Fields.GENDER_INVALID);
     }
 
     [Fact]
@@ -172,7 +173,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.PhoneNumbers)
-            .WithErrorMessage("At least one phone number is required");
+            .WithErrorMessage(MessageCodes.Fields.PHONE_NUMBERS_REQUIRED);
     }
 
     [Fact]
@@ -194,7 +195,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor("PhoneNumbers[0].PhoneNumber")
-            .WithErrorMessage("Please enter a valid phone number");
+            .WithErrorMessage(MessageCodes.Fields.PHONE_NUMBER_INVALID);
     }
 
     [Fact]
@@ -252,7 +253,7 @@ public class CreatePatientCommandValidatorTests
         // Act & Assert
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.ChronicDiseaseIds)
-            .WithErrorMessage("All chronic disease IDs must be positive numbers");
+            .WithErrorMessage(MessageCodes.Fields.CHRONIC_DISEASE_IDS_POSITIVE);
     }
 
     [Fact]

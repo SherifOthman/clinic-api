@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using ClinicManagement.Application.Common.Constants;
+using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 
@@ -7,21 +8,21 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
     public ResetPasswordCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Please enter a valid email address");
+            .NotEmpty().WithMessage(MessageCodes.Fields.EMAIL_REQUIRED)
+            .EmailAddress().WithMessage(MessageCodes.Fields.EMAIL_INVALID_FORMAT);
 
         RuleFor(x => x.Token)
-            .NotEmpty().WithMessage("Reset token is required");
+            .NotEmpty().WithMessage(MessageCodes.Authentication.INVALID_RESET_TOKEN);
 
         RuleFor(x => x.NewPassword)
-            .NotEmpty().WithMessage("Password is required")
-            .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-            .MaximumLength(128).WithMessage("Password must be less than 128 characters")
-            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithMessage("Password must contain at least one uppercase letter, one lowercase letter, and one number")
-            .Must(password => !password.Contains(" ")).WithMessage("Password cannot contain spaces");
+            .NotEmpty().WithMessage(MessageCodes.Fields.PASSWORD_REQUIRED)
+            .MinimumLength(8).WithMessage(MessageCodes.Fields.PASSWORD_MIN_LENGTH)
+            .MaximumLength(128).WithMessage(MessageCodes.Fields.PASSWORD_MAX_LENGTH)
+            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithMessage(MessageCodes.Fields.PASSWORD_COMPLEXITY)
+            .Must(password => !password.Contains(" ")).WithMessage(MessageCodes.Fields.PASSWORD_NO_SPACES);
 
         RuleFor(x => x.ConfirmPassword)
-            .NotEmpty().WithMessage("Please confirm your password")
-            .Equal(x => x.NewPassword).WithMessage("Passwords do not match");
+            .NotEmpty().WithMessage(MessageCodes.Fields.CONFIRM_PASSWORD_REQUIRED)
+            .Equal(x => x.NewPassword).WithMessage(MessageCodes.Fields.PASSWORDS_MUST_MATCH);
     }
 }

@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Patients.Commands.CreatePatient;
 using ClinicManagement.Application.Features.Patients.Commands.DeletePatient;
@@ -68,7 +69,7 @@ public class PatientsController : BaseApiController
     public async Task<IActionResult> UpdatePatient(int id, UpdatePatientCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
-            return BadRequest("ID mismatch");
+            return BadRequest(MessageCodes.Controller.ID_MISMATCH);
 
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult(result);

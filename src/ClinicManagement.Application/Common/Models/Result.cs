@@ -1,9 +1,10 @@
-﻿namespace ClinicManagement.Application.Common.Models;
+﻿using ClinicManagement.Application.Common.Constants;
+
+namespace ClinicManagement.Application.Common.Models;
 
 public class Result
 {
-    public const string VALIDATION_MESSAGE =
-        "One or more fields are invalid. Please correct the errors and try again.";
+    public const string VALIDATION_MESSAGE = MessageCodes.Validation.GENERAL_VALIDATION_ERROR;
 
     public bool Success { get; protected set; }
     public string? Message { get; protected set; }
