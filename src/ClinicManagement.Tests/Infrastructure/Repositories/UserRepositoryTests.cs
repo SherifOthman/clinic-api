@@ -277,9 +277,9 @@ public class UserRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Equal(3, result.TotalCount);
-        Assert.Equal("Charlie", result.Items.First().FirstName);
-        Assert.Equal("Alice", result.Items.Last().FirstName);
+        result.TotalCount.Should().Be(3);
+        result.Items.First().FirstName.Should().Be("Charlie");
+        result.Items.Last().FirstName.Should().Be("Alice");
     }
 
     [Fact]
@@ -301,11 +301,11 @@ public class UserRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Equal(15, result.TotalCount);
-        Assert.Equal(5, result.Items.Count());
-        Assert.Equal(2, result.PageNumber);
-        Assert.Equal(3, result.TotalPages);
-        Assert.Equal("User6", result.Items.First().FirstName); // Should start from 6th user
+        result.TotalCount.Should().Be(15);
+        result.Items.Should().HaveCount(5);
+        result.PageNumber.Should().Be(2);
+        result.TotalPages.Should().Be(3);
+        result.Items.First().FirstName.Should().Be("User6"); // Should start from 6th user
     }
 
     [Theory]
@@ -344,7 +344,7 @@ public class UserRepositoryTests : IDisposable
             _ => firstUser.FirstName // Default case
         };
         
-        Assert.Equal(expectedFirstValue, actualValue);
+        actualValue.Should().Be(expectedFirstValue);
     }
 
     public void Dispose()

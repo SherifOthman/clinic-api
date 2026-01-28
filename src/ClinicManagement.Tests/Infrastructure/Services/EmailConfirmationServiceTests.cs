@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Options;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -81,7 +82,7 @@ public class EmailConfirmationServiceTests
         var result = await _service.SendConfirmationEmailAsync(user, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
         
         _userManagerMock.Verify(x => x.GenerateEmailConfirmationTokenAsync(user), Times.Once);
         _emailSenderMock.Verify(x => x.SendEmailAsync(
@@ -121,7 +122,7 @@ public class EmailConfirmationServiceTests
 
         // Assert
         var expectedLink = $"{_smtpOptions.FrontendUrl}/confirm-email?email={Uri.EscapeDataString(user.Email)}&token={Uri.EscapeDataString(token)}";
-        Assert.Contains(expectedLink, capturedEmailBody);
+        capturedEmailBody.Should().Contain(expectedLink);
     }
 
     [Fact]
@@ -143,7 +144,7 @@ public class EmailConfirmationServiceTests
         var result = await _service.ConfirmEmailAsync(user, token, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
         
         _userManagerMock.Verify(x => x.ConfirmEmailAsync(user, token), Times.Once);
     }
@@ -172,10 +173,10 @@ public class EmailConfirmationServiceTests
         var result = await _service.ConfirmEmailAsync(user, token, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors);
-        Assert.Equal("Invalid token", result.Errors.First().Code);
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().HaveCount(1);
+        result.Errors!.First().Code.Should().Be("Invalid token");
     }
 
     [Fact]
@@ -196,7 +197,7 @@ public class EmailConfirmationServiceTests
         var result = await _service.IsEmailConfirmedAsync(user, CancellationToken.None);
 
         // Assert
-        Assert.True(result);
+        result.Should().BeTrue();
         _userManagerMock.Verify(x => x.IsEmailConfirmedAsync(user), Times.Once);
     }
 
@@ -218,7 +219,7 @@ public class EmailConfirmationServiceTests
         var result = await _service.IsEmailConfirmedAsync(user, CancellationToken.None);
 
         // Assert
-        Assert.False(result);
+        result.Should().BeFalse();
     }
 
     [Fact]
@@ -240,7 +241,7 @@ public class EmailConfirmationServiceTests
         var result = await _service.GenerateEmailConfirmationTokenAsync(user, CancellationToken.None);
 
         // Assert
-        Assert.Equal(expectedToken, result);
+        result.Should().Be(expectedToken);
         _userManagerMock.Verify(x => x.GenerateEmailConfirmationTokenAsync(user), Times.Once);
     }
 
@@ -278,10 +279,10 @@ public class EmailConfirmationServiceTests
         var result = await _service.ConfirmEmailAsync(user, token, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors);
-        Assert.Equal(expectedField, result.Errors.First().Field);
-        Assert.Equal("Test error", result.Errors.First().Code);
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().HaveCount(1);
+        result.Errors!.First().Field.Should().Be(expectedField);
+        result.Errors.First().Code.Should().Be("Test error");
     }
 }

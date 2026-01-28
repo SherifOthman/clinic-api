@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
 using ClinicManagement.Domain.Entities;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -35,8 +36,8 @@ public class ResendEmailVerificationCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.UserWithEmailNotFound("test@example.com"), result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be(ApplicationErrors.Authentication.UserWithEmailNotFound("test@example.com"));
     }
 
     [Fact]
@@ -55,8 +56,8 @@ public class ResendEmailVerificationCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.EMAIL_ALREADY_CONFIRMED, result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be(ApplicationErrors.Authentication.EMAIL_ALREADY_CONFIRMED);
     }
 
     [Fact]
@@ -78,8 +79,8 @@ public class ResendEmailVerificationCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal("Failed to send confirmation email: SMTP error", result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be("Failed to send confirmation email: SMTP error");
     }
 
     [Fact]
@@ -101,6 +102,6 @@ public class ResendEmailVerificationCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 }

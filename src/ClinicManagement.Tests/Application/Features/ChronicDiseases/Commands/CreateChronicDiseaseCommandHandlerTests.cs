@@ -66,6 +66,8 @@ public class CreateChronicDiseaseCommandHandlerTests
             .ThrowsAsync(new Exception("Database error"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, CancellationToken.None));
+        await _handler.Invoking(h => h.Handle(command, CancellationToken.None))
+            .Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 }

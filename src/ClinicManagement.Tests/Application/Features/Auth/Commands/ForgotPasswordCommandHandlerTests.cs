@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 using ClinicManagement.Domain.Entities;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -32,7 +33,7 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -48,7 +49,7 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 
     [Fact]

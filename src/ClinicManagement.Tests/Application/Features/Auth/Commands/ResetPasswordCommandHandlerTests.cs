@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 using ClinicManagement.Domain.Entities;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -32,7 +33,7 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -48,8 +49,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.INVALID_RESET_TOKEN, result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be(ApplicationErrors.Authentication.INVALID_RESET_TOKEN);
     }
 
     [Fact]

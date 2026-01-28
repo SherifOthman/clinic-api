@@ -54,7 +54,7 @@ public class UserManagementServiceTests
         var result = await _userManagementService.CreateUserAsync(user, password);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -77,15 +77,15 @@ public class UserManagementServiceTests
         var result = await _userManagementService.CreateUserAsync(user, password);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Errors);
-        Assert.Equal(2, result.Errors.Count());
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().HaveCount(2);
         
         var passwordError = result.Errors.First(e => e.Field == "Password");
-        Assert.Equal("Password is too short", passwordError.Code);
+        passwordError.Code.Should().Be("Password is too short");
         
         var emailError = result.Errors.First(e => e.Field == "Email");
-        Assert.Equal("Email already exists", emailError.Code);
+        emailError.Code.Should().Be("Email already exists");
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class UserManagementServiceTests
         var result = await _userManagementService.CheckPasswordAsync(user, password);
 
         // Assert
-        Assert.True(result);
+        result.Should().BeTrue();
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class UserManagementServiceTests
         var result = await _userManagementService.CheckPasswordAsync(user, password);
 
         // Assert
-        Assert.False(result);
+        result.Should().BeFalse();
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public class UserManagementServiceTests
         var result = await _userManagementService.GetUserByEmailAsync(email);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(email, result.Email);
+        result.Should().NotBeNull();
+        result.Email.Should().Be(email);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class UserManagementServiceTests
         var result = await _userManagementService.GetUserByEmailAsync(email);
 
         // Assert
-        Assert.Null(result);
+        result.Should().BeNull();
     }
 
     [Fact]
@@ -170,8 +170,8 @@ public class UserManagementServiceTests
         var result = await _userManagementService.GetByUsernameAsync(username);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(username, result.UserName);
+        result.Should().NotBeNull();
+        result.UserName.Should().Be(username);
     }
 
     [Fact]
@@ -188,8 +188,8 @@ public class UserManagementServiceTests
         var result = await _userManagementService.GetUserByIdAsync(userId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(userId, result.Id);
+        result.Should().NotBeNull();
+        result.Id.Should().Be(userId);
     }
 
     [Fact]
@@ -206,10 +206,10 @@ public class UserManagementServiceTests
         var result = await _userManagementService.GetUserRolesAsync(user);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.Contains("Admin", result);
-        Assert.Contains("User", result);
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().Contain("Admin");
+        result.Should().Contain("User");
     }
 
     [Theory]
@@ -238,10 +238,10 @@ public class UserManagementServiceTests
         var result = await _userManagementService.CreateUserAsync(user, password);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors);
-        Assert.Equal(expectedField, result.Errors.First().Field);
-        Assert.Equal("Test error", result.Errors.First().Code);
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().HaveCount(1);
+        result.Errors.First().Field.Should().Be(expectedField);
+        result.Errors.First().Code.Should().Be("Test error");
     }
 }

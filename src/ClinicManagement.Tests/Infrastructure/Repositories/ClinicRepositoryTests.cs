@@ -6,6 +6,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace ClinicManagement.Tests.Infrastructure.Repositories;
 
@@ -38,10 +39,10 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Empty(result.Items);
-        Assert.Equal(0, result.TotalCount);
-        Assert.Equal(1, result.PageNumber);
-        Assert.Equal(10, result.PageSize);
+        result.Items.Should().BeEmpty();
+        result.TotalCount.Should().Be(0);
+        result.PageNumber.Should().Be(1);
+        result.PageSize.Should().Be(10);
     }
 
     [Fact]
@@ -55,8 +56,8 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Single(result.Items);
-        Assert.Contains("Medical", result.Items.First().Name);
+        result.Items.Should().ContainSingle();
+        result.Items.First().Name.Should().Contain("Medical");
     }
 
     [Fact]
@@ -70,8 +71,8 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Equal(2, result.Items.Count());
-        Assert.All(result.Items, c => Assert.Equal(2, c.SubscriptionPlanId));
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().OnlyContain(c => c.SubscriptionPlanId == 2);
     }
 
     [Fact]
@@ -85,8 +86,8 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Single(result.Items);
-        Assert.False(result.Items.First().IsActive);
+        result.Items.Should().ContainSingle();
+        result.Items.First().IsActive.Should().BeFalse();
     }
 
     [Fact]
@@ -106,8 +107,8 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.True(result.Items.Count() >= 0);
-        Assert.All(result.Items, c => Assert.True(c.CreatedAt >= fromDate && c.CreatedAt <= toDate));
+        result.Items.Count().Should().BeGreaterOrEqualTo(0);
+        result.Items.Should().OnlyContain(c => c.CreatedAt >= fromDate && c.CreatedAt <= toDate);
     }
 
     [Fact]
@@ -125,8 +126,8 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.True(result.Items.Any());
-        Assert.All(result.Items, c => Assert.True(c.Users.Count >= 1 && c.Users.Count <= 2));
+        result.Items.Should().NotBeEmpty();
+        result.Items.Should().OnlyContain(c => c.Users.Count >= 1 && c.Users.Count <= 2);
     }
 
     [Fact]
@@ -146,7 +147,7 @@ public class ClinicRepositoryTests : IDisposable
         // Assert
         var sortedNames = result.Items.Select(c => c.Name).ToList();
         var expectedOrder = sortedNames.OrderBy(n => n).ToList();
-        Assert.Equal(expectedOrder, sortedNames);
+        sortedNames.Should().Equal(expectedOrder);
     }
 
     [Fact]
@@ -166,7 +167,7 @@ public class ClinicRepositoryTests : IDisposable
         // Assert
         var sortedNames = result.Items.Select(c => c.Name).ToList();
         var expectedOrder = sortedNames.OrderByDescending(n => n).ToList();
-        Assert.Equal(expectedOrder, sortedNames);
+        sortedNames.Should().Equal(expectedOrder);
     }
 
     [Fact]
@@ -186,7 +187,7 @@ public class ClinicRepositoryTests : IDisposable
         // Assert
         var sortedDates = result.Items.Select(c => c.CreatedAt).ToList();
         var expectedOrder = sortedDates.OrderBy(d => d).ToList();
-        Assert.Equal(expectedOrder, sortedDates);
+        sortedDates.Should().Equal(expectedOrder);
     }
 
     [Fact]
@@ -206,7 +207,7 @@ public class ClinicRepositoryTests : IDisposable
         // Assert
         var sortedActiveStatus = result.Items.Select(c => c.IsActive).ToList();
         var expectedOrder = sortedActiveStatus.OrderBy(a => a).ToList();
-        Assert.Equal(expectedOrder, sortedActiveStatus);
+        sortedActiveStatus.Should().Equal(expectedOrder);
     }
 
     [Fact]
@@ -226,7 +227,7 @@ public class ClinicRepositoryTests : IDisposable
         // Assert
         var sortedIds = result.Items.Select(c => c.Id).ToList();
         var expectedOrder = sortedIds.OrderBy(id => id).ToList();
-        Assert.Equal(expectedOrder, sortedIds);
+        sortedIds.Should().Equal(expectedOrder);
     }
 
     [Fact]
@@ -240,10 +241,10 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request);
 
         // Assert
-        Assert.Single(result.Items);
-        Assert.Equal(2, result.PageNumber);
-        Assert.Equal(1, result.PageSize);
-        Assert.Equal(3, result.TotalCount);
+        result.Items.Should().ContainSingle();
+        result.PageNumber.Should().Be(2);
+        result.PageSize.Should().Be(1);
+        result.TotalCount.Should().Be(3);
     }
 
     [Fact]
@@ -258,7 +259,7 @@ public class ClinicRepositoryTests : IDisposable
         var result = await _repository.GetPagedAsync(request, cancellationToken);
 
         // Assert
-        Assert.Equal(3, result.Items.Count());
+        result.Items.Should().HaveCount(3);
     }
 
     private async Task SeedTestData()

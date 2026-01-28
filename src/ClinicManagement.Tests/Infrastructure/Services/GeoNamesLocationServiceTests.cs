@@ -55,10 +55,10 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.GetCountriesAsync();
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, c => c.Name == "Egypt");
-        Assert.Contains(result, c => c.Name == "United States");
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().Contain(c => c.Name == "Egypt");
+        result.Should().Contain(c => c.Name == "United States");
         
         _clientMock.Verify(x => x.SearchAsync(It.Is<GeoNamesSearchRequest>(r => 
             r.Query == "*" && 
@@ -83,7 +83,7 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result2 = await _service.GetCountriesAsync();
 
         // Assert
-        Assert.Equal(result1.Count, result2.Count);
+        result1.Should().HaveCount(result2.Count);
         _clientMock.Verify(x => x.SearchAsync(It.IsAny<GeoNamesSearchRequest>()), Times.Once);
     }
 
@@ -111,7 +111,7 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.GetStatesAsync(countryId);
 
         // Assert
-        Assert.NotNull(result);
+        result.Should().NotBeNull();
         // The actual service has complex logic, so we just verify it doesn't crash
         _clientMock.Verify(x => x.SearchAsync(It.IsAny<GeoNamesSearchRequest>()), Times.AtLeast(1));
     }
@@ -133,8 +133,8 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.GetStatesAsync(invalidCountryId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
     }
 
     [Fact]
@@ -147,8 +147,8 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.GetCitiesAsync(countryId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
     }
 
     [Fact]
@@ -170,9 +170,9 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.SearchCitiesAsync(countryCode, query);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.All(result, city => Assert.Contains("Cairo", city.Name));
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().OnlyContain(city => city.Name.Contains("Cairo"));
         
         _clientMock.Verify(x => x.SearchAsync(It.Is<GeoNamesSearchRequest>(r => 
             r.Query == query && 
@@ -193,8 +193,8 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.SearchCitiesAsync(countryCode, query);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
         
         _clientMock.Verify(x => x.SearchAsync(It.IsAny<GeoNamesSearchRequest>()), Times.Never);
     }
@@ -216,7 +216,7 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.GetCountryByCodeAsync(invalidCountryCode);
 
         // Assert
-        Assert.Null(result);
+        result.Should().BeNull();
     }
 
     [Fact]
@@ -233,8 +233,8 @@ public class GeoNamesLocationServiceTests : IDisposable
         var result = await _service.SearchCitiesAsync(countryCode, query);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
         
         _loggerMock.Verify(
             x => x.Log(

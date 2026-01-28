@@ -5,6 +5,7 @@ using ClinicManagement.Application.Features.Auth.Commands.CompleteOnboarding;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -46,8 +47,8 @@ public class CompleteOnboardingCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED, result.Code);
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
     }
 
     [Fact]
@@ -92,7 +93,7 @@ public class CompleteOnboardingCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeast(1));
     }
 

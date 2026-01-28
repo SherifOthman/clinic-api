@@ -62,12 +62,12 @@ public class LocalFileStorageServiceTests : IDisposable
         var result = await _service.UploadFileAsync(stream, fileName, contentType, "test-folder");
 
         // Assert
-        Assert.True(result.Success);
-        Assert.NotNull(result.Value);
-        Assert.Contains("test-folder", result.Value.FilePath);
-        Assert.EndsWith(".png", result.Value.FileName);
-        Assert.Equal(contentType, result.Value.ContentType);
-        Assert.Equal(stream.Length, result.Value.FileSize);
+        result.Success.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.FilePath.Should().Contain("test-folder");
+        result.Value.FileName.Should().EndWith(".png");
+        result.Value.ContentType.Should().Be(contentType);
+        result.Value.FileSize.Should().Be(stream.Length);
     }
 
     [Fact]
@@ -83,8 +83,8 @@ public class LocalFileStorageServiceTests : IDisposable
         var result = await _service.UploadFileAsync(stream, fileName, contentType);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Contains("exceeds maximum", result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Contain("exceeds maximum");
     }
 
     [Fact]
@@ -100,8 +100,8 @@ public class LocalFileStorageServiceTests : IDisposable
         var result = await _service.UploadFileAsync(stream, fileName, contentType);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Contains("Invalid file type", result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Contain("Invalid file type");
     }
 
     [Fact]
@@ -115,13 +115,13 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Upload file first
         var uploadResult = await _service.UploadFileAsync(stream, fileName, contentType);
-        Assert.True(uploadResult.Success);
+        uploadResult.Success.Should().BeTrue();
 
         // Act
         var deleteResult = await _service.DeleteFileAsync(uploadResult.Value!.FilePath);
 
         // Assert
-        Assert.True(deleteResult.Success);
+        deleteResult.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class LocalFileStorageServiceTests : IDisposable
         var result = await _service.DeleteFileAsync(nonExistentPath);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -154,18 +154,18 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Upload file first
         var uploadResult = await _service.UploadFileAsync(stream, fileName, contentType);
-        Assert.True(uploadResult.Success);
+        uploadResult.Success.Should().BeTrue();
 
         // Act
         var getResult = await _service.GetFileAsync(uploadResult.Value!.FilePath);
 
         // Assert
-        Assert.True(getResult.Success);
-        Assert.NotNull(getResult.Value);
+        getResult.Success.Should().BeTrue();
+        getResult.Value.Should().NotBeNull();
         
-        using var reader = new StreamReader(getResult.Value);
+        using var reader = new StreamReader(getResult.Value!);
         var retrievedContent = await reader.ReadToEndAsync();
-        Assert.Equal(content, retrievedContent);
+        retrievedContent.Should().Be(content);
     }
 
     [Fact]
@@ -182,8 +182,8 @@ public class LocalFileStorageServiceTests : IDisposable
         var result = await _service.GetFileAsync(nonExistentPath);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.File.FILE_NOT_FOUND, result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be(ApplicationErrors.File.FILE_NOT_FOUND);
     }
 
     [Theory]
@@ -199,7 +199,7 @@ public class LocalFileStorageServiceTests : IDisposable
         var result = _service.IsValidImageFile(fileName, contentType);
 
         // Assert
-        Assert.Equal(expected, result);
+        result.Should().Be(expected);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class LocalFileStorageServiceTests : IDisposable
         var url = _service.GetFileUrl(filePath);
 
         // Assert
-        Assert.Equal("/test-uploads/profile-images/test.png", url);
+        url.Should().Be("/test-uploads/profile-images/test.png");
     }
 
     public void Dispose()

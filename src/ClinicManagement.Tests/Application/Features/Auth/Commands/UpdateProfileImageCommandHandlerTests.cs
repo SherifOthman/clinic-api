@@ -4,6 +4,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfileImage;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -52,8 +53,8 @@ public class UpdateProfileImageCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal("User not authenticated", result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be("User not authenticated");
     }
 
     [Fact]
@@ -74,8 +75,8 @@ public class UpdateProfileImageCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_FOUND, result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be(ApplicationErrors.Authentication.USER_NOT_FOUND);
     }
 
     [Fact]
@@ -105,8 +106,8 @@ public class UpdateProfileImageCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Equal("Upload failed", result.Code);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be("Upload failed");
     }
 
     [Fact]
@@ -147,16 +148,16 @@ public class UpdateProfileImageCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
-        Assert.NotNull(result.Value);
-        Assert.Equal(uploadResult.FileUrl, result.Value.ImageUrl);
-        Assert.Equal(uploadResult.FileName, result.Value.FileName);
-        Assert.Equal(now, result.Value.UpdatedAt);
+        result.Success.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.ImageUrl.Should().Be(uploadResult.FileUrl);
+        result.Value.FileName.Should().Be(uploadResult.FileName);
+        result.Value.UpdatedAt.Should().Be(now);
 
         // Verify user was updated
-        Assert.Equal(uploadResult.FileUrl, user.ProfileImageUrl);
-        Assert.Equal(uploadResult.FileName, user.ProfileImageFileName);
-        Assert.Equal(now, user.ProfileImageUpdatedAt);
+        user.ProfileImageUrl.Should().Be(uploadResult.FileUrl);
+        user.ProfileImageFileName.Should().Be(uploadResult.FileName);
+        user.ProfileImageUpdatedAt.Should().Be(now);
 
         _userRepositoryMock.Verify(x => x.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -214,7 +215,7 @@ public class UpdateProfileImageCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
         
         // Verify old image was deleted
         _fileStorageServiceMock.Verify(x => x.DeleteFileAsync(

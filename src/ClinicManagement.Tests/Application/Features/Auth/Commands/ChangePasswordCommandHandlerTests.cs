@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 using ClinicManagement.Domain.Entities;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -38,8 +39,8 @@ public class ChangePasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED, result.Code);
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
     }
 
     [Fact]
@@ -61,8 +62,8 @@ public class ChangePasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.USER_NOT_FOUND, result.Code);
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be(ApplicationErrors.Authentication.USER_NOT_FOUND);
     }
 
     [Fact]
@@ -87,8 +88,8 @@ public class ChangePasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal(ApplicationErrors.Authentication.INVALID_PASSWORD, result.Code);
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be(ApplicationErrors.Authentication.INVALID_PASSWORD);
     }
 
     [Fact]
@@ -113,6 +114,6 @@ public class ChangePasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Success);
+        result.Success.Should().BeTrue();
     }
 }

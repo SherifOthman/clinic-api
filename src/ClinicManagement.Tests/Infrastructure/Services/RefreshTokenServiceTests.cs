@@ -57,12 +57,12 @@ public class RefreshTokenServiceTests
         var result = await _refreshTokenService.GenerateRefreshTokenAsync(userId, ipAddress);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotEmpty(result.Token);
-        Assert.Equal(userId, result.UserId);
-        Assert.Equal(now, result.CreatedAt);
-        Assert.Equal(now.AddDays(_jwtOptions.RefreshTokenExpirationDays), result.ExpiryTime);
-        Assert.Equal(ipAddress, result.CreatedByIp);
+        result.Should().NotBeNull();
+        result.Token.Should().NotBeEmpty();
+        result.UserId.Should().Be(userId);
+        result.CreatedAt.Should().Be(now);
+        result.ExpiryTime.Should().Be(now.AddDays(_jwtOptions.RefreshTokenExpirationDays));
+        result.CreatedByIp.Should().Be(ipAddress);
 
         _refreshTokenRepositoryMock.Verify(x => x.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -91,9 +91,9 @@ public class RefreshTokenServiceTests
         var result = await _refreshTokenService.GetActiveRefreshTokenAsync(token);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(token, result.Token);
-        Assert.Equal(userId, result.UserId);
+        result.Should().NotBeNull();
+        result.Token.Should().Be(token);
+        result.UserId.Should().Be(userId);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class RefreshTokenServiceTests
         var result = await _refreshTokenService.GetActiveRefreshTokenAsync(token);
 
         // Assert
-        Assert.Null(result);
+        result.Should().BeNull();
     }
 
     [Fact]
@@ -137,9 +137,9 @@ public class RefreshTokenServiceTests
         await _refreshTokenService.RevokeRefreshTokenAsync(token, ipAddress);
 
         // Assert
-        Assert.True(refreshToken.IsRevoked);
-        Assert.Equal(now, refreshToken.RevokedAt);
-        Assert.Equal(ipAddress, refreshToken.RevokedByIp);
+        refreshToken.IsRevoked.Should().BeTrue();
+        refreshToken.RevokedAt.Should().Be(now);
+        refreshToken.RevokedByIp.Should().Be(ipAddress);
 
         _refreshTokenRepositoryMock.Verify(x => x.UpdateAsync(refreshToken, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -182,11 +182,11 @@ public class RefreshTokenServiceTests
         await _refreshTokenService.RevokeAllUserRefreshTokensAsync(userId, ipAddress);
 
         // Assert
-        Assert.All(userTokens, token => 
+        userTokens.Should().AllSatisfy(token => 
         {
-            Assert.True(token.IsRevoked);
-            Assert.Equal(now, token.RevokedAt);
-            Assert.Equal(ipAddress, token.RevokedByIp);
+            token.IsRevoked.Should().BeTrue();
+            token.RevokedAt.Should().Be(now);
+            token.RevokedByIp.Should().Be(ipAddress);
         });
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -221,7 +221,7 @@ public class RefreshTokenServiceTests
         var result = await _refreshTokenService.CleanupExpiredTokensAsync();
 
         // Assert
-        Assert.Equal(expectedCleanedCount, result);
+        result.Should().Be(expectedCleanedCount);
     }
 
     [Fact]
@@ -235,6 +235,6 @@ public class RefreshTokenServiceTests
         var result = await _refreshTokenService.CleanupExpiredTokensAsync();
 
         // Assert
-        Assert.Equal(0, result);
+        result.Should().Be(0);
     }
 }

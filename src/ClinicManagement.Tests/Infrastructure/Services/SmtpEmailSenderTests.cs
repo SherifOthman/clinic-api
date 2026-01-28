@@ -106,11 +106,11 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("SMTP connection failed"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage));
+        var exception = await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+            .Should().ThrowAsync<InvalidOperationException>();
 
-        Assert.Contains("Failed to send email", exception.Message);
-        Assert.Contains("SMTP connection failed", exception.Message);
+        exception.Which.Message.Should().Contain("Failed to send email");
+        exception.Which.Message.Should().Contain("SMTP connection failed");
     }
 
     [Fact]
@@ -128,11 +128,11 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("Authentication failed"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage));
+        var exception = await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+            .Should().ThrowAsync<InvalidOperationException>();
 
-        Assert.Contains("Failed to send email", exception.Message);
-        Assert.Contains("Authentication failed", exception.Message);
+        exception.Which.Message.Should().Contain("Failed to send email");
+        exception.Which.Message.Should().Contain("Authentication failed");
     }
 
     [Fact]
@@ -149,11 +149,11 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("Send failed"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage));
+        var exception = await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+            .Should().ThrowAsync<InvalidOperationException>();
 
-        Assert.Contains("Failed to send email", exception.Message);
-        Assert.Contains("Send failed", exception.Message);
+        exception.Which.Message.Should().Contain("Failed to send email");
+        exception.Which.Message.Should().Contain("Send failed");
     }
 
     [Fact]
@@ -203,8 +203,8 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("Connection failed"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage));
+        await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+            .Should().ThrowAsync<InvalidOperationException>();
 
         _loggerMock.Verify(
             x => x.Log(

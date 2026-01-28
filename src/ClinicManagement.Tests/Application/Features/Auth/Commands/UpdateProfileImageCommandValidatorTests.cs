@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfileImage;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Xunit;
@@ -24,8 +25,8 @@ public class UpdateProfileImageCommandValidatorTests
         var result = _validator.Validate(command);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == "Image" && e.ErrorMessage.Contains("required"));
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "Image" && e.ErrorMessage.Contains("required"));
     }
 
     [Fact]
@@ -42,8 +43,8 @@ public class UpdateProfileImageCommandValidatorTests
         var result = _validator.Validate(command);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == "Image.FileName" && e.ErrorMessage.Contains("required"));
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "Image.FileName" && e.ErrorMessage.Contains("required"));
     }
 
     [Fact]
@@ -60,8 +61,8 @@ public class UpdateProfileImageCommandValidatorTests
         var result = _validator.Validate(command);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == "Image.Length" && e.ErrorMessage.Contains("5MB"));
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "Image.Length" && e.ErrorMessage.Contains("5MB"));
     }
 
     [Theory]
@@ -81,8 +82,8 @@ public class UpdateProfileImageCommandValidatorTests
         var result = _validator.Validate(command);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == "Image.ContentType" && e.ErrorMessage.Contains("image"));
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "Image.ContentType" && e.ErrorMessage.Contains("image"));
     }
 
     [Theory]
@@ -104,6 +105,6 @@ public class UpdateProfileImageCommandValidatorTests
         var result = _validator.Validate(command);
 
         // Assert
-        Assert.True(result.IsValid);
+        result.IsValid.Should().BeTrue();
     }
 }

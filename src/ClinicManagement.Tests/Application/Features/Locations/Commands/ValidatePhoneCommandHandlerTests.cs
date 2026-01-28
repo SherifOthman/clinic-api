@@ -68,6 +68,8 @@ public class ValidatePhoneCommandHandlerTests
             .Throws(new Exception("Validation service error"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, CancellationToken.None));
+        await _handler.Invoking(h => h.Handle(command, CancellationToken.None))
+            .Should().ThrowAsync<Exception>()
+            .WithMessage("Validation service error");
     }
 }
