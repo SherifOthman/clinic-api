@@ -50,7 +50,7 @@ public class GetPatientsWithPaginationQueryHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Access denied. User must be authenticated and associated with a clinic.");
+        result.Code.Should().Be(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
     }
 
     [Fact]

@@ -27,7 +27,7 @@ public class GetPatientsWithPaginationQueryHandler : IRequestHandler<GetPatients
         if (!_currentUserService.HasClinicAccess())
         {
             _logger.LogWarning("Unauthorized paginated patients access attempt by user {UserId}", _currentUserService.UserId);
-            return Result<PagedResult<PatientDto>>.Fail("Access denied. User must be authenticated and associated with a clinic.");
+            return Result<PagedResult<PatientDto>>.Fail(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
         }
 
         var patientSearchRequest = new PatientSearchRequest(

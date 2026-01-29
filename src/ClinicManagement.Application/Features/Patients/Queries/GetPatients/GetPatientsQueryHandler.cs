@@ -26,7 +26,7 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         if (!_currentUserService.HasClinicAccess())
         {
             _logger.LogWarning("Unauthorized access attempt to patients by user {UserId}", _currentUserService.UserId);
-            return Result<List<PatientDto>>.Fail("Access denied. User must be authenticated and associated with a clinic.");
+            return Result<List<PatientDto>>.Fail(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
         }
         
         var patients = await _unitOfWork.Patients.GetAllAsync(cancellationToken);
