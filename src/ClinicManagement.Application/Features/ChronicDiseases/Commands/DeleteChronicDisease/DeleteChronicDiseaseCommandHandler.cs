@@ -1,4 +1,5 @@
-﻿using ClinicManagement.Domain.Common.Interfaces;
+﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
 using MediatR;
