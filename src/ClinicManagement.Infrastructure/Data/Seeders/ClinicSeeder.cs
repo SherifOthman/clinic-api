@@ -62,7 +62,7 @@ public static class ClinicSeeder
                             GeoNameId = branchSeed.GeoNameId,
                             ClinicId = clinic.Id,
                             CityName = branchSeed.CityName ?? "Unknown",
-                            CountryCode = branchSeed.CountryCode ?? "Unknown",
+                            CountryCode = branchSeed.CountryCode ?? "US", // Use US as default 2-character code
                             Latitude = branchSeed.Latitude ?? 0,
                             Longitude = branchSeed.Longitude ?? 0
                         };
