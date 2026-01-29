@@ -26,7 +26,7 @@ public class DeleteChronicDiseaseCommandHandler : IRequestHandler<DeleteChronicD
         if (chronicDisease == null)
         {
             _logger.LogWarning("Chronic disease {DiseaseId} not found for deletion", request.Id);
-            return Result<Unit>.Fail("Chronic disease not found");
+            return Result<Unit>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
         await _unitOfWork.ChronicDiseases.DeleteAsync(chronicDisease, cancellationToken);

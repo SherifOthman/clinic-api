@@ -33,7 +33,7 @@ public class GetPatientQueryHandler : IRequestHandler<GetPatientQuery, Result<Pa
         if (patient == null)
         {
             _logger.LogWarning("Patient with ID {Id} not found or access denied for clinic {ClinicId}", request.Id, _currentUserService.ClinicId);
-            return Result<PatientDto>.Fail("Patient not found or access denied");
+            return Result<PatientDto>.Fail(MessageCodes.Business.PATIENT_NOT_FOUND);
         }
 
         var patientDto = patient.Adapt<PatientDto>();

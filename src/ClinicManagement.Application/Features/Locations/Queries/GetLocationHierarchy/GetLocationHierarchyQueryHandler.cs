@@ -31,7 +31,7 @@ public class GetLocationHierarchyQueryHandler : IRequestHandler<GetLocationHiera
             var locationDetails = await _geoNamesClient.GetLocationByIdAsync(request.GeoNameId);
             if (locationDetails == null)
             {
-                return Result<LocationHierarchyDto>.Fail("Location not found");
+                return Result<LocationHierarchyDto>.Fail(MessageCodes.Location.NOT_FOUND);
             }
 
             var hierarchy = new LocationHierarchyDto
@@ -76,7 +76,7 @@ public class GetLocationHierarchyQueryHandler : IRequestHandler<GetLocationHiera
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get location hierarchy for GeoNameId {GeoNameId}", request.GeoNameId);
-            return Result<LocationHierarchyDto>.Fail("Failed to retrieve location hierarchy");
+            return Result<LocationHierarchyDto>.Fail(MessageCodes.Location.HIERARCHY_FAILED);
         }
     }
 }

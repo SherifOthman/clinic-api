@@ -40,7 +40,7 @@ public class GetCountryPhoneCodesQueryHandler : IRequestHandler<GetCountryPhoneC
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to fetch country data from REST Countries API. Status: {StatusCode}", response.StatusCode);
-                return Result<List<CountryPhoneCodeDto>>.Fail("Failed to fetch country data");
+                return Result<List<CountryPhoneCodeDto>>.Fail(MessageCodes.Location.COUNTRIES_API_FAILED);
             }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -51,7 +51,7 @@ public class GetCountryPhoneCodesQueryHandler : IRequestHandler<GetCountryPhoneC
 
             if (countries == null)
             {
-                return Result<List<CountryPhoneCodeDto>>.Fail("Invalid response from countries API");
+                return Result<List<CountryPhoneCodeDto>>.Fail(MessageCodes.Location.COUNTRIES_API_INVALID_RESPONSE);
             }
 
             var result = countries
@@ -77,7 +77,7 @@ public class GetCountryPhoneCodesQueryHandler : IRequestHandler<GetCountryPhoneC
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching country phone codes");
-            return Result<List<CountryPhoneCodeDto>>.Fail($"Error fetching country phone codes: {ex.Message}");
+            return Result<List<CountryPhoneCodeDto>>.Fail(MessageCodes.Location.COUNTRIES_API_FAILED);
         }
     }
 }

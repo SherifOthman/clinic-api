@@ -102,6 +102,21 @@ public static class MessageCodes
         public const string INTERNAL_ERROR = "EXCEPTION.INTERNAL.ERROR";
     }
 
+    public static class Location
+    {
+        public const string NOT_FOUND = "LOCATION.NOT_FOUND";
+        public const string HIERARCHY_FAILED = "LOCATION.HIERARCHY.FAILED";
+        public const string GEONAMES_HEALTH_FAILED = "LOCATION.GEONAMES.HEALTH_FAILED";
+        public const string COUNTRIES_API_FAILED = "LOCATION.COUNTRIES_API.FAILED";
+        public const string COUNTRIES_API_INVALID_RESPONSE = "LOCATION.COUNTRIES_API.INVALID_RESPONSE";
+    }
+
+    public static class Admin
+    {
+        public const string USERS_RETRIEVAL_FAILED = "ADMIN.USERS.RETRIEVAL_FAILED";
+        public const string CLINICS_RETRIEVAL_FAILED = "ADMIN.CLINICS.RETRIEVAL_FAILED";
+    }
+
     public static class Controller
     {
         public const string ID_MISMATCH = "CONTROLLER.ID.MISMATCH";

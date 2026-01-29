@@ -58,7 +58,7 @@ public class GetClinicsQueryHandler : IRequestHandler<GetClinicsQuery, Result<Pa
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving clinics for admin");
-            return Result<PagedResult<ClinicDto>>.Fail("Failed to retrieve clinics");
+            return Result<PagedResult<ClinicDto>>.Fail(MessageCodes.Admin.CLINICS_RETRIEVAL_FAILED);
         }
     }
 }

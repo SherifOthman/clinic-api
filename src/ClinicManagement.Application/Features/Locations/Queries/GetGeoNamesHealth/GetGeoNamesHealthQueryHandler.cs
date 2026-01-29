@@ -62,7 +62,7 @@ public class GetGeoNamesHealthQueryHandler : IRequestHandler<GetGeoNamesHealthQu
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error performing GeoNames health check");
-            return Result<GeoNamesHealthDto>.Fail("Failed to check GeoNames health");
+            return Result<GeoNamesHealthDto>.Fail(MessageCodes.Location.GEONAMES_HEALTH_FAILED);
         }
     }
 }

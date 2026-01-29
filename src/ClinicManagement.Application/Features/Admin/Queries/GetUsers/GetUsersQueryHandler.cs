@@ -52,7 +52,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, Result<PagedR
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving users for admin");
-            return Result<PagedResult<UserDto>>.Fail("Failed to retrieve users");
+            return Result<PagedResult<UserDto>>.Fail(MessageCodes.Admin.USERS_RETRIEVAL_FAILED);
         }
     }
 }

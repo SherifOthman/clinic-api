@@ -27,7 +27,7 @@ public class ResendEmailVerificationCommandHandler : IRequestHandler<ResendEmail
 
         var result = await _emailConfirmationService.SendConfirmationEmailAsync(user, cancellationToken);
         if (!result.Success)
-            return Result.Fail($"Failed to send confirmation email: {result.Code}");
+            return Result.Fail(result.Code ?? MessageCodes.Exception.INTERNAL_ERROR);
 
         return Result.Ok();
     }

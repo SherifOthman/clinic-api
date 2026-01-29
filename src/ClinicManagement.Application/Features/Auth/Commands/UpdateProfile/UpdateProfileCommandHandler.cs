@@ -58,7 +58,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
-            return Result<UserDto>.Fail("Failed to update profile");
+            return Result<UserDto>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
         }
     }
 }

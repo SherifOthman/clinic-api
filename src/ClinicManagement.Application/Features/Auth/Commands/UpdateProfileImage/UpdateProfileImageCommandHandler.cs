@@ -34,7 +34,7 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthorized attempt to update profile image");
-            return Result<UpdateProfileImageResponse>.Fail("User not authenticated");
+            return Result<UpdateProfileImageResponse>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
@@ -66,7 +66,7 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
             if (!uploadResult.Success)
             {
                 _logger.LogError("Failed to upload profile image for user {UserId}: {Error}", userId, uploadResult.Code ?? "Unknown error");
-                return Result<UpdateProfileImageResponse>.Fail(uploadResult.Code ?? "Failed to upload image");
+                return Result<UpdateProfileImageResponse>.Fail(uploadResult.Code ?? MessageCodes.File.FILE_UPLOAD_FAILED);
             }
 
             // Update user profile
@@ -91,7 +91,7 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating profile image for user {UserId}", userId);
-            return Result<UpdateProfileImageResponse>.Fail("Failed to update profile image");
+            return Result<UpdateProfileImageResponse>.Fail(MessageCodes.File.FILE_UPLOAD_FAILED);
         }
     }
 }

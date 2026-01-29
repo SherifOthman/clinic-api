@@ -44,12 +44,12 @@ public class LocalFileStorageService : IFileStorageService
         {
             if (fileStream.Length > _maxFileSize)
             {
-                return Result<FileUploadResult>.Fail($"File size exceeds maximum allowed size of {_maxFileSize / (1024 * 1024)}MB");
+                return Result<FileUploadResult>.Fail(MessageCodes.File.FILE_TOO_LARGE);
             }
 
             if (!IsValidImageFile(fileName, contentType))
             {
-                return Result<FileUploadResult>.Fail("Invalid file type. Only image files are allowed.");
+                return Result<FileUploadResult>.Fail(MessageCodes.File.INVALID_FILE_TYPE);
             }
 
             var folderPath = _fileSystem.Combine(_uploadPath, folder);
@@ -82,7 +82,7 @@ public class LocalFileStorageService : IFileStorageService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading file: {FileName}", fileName);
-            return Result<FileUploadResult>.Fail("Failed to upload file");
+            return Result<FileUploadResult>.Fail(MessageCodes.File.FILE_UPLOAD_FAILED);
         }
     }
 
@@ -124,7 +124,7 @@ public class LocalFileStorageService : IFileStorageService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting file: {FilePath}", filePath);
-            return Result<Stream>.Fail("Failed to get file");
+            return Result<Stream>.Fail(MessageCodes.File.FILE_NOT_FOUND);
         }
     }
 
