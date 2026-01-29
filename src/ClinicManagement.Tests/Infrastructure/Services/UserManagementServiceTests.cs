@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

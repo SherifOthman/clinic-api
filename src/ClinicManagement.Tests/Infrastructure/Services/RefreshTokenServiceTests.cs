@@ -3,6 +3,7 @@ using ClinicManagement.Application.Options;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Services;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

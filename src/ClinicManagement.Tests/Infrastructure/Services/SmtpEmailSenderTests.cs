@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Options;
 using ClinicManagement.Infrastructure.Common.Interfaces;
 using ClinicManagement.Infrastructure.Services;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -106,7 +107,7 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("SMTP connection failed"));
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+        var exception = await FluentAssertions.FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
             .Should().ThrowAsync<InvalidOperationException>();
 
         exception.Which.Message.Should().Contain("Failed to send email");
@@ -128,7 +129,7 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("Authentication failed"));
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+        var exception = await FluentAssertions.FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
             .Should().ThrowAsync<InvalidOperationException>();
 
         exception.Which.Message.Should().Contain("Failed to send email");
@@ -149,7 +150,7 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("Send failed"));
 
         // Act & Assert
-        var exception = await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+        var exception = await FluentAssertions.FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
             .Should().ThrowAsync<InvalidOperationException>();
 
         exception.Which.Message.Should().Contain("Failed to send email");
@@ -203,7 +204,7 @@ public class SmtpEmailSenderTests
             .ThrowsAsync(new Exception("Connection failed"));
 
         // Act & Assert
-        await FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
+        await FluentAssertions.FluentActions.Invoking(() => _emailSender.SendEmailAsync(toEmail, subject, htmlMessage))
             .Should().ThrowAsync<InvalidOperationException>();
 
         _loggerMock.Verify(

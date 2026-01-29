@@ -18,12 +18,7 @@ public class AuthControllerTests
     public AuthControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
-        _controller = new AuthController();
-        
-        // Use reflection to set the mediator since it's protected
-        var mediatorField = typeof(BaseApiController).GetField("_mediator", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        mediatorField?.SetValue(_controller, _mediatorMock.Object);
+        _controller = new AuthController(_mediatorMock.Object);
     }
 
     [Fact]
@@ -34,10 +29,10 @@ public class AuthControllerTests
         {
             Email = "test@example.com",
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = "John",
             LastName = "Doe",
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         var expectedResult = Result.Ok();
@@ -45,7 +40,7 @@ public class AuthControllerTests
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await _controller.Register(command);
+        var result = await _controller.Register(command, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -61,10 +56,10 @@ public class AuthControllerTests
         {
             Email = "invalid-email",
             Password = "weak",
-            ConfirmPassword = "different",
             FirstName = "",
             LastName = "",
-            Username = ""
+            Username = "",
+            PhoneNumber = ""
         };
 
         var expectedResult = Result.Fail("Validation failed");
@@ -72,7 +67,7 @@ public class AuthControllerTests
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await _controller.Register(command);
+        var result = await _controller.Register(command, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
@@ -88,24 +83,12 @@ public class AuthControllerTests
             Password = "Password123!"
         };
 
-        var loginResponse = new LoginResponse
-        {
-            AccessToken = "access-token",
-            User = new Application.DTOs.UserDto
-            {
-                Id = 1,
-                Email = "test@example.com",
-                FirstName = "John",
-                LastName = "Doe"
-            }
-        };
-
-        var expectedResult = Result<LoginResponse>.Ok(loginResponse);
+        var expectedResult = Result.Ok();
         _mediatorMock.Setup(x => x.Send(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await _controller.Login(command);
+        var result = await _controller.Login(command, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -123,12 +106,12 @@ public class AuthControllerTests
             Password = "wrong-password"
         };
 
-        var expectedResult = Result<LoginResponse>.Fail("Invalid credentials");
+        var expectedResult = Result.Fail("Invalid credentials");
         _mediatorMock.Setup(x => x.Send(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await _controller.Login(command);
+        var result = await _controller.Login(command, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -138,7 +121,7 @@ public class AuthControllerTests
     public async Task Logout_ShouldReturnOkResult()
     {
         // Act
-        var result = await _controller.Logout();
+        var result = await _controller.Logout(CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();

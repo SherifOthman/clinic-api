@@ -34,7 +34,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214", Label = "Main" }
+                new("+201098021214", "Main")
             }
         );
 
@@ -62,7 +62,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -88,7 +88,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -116,7 +116,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -144,7 +144,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -173,7 +173,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -202,7 +202,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -230,7 +230,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -258,7 +258,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -310,7 +310,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "invalid-phone" }
+                new("invalid-phone")
             }
         );
 
@@ -339,7 +339,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214" }
+                new("+201098021214")
             }
         );
 
@@ -364,7 +364,7 @@ public class CompleteOnboardingCommandValidatorTests
             3,
             new List<BranchPhoneNumberDto>
             {
-                new() { PhoneNumber = "+201098021214", Label = new string('A', 51) } // Too long
+                new("+201098021214", new string('A', 51)) // Too long
             }
         );
 

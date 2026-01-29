@@ -1,5 +1,7 @@
+using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace ClinicManagement.Tests.Application.Features.Auth.Commands;
@@ -7,10 +9,13 @@ namespace ClinicManagement.Tests.Application.Features.Auth.Commands;
 public class RegisterCommandValidatorTests
 {
     private readonly RegisterCommandValidator _validator;
+    private readonly Mock<IPhoneNumberValidationService> _phoneNumberValidationServiceMock;
 
     public RegisterCommandValidatorTests()
     {
-        _validator = new RegisterCommandValidator();
+        _phoneNumberValidationServiceMock = new Mock<IPhoneNumberValidationService>();
+        _phoneNumberValidationServiceMock.Setup(x => x.IsValidPhoneNumber(It.IsAny<string>())).Returns(true);
+        _validator = new RegisterCommandValidator(_phoneNumberValidationServiceMock.Object);
     }
 
     [Fact]
@@ -21,10 +26,10 @@ public class RegisterCommandValidatorTests
         {
             Email = "test@example.com",
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = "John",
             LastName = "Doe",
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -45,10 +50,10 @@ public class RegisterCommandValidatorTests
         {
             Email = email,
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = "John",
             LastName = "Doe",
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -67,10 +72,10 @@ public class RegisterCommandValidatorTests
         {
             Email = "invalid-email",
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = "John",
             LastName = "Doe",
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -93,10 +98,10 @@ public class RegisterCommandValidatorTests
         {
             Email = "test@example.com",
             Password = password,
-            ConfirmPassword = password,
             FirstName = "John",
             LastName = "Doe",
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -105,28 +110,6 @@ public class RegisterCommandValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "Password");
-    }
-
-    [Fact]
-    public void Validate_WhenPasswordsDoNotMatch_ShouldHaveValidationError()
-    {
-        // Arrange
-        var command = new RegisterCommand
-        {
-            Email = "test@example.com",
-            Password = "Password123!",
-            ConfirmPassword = "DifferentPassword123!",
-            FirstName = "John",
-            LastName = "Doe",
-            Username = "johndoe"
-        };
-
-        // Act
-        var result = _validator.Validate(command);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "ConfirmPassword");
     }
 
     [Theory]
@@ -140,10 +123,10 @@ public class RegisterCommandValidatorTests
         {
             Email = "test@example.com",
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = firstName,
             LastName = "Doe",
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -165,10 +148,10 @@ public class RegisterCommandValidatorTests
         {
             Email = "test@example.com",
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = "John",
             LastName = lastName,
-            Username = "johndoe"
+            Username = "johndoe",
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -190,10 +173,10 @@ public class RegisterCommandValidatorTests
         {
             Email = "test@example.com",
             Password = "Password123!",
-            ConfirmPassword = "Password123!",
             FirstName = "John",
             LastName = "Doe",
-            Username = username
+            Username = username,
+            PhoneNumber = "+1234567890"
         };
 
         // Act
@@ -202,5 +185,32 @@ public class RegisterCommandValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "Username");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
+    public void Validate_WhenPhoneNumberIsInvalid_ShouldHaveValidationError(string phoneNumber)
+    {
+        // Arrange
+        _phoneNumberValidationServiceMock.Setup(x => x.IsValidPhoneNumber(It.IsAny<string>())).Returns(false);
+        
+        var command = new RegisterCommand
+        {
+            Email = "test@example.com",
+            Password = "Password123!",
+            FirstName = "John",
+            LastName = "Doe",
+            Username = "johndoe",
+            PhoneNumber = phoneNumber
+        };
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "PhoneNumber");
     }
 }
