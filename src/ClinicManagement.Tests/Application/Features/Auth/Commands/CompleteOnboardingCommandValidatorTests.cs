@@ -254,8 +254,8 @@ public class CompleteOnboardingCommandValidatorTests
             "Main Branch",
             "123 Main Street",
             1,
+            2,
             cityId,
-            3,
             new List<BranchPhoneNumberDto>
             {
                 new("+201098021214")

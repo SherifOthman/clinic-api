@@ -1,4 +1,5 @@
-﻿using ClinicManagement.Application.Common.Interfaces;
+﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using FluentValidation;
 using MediatR;
@@ -16,11 +17,11 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
     public LoginCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("Email or username is required");
+            .NotEmpty().WithMessage(MessageCodes.Fields.EMAIL_REQUIRED)
+            .EmailAddress().WithMessage(MessageCodes.Fields.EMAIL_INVALID_FORMAT);
 
         RuleFor(x => x.Password)
-            .NotEmpty()
-            .WithMessage("Password is required");
+            .NotEmpty().WithMessage(MessageCodes.Fields.PASSWORD_REQUIRED)
+            .MinimumLength(6).WithMessage(MessageCodes.Fields.PASSWORD_MIN_LENGTH);
     }
 }

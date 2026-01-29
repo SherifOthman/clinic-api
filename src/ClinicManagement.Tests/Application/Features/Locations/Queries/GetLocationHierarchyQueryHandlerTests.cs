@@ -93,7 +93,7 @@ public class GetLocationHierarchyQueryHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Location not found");
+        result.Code.Should().Be("LOCATION.NOT_FOUND");
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class GetLocationHierarchyQueryHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Failed to retrieve location hierarchy");
+        result.Code.Should().Be("LOCATION.HIERARCHY.FAILED");
     }
 
     [Fact]

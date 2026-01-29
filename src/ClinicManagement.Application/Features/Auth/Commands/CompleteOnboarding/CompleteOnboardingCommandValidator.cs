@@ -17,7 +17,7 @@ public class CompleteOnboardingCommandValidator : AbstractValidator<CompleteOnbo
             .WithMessage(MessageCodes.Fields.CLINIC_NAME_REQUIRED)
             .MaximumLength(100)
             .WithMessage(MessageCodes.Fields.CLINIC_NAME_MAX_LENGTH)
-            .Matches(@"^[\u0600-\u06FFa-zA-Z0-9\s'-]+$")
+            .Matches(@"^[\u0600-\u06FFa-zA-Z0-9\s'.-]+$")
             .WithMessage(MessageCodes.Fields.CLINIC_NAME_INVALID_CHARACTERS);
 
         RuleFor(x => x.SubscriptionPlanId)

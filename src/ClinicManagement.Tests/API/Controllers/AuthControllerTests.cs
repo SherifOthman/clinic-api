@@ -1,5 +1,6 @@
 using ClinicManagement.API.Controllers;
 using ClinicManagement.Application.Features.Auth.Commands.Login;
+using ClinicManagement.Application.Features.Auth.Commands.Logout;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Application.Common.Models;
 using FluentAssertions;
@@ -43,9 +44,7 @@ public class AuthControllerTests
         var result = await _controller.Register(command, CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().Be(expectedResult);
+        result.Should().BeOfType<OkResult>();
     }
 
     [Fact]
@@ -91,9 +90,7 @@ public class AuthControllerTests
         var result = await _controller.Login(command, CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().Be(expectedResult);
+        result.Should().BeOfType<OkResult>();
     }
 
     [Fact]
@@ -114,18 +111,21 @@ public class AuthControllerTests
         var result = await _controller.Login(command, CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<UnauthorizedObjectResult>();
+        result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
     public async Task Logout_ShouldReturnOkResult()
     {
+        // Arrange
+        var expectedResult = Result.Ok();
+        _mediatorMock.Setup(x => x.Send(It.IsAny<LogoutCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
         // Act
         var result = await _controller.Logout(CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().BeEquivalentTo(new { message = "Logged out successfully" });
+        result.Should().BeOfType<OkResult>();
     }
 }

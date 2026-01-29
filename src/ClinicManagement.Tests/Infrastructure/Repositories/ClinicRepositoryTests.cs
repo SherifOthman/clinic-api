@@ -25,6 +25,7 @@ public class ClinicRepositoryTests : IDisposable
 
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        _dateTimeProviderMock.Setup(x => x.UtcNow).Returns(DateTime.UtcNow);
         _context = new ApplicationDbContext(options, _currentUserServiceMock.Object, _dateTimeProviderMock.Object);
         _repository = new ClinicRepository(_context);
     }
@@ -94,9 +95,16 @@ public class ClinicRepositoryTests : IDisposable
     public async Task GetPagedAsync_WithDateRangeFilter_ShouldReturnFilteredResults()
     {
         // Arrange
+        var baseDate = new DateTime(2024, 1, 15, 12, 0, 0, DateTimeKind.Utc);
+        _dateTimeProviderMock.SetupSequence(x => x.UtcNow)
+            .Returns(baseDate.AddDays(-2))  // First clinic
+            .Returns(baseDate.AddDays(-1))  // Second clinic
+            .Returns(baseDate);             // Third clinic
+        
         await SeedTestData();
-        var fromDate = DateTime.UtcNow.AddDays(-5);
-        var toDate = DateTime.UtcNow.AddDays(5);
+        
+        var fromDate = baseDate.AddDays(-5);
+        var toDate = baseDate.AddDays(5);
         var request = new ClinicSearchRequest(1, 10) 
         { 
             CreatedFrom = fromDate, 
@@ -270,38 +278,38 @@ public class ClinicRepositoryTests : IDisposable
         await _context.SubscriptionPlans.AddRangeAsync(subscriptionPlan1, subscriptionPlan2);
         await _context.SaveChangesAsync();
 
-        var clinics = new List<Clinic>
-        {
-            new Clinic 
-            { 
-                Id = 1, 
-                Name = "City Medical Center", 
-                SubscriptionPlanId = 1,
-                IsActive = true, 
-                CreatedAt = DateTime.UtcNow.AddDays(-2),
-                Users = new List<User>()
-            },
-            new Clinic 
-            { 
-                Id = 2, 
-                Name = "Family Health Clinic", 
-                SubscriptionPlanId = 2,
-                IsActive = true, 
-                CreatedAt = DateTime.UtcNow.AddDays(-1),
-                Users = new List<User>()
-            },
-            new Clinic 
-            { 
-                Id = 3, 
-                Name = "Wellness Center", 
-                SubscriptionPlanId = 2, // Changed to 2 to test filtering
-                IsActive = false, 
-                CreatedAt = DateTime.UtcNow,
-                Users = new List<User>()
-            }
+        // Add clinics one by one so the mock can return different dates for each
+        var clinic1 = new Clinic 
+        { 
+            Id = 1, 
+            Name = "City Medical Center", 
+            SubscriptionPlanId = 1,
+            IsActive = true,
+            Users = new List<User>()
         };
+        await _context.Clinics.AddAsync(clinic1);
+        await _context.SaveChangesAsync();
 
-        await _context.Clinics.AddRangeAsync(clinics);
+        var clinic2 = new Clinic 
+        { 
+            Id = 2, 
+            Name = "Family Health Clinic", 
+            SubscriptionPlanId = 2,
+            IsActive = true,
+            Users = new List<User>()
+        };
+        await _context.Clinics.AddAsync(clinic2);
+        await _context.SaveChangesAsync();
+
+        var clinic3 = new Clinic 
+        { 
+            Id = 3, 
+            Name = "Wellness Center", 
+            SubscriptionPlanId = 2, // Changed to 2 to test filtering
+            IsActive = false,
+            Users = new List<User>()
+        };
+        await _context.Clinics.AddAsync(clinic3);
         await _context.SaveChangesAsync();
     }
 

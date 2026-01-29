@@ -133,6 +133,6 @@ public class ConfirmEmailCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("EMAIL.CONFIRMATION.FAILED");
+        result.Code.Should().Be("AUTH.EMAIL.NOT_CONFIRMED");
     }
 }

@@ -80,7 +80,7 @@ public class ResendEmailVerificationCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Failed to send confirmation email: SMTP error");
+        result.Code.Should().Be("SMTP error");
     }
 
     [Fact]

@@ -54,7 +54,7 @@ public class UpdateProfileImageCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("User not authenticated");
+        result.Code.Should().Be("AUTH.USER.NOT_AUTHENTICATED");
     }
 
     [Fact]

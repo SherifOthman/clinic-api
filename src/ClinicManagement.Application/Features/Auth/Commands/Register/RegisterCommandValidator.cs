@@ -29,7 +29,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .MinimumLength(3).WithMessage(MessageCodes.Fields.USERNAME_MIN_LENGTH)
             .MaximumLength(30).WithMessage(MessageCodes.Fields.USERNAME_MAX_LENGTH)
             .Matches("^[a-zA-Z0-9_]+$").WithMessage(MessageCodes.Fields.USERNAME_INVALID_CHARACTERS)
-            .Must(username => !username.StartsWith("_") && !username.EndsWith("_"))
+            .Must(username => string.IsNullOrEmpty(username) || (!username.StartsWith("_") && !username.EndsWith("_")))
             .WithMessage(MessageCodes.Fields.USERNAME_UNDERSCORE_POSITION);
 
         RuleFor(x => x.Email)
@@ -42,7 +42,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .MinimumLength(8).WithMessage(MessageCodes.Fields.PASSWORD_MIN_LENGTH)
             .MaximumLength(128).WithMessage(MessageCodes.Fields.PASSWORD_MAX_LENGTH)
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithMessage(MessageCodes.Fields.PASSWORD_COMPLEXITY)
-            .Must(password => !password.Contains(" ")).WithMessage(MessageCodes.Fields.PASSWORD_NO_SPACES);
+            .Must(password => string.IsNullOrEmpty(password) || !password.Contains(" ")).WithMessage(MessageCodes.Fields.PASSWORD_NO_SPACES);
 
         RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage(MessageCodes.Fields.PHONE_NUMBER_REQUIRED)

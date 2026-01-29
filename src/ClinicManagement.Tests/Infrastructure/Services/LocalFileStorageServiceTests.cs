@@ -85,7 +85,7 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Contain("exceeds maximum");
+        result.Code.Should().Be("FILE.TOO_LARGE");
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class LocalFileStorageServiceTests : IDisposable
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Contain("Invalid file type");
+        result.Code.Should().Be("FILE.INVALID_TYPE");
     }
 
     [Fact]
