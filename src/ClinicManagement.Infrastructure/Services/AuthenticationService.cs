@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
+using ClinicManagement.Application.Common.Constants;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -38,14 +39,14 @@ public class AuthenticationService : IAuthenticationService
         if (string.IsNullOrEmpty(refreshToken))
         {
             _logger.LogWarning("Refresh token attempt with empty token");
-            return Result<TokenRefreshResult>.Fail("Invalid refresh token");
+            return Result<TokenRefreshResult>.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
         }
 
         var tokenEntity = await _refreshTokenService.GetActiveRefreshTokenAsync(refreshToken, cancellationToken);
         if (tokenEntity == null)
         {
             _logger.LogWarning("Invalid refresh token used");
-            return Result<TokenRefreshResult>.Fail("Invalid refresh token");
+            return Result<TokenRefreshResult>.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
         }
 
         // Generate new tokens
@@ -75,13 +76,13 @@ public class AuthenticationService : IAuthenticationService
         if (user == null || !await _userManagementService.CheckPasswordAsync(user, password, cancellationToken))
         {
             _logger.LogWarning("Failed login attempt for: {Email}", email);
-            return Result<LoginResult>.Fail("Invalid username or password");
+            return Result<LoginResult>.Fail(MessageCodes.Authentication.INVALID_CREDENTIALS);
         }
 
         if (!await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
         {
             _logger.LogWarning("Login attempt with unconfirmed email: {Email}", email);
-            return Result<LoginResult>.Fail("Please verify your email address before signing in. Check your inbox for the verification link.");
+            return Result<LoginResult>.Fail(MessageCodes.Authentication.EMAIL_NOT_CONFIRMED);
         }
 
         var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);

@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Services;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Services;
 using FluentAssertions;
@@ -90,7 +91,7 @@ public class AuthenticationServiceTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Invalid username or password");
+        result.Code.Should().Be(MessageCodes.Authentication.INVALID_CREDENTIALS);
     }
 
     [Fact]
@@ -120,7 +121,7 @@ public class AuthenticationServiceTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Please verify your email address before signing in. Check your inbox for the verification link.");
+        result.Code.Should().Be(MessageCodes.Authentication.EMAIL_NOT_CONFIRMED);
     }
 
     [Fact]
@@ -147,7 +148,7 @@ public class AuthenticationServiceTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Code.Should().Be("Invalid username or password");
+        result.Code.Should().Be(MessageCodes.Authentication.INVALID_CREDENTIALS);
     }
 
     [Fact]
