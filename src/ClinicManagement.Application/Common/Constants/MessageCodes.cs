@@ -18,6 +18,10 @@ public static class MessageCodes
         public const string EMAIL_ALREADY_CONFIRMED = "AUTH.EMAIL.ALREADY_CONFIRMED";
         public const string AUTHENTICATION_FAILED = "AUTH.FAILED";
         public const string USER_WITH_EMAIL_NOT_FOUND = "AUTH.USER.EMAIL_NOT_FOUND";
+        public const string UNAUTHORIZED_ACCESS = "AUTH.UNAUTHORIZED_ACCESS";
+        public const string CLINIC_ACCESS_DENIED = "AUTH.CLINIC.ACCESS_DENIED";
+        public const string CLINIC_NOT_FOUND = "AUTH.CLINIC.NOT_FOUND";
+        public const string CLINIC_SWITCH_FAILED = "AUTH.CLINIC.SWITCH_FAILED";
     }
 
     public static class Authorization

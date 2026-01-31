@@ -11,6 +11,8 @@ public class Clinic : AuditableEntity
     // Navigation properties
     public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<User> CurrentUsers { get; set; } = new List<User>();
+    public virtual ICollection<UserClinic> UserClinics { get; set; } = new List<UserClinic>();
     public virtual ICollection<ClinicBranch> ClinicBranches { get; set; } = new List<ClinicBranch>();
     public virtual ICollection<Patient> Patients { get; set; } = new List<Patient>();
 }

@@ -7,7 +7,8 @@ public class User : IdentityUser<int>
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public int? ClinicId { get; set; }
+    public int? ClinicId { get; set; } // Current/Primary clinic for backward compatibility
+    public int? CurrentClinicId { get; set; } // Currently selected clinic for multi-clinic users
     public int? SpecializationId { get; set; }
     
     public string? Country { get; set; }
@@ -18,6 +19,8 @@ public class User : IdentityUser<int>
     public DateTime? ProfileImageUpdatedAt { get; set; }
     
     public virtual Clinic? Clinic { get; set; }
+    public virtual Clinic? CurrentClinic { get; set; }
     public virtual Specialization? Specialization { get; set; }
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public virtual ICollection<UserClinic> UserClinics { get; set; } = new List<UserClinic>();
 }

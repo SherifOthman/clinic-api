@@ -39,6 +39,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(u => u.ClinicId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(u => u.CurrentClinic)
+            .WithMany(c => c.CurrentUsers)
+            .HasForeignKey(u => u.CurrentClinicId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasOne(u => u.Specialization)
             .WithMany(s => s.Users)
             .HasForeignKey(u => u.SpecializationId)
@@ -47,5 +52,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email);
         builder.HasIndex(u => u.UserName);
         builder.HasIndex(u => u.ClinicId);
+        builder.HasIndex(u => u.CurrentClinicId);
     }
 }

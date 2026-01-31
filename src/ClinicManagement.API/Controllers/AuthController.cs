@@ -11,9 +11,11 @@ using ClinicManagement.Application.Features.Auth.Commands.Logout;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
+using ClinicManagement.Application.Features.Auth.Commands.SwitchClinic;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfileImage;
 using ClinicManagement.Application.Features.Auth.Queries.GetMe;
+using ClinicManagement.Application.Features.Auth.Queries.GetUserClinics;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -154,6 +156,32 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateProfile(UpdateProfileCommand command, CancellationToken cancellationToken)
     {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    [HttpGet("clinics")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(IEnumerable<UserClinicDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetUserClinics(CancellationToken cancellationToken)
+    {
+        var query = new GetUserClinicsQuery();
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult(result);
+    }
+
+    [HttpPost("switch-clinic")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(SwitchClinicResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SwitchClinic(SwitchClinicRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SwitchClinicCommand { ClinicId = request.ClinicId };
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }

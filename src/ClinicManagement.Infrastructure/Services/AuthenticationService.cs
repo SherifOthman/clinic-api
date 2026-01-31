@@ -51,7 +51,7 @@ public class AuthenticationService : IAuthenticationService
 
         // Generate new tokens
         var userRoles = await _userManagementService.GetUserRolesAsync(tokenEntity.User, cancellationToken);
-        var newAccessToken = _tokenService.GenerateAccessToken(tokenEntity.User, userRoles, tokenEntity.User.ClinicId);
+        var newAccessToken = _tokenService.GenerateAccessToken(tokenEntity.User, userRoles, tokenEntity.User.CurrentClinicId ?? tokenEntity.User.ClinicId);
         var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(tokenEntity.UserId, null, cancellationToken);
 
         // Revoke old refresh token
@@ -86,7 +86,7 @@ public class AuthenticationService : IAuthenticationService
         }
 
         var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
-        var accessToken = _tokenService.GenerateAccessToken(user, userRoles, user.ClinicId);
+        var accessToken = _tokenService.GenerateAccessToken(user, userRoles, user.CurrentClinicId ?? user.ClinicId);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
         _logger.LogInformation("User {UserId} logged in successfully", user.Id);

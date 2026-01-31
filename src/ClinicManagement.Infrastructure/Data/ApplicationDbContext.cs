@@ -24,6 +24,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
     public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<UserClinic> UserClinics => Set<UserClinic>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider) : base(options)
     {

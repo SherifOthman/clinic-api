@@ -10,5 +10,11 @@ public class SubscriptionPlan : BaseEntity
     public int DurationDays { get; set; }
     public int MaxUsers { get; set; }
     public int MaxPatients { get; set; }
+    public int MaxClinics { get; set; } = 1;
+    public int MaxBranches { get; set; } = 1;
+    public bool HasAdvancedReporting { get; set; } = false;
+    public bool HasApiAccess { get; set; } = false;
+    public bool HasPrioritySupport { get; set; } = false;
+    public bool HasCustomBranding { get; set; } = false;
     public bool IsActive { get; set; } = true;
 }

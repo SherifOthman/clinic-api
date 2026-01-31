@@ -55,6 +55,9 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             // Update users with clinic associations
             await UpdateUserClinicAssociations();
             
+            // Seed UserClinic entries for existing users
+            await UserClinicSeeder.SeedAsync(_context, _logger);
+            
             // Seed patients (requires clinics and chronic diseases)
             await PatientSeeder.SeedAsync(_context, _fileSystem, _logger);
             

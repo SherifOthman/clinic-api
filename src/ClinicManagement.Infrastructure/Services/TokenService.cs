@@ -33,12 +33,15 @@ public class TokenService : ITokenService
 
     public string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null)
     {
+        // Use CurrentClinicId if available, otherwise fall back to ClinicId for backward compatibility
+        var effectiveClinicId = clinicId ?? user.CurrentClinicId ?? user.ClinicId;
+        
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
             new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim()),
-            new(ClaimConstants.ClinicId, clinicId?.ToString() ?? string.Empty)
+            new(ClaimConstants.ClinicId, effectiveClinicId?.ToString() ?? string.Empty)
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

@@ -14,17 +14,20 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILocationsService _locationsService;
+    private readonly IClinicManagementService _clinicManagementService;
     private readonly ILogger<CompleteOnboardingCommandHandler> _logger;
 
     public CompleteOnboardingCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         ILocationsService locationsService,
+        IClinicManagementService clinicManagementService,
         ILogger<CompleteOnboardingCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _locationsService = locationsService;
+        _clinicManagementService = clinicManagementService;
         _logger = logger;
     }
 
@@ -102,13 +105,23 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         }
         
         user.ClinicId = clinic.Id;
+        user.CurrentClinicId = clinic.Id; // Set as current clinic
         user.Country = country?.Name;
         user.City = city?.Name;
         
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
+
+        // Create UserClinic relationship with owner privileges
+        var assignResult = await _clinicManagementService.AssignUserToClinicAsync(userId, clinic.Id, isOwner: true, cancellationToken);
+        if (!assignResult.Success)
+        {
+            _logger.LogError("Failed to assign user {UserId} as owner of clinic {ClinicId}", userId, clinic.Id);
+            return Result<int>.Fail(assignResult.Code ?? MessageCodes.Business.OPERATION_NOT_ALLOWED);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Onboarding completed for user {UserId}, created clinic {ClinicId}", userId, clinic.Id);
+        _logger.LogInformation("Onboarding completed for user {UserId}, created clinic {ClinicId} with owner privileges", userId, clinic.Id);
 
         return Result<int>.Ok(clinic.Id);
     }

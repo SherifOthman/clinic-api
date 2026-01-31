@@ -18,6 +18,7 @@ public interface IApplicationDbContext
     DbSet<PatientChronicDisease> PatientChronicDiseases { get; }
     DbSet<RateLimitEntry> RateLimitEntries { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<UserClinic> UserClinics { get; }
     
     DatabaseFacade Database { get; }
     
