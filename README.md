@@ -12,7 +12,7 @@ A healthcare management API that supports multiple clinics with role-based acces
 
 ### **🚀 Live Demo**
 
-- **API Documentation**: http://clinic-api.runasp.net/swagger
+- **API Documentation**: https://clinic-api.runasp.net/swagger
 
 ## 🛠️ **Technology Stack**
 
