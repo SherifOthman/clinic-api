@@ -31,7 +31,7 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null)
     {
         // Use CurrentClinicId if available, otherwise fall back to ClinicId for backward compatibility
         var effectiveClinicId = clinicId ?? user.CurrentClinicId ?? user.ClinicId;

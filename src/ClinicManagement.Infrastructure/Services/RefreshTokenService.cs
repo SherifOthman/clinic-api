@@ -31,7 +31,7 @@ public class RefreshTokenService : IRefreshTokenService
         _logger = logger;
     }
 
-    public async Task<RefreshToken> GenerateRefreshTokenAsync(int userId, string? ipAddress = null, CancellationToken cancellationToken = default)
+    public async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
         var randomBytes = new byte[64];
         using var rng = RandomNumberGenerator.Create();
@@ -80,7 +80,7 @@ public class RefreshTokenService : IRefreshTokenService
         }
     }
 
-    public async Task RevokeAllUserRefreshTokensAsync(int userId, string? ipAddress = null, CancellationToken cancellationToken = default)
+    public async Task RevokeAllUserRefreshTokensAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
         var activeTokens = await _unitOfWork.RefreshTokens.GetActiveTokensByUserIdAsync(userId, cancellationToken);
         var revokeIp = ipAddress ?? _currentUserService.IpAddress;

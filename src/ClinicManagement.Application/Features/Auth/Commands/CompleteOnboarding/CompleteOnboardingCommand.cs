@@ -5,14 +5,14 @@ namespace ClinicManagement.Application.Features.Auth.Commands.CompleteOnboarding
 
 public record CompleteOnboardingCommand(
     string ClinicName,
-    int SubscriptionPlanId,
+    Guid SubscriptionPlanId,
     string BranchName,
     string BranchAddress,
     int CountryId,
     int? StateId,
     int CityId,
     List<BranchPhoneNumberDto> BranchPhoneNumbers
-) : IRequest<Result<int>>;
+) : IRequest<Result<Guid>>;
 
 public record BranchPhoneNumberDto(
     string PhoneNumber,

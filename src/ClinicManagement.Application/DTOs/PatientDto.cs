@@ -4,7 +4,7 @@ namespace ClinicManagement.Application.DTOs;
 
 public class PatientDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
@@ -26,14 +26,14 @@ public class PatientDto
 
 public class PatientPhoneNumberDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string PhoneNumber { get; set; } = string.Empty;
 }
 
 public class PatientChronicDiseaseDto
 {
-    public int Id { get; set; }
-    public int ChronicDiseaseId { get; set; }
+    public Guid Id { get; set; }
+    public Guid ChronicDiseaseId { get; set; }
     public string ChronicDiseaseName { get; set; } = string.Empty;
     public DateTime DiagnosedDate { get; set; }
     public string? Notes { get; set; }
@@ -64,7 +64,7 @@ public class CreatePatientPhoneNumberDto
 
 public class CreatePatientChronicDiseaseDto
 {
-    public int ChronicDiseaseId { get; set; }
+    public Guid ChronicDiseaseId { get; set; }
     public DateTime DiagnosedDate { get; set; }
     public string? Notes { get; set; }
 }
@@ -88,14 +88,14 @@ public class UpdatePatientDto
 
 public class UpdatePatientPhoneNumberDto
 {
-    public int? Id { get; set; } // null for new phone numbers
+    public Guid? Id { get; set; } // null for new phone numbers
     public string PhoneNumber { get; set; } = string.Empty;
 }
 
 public class UpdatePatientChronicDiseaseDto
 {
-    public int? Id { get; set; } // null for new chronic diseases
-    public int ChronicDiseaseId { get; set; }
+    public Guid? Id { get; set; } // null for new chronic diseases
+    public Guid ChronicDiseaseId { get; set; }
     public DateTime DiagnosedDate { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;

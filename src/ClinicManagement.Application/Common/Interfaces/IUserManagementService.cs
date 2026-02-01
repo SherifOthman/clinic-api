@@ -9,6 +9,6 @@ public interface IUserManagementService
     Task<bool> CheckPasswordAsync(User user, string password, CancellationToken cancellationToken = default);
     Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
-    Task<User?> GetUserByIdAsync(int userId, CancellationToken cancellationToken = default);
+    Task<User?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<IList<string>> GetUserRolesAsync(User user, CancellationToken cancellationToken = default);
 }

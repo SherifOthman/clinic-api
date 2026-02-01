@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>, IApplicationDbContext
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>, IApplicationDbContext
 {
     private readonly ICurrentUserService _currentUserService;
     private readonly IDateTimeProvider _dateTimeProvider;
@@ -54,12 +54,12 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
         base.OnModelCreating(builder);
 
         builder.Entity<User>().ToTable("Users");
-        builder.Entity<IdentityRole<int>>().ToTable("Roles");
-        builder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
-        builder.Entity<IdentityUserClaim<int>>().ToTable("UserClaims");
-        builder.Entity<IdentityUserLogin<int>>().ToTable("UserLogins");
-        builder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
-        builder.Entity<IdentityUserToken<int>>().ToTable("UserTokens");
+        builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
 
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 

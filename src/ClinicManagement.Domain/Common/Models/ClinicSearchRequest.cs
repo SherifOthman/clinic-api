@@ -2,7 +2,7 @@ namespace ClinicManagement.Domain.Common.Models;
 
 public class ClinicSearchRequest : PaginationRequest
 {
-    public int? SubscriptionPlanId { get; set; }
+    public Guid? SubscriptionPlanId { get; set; }
     public bool? IsActive { get; set; }
     public DateTime? CreatedFrom { get; set; }
     public DateTime? CreatedTo { get; set; }

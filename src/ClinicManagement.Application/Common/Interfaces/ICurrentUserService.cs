@@ -2,8 +2,8 @@
 
 public interface ICurrentUserService
 {
-    int? UserId { get; }
-    int? ClinicId { get; }
+    Guid? UserId { get; }
+    Guid? ClinicId { get; }
     string? Email { get; }
     string IpAddress { get; }
     string? UserAgent { get; }
@@ -11,9 +11,9 @@ public interface ICurrentUserService
     bool IsAuthenticated { get; }
     
     // Helper methods that return results instead of throwing exceptions
-    int GetRequiredUserId();
-    int GetRequiredClinicId();
-    bool TryGetUserId(out int userId);
-    bool TryGetClinicId(out int clinicId);
+    Guid GetRequiredUserId();
+    Guid GetRequiredClinicId();
+    bool TryGetUserId(out Guid userId);
+    bool TryGetClinicId(out Guid clinicId);
     bool HasClinicAccess();
 }

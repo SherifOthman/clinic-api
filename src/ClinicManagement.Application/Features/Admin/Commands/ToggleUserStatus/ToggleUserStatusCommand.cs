@@ -7,5 +7,5 @@ namespace ClinicManagement.Application.Features.Admin.Commands.ToggleUserStatus;
 
 public class ToggleUserStatusCommand : IRequest<Result<UserDto>>
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 }

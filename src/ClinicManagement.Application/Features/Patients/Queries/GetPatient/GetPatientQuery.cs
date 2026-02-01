@@ -6,5 +6,5 @@ namespace ClinicManagement.Application.Features.Patients.Queries.GetPatient;
 
 public record GetPatientQuery : IRequest<Result<PatientDto>>
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
 }

@@ -6,5 +6,5 @@ namespace ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChron
 
 public class GetChronicDiseaseQuery : IRequest<Result<ChronicDiseaseDto>>
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 }

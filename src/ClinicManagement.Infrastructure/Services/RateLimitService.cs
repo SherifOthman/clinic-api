@@ -27,7 +27,7 @@ public class RateLimitService : IRateLimitService
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<bool> IsRateLimitExceededAsync(string ipAddress, int? userId = null, CancellationToken cancellationToken = default)
+    public async Task<bool> IsRateLimitExceededAsync(string ipAddress, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         var identifier = userId?.ToString() ?? ipAddress;
         var type = userId.HasValue ? "USER" : "IP";

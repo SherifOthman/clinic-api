@@ -23,7 +23,7 @@ public class ClinicManagementService : IClinicManagementService
         _logger = logger;
     }
 
-    public async Task<Result<bool>> AssignUserToClinicAsync(int userId, int clinicId, bool isOwner = false, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> AssignUserToClinicAsync(Guid userId, Guid clinicId, bool isOwner = false, CancellationToken cancellationToken = default)
     {
         // Check if user is already assigned to this clinic
         var existingAssignment = await _context.UserClinics
@@ -67,7 +67,7 @@ public class ClinicManagementService : IClinicManagementService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<bool>> RemoveUserFromClinicAsync(int userId, int clinicId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> RemoveUserFromClinicAsync(Guid userId, Guid clinicId, CancellationToken cancellationToken = default)
     {
         var userClinic = await _context.UserClinics
             .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ClinicId == clinicId, cancellationToken);
@@ -97,7 +97,7 @@ public class ClinicManagementService : IClinicManagementService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<IEnumerable<Clinic>>> GetUserClinicsAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<Clinic>>> GetUserClinicsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var clinics = await _context.UserClinics
             .Include(uc => uc.Clinic)
@@ -109,7 +109,7 @@ public class ClinicManagementService : IClinicManagementService
         return Result<IEnumerable<Clinic>>.Ok(clinics);
     }
 
-    public async Task<Result<bool>> CanUserAccessClinicAsync(int userId, int clinicId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> CanUserAccessClinicAsync(Guid userId, Guid clinicId, CancellationToken cancellationToken = default)
     {
         var hasAccess = await _context.UserClinics
             .AnyAsync(uc => uc.UserId == userId && uc.ClinicId == clinicId && uc.IsActive, cancellationToken);
@@ -117,7 +117,7 @@ public class ClinicManagementService : IClinicManagementService
         return Result<bool>.Ok(hasAccess);
     }
 
-    public async Task<Result<bool>> IsUserClinicOwnerAsync(int userId, int clinicId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> IsUserClinicOwnerAsync(Guid userId, Guid clinicId, CancellationToken cancellationToken = default)
     {
         var isOwner = await _context.UserClinics
             .AnyAsync(uc => uc.UserId == userId && uc.ClinicId == clinicId && uc.IsOwner && uc.IsActive, cancellationToken);
@@ -125,7 +125,7 @@ public class ClinicManagementService : IClinicManagementService
         return Result<bool>.Ok(isOwner);
     }
 
-    public async Task<Result<int>> GetUserClinicCountAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<Result<int>> GetUserClinicCountAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var count = await _context.UserClinics
             .Where(uc => uc.UserId == userId && uc.IsOwner && uc.IsActive)
@@ -134,7 +134,7 @@ public class ClinicManagementService : IClinicManagementService
         return Result<int>.Ok(count);
     }
 
-    public async Task<Result<bool>> CanUserCreateMoreClinicsAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> CanUserCreateMoreClinicsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         // Get user's current clinic and its subscription plan
         var user = await _context.Users

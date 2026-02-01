@@ -21,7 +21,7 @@ public class CompleteOnboardingCommandValidator : AbstractValidator<CompleteOnbo
             .WithMessage(MessageCodes.Fields.CLINIC_NAME_INVALID_CHARACTERS);
 
         RuleFor(x => x.SubscriptionPlanId)
-            .GreaterThan(0)
+            .NotEqual(Guid.Empty)
             .WithMessage(MessageCodes.Fields.SUBSCRIPTION_PLAN_REQUIRED);
 
         RuleFor(x => x.BranchName)

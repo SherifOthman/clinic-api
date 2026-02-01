@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Patient : AuditableEntity
 {
-    public int ClinicId { get; set; }
+    public Guid ClinicId { get; set; }
     public string FullName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }

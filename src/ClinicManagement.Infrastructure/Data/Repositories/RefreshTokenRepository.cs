@@ -23,7 +23,7 @@ public class RefreshTokenRepository : BaseRepository<RefreshToken>, IRefreshToke
                 cancellationToken);
     }
 
-    public async Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var currentTime = _dateTimeProvider.UtcNow;
         return await _dbSet

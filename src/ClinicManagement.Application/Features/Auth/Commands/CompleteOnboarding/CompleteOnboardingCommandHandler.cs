@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.CompleteOnboarding;
 
-public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardingCommand, Result<int>>
+public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardingCommand, Result<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
@@ -31,32 +31,32 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         _logger = logger;
     }
 
-    public async Task<Result<int>> Handle(CompleteOnboardingCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CompleteOnboardingCommand request, CancellationToken cancellationToken)
     {
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthenticated user attempted to complete onboarding");
-            return Result<int>.Fail(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<Guid>.Fail(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("User {UserId} not found during onboarding", userId);
-            return Result<int>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+            return Result<Guid>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
         }
 
         if (user.ClinicId != null)
         {
             _logger.LogWarning("User {UserId} already has clinic {ClinicId}", userId, user.ClinicId);
-            return Result<int>.Fail(ApplicationErrors.Onboarding.USER_ALREADY_HAS_CLINIC);
+            return Result<Guid>.Fail(ApplicationErrors.Onboarding.USER_ALREADY_HAS_CLINIC);
         }
 
         var subscriptionPlan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(request.SubscriptionPlanId, cancellationToken);
         if (subscriptionPlan == null || !subscriptionPlan.IsActive)
         {
             _logger.LogWarning("Invalid subscription plan {PlanId} for user {UserId}", request.SubscriptionPlanId, userId);
-            return Result<int>.Fail(ApplicationErrors.Onboarding.INVALID_SUBSCRIPTION_PLAN);
+            return Result<Guid>.Fail(ApplicationErrors.Onboarding.INVALID_SUBSCRIPTION_PLAN);
         }
 
         var countries = await _locationsService.GetCountriesAsync();
@@ -116,13 +116,13 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         if (!assignResult.Success)
         {
             _logger.LogError("Failed to assign user {UserId} as owner of clinic {ClinicId}", userId, clinic.Id);
-            return Result<int>.Fail(assignResult.Code ?? MessageCodes.Business.OPERATION_NOT_ALLOWED);
+            return Result<Guid>.Fail(assignResult.Code ?? MessageCodes.Business.OPERATION_NOT_ALLOWED);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Onboarding completed for user {UserId}, created clinic {ClinicId} with owner privileges", userId, clinic.Id);
 
-        return Result<int>.Ok(clinic.Id);
+        return Result<Guid>.Ok(clinic.Id);
     }
 }

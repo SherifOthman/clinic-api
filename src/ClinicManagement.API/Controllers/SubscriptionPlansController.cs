@@ -31,7 +31,7 @@ public class SubscriptionPlansController : BaseApiController
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(SubscriptionPlanDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSubscriptionPlan(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetSubscriptionPlan(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetSubscriptionPlanQuery(id);
         var result = await Mediator.Send(query, cancellationToken);
@@ -49,7 +49,7 @@ public class SubscriptionPlansController : BaseApiController
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(SubscriptionPlanDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateSubscriptionPlan(int id, UpdateSubscriptionPlanCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateSubscriptionPlan(Guid id, UpdateSubscriptionPlanCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
             return BadRequest(MessageCodes.Controller.ID_MISMATCH);
@@ -61,7 +61,7 @@ public class SubscriptionPlansController : BaseApiController
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteSubscriptionPlan(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteSubscriptionPlan(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteSubscriptionPlanCommand(id);
         var result = await Mediator.Send(command, cancellationToken);

@@ -14,7 +14,7 @@ public class UpdatePatientCommandValidator : AbstractValidator<UpdatePatientComm
         _phoneNumberValidationService = phoneNumberValidationService;
 
         RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage(MessageCodes.Validation.POSITIVE_NUMBER_REQUIRED);
+            .NotEqual(Guid.Empty).WithMessage(MessageCodes.Validation.POSITIVE_NUMBER_REQUIRED);
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage(MessageCodes.Fields.FULL_NAME_REQUIRED)
@@ -38,7 +38,7 @@ public class UpdatePatientCommandValidator : AbstractValidator<UpdatePatientComm
             .SetValidator(new UpdatePatientPhoneNumberValidator(_phoneNumberValidationService));
 
         RuleFor(x => x.ChronicDiseaseIds)
-            .Must(ids => ids.All(id => id > 0)).WithMessage(MessageCodes.Fields.CHRONIC_DISEASE_IDS_POSITIVE)
+            .Must(ids => ids.All(id => id != Guid.Empty)).WithMessage(MessageCodes.Fields.CHRONIC_DISEASE_IDS_POSITIVE)
             .When(x => x.ChronicDiseaseIds.Any());
     }
 }
@@ -52,7 +52,7 @@ public class UpdatePatientPhoneNumberValidator : AbstractValidator<UpdatePatient
         _phoneNumberValidationService = phoneNumberValidationService;
 
         RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage(MessageCodes.Validation.POSITIVE_NUMBER_REQUIRED)
+            .NotEqual(Guid.Empty).WithMessage(MessageCodes.Validation.POSITIVE_NUMBER_REQUIRED)
             .When(x => x.Id.HasValue);
 
         RuleFor(x => x.PhoneNumber)

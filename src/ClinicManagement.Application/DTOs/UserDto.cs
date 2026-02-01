@@ -2,7 +2,7 @@
 
 public class UserDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Username { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
@@ -20,7 +20,7 @@ public class UserDto
     public DateTime? ProfileImageUpdatedAt { get; set; }
     
     // Onboarding and clinic information
-    public int? ClinicId { get; set; }
+    public Guid? ClinicId { get; set; }
     public string? ClinicName { get; set; }
     public bool OnboardingCompleted { get; set; }
     

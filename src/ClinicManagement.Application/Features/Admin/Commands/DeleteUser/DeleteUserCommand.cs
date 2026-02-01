@@ -7,5 +7,5 @@ namespace ClinicManagement.Application.Features.Admin.Commands.DeleteUser;
 
 public class DeleteUserCommand : IRequest<Result<bool>>
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 }

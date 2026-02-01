@@ -55,7 +55,7 @@ public class OnboardingController : BaseApiController
 
 public record CompleteOnboardingRequest(
     string ClinicName, 
-    int SubscriptionPlanId,
+    Guid SubscriptionPlanId,
     string BranchName,
     string BranchAddress,
     int CountryId,

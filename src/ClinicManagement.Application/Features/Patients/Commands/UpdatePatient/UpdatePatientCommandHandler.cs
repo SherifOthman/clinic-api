@@ -122,7 +122,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         }
     }
 
-    private async Task UpdateChronicDiseases(Patient patient, List<int> chronicDiseaseIds, CancellationToken cancellationToken)
+    private async Task UpdateChronicDiseases(Patient patient, List<Guid> chronicDiseaseIds, CancellationToken cancellationToken)
     {
         // Remove all existing chronic diseases
         patient.ChronicDiseases.Clear();

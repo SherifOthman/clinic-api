@@ -51,7 +51,7 @@ public class ChronicDiseasesController : BaseApiController
     [Authorize(Roles = RoleNames.AllStaff)]
     [ProducesResponseType(typeof(ChronicDiseaseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetChronicDisease(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetChronicDisease(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetChronicDiseaseQuery { Id = id };
         var result = await Mediator.Send(query, cancellationToken);
@@ -71,7 +71,7 @@ public class ChronicDiseasesController : BaseApiController
     [Authorize(Roles = RoleNames.AdminAndManagement)]
     [ProducesResponseType(typeof(ChronicDiseaseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateChronicDisease(int id, UpdateChronicDiseaseCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateChronicDisease(Guid id, UpdateChronicDiseaseCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
             return BadRequest(MessageCodes.Controller.ID_MISMATCH);
@@ -84,7 +84,7 @@ public class ChronicDiseasesController : BaseApiController
     [Authorize(Roles = RoleNames.AdminAndManagement)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteChronicDisease(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteChronicDisease(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteChronicDiseaseCommand { Id = id };
         var result = await Mediator.Send(command, cancellationToken);

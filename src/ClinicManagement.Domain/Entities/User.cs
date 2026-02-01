@@ -2,14 +2,14 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class User : IdentityUser<int>
+public class User : IdentityUser<Guid>
 {
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public int? ClinicId { get; set; } // Current/Primary clinic for backward compatibility
-    public int? CurrentClinicId { get; set; } // Currently selected clinic for multi-clinic users
-    public int? SpecializationId { get; set; }
+    public Guid? ClinicId { get; set; } // Current/Primary clinic for backward compatibility
+    public Guid? CurrentClinicId { get; set; } // Currently selected clinic for multi-clinic users
+    public Guid? SpecializationId { get; set; }
     
     public string? Country { get; set; }
     public string? City { get; set; }

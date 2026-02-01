@@ -4,7 +4,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class ClinicBranch : AuditableEntity
 {
-    public int ClinicId { get; set; }
+    public Guid ClinicId { get; set; }
     public string Name { get; set; } = string.Empty; // Branch name
     
     // GeoNames integration - replace database foreign keys with GeoNames data

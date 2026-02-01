@@ -7,5 +7,5 @@ namespace ClinicManagement.Application.Features.Admin.Queries.GetUser;
 
 public class GetUserQuery : IRequest<Result<UserDto>>
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 }

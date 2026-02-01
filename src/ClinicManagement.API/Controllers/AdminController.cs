@@ -34,7 +34,7 @@ public class AdminController : BaseApiController
     [HttpGet("users/{id}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUser(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetUserQuery { Id = id };
         var result = await Mediator.Send(query, cancellationToken);
@@ -44,7 +44,7 @@ public class AdminController : BaseApiController
     [HttpPut("users/{id}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateUser(int id, UpdateUserCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateUser(Guid id, UpdateUserCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
             return BadRequest(MessageCodes.Controller.ID_MISMATCH);
@@ -56,7 +56,7 @@ public class AdminController : BaseApiController
     [HttpDelete("users/{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteUserCommand { Id = id };
         var result = await Mediator.Send(command, cancellationToken);
@@ -66,7 +66,7 @@ public class AdminController : BaseApiController
     [HttpPost("users/{id}/toggle-status")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ToggleUserStatus(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> ToggleUserStatus(Guid id, CancellationToken cancellationToken)
     {
         var command = new ToggleUserStatusCommand { Id = id };
         var result = await Mediator.Send(command, cancellationToken);
@@ -86,7 +86,7 @@ public class AdminController : BaseApiController
     [HttpGet("clinics/{id}")]
     [ProducesResponseType(typeof(ClinicDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetClinic(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetClinic(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetClinicQuery(id);
         var result = await Mediator.Send(query, cancellationToken);

@@ -35,7 +35,7 @@ public class CreatePatientCommandValidator : AbstractValidator<CreatePatientComm
             .SetValidator(new CreatePatientPhoneNumberValidator(_phoneNumberValidationService));
 
         RuleFor(x => x.ChronicDiseaseIds)
-            .Must(ids => ids.All(id => id > 0)).WithMessage(MessageCodes.Fields.CHRONIC_DISEASE_IDS_POSITIVE)
+            .Must(ids => ids.All(id => id != Guid.Empty)).WithMessage(MessageCodes.Fields.CHRONIC_DISEASE_IDS_POSITIVE)
             .When(x => x.ChronicDiseaseIds.Any());
     }
 }

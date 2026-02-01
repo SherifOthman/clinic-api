@@ -4,4 +4,4 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.SubscriptionPlans.Queries.GetSubscriptionPlan;
 
-public record GetSubscriptionPlanQuery(int Id) : IRequest<Result<SubscriptionPlanDto>>;
+public record GetSubscriptionPlanQuery(Guid Id) : IRequest<Result<SubscriptionPlanDto>>;

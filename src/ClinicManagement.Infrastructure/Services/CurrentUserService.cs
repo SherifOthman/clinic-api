@@ -14,21 +14,21 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public int? UserId
+    public Guid? UserId
     {
         get
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out var userId) ? userId : null;
+            return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
         }
     }
 
-    public int? ClinicId
+    public Guid? ClinicId
     {
         get
         {
             var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimConstants.ClinicId)?.Value;
-            return int.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
+            return Guid.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
         }
     }
 
@@ -59,7 +59,7 @@ public class CurrentUserService : ICurrentUserService
 
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
-    public int GetRequiredUserId()
+    public Guid GetRequiredUserId()
     {
         if (!UserId.HasValue)
             throw new UnauthorizedAccessException("User ID is required but not available");
@@ -67,7 +67,7 @@ public class CurrentUserService : ICurrentUserService
         return UserId.Value;
     }
 
-    public int GetRequiredClinicId()
+    public Guid GetRequiredClinicId()
     {
         if (!ClinicId.HasValue)
             throw new UnauthorizedAccessException("Clinic ID is required but not available. User may not be associated with a clinic.");
@@ -75,9 +75,9 @@ public class CurrentUserService : ICurrentUserService
         return ClinicId.Value;
     }
 
-    public bool TryGetUserId(out int userId)
+    public bool TryGetUserId(out Guid userId)
     {
-        userId = 0;
+        userId = Guid.Empty;
         if (UserId.HasValue)
         {
             userId = UserId.Value;
@@ -86,9 +86,9 @@ public class CurrentUserService : ICurrentUserService
         return false;
     }
 
-    public bool TryGetClinicId(out int clinicId)
+    public bool TryGetClinicId(out Guid clinicId)
     {
-        clinicId = 0;
+        clinicId = Guid.Empty;
         if (ClinicId.HasValue)
         {
             clinicId = ClinicId.Value;

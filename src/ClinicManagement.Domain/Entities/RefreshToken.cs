@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 public class RefreshToken : BaseEntity
 {
     public string Token { get; set; } = string.Empty;
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     public DateTime ExpiryTime { get; set; }
     public bool IsRevoked { get; set; } = false;
     public DateTime CreatedAt { get; set; }

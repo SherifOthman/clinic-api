@@ -19,5 +19,5 @@ public record CreatePatientCommand : IRequest<Result<PatientDto>>
     public List<CreatePatientPhoneNumberDto> PhoneNumbers { get; init; } = new();
     
     // Chronic diseases
-    public List<int> ChronicDiseaseIds { get; init; } = new();
+    public List<Guid> ChronicDiseaseIds { get; init; } = new();
 }

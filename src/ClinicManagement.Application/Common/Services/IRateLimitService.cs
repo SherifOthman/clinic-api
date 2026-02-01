@@ -2,5 +2,5 @@
 
 public interface IRateLimitService
 {
-    Task<bool> IsRateLimitExceededAsync(string ipAddress, int? userId = null, CancellationToken cancellationToken = default);
+    Task<bool> IsRateLimitExceededAsync(string ipAddress, Guid? userId = null, CancellationToken cancellationToken = default);
 }

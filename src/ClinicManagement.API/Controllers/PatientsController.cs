@@ -46,7 +46,7 @@ public class PatientsController : BaseApiController
     [Authorize(Roles = RoleNames.PatientManagement)]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPatient(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPatient(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetPatientQuery { Id = id };
         var result = await Mediator.Send(query, cancellationToken);
@@ -66,7 +66,7 @@ public class PatientsController : BaseApiController
     [Authorize(Roles = RoleNames.PatientManagement)]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdatePatient(int id, UpdatePatientCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdatePatient(Guid id, UpdatePatientCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
             return BadRequest(MessageCodes.Controller.ID_MISMATCH);
@@ -79,7 +79,7 @@ public class PatientsController : BaseApiController
     [Authorize(Roles = RoleNames.PatientManagement)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeletePatient(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeletePatient(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeletePatientCommand { Id = id };
         var result = await Mediator.Send(command, cancellationToken);

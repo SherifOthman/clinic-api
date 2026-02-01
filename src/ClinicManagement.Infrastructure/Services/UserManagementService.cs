@@ -36,7 +36,7 @@ public class UserManagementService : IUserManagementService
         return await _userManager.FindByNameAsync(username);
     }
 
-    public async Task<User?> GetUserByIdAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<User?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _userManager.FindByIdAsync(userId.ToString());
     }

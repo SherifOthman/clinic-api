@@ -17,7 +17,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
         _currentUserService = currentUserService;
     }
 
-    public override async Task<Patient?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public override async Task<Patient?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(p => p.PhoneNumbers)

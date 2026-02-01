@@ -6,5 +6,5 @@ namespace ClinicManagement.Application.Features.Auth.Commands.SwitchClinic;
 
 public class SwitchClinicCommand : IRequest<Result<SwitchClinicResponse>>
 {
-    public int ClinicId { get; set; }
+    public Guid ClinicId { get; set; }
 }

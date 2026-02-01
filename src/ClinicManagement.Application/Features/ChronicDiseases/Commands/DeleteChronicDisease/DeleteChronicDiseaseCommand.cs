@@ -5,5 +5,5 @@ namespace ClinicManagement.Application.Features.ChronicDiseases.Commands.DeleteC
 
 public class DeleteChronicDiseaseCommand : IRequest<Result<Unit>>
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 }

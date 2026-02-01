@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 public class Clinic : AuditableEntity
 {
     public string Name { get; set; } = string.Empty;
-    public int SubscriptionPlanId { get; set; }
+    public Guid SubscriptionPlanId { get; set; }
     public bool IsActive { get; set; } = true;
     
     // Navigation properties

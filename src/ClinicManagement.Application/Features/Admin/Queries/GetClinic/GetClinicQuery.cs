@@ -4,4 +4,4 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.Admin.Queries.GetClinic;
 
-public record GetClinicQuery(int Id) : IRequest<Result<ClinicDto>>;
+public record GetClinicQuery(Guid Id) : IRequest<Result<ClinicDto>>;

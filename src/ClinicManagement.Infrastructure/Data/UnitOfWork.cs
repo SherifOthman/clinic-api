@@ -17,7 +17,7 @@ public class UnitOfWork : IUnitOfWork
 
     public IUserRepository Users => field ??= new UserRepository(_context, _currentUserService, _userManager);
     public IPatientRepository Patients => field ??= new PatientRepository(_context, _currentUserService);
-    public IChronicDiseaseRepository ChronicDiseases => field ??= new ChronicDiseaseRepository(_context, _currentUserService);
+    public IChronicDiseaseRepository ChronicDiseases => field ??= new ChronicDiseaseRepository(_context);
     public IClinicRepository Clinics => field ??= new ClinicRepository(_context);
     
     // Basic entities using simple base repository
