@@ -33,7 +33,8 @@ public class CookieService : ICookieService
         // Log cookie setting for debugging
         var context = _httpContextAccessor.HttpContext;
         var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
-        logger?.LogDebug("Access token cookie set with expiry: {Expiry} minutes", _cookieSettings.ExpiryInMinutes);
+        logger?.LogInformation("Access token cookie set: Secure={Secure}, SameSite={SameSite}, HttpOnly={HttpOnly}, Expiry={Expiry}", 
+            cookieOptions.Secure, cookieOptions.SameSite, cookieOptions.HttpOnly, cookieOptions.Expires);
     }
 
     public void SetRefreshTokenCookie(string refreshToken)
@@ -50,7 +51,15 @@ public class CookieService : ICookieService
 
     public string? GetAccessTokenFromCookie()
     {
-        return _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.AccessToken];
+        var context = _httpContextAccessor.HttpContext;
+        var token = context?.Request.Cookies[CookieConstants.AccessToken];
+        
+        // Log cookie retrieval for debugging
+        var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
+        logger?.LogInformation("Access token cookie retrieval: Found={Found}, Origin={Origin}", 
+            !string.IsNullOrEmpty(token), context?.Request.Headers.Origin.FirstOrDefault() ?? "none");
+            
+        return token;
     }
 
     public string? GetRefreshTokenFromCookie()
@@ -75,16 +84,21 @@ public class CookieService : ICookieService
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
     {
-        // For cross-origin HTTPS requests, cookies must be Secure=true and SameSite=None
+        // For cross-origin HTTPS requests, cookies must be:
+        // 1. Secure=true (HTTPS only)
+        // 2. SameSite=None (allow cross-origin)
+        // 3. HttpOnly=true (security)
+        // 4. No Domain restriction (let browser handle it)
+        
         return new CookieOptions
         {
             HttpOnly = true,                    // Prevents XSS attacks
-            Secure = true,                      // Always secure for cross-origin HTTPS
+            Secure = true,                      // Required for SameSite=None
             SameSite = SameSiteMode.None,       // Allow cross-origin requests
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",                         // Available to entire application
             IsEssential = true,                 // GDPR compliance - essential for authentication
-            Domain = null                       // No domain restriction for better compatibility
+            Domain = null                       // Let browser handle domain automatically
         };
     }
 }
