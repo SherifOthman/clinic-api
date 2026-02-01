@@ -75,14 +75,12 @@ public class CookieService : ICookieService
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
     {
-        var context = _httpContextAccessor.HttpContext;
-        var isHttps = context?.Request.IsHttps ?? false;
-        
+        // For cross-origin HTTPS requests, cookies must be Secure=true and SameSite=None
         return new CookieOptions
         {
             HttpOnly = true,                    // Prevents XSS attacks
-            Secure = isHttps,                   // Require HTTPS if available
-            SameSite = SameSiteMode.None,       // Allow cross-origin for all environments
+            Secure = true,                      // Always secure for cross-origin HTTPS
+            SameSite = SameSiteMode.None,       // Allow cross-origin requests
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",                         // Available to entire application
             IsEssential = true,                 // GDPR compliance - essential for authentication
