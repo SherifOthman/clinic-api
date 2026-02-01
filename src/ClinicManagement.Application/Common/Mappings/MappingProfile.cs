@@ -45,8 +45,14 @@ public static class MappingConfig
             .NewConfig()
             .Map(dest => dest.Id, src => src.GeoNameId)
             .Map(dest => dest.StateId, src => string.IsNullOrEmpty(src.AdminName1) ? (int?)null : src.AdminName1.GetHashCode());
+
+        // ChronicDisease mapping - set Name and Description based on current language
+        TypeAdapterConfig<ChronicDisease, ChronicDiseaseDto>
+            .NewConfig()
+            .Map(dest => dest.Name, src => src.NameEn) // Default to English, will be handled in service layer
+            .Map(dest => dest.Description, src => src.DescriptionEn);
         
-        // All other DTOs (ChronicDisease, SubscriptionPlan, etc.) 
+        // All other DTOs (SubscriptionPlan, etc.) 
         // will be mapped automatically since properties have the same names
     }
 }

@@ -44,8 +44,10 @@ public static class ChronicDiseaseSeeder
             {
                 var disease = new ChronicDisease
                 {
-                    Name = diseaseSeed.Name,
-                    Description = diseaseSeed.Description,
+                    NameEn = diseaseSeed.NameEn,
+                    NameAr = diseaseSeed.NameAr,
+                    DescriptionEn = diseaseSeed.DescriptionEn,
+                    DescriptionAr = diseaseSeed.DescriptionAr,
                     IsActive = diseaseSeed.IsActive
                 };
 
@@ -69,26 +71,34 @@ public static class ChronicDiseaseSeeder
         {
             new ChronicDisease
             {
-                Name = "Diabetes",
-                Description = "A group of metabolic disorders characterized by high blood sugar levels",
+                NameEn = "Diabetes",
+                NameAr = "السكري",
+                DescriptionEn = "A group of metabolic disorders characterized by high blood sugar levels",
+                DescriptionAr = "مجموعة من اضطرابات التمثيل الغذائي التي تتميز بارتفاع مستويات السكر في الدم",
                 IsActive = true
             },
             new ChronicDisease
             {
-                Name = "Hypertension",
-                Description = "High blood pressure, a condition in which blood pressure is consistently elevated",
+                NameEn = "Hypertension",
+                NameAr = "ارتفاع ضغط الدم",
+                DescriptionEn = "High blood pressure, a condition in which blood pressure is consistently elevated",
+                DescriptionAr = "ضغط الدم المرتفع، حالة يكون فيها ضغط الدم مرتفعاً باستمرار",
                 IsActive = true
             },
             new ChronicDisease
             {
-                Name = "Heart Disease",
-                Description = "Various conditions that affect the heart and blood vessels",
+                NameEn = "Heart Disease",
+                NameAr = "أمراض القلب",
+                DescriptionEn = "Various conditions that affect the heart and blood vessels",
+                DescriptionAr = "حالات مختلفة تؤثر على القلب والأوعية الدموية",
                 IsActive = true
             },
             new ChronicDisease
             {
-                Name = "Asthma",
-                Description = "A respiratory condition marked by attacks of spasm in the bronchi",
+                NameEn = "Asthma",
+                NameAr = "الربو",
+                DescriptionEn = "A respiratory condition marked by attacks of spasm in the bronchi",
+                DescriptionAr = "حالة تنفسية تتميز بنوبات تشنج في القصبات الهوائية",
                 IsActive = true
             }
         };
@@ -100,8 +110,10 @@ public static class ChronicDiseaseSeeder
     private class ChronicDiseaseSeedData
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public string DescriptionEn { get; set; } = string.Empty;
+        public string DescriptionAr { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
     }

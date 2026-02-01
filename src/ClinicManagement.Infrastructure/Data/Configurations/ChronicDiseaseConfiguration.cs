@@ -10,8 +10,10 @@ public class ChronicDiseaseConfiguration : IEntityTypeConfiguration<ChronicDisea
     {
         builder.ToTable("ChronicDiseases");
         
-        builder.Property(e => e.Name).HasMaxLength(100).IsRequired();
-        builder.Property(e => e.Description).HasMaxLength(500);
+        builder.Property(e => e.NameEn).HasMaxLength(100).IsRequired();
+        builder.Property(e => e.NameAr).HasMaxLength(100).IsRequired();
+        builder.Property(e => e.DescriptionEn).HasMaxLength(500);
+        builder.Property(e => e.DescriptionAr).HasMaxLength(500);
 
         // Relationships
         builder.HasMany(cd => cd.PatientChronicDiseases)
@@ -20,7 +22,8 @@ public class ChronicDiseaseConfiguration : IEntityTypeConfiguration<ChronicDisea
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
-        builder.HasIndex(cd => cd.Name).IsUnique();
+        builder.HasIndex(cd => cd.NameEn);
+        builder.HasIndex(cd => cd.NameAr);
         builder.HasIndex(cd => cd.IsActive);
     }
 }

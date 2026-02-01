@@ -32,8 +32,10 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
             return Result<ChronicDiseaseDto>.Fail(ApplicationErrors.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
-        chronicDisease.Name = request.Name;
-        chronicDisease.Description = request.Description;
+        chronicDisease.NameEn = request.NameEn;
+        chronicDisease.NameAr = request.NameAr;
+        chronicDisease.DescriptionEn = request.DescriptionEn;
+        chronicDisease.DescriptionAr = request.DescriptionAr;
         chronicDisease.IsActive = request.IsActive;
 
         await _unitOfWork.ChronicDiseases.UpdateAsync(chronicDisease, cancellationToken);
@@ -41,7 +43,18 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
 
         _logger.LogInformation("Chronic disease {DiseaseId} updated successfully", request.Id);
 
-        var dto = chronicDisease.Adapt<ChronicDiseaseDto>();
+        var dto = new ChronicDiseaseDto
+        {
+            Id = chronicDisease.Id,
+            NameEn = chronicDisease.NameEn,
+            NameAr = chronicDisease.NameAr,
+            DescriptionEn = chronicDisease.DescriptionEn,
+            DescriptionAr = chronicDisease.DescriptionAr,
+            Name = chronicDisease.NameEn, // Default to English
+            Description = chronicDisease.DescriptionEn,
+            IsActive = chronicDisease.IsActive
+        };
+        
         return Result<ChronicDiseaseDto>.Ok(dto);
     }
 }

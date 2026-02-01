@@ -25,17 +25,30 @@ public class CreateChronicDiseaseCommandHandler : IRequestHandler<CreateChronicD
     {
         var chronicDisease = new ChronicDisease
         {
-            Name = request.Name,
-            Description = request.Description,
+            NameEn = request.NameEn,
+            NameAr = request.NameAr,
+            DescriptionEn = request.DescriptionEn,
+            DescriptionAr = request.DescriptionAr,
             IsActive = request.IsActive
         };
 
         await _unitOfWork.ChronicDiseases.AddAsync(chronicDisease, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Chronic disease {DiseaseName} created with ID {DiseaseId}", request.Name, chronicDisease.Id);
+        _logger.LogInformation("Chronic disease {DiseaseName} created with ID {DiseaseId}", request.NameEn, chronicDisease.Id);
 
-        var dto = chronicDisease.Adapt<ChronicDiseaseDto>();
+        var dto = new ChronicDiseaseDto
+        {
+            Id = chronicDisease.Id,
+            NameEn = chronicDisease.NameEn,
+            NameAr = chronicDisease.NameAr,
+            DescriptionEn = chronicDisease.DescriptionEn,
+            DescriptionAr = chronicDisease.DescriptionAr,
+            Name = chronicDisease.NameEn, // Default to English
+            Description = chronicDisease.DescriptionEn,
+            IsActive = chronicDisease.IsActive
+        };
+        
         return Result<ChronicDiseaseDto>.Ok(dto);
     }
 }

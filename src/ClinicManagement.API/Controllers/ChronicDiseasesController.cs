@@ -24,9 +24,9 @@ public class ChronicDiseasesController : BaseApiController
 
     [HttpGet]
     [Authorize(Roles = RoleNames.AllStaff)]
-    public async Task<IActionResult> GetChronicDiseases()
+    public async Task<IActionResult> GetChronicDiseases([FromQuery] string? language = null)
     {
-        var result = await Mediator.Send(new GetChronicDiseasesQuery());
+        var result = await Mediator.Send(new GetChronicDiseasesQuery(language));
         return HandleResult(result);
     }
 

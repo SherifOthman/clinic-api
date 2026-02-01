@@ -15,7 +15,7 @@ public class ChronicDiseaseRepository : BaseRepository<ChronicDisease>, IChronic
     {
         return await _dbSet
             .Where(cd => cd.IsActive)
-            .OrderBy(cd => cd.Name)
+            .OrderBy(cd => cd.NameEn)
             .ToListAsync(cancellationToken);
     }
 }
