@@ -47,11 +47,11 @@ public static class DependencyInjection
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseMiddleware<RateLimitMiddleware>();
 
-        if (app.Environment.IsDevelopment())
-        {
+        //if (app.Environment.IsDevelopment())
+        //{
             app.UseSwagger();
             app.UseSwaggerUI();
-        }
+        //}
 
         // Enable static file serving for uploaded files
         app.UseStaticFiles();
