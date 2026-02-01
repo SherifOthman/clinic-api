@@ -81,12 +81,12 @@ public class CookieService : ICookieService
         return new CookieOptions
         {
             HttpOnly = true,                    // Prevents XSS attacks
-            Secure = _cookieSettings.IsProduction && isHttps, // Only require HTTPS in production
-            SameSite = _cookieSettings.IsProduction ? SameSiteMode.None : SameSiteMode.Lax, // Cross-origin support
+            Secure = isHttps,                   // Require HTTPS if available
+            SameSite = SameSiteMode.None,       // Allow cross-origin for all environments
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",                         // Available to entire application
             IsEssential = true,                 // GDPR compliance - essential for authentication
-            Domain = _cookieSettings.IsProduction ? _cookieSettings.CookieDomain : null // Set domain in production
+            Domain = null                       // No domain restriction for better compatibility
         };
     }
 }
