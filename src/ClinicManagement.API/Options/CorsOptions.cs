@@ -8,6 +8,6 @@ public class CorsOptions
         "http://localhost:3000",  // Next.js dev server
         "http://localhost:3001",  // Dashboard dev server
         "https://clinic-dashboard-ecru.vercel.app", // Dashboard production
-        "https://clinic-website-ecru.vercel.app"    // Website production
+        "https://clinic-website-lime.vercel.app"    // Website production
     };
 }
