@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -28,7 +28,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             if (user == null)
             {
                 _logger.LogWarning("User with ID {UserId} not found for deletion", request.Id);
-                return Result<bool>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+                return Result<bool>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
             }
 
             // Check if user is the current user (prevent self-deletion)
@@ -43,7 +43,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting user {UserId} by admin", request.Id);
-            return Result<bool>.Fail(ApplicationErrors.Business.INVALID_OPERATION);
+            return Result<bool>.Fail(MessageCodes.Business.INVALID_OPERATION);
         }
     }
 }

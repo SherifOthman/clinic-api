@@ -103,7 +103,7 @@ public class LocalFileStorageService : IFileStorageService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting file: {FilePath}", filePath);
-            return Result.Fail(ApplicationErrors.File.FILE_DELETE_FAILED);
+            return Result.Fail(MessageCodes.File.FILE_DELETE_FAILED);
         }
     }
 
@@ -115,7 +115,7 @@ public class LocalFileStorageService : IFileStorageService
             
             if (!_fileSystem.Exists(fullPath))
             {
-            return Result<Stream>.Fail(ApplicationErrors.File.FILE_NOT_FOUND);
+            return Result<Stream>.Fail(MessageCodes.File.FILE_NOT_FOUND);
             }
 
             var stream = _fileSystem.CreateFileStream(fullPath, FileMode.Open, FileAccess.Read);

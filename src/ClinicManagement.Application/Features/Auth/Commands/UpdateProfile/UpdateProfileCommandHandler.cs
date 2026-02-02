@@ -30,14 +30,14 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthorized attempt to update profile");
-            return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("User not found for profile update: {UserId}", userId);
-            return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
         }
 
         try

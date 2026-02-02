@@ -73,7 +73,7 @@ public class AuthController : BaseApiController
         var result = await Mediator.Send(query, cancellationToken);
 
         if (!result.Success)
-            return Unauthorized(new ApiError(result.Code ?? ApplicationErrors.Authentication.AUTHENTICATION_FAILED));
+            return Unauthorized(new ApiError(result.Code ?? MessageCodes.Authentication.AUTHENTICATION_FAILED));
 
         return Ok(result.Value);
     }

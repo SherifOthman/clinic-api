@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
@@ -36,27 +36,27 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthenticated user attempted to complete onboarding");
-            return Result<Guid>.Fail(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<Guid>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("User {UserId} not found during onboarding", userId);
-            return Result<Guid>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+            return Result<Guid>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
         }
 
         if (user.ClinicId != null)
         {
             _logger.LogWarning("User {UserId} already has clinic {ClinicId}", userId, user.ClinicId);
-            return Result<Guid>.Fail(ApplicationErrors.Onboarding.USER_ALREADY_HAS_CLINIC);
+            return Result<Guid>.Fail(MessageCodes.Onboarding.USER_ALREADY_HAS_CLINIC);
         }
 
         var subscriptionPlan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(request.SubscriptionPlanId, cancellationToken);
         if (subscriptionPlan == null || !subscriptionPlan.IsActive)
         {
             _logger.LogWarning("Invalid subscription plan {PlanId} for user {UserId}", request.SubscriptionPlanId, userId);
-            return Result<Guid>.Fail(ApplicationErrors.Onboarding.INVALID_SUBSCRIPTION_PLAN);
+            return Result<Guid>.Fail(MessageCodes.Onboarding.INVALID_SUBSCRIPTION_PLAN);
         }
 
         var countries = await _locationsService.GetCountriesAsync();

@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
@@ -33,7 +33,7 @@ public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, R
         if (user == null)
         {
             _logger.LogWarning("Email confirmation attempt for non-existent user: {Email}", request.Email);
-            return Result.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+            return Result.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
         }
 
         if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))

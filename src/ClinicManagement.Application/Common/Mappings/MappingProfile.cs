@@ -26,9 +26,9 @@ public static class MappingConfig
 
         TypeAdapterConfig<Clinic, ClinicDto>
             .NewConfig()
-            .Map(dest => dest.SubscriptionPlanName, src => src.SubscriptionPlan.Name)
-            .Map(dest => dest.UserCount, src => src.Users.Count)
-            .Map(dest => dest.PatientCount, src => src.Patients.Count);
+            .Map(dest => dest.SubscriptionPlanName, src => src.SubscriptionPlan != null ? src.SubscriptionPlan.Name : string.Empty)
+            .Map(dest => dest.UserCount, src => src.Users != null ? src.Users.Count : 0)
+            .Map(dest => dest.PatientCount, src => src.Patients != null ? src.Patients.Count : 0);
 
         // GeoNames mappings - simplified without hardcoded phone codes
         TypeAdapterConfig<GeoNamesLocationDto, CountryDto>
@@ -62,16 +62,20 @@ public static class MappingConfig
             .Ignore(dest => dest.ClinicId)
             .Ignore(dest => dest.CreatedAt)
             .Ignore(dest => dest.UpdatedAt)
+#pragma warning disable CS8603 // Possible null reference return
             .Ignore(dest => dest.DeletedAt)
+#pragma warning restore CS8603 // Possible null reference return
             .Ignore(dest => dest.CreatedBy)
             .Ignore(dest => dest.UpdatedBy)
-            .Ignore(dest => dest.DeletedBy);
+            .Ignore(dest => dest.DeletedBy)
+            .Ignore(dest => dest.Clinic)
+            .Ignore(dest => dest.IsDeleted);
 
         // UserClinic to UserClinicDto mapping
         TypeAdapterConfig<UserClinic, UserClinicDto>
             .NewConfig()
-            .Map(dest => dest.ClinicName, src => src.Clinic.Name)
-            .Map(dest => dest.SubscriptionPlan, src => src.Clinic.SubscriptionPlan)
+            .Map(dest => dest.ClinicName, src => src.Clinic != null ? src.Clinic.Name : string.Empty)
+            .Map(dest => dest.SubscriptionPlan, src => src.Clinic != null ? src.Clinic.SubscriptionPlan : null)
             .Ignore(dest => dest.IsCurrent); // Will be set manually in handler
         
         // All other DTOs (SubscriptionPlan, etc.) 

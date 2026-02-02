@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using MediatR;
@@ -18,7 +18,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
     {
         var user = await _userManagementService.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
-            return Result.Fail(ApplicationErrors.Authentication.INVALID_RESET_TOKEN);
+            return Result.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
 
         return Result.Ok();
     }

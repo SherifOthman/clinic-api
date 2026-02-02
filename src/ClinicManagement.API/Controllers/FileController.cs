@@ -27,7 +27,7 @@ public class FileController : ControllerBase
 
         if (!result.Success || result.Value == null)
         {
-            return NotFound(new ApiError(ApplicationErrors.File.FILE_NOT_FOUND));
+            return NotFound(new ApiError(MessageCodes.File.FILE_NOT_FOUND));
         }
 
         // Determine content type based on file extension

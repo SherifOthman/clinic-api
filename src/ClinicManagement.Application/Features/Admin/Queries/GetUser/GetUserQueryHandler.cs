@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -29,7 +29,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, Result<UserDto>
             if (user == null)
             {
                 _logger.LogWarning("User with ID {UserId} not found", request.Id);
-                return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+                return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
             }
 
             var userDto = user.Adapt<UserDto>();
@@ -40,7 +40,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, Result<UserDto>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving user {UserId} for admin", request.Id);
-            return Result<UserDto>.Fail(ApplicationErrors.Business.INVALID_OPERATION);
+            return Result<UserDto>.Fail(MessageCodes.Business.INVALID_OPERATION);
         }
     }
 }

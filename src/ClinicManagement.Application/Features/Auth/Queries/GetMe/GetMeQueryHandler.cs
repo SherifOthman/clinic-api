@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
@@ -28,11 +28,11 @@ public class GetMeQueryHandler : IRequestHandler<GetMeQuery, Result<UserDto>>
     {
         var userId = _currentUserService.UserId;
         if (userId == null)
-            return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
 
         var user = await _userManagementService.GetUserByIdAsync(userId.Value, cancellationToken);
         if (user == null)
-            return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
 
         var userDto = user.Adapt<UserDto>();
         

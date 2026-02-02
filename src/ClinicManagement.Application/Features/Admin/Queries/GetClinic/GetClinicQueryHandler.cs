@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -26,7 +26,7 @@ public class GetClinicQueryHandler : IRequestHandler<GetClinicQuery, Result<Clin
         if (clinic == null)
         {
             _logger.LogWarning("Clinic with ID {Id} not found", request.Id);
-            return Result<ClinicDto>.Fail(ApplicationErrors.Business.EntityNotFound("Clinic"));
+            return Result<ClinicDto>.Fail(MessageCodes.Business.ENTITY_NOT_FOUND);
         }
 
         var dto = clinic.Adapt<ClinicDto>();

@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -25,27 +25,27 @@ public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand,
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthenticated user attempted to delete patient {PatientId}", request.Id);
-            return Result.Fail(ApplicationErrors.Authentication.USER_NOT_AUTHENTICATED);
+            return Result.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
         if (!_currentUserService.TryGetClinicId(out var userClinicId))
         {
             _logger.LogWarning("User {UserId} without clinic access attempted to delete patient {PatientId}", userId, request.Id);
-            return Result.Fail(ApplicationErrors.Authorization.USER_NO_CLINIC_ACCESS);
+            return Result.Fail(MessageCodes.Authorization.USER_NO_CLINIC_ACCESS);
         }
 
         var patient = await _unitOfWork.Patients.GetByIdAsync(request.Id, cancellationToken);
         if (patient == null)
         {
             _logger.LogWarning("Attempt to delete non-existent patient {PatientId} by user {UserId}", request.Id, userId);
-            return Result.Fail(ApplicationErrors.Business.PATIENT_NOT_FOUND);
+            return Result.Fail(MessageCodes.Business.PATIENT_NOT_FOUND);
         }
 
         if (patient.ClinicId != userClinicId)
         {
             _logger.LogWarning("User {UserId} from clinic {UserClinicId} attempted to delete patient {PatientId} from clinic {PatientClinicId}", 
                 userId, userClinicId, request.Id, patient.ClinicId);
-            return Result.Fail(ApplicationErrors.Business.PATIENT_NOT_FOUND);
+            return Result.Fail(MessageCodes.Business.PATIENT_NOT_FOUND);
         }
 
         patient.SoftDelete(userId);

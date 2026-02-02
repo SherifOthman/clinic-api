@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -29,7 +29,7 @@ public class ToggleUserStatusCommandHandler : IRequestHandler<ToggleUserStatusCo
             if (user == null)
             {
                 _logger.LogWarning("User with ID {UserId} not found for status toggle", request.Id);
-                return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+                return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
             }
 
             // Toggle email confirmed status (this could be extended to other status fields)
@@ -47,7 +47,7 @@ public class ToggleUserStatusCommandHandler : IRequestHandler<ToggleUserStatusCo
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error toggling status for user {UserId} by admin", request.Id);
-            return Result<UserDto>.Fail(ApplicationErrors.Business.INVALID_OPERATION);
+            return Result<UserDto>.Fail(MessageCodes.Business.INVALID_OPERATION);
         }
     }
 }

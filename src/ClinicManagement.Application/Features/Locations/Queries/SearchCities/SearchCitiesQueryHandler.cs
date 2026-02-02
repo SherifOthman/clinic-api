@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
@@ -19,7 +19,7 @@ public class SearchCitiesQueryHandler : IRequestHandler<SearchCitiesQuery, Resul
     {
         if (string.IsNullOrWhiteSpace(request.Query) || request.Query.Length < 2)
         {
-            return Result<List<CityDto>>.Fail(ApplicationErrors.Validation.InvalidLength("Query", 2, int.MaxValue));
+            return Result<List<CityDto>>.Fail(MessageCodes.Validation.FIELD_INVALID_LENGTH);
         }
 
         var cities = await _locationsService.SearchCitiesAsync(request.CountryCode, request.Query);

@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
@@ -34,14 +34,14 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
         if (userExist != null)
         {
             _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
-            return Result.FailField("email", ApplicationErrors.Validation.EMAIL_ALREADY_REGISTERED);
+            return Result.FailField("email", MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
         }
 
         userExist = await _userManagementService.GetByUsernameAsync(request.Username, cancellationToken);
         if (userExist != null)
         {
             _logger.LogWarning("Registration attempt with existing username: {Username}", request.Username);
-            return Result.FailField("username", ApplicationErrors.Validation.USERNAME_ALREADY_TAKEN);
+            return Result.FailField("username", MessageCodes.Validation.USERNAME_ALREADY_TAKEN);
         }
 
         var user = request.Adapt<User>();

@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -27,7 +27,7 @@ public class UpdateSubscriptionPlanCommandHandler : IRequestHandler<UpdateSubscr
         if (subscriptionPlan == null)
         {
             _logger.LogWarning("Subscription plan with ID {Id} not found", request.Id);
-            return Result<SubscriptionPlanDto>.Fail(ApplicationErrors.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
+            return Result<SubscriptionPlanDto>.Fail(MessageCodes.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
         }
 
         request.Adapt(subscriptionPlan);

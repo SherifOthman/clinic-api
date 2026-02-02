@@ -41,7 +41,7 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         if (user == null)
         {
             _logger.LogWarning("User not found for profile image update: {UserId}", userId);
-            return Result<UpdateProfileImageResponse>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+            return Result<UpdateProfileImageResponse>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
         }
 
         try

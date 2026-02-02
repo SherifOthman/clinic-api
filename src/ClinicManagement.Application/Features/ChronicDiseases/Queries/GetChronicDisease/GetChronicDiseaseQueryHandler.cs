@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -29,7 +29,7 @@ public class GetChronicDiseaseQueryHandler : IRequestHandler<GetChronicDiseaseQu
         if (chronicDisease == null)
         {
             _logger.LogWarning("Chronic disease {DiseaseId} not found", request.Id);
-            return Result<ChronicDiseaseDto>.Fail(ApplicationErrors.Business.EntityNotFound("Chronic disease"));
+            return Result<ChronicDiseaseDto>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
         var dto = chronicDisease.Adapt<ChronicDiseaseDto>();

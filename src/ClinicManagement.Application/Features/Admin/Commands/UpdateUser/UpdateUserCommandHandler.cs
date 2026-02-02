@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -29,7 +29,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             if (user == null)
             {
                 _logger.LogWarning("User with ID {UserId} not found for update", request.Id);
-                return Result<UserDto>.Fail(ApplicationErrors.Authentication.USER_NOT_FOUND);
+                return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
             }
 
             // Update user properties
@@ -50,7 +50,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating user {UserId} by admin", request.Id);
-            return Result<UserDto>.Fail(ApplicationErrors.Business.INVALID_OPERATION);
+            return Result<UserDto>.Fail(MessageCodes.Business.INVALID_OPERATION);
         }
     }
 }

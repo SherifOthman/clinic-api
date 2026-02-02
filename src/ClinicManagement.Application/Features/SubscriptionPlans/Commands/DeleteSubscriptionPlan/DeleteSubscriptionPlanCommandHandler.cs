@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
@@ -24,7 +24,7 @@ public class DeleteSubscriptionPlanCommandHandler : IRequestHandler<DeleteSubscr
         if (subscriptionPlan == null)
         {
             _logger.LogWarning("Subscription plan with ID {Id} not found", request.Id);
-            return Result.Fail(ApplicationErrors.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
+            return Result.Fail(MessageCodes.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
         }
 
         await _unitOfWork.SubscriptionPlans.DeleteAsync(subscriptionPlan, cancellationToken);

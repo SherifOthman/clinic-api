@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -26,7 +26,7 @@ public class GetSubscriptionPlanQueryHandler : IRequestHandler<GetSubscriptionPl
         if (subscriptionPlan == null)
         {
             _logger.LogWarning("Subscription plan with ID {Id} not found", request.Id);
-            return Result<SubscriptionPlanDto>.Fail(ApplicationErrors.Business.EntityNotFound("Subscription plan"));
+            return Result<SubscriptionPlanDto>.Fail(MessageCodes.Business.SUBSCRIPTION_PLAN_NOT_FOUND);
         }
 
         var dto = subscriptionPlan.Adapt<SubscriptionPlanDto>();
