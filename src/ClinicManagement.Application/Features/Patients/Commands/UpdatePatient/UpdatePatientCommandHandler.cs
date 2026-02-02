@@ -60,12 +60,8 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
             return Result<PatientDto>.Fail(MessageCodes.Business.PATIENT_NOT_FOUND);
         }
 
-        // Update basic patient information
-        patient.FullName = request.FullName;
-        patient.DateOfBirth = request.DateOfBirth;
-        patient.Gender = request.Gender;
-        patient.Address = request.Address;
-        patient.GeoNameId = request.GeoNameId;
+        // Update basic patient information using Mapster
+        request.Adapt(patient);
 
         // Update phone numbers
         await UpdatePhoneNumbers(patient, request.PhoneNumbers, cancellationToken);

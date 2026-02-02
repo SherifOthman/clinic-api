@@ -34,15 +34,9 @@ public class ChronicDiseasesController : BaseApiController
     [Authorize(Roles = RoleNames.AllStaff)]
     [ProducesResponseType(typeof(PagedResult<ChronicDiseaseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetChronicDiseasesWithPagination(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? searchTerm = null,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] bool sortDescending = false,
-        [FromQuery] bool? isActive = null,
+        [FromQuery] GetChronicDiseasesWithPaginationQuery query,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetChronicDiseasesWithPaginationQuery(pageNumber, pageSize, searchTerm, sortBy, sortDescending, isActive);
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult(result);
     }

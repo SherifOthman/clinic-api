@@ -27,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
     public ISubscriptionPlanRepository SubscriptionPlans => field ??= new SubscriptionPlanRepository(_context);
     public IRateLimitRepository RateLimitEntries => field ??= new RateLimitRepository(_context);
     public IRefreshTokenRepository RefreshTokens => field ??= new RefreshTokenRepository(_context, _currentUserService, _dateTimeProvider);
+    public IUserClinicRepository UserClinics => field ??= new UserClinicRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

@@ -106,6 +106,7 @@ public class RefreshTokenService : IRefreshTokenService
         
         if (cleanedCount > 0)
         {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Cleaned up {Count} expired/revoked refresh tokens", cleanedCount);
         }
 

@@ -1,5 +1,6 @@
 ﻿using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
+using ClinicManagement.Application.Features.Patients.Commands.UpdatePatient;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 
@@ -51,6 +52,27 @@ public static class MappingConfig
             .NewConfig()
             .Map(dest => dest.Name, src => src.NameEn) // Default to English, will be handled in service layer
             .Map(dest => dest.Description, src => src.DescriptionEn);
+
+        // UpdatePatientCommand to Patient mapping - ignore collections as they need special handling
+        TypeAdapterConfig<UpdatePatientCommand, Patient>
+            .NewConfig()
+            .Ignore(dest => dest.PhoneNumbers)
+            .Ignore(dest => dest.ChronicDiseases)
+            .Ignore(dest => dest.Id)
+            .Ignore(dest => dest.ClinicId)
+            .Ignore(dest => dest.CreatedAt)
+            .Ignore(dest => dest.UpdatedAt)
+            .Ignore(dest => dest.DeletedAt)
+            .Ignore(dest => dest.CreatedBy)
+            .Ignore(dest => dest.UpdatedBy)
+            .Ignore(dest => dest.DeletedBy);
+
+        // UserClinic to UserClinicDto mapping
+        TypeAdapterConfig<UserClinic, UserClinicDto>
+            .NewConfig()
+            .Map(dest => dest.ClinicName, src => src.Clinic.Name)
+            .Map(dest => dest.SubscriptionPlan, src => src.Clinic.SubscriptionPlan)
+            .Ignore(dest => dest.IsCurrent); // Will be set manually in handler
         
         // All other DTOs (SubscriptionPlan, etc.) 
         // will be mapped automatically since properties have the same names

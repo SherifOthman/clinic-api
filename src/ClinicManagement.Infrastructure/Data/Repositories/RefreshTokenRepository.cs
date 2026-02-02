@@ -46,7 +46,7 @@ public class RefreshTokenRepository : BaseRepository<RefreshToken>, IRefreshToke
         if (expiredTokens.Any())
         {
             _dbSet.RemoveRange(expiredTokens);
-            await _context.SaveChangesAsync(cancellationToken);
+            // Note: SaveChangesAsync should be called by UnitOfWork, not repository
         }
 
         return expiredTokens.Count;

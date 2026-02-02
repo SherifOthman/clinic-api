@@ -7,21 +7,10 @@ namespace ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChron
 
 public class GetChronicDiseasesWithPaginationQuery : IRequest<Result<PagedResult<ChronicDiseaseDto>>>
 {
-    public int PageNumber { get; set; }
-    public int PageSize { get; set; }
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
     public string? SearchTerm { get; set; }
     public string? SortBy { get; set; }
-    public bool SortDescending { get; set; }
+    public bool SortDescending { get; set; } = false;
     public bool? IsActive { get; set; }
-
-    public GetChronicDiseasesWithPaginationQuery(int pageNumber, int pageSize, string? searchTerm = null, 
-        string? sortBy = null, bool sortDescending = false, bool? isActive = null)
-    {
-        PageNumber = pageNumber;
-        PageSize = pageSize;
-        SearchTerm = searchTerm;
-        SortBy = sortBy;
-        SortDescending = sortDescending;
-        IsActive = isActive;
-    }
 }
