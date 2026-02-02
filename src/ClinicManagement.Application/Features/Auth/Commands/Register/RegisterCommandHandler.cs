@@ -37,10 +37,10 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
             return Result.FailField("email", MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
         }
 
-        userExist = await _userManagementService.GetByUsernameAsync(request.Username, cancellationToken);
+        userExist = await _userManagementService.GetByUsernameAsync(request.UserName, cancellationToken);
         if (userExist != null)
         {
-            _logger.LogWarning("Registration attempt with existing username: {Username}", request.Username);
+            _logger.LogWarning("Registration attempt with existing username: {UserName}", request.UserName);
             return Result.FailField("username", MessageCodes.Validation.USERNAME_ALREADY_TAKEN);
         }
 

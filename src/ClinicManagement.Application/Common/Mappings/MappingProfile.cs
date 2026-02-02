@@ -10,14 +10,7 @@ public static class MappingConfig
 {
     public static void RegisterMappings()
     {
-        // Mappings for properties with different names
-        TypeAdapterConfig<User, UserDto>
-            .NewConfig()
-            .Map(dest => dest.Username, src => src.UserName);
-        
-        TypeAdapterConfig<RegisterCommand, User>
-            .NewConfig()
-            .Map(dest => dest.UserName, src => src.Username);
+        // No custom mappings needed for UserName since both use the same property name
 
         // Mappings that need custom logic
         TypeAdapterConfig<Patient, PatientDto>

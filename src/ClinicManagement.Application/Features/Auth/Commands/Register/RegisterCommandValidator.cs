@@ -24,7 +24,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .MaximumLength(50).WithMessage(MessageCodes.Fields.LAST_NAME_MAX_LENGTH)
             .Matches(@"^[\u0600-\u06FFa-zA-Z\s'-]+$").WithMessage(MessageCodes.Fields.LAST_NAME_INVALID_CHARACTERS);
 
-        RuleFor(x => x.Username)
+        RuleFor(x => x.UserName)
             .NotEmpty().WithMessage(MessageCodes.Fields.USERNAME_REQUIRED)
             .MinimumLength(3).WithMessage(MessageCodes.Fields.USERNAME_MIN_LENGTH)
             .MaximumLength(30).WithMessage(MessageCodes.Fields.USERNAME_MAX_LENGTH)
