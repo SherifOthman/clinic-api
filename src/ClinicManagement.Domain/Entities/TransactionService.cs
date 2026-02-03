@@ -1,10 +1,10 @@
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class TransactionService
+public class TransactionService : AuditableEntity
 {
-    public Guid Id { get; set; }
     public Guid PatientTransactionId { get; set; }
     public Guid ServiceId { get; set; }
     public decimal Price { get; set; } // Price at the time of transaction

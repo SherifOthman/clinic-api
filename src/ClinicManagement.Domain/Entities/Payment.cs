@@ -1,10 +1,10 @@
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Payment
+public class Payment : AuditableEntity
 {
-    public Guid Id { get; set; }
     public Guid PatientTransactionId { get; set; }
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; }

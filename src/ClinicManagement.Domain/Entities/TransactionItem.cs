@@ -1,8 +1,9 @@
+using ClinicManagement.Domain.Common;
+
 namespace ClinicManagement.Domain.Entities;
 
-public class TransactionItem
+public class TransactionItem : AuditableEntity
 {
-    public Guid Id { get; set; }
     public Guid PatientTransactionId { get; set; }
     public Guid InventoryItemId { get; set; }
     public int Quantity { get; set; }
