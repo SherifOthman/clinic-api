@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Medicines.Commands.CreateMedicine;
@@ -7,22 +8,22 @@ public class CreateMedicineCommandValidator : AbstractValidator<CreateMedicineCo
     public CreateMedicineCommandValidator()
     {
         RuleFor(x => x.ClinicBranchId)
-            .NotEmpty().WithMessage("Clinic branch is required.");
+            .NotEmpty().WithErrorCode(MessageCodes.Common.CLINIC_BRANCH_REQUIRED);
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Medicine name is required.")
-            .MaximumLength(200).WithMessage("Medicine name must not exceed 200 characters.");
+            .NotEmpty().WithErrorCode(MessageCodes.Medicine.NAME_REQUIRED)
+            .MaximumLength(200).WithErrorCode(MessageCodes.Medicine.NAME_TOO_LONG);
 
         RuleFor(x => x.BoxPrice)
-            .GreaterThan(0).WithMessage("Box price must be greater than 0.");
+            .GreaterThan(0).WithErrorCode(MessageCodes.Medicine.PRICE_MUST_BE_POSITIVE);
 
         RuleFor(x => x.StripsPerBox)
-            .GreaterThan(0).WithMessage("Strips per box must be greater than 0.");
+            .GreaterThan(0).WithErrorCode(MessageCodes.Medicine.STRIPS_PER_BOX_MUST_BE_POSITIVE);
 
         RuleFor(x => x.TotalStripsInStock)
-            .GreaterThanOrEqualTo(0).WithMessage("Stock cannot be negative.");
+            .GreaterThanOrEqualTo(0).WithErrorCode(MessageCodes.Medicine.STOCK_CANNOT_BE_NEGATIVE);
 
         RuleFor(x => x.MinimumStockLevel)
-            .GreaterThanOrEqualTo(0).WithMessage("Minimum stock level cannot be negative.");
+            .GreaterThanOrEqualTo(0).WithErrorCode(MessageCodes.Medicine.MINIMUM_STOCK_CANNOT_BE_NEGATIVE);
     }
 }

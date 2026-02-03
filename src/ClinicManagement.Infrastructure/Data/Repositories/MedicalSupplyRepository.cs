@@ -67,6 +67,13 @@ public class MedicalSupplyRepository : BaseRepository<MedicalSupply>, IMedicalSu
             .FirstOrDefaultAsync(s => s.Id == id && s.ClinicBranchId == clinicBranchId, cancellationToken);
     }
 
+    public async Task<MedicalSupply?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower() && s.ClinicBranchId == clinicBranchId, cancellationToken);
+    }
+
     public async Task<IEnumerable<MedicalSupply>> GetLowStockSuppliesAsync(Guid clinicBranchId, int threshold = 10, CancellationToken cancellationToken = default)
     {
         return await _dbSet

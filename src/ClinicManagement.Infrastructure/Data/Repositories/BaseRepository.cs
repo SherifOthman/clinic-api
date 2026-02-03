@@ -98,4 +98,9 @@ public class BaseRepository<T> : IRepository<T> where T : class
     {
         _dbSet.Remove(entity);
     }
+
+    public virtual async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.FindAsync(new object[] { id }, cancellationToken) != null;
+    }
 }

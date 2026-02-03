@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.ClinicPatients.Commands.AddChronicDisease;
@@ -8,23 +9,23 @@ public class AddChronicDiseaseCommandValidator : AbstractValidator<AddChronicDis
     {
         RuleFor(x => x.ClinicPatientId)
             .NotEmpty()
-            .WithMessage("Clinic patient ID is required");
+            .WithErrorCode(MessageCodes.ClinicPatient.ID_REQUIRED);
 
         RuleFor(x => x.ChronicDisease.ChronicDiseaseId)
             .NotEmpty()
-            .WithMessage("Chronic disease ID is required");
+            .WithErrorCode(MessageCodes.ChronicDisease.NOT_FOUND);
 
         RuleFor(x => x.ChronicDisease.Status)
             .MaximumLength(50)
-            .WithMessage("Status cannot exceed 50 characters");
+            .WithErrorCode(MessageCodes.ChronicDisease.STATUS_TOO_LONG);
 
         RuleFor(x => x.ChronicDisease.Notes)
             .MaximumLength(1000)
-            .WithMessage("Notes cannot exceed 1000 characters");
+            .WithErrorCode(MessageCodes.ChronicDisease.NOTES_TOO_LONG);
 
         RuleFor(x => x.ChronicDisease.DiagnosedDate)
             .LessThanOrEqualTo(DateTime.Today)
             .When(x => x.ChronicDisease.DiagnosedDate.HasValue)
-            .WithMessage("Diagnosed date cannot be in the future");
+            .WithErrorCode(MessageCodes.ChronicDisease.DIAGNOSED_DATE_IN_FUTURE);
     }
 }

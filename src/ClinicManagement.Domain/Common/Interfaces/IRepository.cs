@@ -8,6 +8,7 @@ public interface IRepository<T> where T : class
     Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<PagedResult<T>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default);
     Task<PagedResult<T>> GetPagedAsync(SearchablePaginationRequest request, CancellationToken cancellationToken = default);
+    Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
     Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);

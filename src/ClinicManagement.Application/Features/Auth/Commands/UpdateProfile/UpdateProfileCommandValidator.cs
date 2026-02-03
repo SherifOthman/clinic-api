@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
@@ -8,13 +9,13 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
     {
         RuleFor(x => x.FullName)
             .NotEmpty()
-            .WithMessage("Full name is required")
+            .WithErrorCode(MessageCodes.Fields.FULL_NAME_REQUIRED)
             .MaximumLength(100)
-            .WithMessage("Full name must not exceed 100 characters");
+            .WithErrorCode(MessageCodes.Fields.FULL_NAME_MAX_LENGTH);
 
         RuleFor(x => x.PhoneNumber)
             .MaximumLength(20)
-            .WithMessage("Phone number must not exceed 20 characters")
+            .WithErrorCode(MessageCodes.Fields.PHONE_NUMBER_MAX_LENGTH)
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
     }
 }

@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using MediatR;
 

@@ -99,6 +99,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();
@@ -118,6 +119,7 @@ public static class DependencyInjection
         services.Configure<CookieSettings>(configuration.GetSection("Cookie"));
 
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
 
         services.AddHostedService<RefreshTokenCleanupService>();
 

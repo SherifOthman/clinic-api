@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Common.Services;
 

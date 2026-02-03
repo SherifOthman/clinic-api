@@ -1,13 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace ClinicManagement.Domain.Common.Exceptions;
 
-public class DomainException : Exception
+/// <summary>
+/// Base class for all domain exceptions
+/// </summary>
+public abstract class DomainException : Exception
 {
-    public DomainException( string message): base(message)
-    {
+    public string ErrorCode { get; }
 
+    protected DomainException(string message, string errorCode) : base(message)
+    {
+        ErrorCode = errorCode;
+    }
+
+    protected DomainException(string message, string errorCode, Exception innerException) : base(message, innerException)
+    {
+        ErrorCode = errorCode;
     }
 }

@@ -4,7 +4,6 @@ namespace ClinicManagement.Domain.Entities;
 
 public class MedicalService : AuditableEntity
 {
-    public Guid Id { get; set; }
     public Guid ClinicBranchId { get; set; } // Linked to branch, not clinic
     public string Name { get; set; } = null!;
     public decimal DefaultPrice { get; set; }

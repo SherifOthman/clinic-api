@@ -13,11 +13,15 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
+    public DbSet<Staff> Staff => Set<Staff>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Specialization> Specializations => Set<Specialization>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<ClinicPatient> ClinicPatients => Set<ClinicPatient>();
     public DbSet<ClinicPatientChronicDisease> ClinicPatientChronicDiseases => Set<ClinicPatientChronicDisease>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<MedicalFile> MedicalFiles => Set<MedicalFile>();
     public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
     public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
     

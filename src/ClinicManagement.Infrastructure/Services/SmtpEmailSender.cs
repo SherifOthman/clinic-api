@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Options;
 using ClinicManagement.Infrastructure.Common.Interfaces;
 using Microsoft.Extensions.Logging;

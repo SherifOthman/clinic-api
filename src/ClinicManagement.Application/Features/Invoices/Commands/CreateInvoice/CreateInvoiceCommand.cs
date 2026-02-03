@@ -6,11 +6,11 @@ namespace ClinicManagement.Application.Features.Invoices.Commands.CreateInvoice;
 
 public record CreateInvoiceCommand : IRequest<Result<Guid>>
 {
-    public Guid ClinicId { get; init; }
     public Guid ClinicPatientId { get; init; }
     public Guid? MedicalVisitId { get; init; }
     public decimal Discount { get; init; }
     public DateTime? DueDate { get; init; }
+    public string? Notes { get; init; }
     public List<CreateInvoiceItemCommand> Items { get; init; } = new();
 }
 

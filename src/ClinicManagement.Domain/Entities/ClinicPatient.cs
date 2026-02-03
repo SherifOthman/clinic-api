@@ -10,6 +10,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class ClinicPatient : AuditableEntity
 {
+    public string PatientNumber { get; set; } = null!; // Human-readable: PAT-2024-0001
     public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
     

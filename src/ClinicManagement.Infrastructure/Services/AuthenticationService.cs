@@ -1,7 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
-using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Constants;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -68,34 +68,45 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<Result<LoginResult>> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
-        bool isEmail = email.Contains('@');
-        var user = isEmail
-            ? await _userManagementService.GetUserByEmailAsync(email, cancellationToken)
-            : await _userManagementService.GetByUsernameAsync(email, cancellationToken);
+        _logger.LogInformation("Login attempt for user: {Email}", email);
 
-        if (user == null || !await _userManagementService.CheckPasswordAsync(user, password, cancellationToken))
+        try
         {
-            _logger.LogWarning("Failed login attempt for: {Email}", email);
-            return Result<LoginResult>.Fail(MessageCodes.Authentication.INVALID_CREDENTIALS);
+            bool isEmail = email.Contains('@');
+            var user = isEmail
+                ? await _userManagementService.GetUserByEmailAsync(email, cancellationToken)
+                : await _userManagementService.GetByUsernameAsync(email, cancellationToken);
+
+            if (user == null || !await _userManagementService.CheckPasswordAsync(user, password, cancellationToken))
+            {
+                _logger.LogWarning("Failed login attempt for: {Email} - Invalid credentials", email);
+                return Result<LoginResult>.Fail(MessageCodes.Authentication.INVALID_CREDENTIALS);
+            }
+
+            if (!await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
+            {
+                _logger.LogWarning("Login attempt with unconfirmed email: {Email}", email);
+                return Result<LoginResult>.Fail(MessageCodes.Authentication.EMAIL_NOT_CONFIRMED);
+            }
+
+            var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
+            var accessToken = _tokenService.GenerateAccessToken(user, userRoles);
+            var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
+
+            _logger.LogInformation("User {UserId} ({Email}) logged in successfully with roles: {Roles}", 
+                user.Id, user.Email, string.Join(", ", userRoles));
+
+            return Result<LoginResult>.Ok(new LoginResult
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token
+            });
         }
-
-        if (!await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
+        catch (Exception ex)
         {
-            _logger.LogWarning("Login attempt with unconfirmed email: {Email}", email);
-            return Result<LoginResult>.Fail(MessageCodes.Authentication.EMAIL_NOT_CONFIRMED);
+            _logger.LogError(ex, "Error during login attempt for: {Email}", email);
+            throw;
         }
-
-        var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
-        var accessToken = _tokenService.GenerateAccessToken(user, userRoles);
-        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
-
-        _logger.LogInformation("User {UserId} logged in successfully", user.Id);
-
-        return Result<LoginResult>.Ok(new LoginResult
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken.Token
-        });
     }
 
     public async Task<Result<bool>> LogoutAsync(string? refreshToken, CancellationToken cancellationToken = default)

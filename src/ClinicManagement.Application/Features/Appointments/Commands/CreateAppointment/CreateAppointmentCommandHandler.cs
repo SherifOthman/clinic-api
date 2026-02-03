@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
@@ -26,6 +27,20 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
 
     public async Task<Result<AppointmentDto>> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
     {
+        // Validate clinic branch exists
+        var clinicBranchExists = await _unitOfWork.ClinicBranches.ExistsAsync(request.Appointment.ClinicBranchId, cancellationToken);
+        if (!clinicBranchExists)
+        {
+            return Result<AppointmentDto>.Fail(MessageCodes.Common.CLINIC_BRANCH_NOT_FOUND);
+        }
+
+        // Validate clinic patient exists
+        var clinicPatientExists = await _unitOfWork.ClinicPatients.ExistsAsync(request.Appointment.ClinicPatientId, cancellationToken);
+        if (!clinicPatientExists)
+        {
+            return Result<AppointmentDto>.Fail(MessageCodes.Appointment.PATIENT_REQUIRED);
+        }
+
         // Get the next queue number for the doctor on the appointment date
         var queueNumber = await _appointmentRepository.GetNextQueueNumberAsync(
             request.Appointment.AppointmentDate.Date, 
@@ -40,7 +55,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
 
         if (pricing == null)
         {
-            return Result<AppointmentDto>.Fail("Appointment type not available at this clinic branch or price not set");
+            return Result<AppointmentDto>.Fail(MessageCodes.Appointment.TYPE_REQUIRED);
         }
 
         // Use custom price if provided, otherwise use the default price

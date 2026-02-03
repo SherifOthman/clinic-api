@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;

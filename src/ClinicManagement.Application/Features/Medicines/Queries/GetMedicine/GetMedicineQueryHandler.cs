@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
 
@@ -21,10 +22,10 @@ public class GetMedicineQueryHandler : IRequestHandler<GetMedicineQuery, Result<
         
         if (medicine == null)
         {
-            return Result<MedicineDto>.Failure("Medicine not found.");
+            return Result<MedicineDto>.Fail("Medicine not found.");
         }
 
         var medicineDto = medicine.Adapt<MedicineDto>();
-        return Result<MedicineDto>.Success(medicineDto);
+        return Result<MedicineDto>.Ok(medicineDto);
     }
 }

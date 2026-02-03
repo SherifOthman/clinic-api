@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Application.DTOs;
 

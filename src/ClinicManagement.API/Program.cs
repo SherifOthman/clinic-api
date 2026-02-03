@@ -23,11 +23,12 @@ try
 
     var app = builder.Build();
 
-    using (var scope = app.Services.CreateScope())
-    {
-        var databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
-        await databaseInitializer.InitializeAsync();
-    }
+    // Temporarily disable database initialization to test app startup
+    // using (var scope = app.Services.CreateScope())
+    // {
+    //     var databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
+    //     await databaseInitializer.InitializeAsync();
+    // }
 
     app.UseAppConfigurations();
 

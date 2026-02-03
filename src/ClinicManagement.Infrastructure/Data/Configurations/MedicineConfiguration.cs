@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ClinicManagement.Infrastructure.Data.Configurations;
 
-public class MedicineConfiguration : IEntityTypeConfiguration<Medicine>
+public class MedicineConfiguration : BaseEntityConfiguration<Medicine>
 {
-    public void Configure(EntityTypeBuilder<Medicine> builder)
+    public override void Configure(EntityTypeBuilder<Medicine> builder)
     {
-        builder.HasKey(m => m.Id);
+        base.Configure(builder);
 
         builder.Property(m => m.Name)
             .IsRequired()

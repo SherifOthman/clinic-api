@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using System.Security.Claims;
 

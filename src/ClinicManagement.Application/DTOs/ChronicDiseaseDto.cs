@@ -1,4 +1,4 @@
-﻿namespace ClinicManagement.Application.DTOs;
+namespace ClinicManagement.Application.DTOs;
 
 public class ChronicDiseaseDto
 {

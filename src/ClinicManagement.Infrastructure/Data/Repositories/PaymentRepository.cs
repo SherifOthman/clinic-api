@@ -30,4 +30,12 @@ public class PaymentRepository : BaseRepository<Payment>, IPaymentRepository
             .OrderBy(p => p.PaymentDate)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<decimal> GetTotalPaidForInvoiceAsync(Guid invoiceId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(p => p.InvoiceId == invoiceId)
+            .SumAsync(p => p.Amount, cancellationToken);
+    }
 }

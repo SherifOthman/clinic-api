@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
 
@@ -20,6 +21,6 @@ public class GetMedicalServicesQueryHandler : IRequestHandler<GetMedicalServices
         var services = await _unitOfWork.MedicalServices.GetByClinicBranchIdAsync(request.ClinicBranchId, cancellationToken);
         var servicesDto = services.Adapt<IEnumerable<MedicalServiceDto>>();
         
-        return Result<IEnumerable<MedicalServiceDto>>.Success(servicesDto);
+        return Result<IEnumerable<MedicalServiceDto>>.Ok(servicesDto);
     }
 }

@@ -1,4 +1,4 @@
-﻿
+
 using System.Net.Mail;
 
 namespace ClinicManagement.Application.Common.Interfaces;

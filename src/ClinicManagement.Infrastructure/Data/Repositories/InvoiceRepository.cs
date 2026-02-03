@@ -14,7 +14,7 @@ public class InvoiceRepository : BaseRepository<Invoice>, IInvoiceRepository
 
     public async Task<PagedResult<Invoice>> GetByClinicIdPagedAsync(Guid clinicId, SearchablePaginationRequest request, CancellationToken cancellationToken = default)
     {
-        var query = _dbSet
+        IQueryable<Invoice> query = _dbSet
             .AsNoTracking()
             .Where(i => i.ClinicId == clinicId)
             .Include(i => i.Items)

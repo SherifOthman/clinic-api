@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Medicines.Commands.UpdateMedicine;
@@ -19,7 +20,7 @@ public class UpdateMedicineCommandHandler : IRequestHandler<UpdateMedicineComman
         
         if (medicine == null)
         {
-            return Result.Failure("Medicine not found.");
+            return Result.Fail("Medicine not found.");
         }
 
         medicine.Name = request.Name;
@@ -31,6 +32,6 @@ public class UpdateMedicineCommandHandler : IRequestHandler<UpdateMedicineComman
         _unitOfWork.Medicines.Update(medicine);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success();
+        return Result.Ok();
     }
 }

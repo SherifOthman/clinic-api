@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
@@ -8,7 +8,7 @@ public class ForgotPasswordCommandValidator : AbstractValidator<ForgotPasswordCo
     public ForgotPasswordCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(MessageCodes.Fields.EMAIL_REQUIRED)
-            .EmailAddress().WithMessage(MessageCodes.Fields.EMAIL_INVALID_FORMAT);
+            .NotEmpty().WithErrorCode(MessageCodes.Fields.EMAIL_REQUIRED)
+            .EmailAddress().WithErrorCode(MessageCodes.Fields.EMAIL_INVALID_FORMAT);
     }
 }

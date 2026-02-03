@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
@@ -14,6 +15,7 @@ public class MedicalVisitMeasurement : BaseEntity
     public string? StringValue { get; set; }
     public int? IntValue { get; set; }
     public decimal? DecimalValue { get; set; }
+    public DateTime? DateTimeValue { get; set; }
     public bool? BooleanValue { get; set; }
     
     public string? Notes { get; set; }
@@ -27,11 +29,10 @@ public class MedicalVisitMeasurement : BaseEntity
     {
         return MeasurementAttribute?.DataType switch
         {
-            Common.Enums.MeasurementDataType.String => StringValue,
-            Common.Enums.MeasurementDataType.Integer => IntValue,
-            Common.Enums.MeasurementDataType.Decimal => DecimalValue,
-            Common.Enums.MeasurementDataType.DateTime => DateTimeValue,
-            Common.Enums.MeasurementDataType.Boolean => BooleanValue,
+            MeasurementDataType.Text => StringValue,
+            MeasurementDataType.Integer => IntValue,
+            MeasurementDataType.Decimal => DecimalValue,
+            MeasurementDataType.Boolean => BooleanValue,
             _ => null
         };
     }
@@ -42,7 +43,6 @@ public class MedicalVisitMeasurement : BaseEntity
         StringValue = null;
         IntValue = null;
         DecimalValue = null;
-        DateTimeValue = null;
         BooleanValue = null;
         
         // Set the appropriate value based on data type
@@ -50,19 +50,16 @@ public class MedicalVisitMeasurement : BaseEntity
         {
             switch (MeasurementAttribute.DataType)
             {
-                case Common.Enums.MeasurementDataType.String:
+                case MeasurementDataType.Text:
                     StringValue = value.ToString();
                     break;
-                case Common.Enums.MeasurementDataType.Integer:
+                case MeasurementDataType.Integer:
                     IntValue = Convert.ToInt32(value);
                     break;
-                case Common.Enums.MeasurementDataType.Decimal:
+                case MeasurementDataType.Decimal:
                     DecimalValue = Convert.ToDecimal(value);
                     break;
-                case Common.Enums.MeasurementDataType.DateTime:
-                    DateTimeValue = Convert.ToDateTime(value);
-                    break;
-                case Common.Enums.MeasurementDataType.Boolean:
+                case MeasurementDataType.Boolean:
                     BooleanValue = Convert.ToBoolean(value);
                     break;
             }

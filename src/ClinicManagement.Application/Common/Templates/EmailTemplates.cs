@@ -1,4 +1,4 @@
-﻿namespace ClinicManagement.Application.Common.Templates;
+namespace ClinicManagement.Application.Common.Templates;
 
 /// <summary>
 /// Centralized email templates for the application.
@@ -21,7 +21,7 @@ public static class EmailTemplates
     </div>
     
     <div style='background-color: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;'>
-        <h2 style='color: #2563eb; margin-top: 0;'>Hello {firstName}! 👋</h2>
+        <h2 style='color: #2563eb; margin-top: 0;'>Hello {firstName}! ??</h2>
         
         <p>Thank you for registering with our Clinic Management System!</p>
         
@@ -37,13 +37,13 @@ public static class EmailTemplates
         <p style='word-break: break-all; background-color: #f3f4f6; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;'>{confirmationLink}</p>
         
         <div style='background-color: #fef3c7; padding: 15px; border-radius: 5px; border-left: 4px solid #f59e0b; margin-top: 30px;'>
-            <p style='margin: 0;'><strong>⏰ This link will expire in 24 hours</strong></p>
+            <p style='margin: 0;'><strong>? This link will expire in 24 hours</strong></p>
             <p style='margin: 10px 0 0 0; font-size: 14px;'>If you didn't create an account, you can safely ignore this email.</p>
         </div>
     </div>
     
     <div style='text-align: center; padding: 20px; color: #6b7280; font-size: 12px;'>
-        <p>© 2025 Clinic Management System. All rights reserved.</p>
+        <p>� 2025 Clinic Management System. All rights reserved.</p>
         <p>This is an automated message, please do not reply to this email.</p>
     </div>
 </body>
@@ -61,7 +61,7 @@ public static class EmailTemplates
 </head>
 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;'>
     <div style='background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
-        <h1 style='color: white; margin: 0;'>🔐 Password Reset Request</h1>
+        <h1 style='color: white; margin: 0;'>?? Password Reset Request</h1>
     </div>
     
     <div style='background-color: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;'>
@@ -78,7 +78,7 @@ public static class EmailTemplates
         </div>
         
         <div style='background-color: #fef3c7; padding: 15px; border-radius: 5px; border-left: 4px solid #f59e0b; margin: 20px 0;'>
-            <p style='margin: 0;'><strong>⏰ Important:</strong> This link will expire in <strong>1 hour</strong> for security reasons.</p>
+            <p style='margin: 0;'><strong>? Important:</strong> This link will expire in <strong>1 hour</strong> for security reasons.</p>
         </div>
         
         <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, you can copy and paste this link into your browser:</p>
@@ -88,7 +88,7 @@ public static class EmailTemplates
     </div>
     
     <div style='text-align: center; padding: 20px; color: #6b7280; font-size: 12px;'>
-        <p>© 2025 Clinic Management System. All rights reserved.</p>
+        <p>� 2025 Clinic Management System. All rights reserved.</p>
     </div>
 </body>
 </html>";

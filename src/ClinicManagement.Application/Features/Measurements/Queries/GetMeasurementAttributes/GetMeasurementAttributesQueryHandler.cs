@@ -21,6 +21,6 @@ public class GetMeasurementAttributesQueryHandler : IRequestHandler<GetMeasureme
         var attributes = await _context.MeasurementAttributes.ToListAsync(cancellationToken);
         var attributesDto = attributes.Adapt<IEnumerable<MeasurementAttributeDto>>();
         
-        return Result<IEnumerable<MeasurementAttributeDto>>.Success(attributesDto);
+        return Result<IEnumerable<MeasurementAttributeDto>>.Ok(attributesDto);
     }
 }

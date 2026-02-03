@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Common.Interfaces;

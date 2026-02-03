@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Entities;
 using System.Security.Claims;
 
 namespace ClinicManagement.Application.Common.Interfaces;

@@ -23,6 +23,8 @@ public class UnitOfWork : IUnitOfWork
     public IMedicalSupplyRepository MedicalSupplies => field ??= new MedicalSupplyRepository(_context);
     public IInvoiceRepository Invoices => field ??= new InvoiceRepository(_context);
     public IPaymentRepository Payments => field ??= new PaymentRepository(_context);
+    public IClinicBranchRepository ClinicBranches => field ??= new ClinicBranchRepository(_context);
+    public IClinicPatientRepository ClinicPatients => field ??= new ClinicPatientRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

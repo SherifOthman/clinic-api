@@ -1,4 +1,4 @@
-﻿namespace ClinicManagement.Application.Options;
+namespace ClinicManagement.Application.Options;
 
 public class JwtOptions
 {

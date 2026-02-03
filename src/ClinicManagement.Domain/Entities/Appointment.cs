@@ -9,6 +9,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class Appointment : AuditableEntity
 {
+    public string AppointmentNumber { get; set; } = null!; // Human-readable: APT-2024-001
     public Guid ClinicBranchId { get; set; }
     public ClinicBranch ClinicBranch { get; set; } = null!;
     

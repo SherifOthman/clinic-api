@@ -1,4 +1,4 @@
-﻿namespace ClinicManagement.Application.Common.Services;
+namespace ClinicManagement.Application.Common.Services;
 
 public interface IRateLimitService
 {

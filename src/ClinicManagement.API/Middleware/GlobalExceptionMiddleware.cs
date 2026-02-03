@@ -1,5 +1,5 @@
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 using System.Text.Json;
 
@@ -42,7 +42,7 @@ public class GlobalExceptionMiddleware
 
         context.Response.StatusCode = statusCode;
 
-        var response = new { code };
+        var response = new ApiError(code);
         var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase

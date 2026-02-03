@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using ClinicManagement.Domain.Entities;
 using Mapster;
@@ -37,6 +38,6 @@ public class GetMedicalSuppliesQueryHandler : IRequestHandler<GetMedicalSupplies
         var suppliesDto = supplies.Items.Adapt<List<MedicalSupplyDto>>();
         var result = new PagedResult<MedicalSupplyDto>(suppliesDto, supplies.TotalCount, supplies.PageNumber, supplies.PageSize);
         
-        return Result<PagedResult<MedicalSupplyDto>>.Success(result);
+        return Result<PagedResult<MedicalSupplyDto>>.Ok(result);
     }
 }

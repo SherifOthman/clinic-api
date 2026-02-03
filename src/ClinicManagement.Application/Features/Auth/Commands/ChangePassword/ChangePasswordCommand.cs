@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.ChangePassword;

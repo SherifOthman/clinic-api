@@ -1,7 +1,9 @@
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Measurements.Commands.CreateMeasurementAttribute;
 
@@ -16,6 +18,16 @@ public class CreateMeasurementAttributeCommandHandler : IRequestHandler<CreateMe
 
     public async Task<Result<Guid>> Handle(CreateMeasurementAttributeCommand request, CancellationToken cancellationToken)
     {
+        // Check if measurement attribute with same name already exists
+        var existingAttribute = await _context.MeasurementAttributes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Name.ToLower() == request.Name.ToLower(), cancellationToken);
+        
+        if (existingAttribute != null)
+        {
+            return Result<Guid>.Fail(MessageCodes.Measurement.ATTRIBUTE_ALREADY_EXISTS);
+        }
+
         var attribute = new MeasurementAttribute
         {
             Id = Guid.NewGuid(),
@@ -26,6 +38,6 @@ public class CreateMeasurementAttributeCommandHandler : IRequestHandler<CreateMe
         _context.MeasurementAttributes.Add(attribute);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<Guid>.Success(attribute.Id);
+        return Result<Guid>.Ok(attribute.Id);
     }
 }

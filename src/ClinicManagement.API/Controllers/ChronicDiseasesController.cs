@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.ChronicDiseases.Commands.CreateChronicDisease;
 using ClinicManagement.Application.Features.ChronicDiseases.Commands.DeleteChronicDisease;

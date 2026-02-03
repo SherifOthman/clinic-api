@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Medicines.Commands.DeleteMedicine;
@@ -19,12 +20,12 @@ public class DeleteMedicineCommandHandler : IRequestHandler<DeleteMedicineComman
         
         if (medicine == null)
         {
-            return Result.Failure("Medicine not found.");
+            return Result.Fail("Medicine not found.");
         }
 
         _unitOfWork.Medicines.Delete(medicine);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success();
+        return Result.Ok();
     }
 }

@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.DTOs;
+using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 

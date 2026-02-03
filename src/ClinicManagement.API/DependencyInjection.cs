@@ -1,4 +1,4 @@
-﻿using ClinicManagement.API.Middleware;
+using ClinicManagement.API.Middleware;
 using ClinicManagement.API.Options;
 using ClinicManagement.Application.Options;
 using Microsoft.OpenApi.Models;
@@ -44,6 +44,8 @@ public static class DependencyInjection
 
     public static WebApplication UseAppConfigurations(this WebApplication app)
     {
+        // Domain exception middleware should come first to handle domain-specific exceptions
+        app.UseMiddleware<DomainExceptionMiddleware>();
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
         //if (app.Environment.IsDevelopment())

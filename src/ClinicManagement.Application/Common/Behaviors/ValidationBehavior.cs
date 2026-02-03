@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Extensions;
 using FluentValidation;
 using MediatR;

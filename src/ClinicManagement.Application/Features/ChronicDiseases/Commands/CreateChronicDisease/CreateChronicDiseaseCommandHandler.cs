@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.DTOs;
+using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;

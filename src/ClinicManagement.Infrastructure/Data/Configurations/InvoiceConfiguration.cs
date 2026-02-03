@@ -4,11 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ClinicManagement.Infrastructure.Data.Configurations;
 
-public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
+public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
 {
-    public void Configure(EntityTypeBuilder<Invoice> builder)
+    public override void Configure(EntityTypeBuilder<Invoice> builder)
     {
-        builder.HasKey(i => i.Id);
+        base.Configure(builder);
+
+        builder.Property(i => i.InvoiceNumber)
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder.Property(i => i.TotalAmount)
             .HasPrecision(18, 2);
@@ -40,6 +44,10 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .WithOne(p => p.Invoice)
             .HasForeignKey(p => p.InvoiceId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Unique constraint on invoice number per clinic
+        builder.HasIndex(i => new { i.ClinicId, i.InvoiceNumber })
+            .IsUnique();
 
         // Ignore calculated properties
         builder.Ignore(i => i.FinalAmount);

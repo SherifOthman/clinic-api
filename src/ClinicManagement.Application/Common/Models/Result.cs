@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Domain.Common.Constants;
 
 namespace ClinicManagement.Application.Common.Models;
 

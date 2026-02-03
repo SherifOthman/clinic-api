@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using ClinicManagement.Domain.Entities;
 using Mapster;
@@ -37,6 +38,6 @@ public class GetInvoicesQueryHandler : IRequestHandler<GetInvoicesQuery, Result<
         var invoicesDto = invoices.Items.Adapt<List<InvoiceDto>>();
         var result = new PagedResult<InvoiceDto>(invoicesDto, invoices.TotalCount, invoices.PageNumber, invoices.PageSize);
         
-        return Result<PagedResult<InvoiceDto>>.Success(result);
+        return Result<PagedResult<InvoiceDto>>.Ok(result);
     }
 }

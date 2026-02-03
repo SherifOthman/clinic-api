@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using ClinicManagement.Domain.Common.Constants;
+using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
 
@@ -8,8 +9,8 @@ public class ResendEmailVerificationCommandValidator : AbstractValidator<ResendE
     {
         RuleFor(x => x.Email)
             .NotEmpty()
-            .WithMessage("Email is required")
+            .WithErrorCode(MessageCodes.Fields.EMAIL_REQUIRED)
             .EmailAddress()
-            .WithMessage("Please enter a valid email address");
+            .WithErrorCode(MessageCodes.Fields.EMAIL_INVALID_FORMAT);
     }
 }

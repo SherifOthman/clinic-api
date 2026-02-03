@@ -6,4 +6,5 @@ public interface IMedicalServiceRepository : IRepository<MedicalService>
 {
     Task<IEnumerable<MedicalService>> GetByClinicBranchIdAsync(Guid clinicBranchId, CancellationToken cancellationToken = default);
     Task<MedicalService?> GetByIdAndClinicBranchIdAsync(Guid id, Guid clinicBranchId, CancellationToken cancellationToken = default);
+    Task<MedicalService?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default);
 }

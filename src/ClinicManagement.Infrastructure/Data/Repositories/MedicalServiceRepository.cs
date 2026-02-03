@@ -25,4 +25,11 @@ public class MedicalServiceRepository : BaseRepository<MedicalService>, IMedical
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == id && s.ClinicBranchId == clinicBranchId, cancellationToken);
     }
+
+    public async Task<MedicalService?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower() && s.ClinicBranchId == clinicBranchId, cancellationToken);
+    }
 }
