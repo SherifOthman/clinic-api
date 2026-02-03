@@ -2,15 +2,14 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class UserClinic : BaseEntity
+public class UserClinic : AuditableEntity
 {
     public Guid UserId { get; set; }
     public Guid ClinicId { get; set; }
-    public bool IsOwner { get; set; } = false;
     public bool IsActive { get; set; } = true;
-    public DateTime JoinedAt { get; set; }
+    public bool IsPrimary { get; set; } = false;
     
     // Navigation properties
-    public virtual User User { get; set; } = null!;
-    public virtual Clinic Clinic { get; set; } = null!;
+    public User User { get; set; } = null!;
+    public Clinic Clinic { get; set; } = null!;
 }

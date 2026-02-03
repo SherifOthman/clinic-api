@@ -1,8 +1,10 @@
 namespace ClinicManagement.Domain.Common.Enums;
 
-public enum AppointmentStatus
+public enum AppointmentStatus: byte
 {
-    Scheduled = 1,
-    Completed = 2,
-    Cancelled = 3
+    Pending = 1,
+    Confirmed = 2,
+    Completed = 3,
+    Cancelled = 4,
+    NoShow = 5
 }

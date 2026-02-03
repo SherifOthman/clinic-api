@@ -3,22 +3,17 @@ using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Patient : AuditableEntity
+public class Patient : BaseEntity
 {
-    public Guid ClinicId { get; set; }
-    public string FullName { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     
-    // Location fields
-    public string? Address { get; set; }
-    public int? GeoNameId { get; set; }
-    
     // Navigation properties
-    public virtual Clinic Clinic { get; set; } = null!;
-    public virtual ICollection<PatientPhoneNumber> PhoneNumbers { get; set; } = new List<PatientPhoneNumber>();
-    public virtual ICollection<PatientChronicDisease> ChronicDiseases { get; set; } = new List<PatientChronicDisease>();
-    
+    public User User { get; set; } = null!;
+    public List<ClinicPatient> Clinics { get; set; } = new();
+
+
     public int GetAge()
     {
         if (!DateOfBirth.HasValue)
@@ -30,4 +25,5 @@ public class Patient : AuditableEntity
             age--;
         return age;
     }
+
 }

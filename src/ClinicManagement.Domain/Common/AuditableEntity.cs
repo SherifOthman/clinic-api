@@ -23,4 +23,5 @@ public class AuditableEntity : BaseEntity
         DeletedAt = null;
         DeletedBy = null;
     }
+
 }

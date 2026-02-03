@@ -6,9 +6,6 @@ public class PatientChronicDisease : BaseEntity
 {
     public Guid PatientId { get; set; }
     public Guid ChronicDiseaseId { get; set; }
-    public DateTime DiagnosedDate { get; set; }
-    public string? Notes { get; set; }
-    public bool IsActive { get; set; } = true;
     
     // Navigation properties
     public virtual Patient Patient { get; set; } = null!;

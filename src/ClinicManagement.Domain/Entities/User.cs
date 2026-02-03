@@ -4,23 +4,17 @@ namespace ClinicManagement.Domain.Entities;
 
 public class User : IdentityUser<Guid>
 {
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public Guid? ClinicId { get; set; } // Current/Primary clinic for backward compatibility
-    public Guid? CurrentClinicId { get; set; } // Currently selected clinic for multi-clinic users
-    public Guid? SpecializationId { get; set; }
-    
-    public string? Country { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public bool HasAccount { get; set; }
+    public bool IsSystemAdmin { get; set; }
     public string? City { get; set; }
+    public int? PatientId { get; set;  }
+    public Patient? Patient { get; set; }
+    public int? StaffId { get; set; }
+    public Staff? Staff { get; set; }
+    public DateTime CreatedAt { get; set; }
     
-    public string? ProfileImageUrl { get; set; }
-    public string? ProfileImageFileName { get; set; }
-    public DateTime? ProfileImageUpdatedAt { get; set; }
-    
-    public virtual Clinic? Clinic { get; set; }
-    public virtual Clinic? CurrentClinic { get; set; }
-    public virtual Specialization? Specialization { get; set; }
-    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-    public virtual ICollection<UserClinic> UserClinics { get; set; } = new List<UserClinic>();
+    // New relationships for visits and measurements
+    public virtual ICollection<Visit> VisitsAsDoctor { get; set; } = new List<Visit>();
+    public virtual ICollection<PatientMeasurement> MeasurementsTaken { get; set; } = new List<PatientMeasurement>();
 }

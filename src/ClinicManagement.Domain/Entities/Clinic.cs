@@ -2,17 +2,19 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Clinic : AuditableEntity
+public class Clinic : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
     public Guid SubscriptionPlanId { get; set; }
     public bool IsActive { get; set; } = true;
-    
+
     // Navigation properties
-    public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
-    public virtual ICollection<User> CurrentUsers { get; set; } = new List<User>();
-    public virtual ICollection<UserClinic> UserClinics { get; set; } = new List<UserClinic>();
-    public virtual ICollection<ClinicBranch> ClinicBranches { get; set; } = new List<ClinicBranch>();
-    public virtual ICollection<Patient> Patients { get; set; } = new List<Patient>();
+    public SubscriptionPlan? SubscriptionPlan { get; set; }
+    public ICollection<User> Users { get; set; } = new List<User>();
+    public ICollection<ClinicPatient> Patients { get; set; } = new List<ClinicPatient>();
+    public ICollection<MedicalService> Services { get; set; } = new List<MedicalService>();
+    public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+    public ICollection<MeasurementType> MeasurementTypes { get; set; } = new List<MeasurementType>();
+    public ICollection<PatientTransaction> Transactions { get; set; } = new List<PatientTransaction>();
+    public ICollection<Visit> Visits { get; set; } = new List<Visit>();
 }
