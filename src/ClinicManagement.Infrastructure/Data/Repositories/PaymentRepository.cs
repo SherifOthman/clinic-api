@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
 
-public class PaymentRepository : Repository<Payment>, IPaymentRepository
+public class PaymentRepository : BaseRepository<Payment>, IPaymentRepository
 {
     public PaymentRepository(ApplicationDbContext context) : base(context)
     {
@@ -12,7 +12,8 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
 
     public async Task<IEnumerable<Payment>> GetByInvoiceIdAsync(Guid invoiceId, CancellationToken cancellationToken = default)
     {
-        return await _context.Payments
+        return await _dbSet
+            .AsNoTracking()
             .Where(p => p.InvoiceId == invoiceId)
             .OrderBy(p => p.PaymentDate)
             .ToListAsync(cancellationToken);
@@ -20,7 +21,8 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
 
     public async Task<IEnumerable<Payment>> GetByDateRangeAsync(Guid clinicId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
-        return await _context.Payments
+        return await _dbSet
+            .AsNoTracking()
             .Include(p => p.Invoice)
             .Where(p => p.Invoice.ClinicId == clinicId && 
                        p.PaymentDate >= startDate && 

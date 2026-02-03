@@ -14,8 +14,8 @@ public class ChronicDiseaseRepository : BaseRepository<ChronicDisease>, IChronic
 
     public async Task<IEnumerable<ChronicDisease>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
-        // Since we removed IsActive, just return all chronic diseases
-        return await GetAllAsync(cancellationToken);
+        // Since we removed IsActive, just return all chronic diseases with AsNoTracking
+        return await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
     }
 
     public async Task<PagedResult<ChronicDisease>> GetActivePagedAsync(PaginationRequest request, CancellationToken cancellationToken = default)
@@ -30,14 +30,13 @@ public class ChronicDiseaseRepository : BaseRepository<ChronicDisease>, IChronic
         return entity;
     }
 
-    public new async Task<ChronicDisease> UpdateAsync(ChronicDisease entity, CancellationToken cancellationToken = default)
+    public new void Update(ChronicDisease entity)
     {
-        await base.UpdateAsync(entity, cancellationToken);
-        return entity;
+        base.Update(entity);
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.AnyAsync(e => e.Id == id, cancellationToken);
+        return await _dbSet.AsNoTracking().AnyAsync(e => e.Id == id, cancellationToken);
     }
 }
