@@ -38,7 +38,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var clinicPatientExists = await _unitOfWork.ClinicPatients.ExistsAsync(request.Appointment.ClinicPatientId, cancellationToken);
         if (!clinicPatientExists)
         {
-            return Result<AppointmentDto>.Fail(MessageCodes.Appointment.PATIENT_REQUIRED);
+            return Result<AppointmentDto>.FailField("appointment.clinicPatientId", MessageCodes.Appointment.PATIENT_REQUIRED);
         }
 
         // Get the next queue number for the doctor on the appointment date
@@ -55,7 +55,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
 
         if (pricing == null)
         {
-            return Result<AppointmentDto>.Fail(MessageCodes.Appointment.TYPE_REQUIRED);
+            return Result<AppointmentDto>.FailField("appointment.appointmentTypeId", MessageCodes.Appointment.TYPE_REQUIRED);
         }
 
         // Use custom price if provided, otherwise use the default price

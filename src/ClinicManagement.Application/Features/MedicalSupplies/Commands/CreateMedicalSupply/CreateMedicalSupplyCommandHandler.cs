@@ -29,7 +29,7 @@ public class CreateMedicalSupplyCommandHandler : IRequestHandler<CreateMedicalSu
         var existingSupply = await _unitOfWork.MedicalSupplies.GetByNameAndClinicBranchAsync(request.Name, request.ClinicBranchId, cancellationToken);
         if (existingSupply != null)
         {
-            return Result<Guid>.Fail(MessageCodes.MedicalSupply.ALREADY_EXISTS);
+            return Result<Guid>.FailField("name", MessageCodes.MedicalSupply.ALREADY_EXISTS);
         }
 
         var supply = new MedicalSupply

@@ -31,7 +31,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         
         if (request.Amount > remainingAmount)
         {
-            return Result<Guid>.Fail(MessageCodes.Payment.AMOUNT_EXCEEDS_REMAINING);
+            return Result<Guid>.FailField("amount", MessageCodes.Payment.AMOUNT_EXCEEDS_REMAINING);
         }
 
         var payment = new Payment

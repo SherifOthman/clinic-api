@@ -20,10 +20,10 @@ public class ResendEmailVerificationCommandHandler : IRequestHandler<ResendEmail
     {
         var user = await _userManagementService.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
-            return Result.Fail(MessageCodes.Authentication.USER_WITH_EMAIL_NOT_FOUND);
+            return Result.FailField("email", MessageCodes.Authentication.USER_WITH_EMAIL_NOT_FOUND);
 
         if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
-            return Result.Fail(MessageCodes.Authentication.EMAIL_ALREADY_CONFIRMED);
+            return Result.FailField("email", MessageCodes.Authentication.EMAIL_ALREADY_CONFIRMED);
 
         var result = await _emailConfirmationService.SendConfirmationEmailAsync(user, cancellationToken);
         if (!result.Success)

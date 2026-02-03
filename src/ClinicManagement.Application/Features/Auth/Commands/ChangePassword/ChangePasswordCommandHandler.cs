@@ -30,7 +30,7 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             return Result.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
 
         if (!await _userManagementService.CheckPasswordAsync(user, request.CurrentPassword, cancellationToken))
-            return Result.Fail(MessageCodes.Authentication.INVALID_PASSWORD);
+            return Result.FailField("currentPassword", MessageCodes.Authentication.INVALID_PASSWORD);
 
         return Result.Ok();
     }

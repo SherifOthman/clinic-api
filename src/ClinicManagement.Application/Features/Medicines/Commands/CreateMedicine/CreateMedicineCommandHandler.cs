@@ -45,7 +45,7 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
             {
                 _logger.LogWarning("Medicine '{MedicineName}' already exists in clinic branch {ClinicBranchId}", 
                     request.Name, request.ClinicBranchId);
-                return Result<Guid>.Fail(MessageCodes.Medicine.ALREADY_EXISTS);
+                return Result<Guid>.FailField("name", MessageCodes.Medicine.ALREADY_EXISTS);
             }
 
             // Create medicine entity

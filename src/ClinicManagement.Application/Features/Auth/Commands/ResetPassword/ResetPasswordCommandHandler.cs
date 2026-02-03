@@ -18,7 +18,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
     {
         var user = await _userManagementService.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
-            return Result.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
+            return Result.FailField("email", MessageCodes.Authentication.INVALID_RESET_TOKEN);
 
         return Result.Ok();
     }

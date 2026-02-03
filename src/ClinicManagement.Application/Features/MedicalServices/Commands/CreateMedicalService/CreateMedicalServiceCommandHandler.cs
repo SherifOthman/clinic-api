@@ -29,7 +29,7 @@ public class CreateMedicalServiceCommandHandler : IRequestHandler<CreateMedicalS
         var existingService = await _unitOfWork.MedicalServices.GetByNameAndClinicBranchAsync(request.Name, request.ClinicBranchId, cancellationToken);
         if (existingService != null)
         {
-            return Result<Guid>.Fail(MessageCodes.MedicalService.ALREADY_EXISTS);
+            return Result<Guid>.FailField("name", MessageCodes.MedicalService.ALREADY_EXISTS);
         }
 
         var service = new MedicalService

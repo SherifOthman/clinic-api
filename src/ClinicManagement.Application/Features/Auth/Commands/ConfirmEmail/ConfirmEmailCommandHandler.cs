@@ -33,7 +33,7 @@ public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, R
         if (user == null)
         {
             _logger.LogWarning("Email confirmation attempt for non-existent user: {Email}", request.Email);
-            return Result.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result.FailField("email", MessageCodes.Authentication.USER_NOT_FOUND);
         }
 
         if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))

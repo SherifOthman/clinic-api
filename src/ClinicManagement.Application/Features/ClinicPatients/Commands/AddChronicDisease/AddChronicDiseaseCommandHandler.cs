@@ -30,7 +30,7 @@ public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDisease
         var chronicDisease = await _chronicDiseaseRepository.GetByIdAsync(request.ChronicDisease.ChronicDiseaseId, cancellationToken);
         if (chronicDisease == null)
         {
-            return Result<ClinicPatientChronicDiseaseDto>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+            return Result<ClinicPatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
         // Check if the relationship already exists
@@ -41,7 +41,7 @@ public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDisease
 
         if (exists)
         {
-            return Result<ClinicPatientChronicDiseaseDto>.Fail(MessageCodes.Business.CHRONIC_DISEASE_ALREADY_EXISTS);
+            return Result<ClinicPatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_ALREADY_EXISTS);
         }
 
         // Create the relationship
