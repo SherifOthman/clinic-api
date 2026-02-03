@@ -17,7 +17,7 @@ public class GetMedicalServicesQueryHandler : IRequestHandler<GetMedicalServices
 
     public async Task<Result<IEnumerable<MedicalServiceDto>>> Handle(GetMedicalServicesQuery request, CancellationToken cancellationToken)
     {
-        var services = await _unitOfWork.MedicalServices.GetByClinicIdAsync(request.ClinicBranchId, cancellationToken);
+        var services = await _unitOfWork.MedicalServices.GetByClinicBranchIdAsync(request.ClinicBranchId, cancellationToken);
         var servicesDto = services.Adapt<IEnumerable<MedicalServiceDto>>();
         
         return Result<IEnumerable<MedicalServiceDto>>.Success(servicesDto);

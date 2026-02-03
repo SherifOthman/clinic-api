@@ -4,6 +4,8 @@ using ClinicManagement.Application.Features.Medicines.Commands.DeleteMedicine;
 using ClinicManagement.Application.Features.Medicines.Commands.UpdateMedicine;
 using ClinicManagement.Application.Features.Medicines.Queries.GetMedicine;
 using ClinicManagement.Application.Features.Medicines.Queries.GetMedicines;
+using ClinicManagement.Domain.Common.Models;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
@@ -11,25 +13,50 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/[controller]")]
 public class MedicinesController : BaseApiController
 {
-    [HttpGet("branch/{branchId}")]
-    public async Task<IActionResult> GetMedicines(Guid branchId)
+    public MedicinesController(IMediator mediator) : base(mediator)
     {
-        var result = await Mediator.Send(new GetMedicinesQuery(branchId));
-        return Ok(result);
+    }
+
+    [HttpGet("branch/{branchId}")]
+    public async Task<IActionResult> GetMedicines(
+        Guid branchId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string sortDirection = "asc",
+        [FromQuery] bool? isLowStock = null)
+    {
+        var paginationRequest = new SearchablePaginationRequest
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            SearchTerm = searchTerm,
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+
+        if (isLowStock.HasValue)
+        {
+            paginationRequest.Filters.Add("isLowStock", isLowStock.Value);
+        }
+
+        var result = await Mediator.Send(new GetMedicinesQuery(branchId, paginationRequest));
+        return HandleResult(result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetMedicine(Guid id)
     {
         var result = await Mediator.Send(new GetMedicineQuery(id));
-        return Ok(result);
+        return HandleResult(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateMedicine(CreateMedicineCommand command)
     {
         var result = await Mediator.Send(command);
-        return Ok(result);
+        return HandleCreateResult(result, nameof(GetMedicine), new { id = result.Value });
     }
 
     [HttpPut("{id}")]
@@ -41,13 +68,13 @@ public class MedicinesController : BaseApiController
         }
 
         var result = await Mediator.Send(command);
-        return Ok(result);
+        return HandleResult(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMedicine(Guid id)
     {
         var result = await Mediator.Send(new DeleteMedicineCommand(id));
-        return Ok(result);
+        return HandleDeleteResult(result);
     }
 }
