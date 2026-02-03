@@ -4,8 +4,7 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// Doctor's working set of measurements
-/// This is what the system actually works with
-/// Copied from SpecialtyMeasurementDefaults when doctor is created
+/// Child entity - accessed through User.ClinicId for tenant isolation
 /// </summary>
 public class DoctorMeasurement : AuditableEntity
 {

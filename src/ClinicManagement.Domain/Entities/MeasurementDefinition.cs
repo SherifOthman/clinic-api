@@ -4,8 +4,8 @@ using ClinicManagement.Domain.Common.Enums;
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// Defines measurement types (e.g., Blood Pressure, Weight, Height, etc.)
-/// This is the master definition table
+/// Global measurement definitions shared across all tenants
+/// No ClinicId - this is reference data
 /// </summary>
 public class MeasurementDefinition : AuditableEntity
 {

@@ -2,10 +2,6 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-/// <summary>
-/// Stores actual measurement values taken during visits
-/// The real data that doctors work with
-/// </summary>
 public class VisitMeasurement : AuditableEntity
 {
     public Guid VisitId { get; set; }

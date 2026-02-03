@@ -3,8 +3,8 @@ using ClinicManagement.Domain.Common;
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// Template/Seed data for measurements per specialty
-/// Read-only table managed by admin
+/// Global template data for measurements per specialty
+/// No ClinicId - this is admin-managed reference data
 /// </summary>
 public class SpecialtyMeasurementDefault : AuditableEntity
 {
