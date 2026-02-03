@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.Options;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -31,17 +30,13 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles)
     {
-        // Use CurrentClinicId if available, otherwise fall back to ClinicId for backward compatibility
-        var effectiveClinicId = clinicId ?? user.CurrentClinicId ?? user.ClinicId;
-        
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim()),
-            new(ClaimConstants.ClinicId, effectiveClinicId?.ToString() ?? string.Empty)
+            new(ClaimTypes.Name, user.FullName)
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
@@ -62,13 +57,13 @@ public class TokenService : ITokenService
 
     public async Task<string> GenerateRefreshTokenAsync(User user, CancellationToken cancellationToken = default)
     {
-        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
+        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, cancellationToken);
         return refreshToken.Token;
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, null, null, cancellationToken);
+        await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
     }
 
     public ClaimsPrincipal? ValidateAccessToken(string token)

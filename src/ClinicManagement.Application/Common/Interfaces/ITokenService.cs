@@ -5,9 +5,9 @@ namespace ClinicManagement.Application.Common.Interfaces;
 
 public interface ITokenService
 {
-    string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null);
+    string GenerateAccessToken(User user, IEnumerable<string> roles);
     Task<string> GenerateRefreshTokenAsync(User user, CancellationToken cancellationToken = default);
-    Task RevokeRefreshTokenAsync(string refreshTokens, CancellationToken cancellationToken = default);
+    Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
     
     ClaimsPrincipal? ValidateAccessToken(string token);
     

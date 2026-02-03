@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Domain.Common.Constants;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -20,15 +19,6 @@ public class CurrentUserService : ICurrentUserService
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
-        }
-    }
-
-    public Guid? ClinicId
-    {
-        get
-        {
-            var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimConstants.ClinicId)?.Value;
-            return Guid.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
         }
     }
 
@@ -67,14 +57,6 @@ public class CurrentUserService : ICurrentUserService
         return UserId.Value;
     }
 
-    public Guid GetRequiredClinicId()
-    {
-        if (!ClinicId.HasValue)
-            throw new UnauthorizedAccessException("Clinic ID is required but not available. User may not be associated with a clinic.");
-
-        return ClinicId.Value;
-    }
-
     public bool TryGetUserId(out Guid userId)
     {
         userId = Guid.Empty;
@@ -84,21 +66,5 @@ public class CurrentUserService : ICurrentUserService
             return true;
         }
         return false;
-    }
-
-    public bool TryGetClinicId(out Guid clinicId)
-    {
-        clinicId = Guid.Empty;
-        if (ClinicId.HasValue)
-        {
-            clinicId = ClinicId.Value;
-            return true;
-        }
-        return false;
-    }
-
-    public bool HasClinicAccess()
-    {
-        return IsAuthenticated && ClinicId.HasValue;
     }
 }

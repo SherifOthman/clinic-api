@@ -6,7 +6,6 @@ using ClinicManagement.Application.Features.ChronicDiseases.Commands.UpdateChron
 using ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChronicDisease;
 using ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChronicDiseases;
 using ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChronicDiseasesWithPagination;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +22,6 @@ public class ChronicDiseasesController : BaseApiController
     }
 
     [HttpGet]
-    [Authorize(Roles = RoleNames.AllStaff)]
     public async Task<IActionResult> GetChronicDiseases([FromQuery] string? language = null)
     {
         var result = await Mediator.Send(new GetChronicDiseasesQuery(language));
@@ -31,7 +29,6 @@ public class ChronicDiseasesController : BaseApiController
     }
 
     [HttpGet("paginated")]
-    [Authorize(Roles = RoleNames.AllStaff)]
     [ProducesResponseType(typeof(PagedResult<ChronicDiseaseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetChronicDiseasesWithPagination(
         [FromQuery] GetChronicDiseasesWithPaginationQuery query,
@@ -42,7 +39,6 @@ public class ChronicDiseasesController : BaseApiController
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = RoleNames.AllStaff)]
     [ProducesResponseType(typeof(ChronicDiseaseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetChronicDisease(Guid id, CancellationToken cancellationToken)
@@ -53,7 +49,6 @@ public class ChronicDiseasesController : BaseApiController
     }
 
     [HttpPost]
-    [Authorize(Roles = RoleNames.AdminAndManagement)]
     [ProducesResponseType(typeof(ChronicDiseaseDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateChronicDisease(CreateChronicDiseaseCommand command, CancellationToken cancellationToken)
     {
@@ -62,7 +57,6 @@ public class ChronicDiseasesController : BaseApiController
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = RoleNames.AdminAndManagement)]
     [ProducesResponseType(typeof(ChronicDiseaseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateChronicDisease(Guid id, UpdateChronicDiseaseCommand command, CancellationToken cancellationToken)
@@ -75,7 +69,6 @@ public class ChronicDiseasesController : BaseApiController
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = RoleNames.AdminAndManagement)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteChronicDisease(Guid id, CancellationToken cancellationToken)
