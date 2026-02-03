@@ -3,6 +3,10 @@ using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
+/// <summary>
+/// Medical services offered by the clinic.
+/// Used for consultation, operations, lab tests, radiology, etc.
+/// </summary>
 public class MedicalService : AuditableEntity
 {
     public Guid ClinicId { get; set; }
@@ -14,5 +18,9 @@ public class MedicalService : AuditableEntity
     
     // Navigation properties
     public Clinic Clinic { get; set; } = null!;
+    public ICollection<VisitServiceItem> VisitServiceItems { get; set; } = new List<VisitServiceItem>();
+    
+    // Legacy - keeping for backward compatibility
+    [Obsolete("Use VisitServiceItems instead")]
     public ICollection<TransactionService> TransactionServices { get; set; } = new List<TransactionService>();
 }
