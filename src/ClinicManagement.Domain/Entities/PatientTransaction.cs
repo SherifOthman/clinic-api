@@ -18,8 +18,8 @@ public class PatientTransaction : AuditableEntity
     public ICollection<TransactionItem> Items { get; set; } = new List<TransactionItem>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     
-    // Simple accounting calculations
-    public decimal TotalAmount => Services.Sum(s => s.Price) + Items.Sum(i => i.Quantity * i.UnitPrice);
-    public decimal PaidAmount => Payments.Sum(p => p.Amount);
-    public decimal RemainingAmount => TotalAmount - PaidAmount;
+    // Business logic moved to Domain Service
+    // Use IPatientTransactionDomainService.CalculateTotalAmount(this)
+    // Use IPatientTransactionDomainService.CalculatePaidAmount(this)  
+    // Use IPatientTransactionDomainService.CalculateRemainingAmount(this)
 }

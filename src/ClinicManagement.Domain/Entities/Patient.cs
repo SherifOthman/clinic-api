@@ -13,17 +13,6 @@ public class Patient : BaseEntity
     public User User { get; set; } = null!;
     public List<ClinicPatient> Clinics { get; set; } = new();
 
-
-    public int GetAge()
-    {
-        if (!DateOfBirth.HasValue)
-            return 0;
-            
-        var today = DateTime.Today;
-        var age = today.Year - DateOfBirth.Value.Year;
-        if (DateOfBirth.Value.Date > today.AddYears(-age))
-            age--;
-        return age;
-    }
-
+    // Business logic moved to Domain Service
+    // Use IPatientDomainService.CalculateAge(this.DateOfBirth)
 }

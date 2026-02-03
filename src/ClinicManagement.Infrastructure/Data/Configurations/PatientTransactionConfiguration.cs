@@ -56,9 +56,9 @@ public class PatientTransactionConfiguration : IEntityTypeConfiguration<PatientT
         builder.HasIndex(pt => pt.VisitId);
         builder.HasIndex(pt => pt.CreatedAt);
         
-        // Ignore calculated properties
-        builder.Ignore(pt => pt.TotalAmount);
-        builder.Ignore(pt => pt.PaidAmount);
-        builder.Ignore(pt => pt.RemainingAmount);
+        // Ignore calculated properties - use Domain Service instead
+        // IPatientTransactionDomainService.CalculateTotalAmount()
+        // IPatientTransactionDomainService.CalculatePaidAmount()
+        // IPatientTransactionDomainService.CalculateRemainingAmount()
     }
 }
