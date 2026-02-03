@@ -18,13 +18,18 @@ public class Appointment : AuditableEntity
     public Guid DoctorId { get; set; }
     public Staff Doctor { get; set; } = null!;
     
+    public Guid AppointmentTypeId { get; set; }
+    public AppointmentType AppointmentType { get; set; } = null!;
+    
     public DateTime AppointmentDate { get; set; }
     public short QueueNumber { get; set; }
     public AppointmentStatus Status { get; set; }
-    
-    // Payment related to the consultation only
-    public decimal Price { get; set; }
+
+    public decimal FinalPrice { get; set; }
+     
     public decimal DiscountAmount { get; set; }
+    
     public decimal PaidAmount { get; set; }
-    public decimal RemainingAmount => Price - DiscountAmount - PaidAmount;
+    
+    public decimal RemainingAmount => FinalPrice - DiscountAmount - PaidAmount;
 }

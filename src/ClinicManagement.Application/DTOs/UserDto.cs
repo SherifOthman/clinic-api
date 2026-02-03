@@ -1,4 +1,6 @@
-﻿namespace ClinicManagement.Application.DTOs;
+﻿using ClinicManagement.Domain.Common.Enums;
+
+namespace ClinicManagement.Application.DTOs;
 
 public class UserDto
 {

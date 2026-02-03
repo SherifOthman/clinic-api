@@ -5,7 +5,7 @@ using ClinicManagement.Domain.Identity;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Staff : AuditableEntity
+public class Staff : BaseEntity
 {
     public Guid UserId { get; set; }
     public ApplicationUser User { get; set; } = null!;
@@ -19,5 +19,5 @@ public class Staff : AuditableEntity
     /// Link to doctor profile if role is Doctor
     /// </summary>
     public Guid? DoctorProfileId { get; set; }
-    public DoctorProfile? DoctorProfile { get; set; }
+    public Doctor? DoctorProfile { get; set; }
 }

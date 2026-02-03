@@ -107,6 +107,12 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IChronicDiseaseRepository, ChronicDiseaseRepository>();
+        services.AddScoped<ISpecializationRepository, SpecializationRepository>();
+        services.AddScoped<IDoctorRepository, DoctorRepository>();
+        services.AddScoped<IClinicPatientChronicDiseaseRepository, ClinicPatientChronicDiseaseRepository>();
+        services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IAppointmentTypeRepository, AppointmentTypeRepository>();
+        services.AddScoped<IClinicBranchAppointmentPriceRepository, ClinicBranchAppointmentPriceRepository>();
 
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
         services.Configure<CookieSettings>(configuration.GetSection("Cookie"));

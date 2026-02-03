@@ -9,7 +9,6 @@ namespace ClinicManagement.Domain.Entities;
 public class User : IdentityUser<Guid>
 {
     public string FullName { get; set; } = string.Empty;
-    public string? City { get; set; }
     public DateTime CreatedAt { get; set; }
     
     // Navigation properties

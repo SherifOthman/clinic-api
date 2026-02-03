@@ -14,6 +14,12 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
 
     public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Specialization> Specializations => Set<Specialization>();
+    public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<ClinicPatientChronicDisease> ClinicPatientChronicDiseases => Set<ClinicPatientChronicDisease>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
+    public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider) : base(options)
     {

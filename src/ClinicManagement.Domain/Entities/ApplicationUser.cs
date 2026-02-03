@@ -1,5 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Identity;
+using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Identity;
 
@@ -10,7 +11,7 @@ namespace ClinicManagement.Domain.Identity;
 public class ApplicationUser : IdentityUser<Guid>
 {
     public string FullName { get; set; } = null!;
-    public string Gender { get; set; } = null!; // Could be Enum if desired
+    public Gender Gender { get; set; }
     public string City { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
 }

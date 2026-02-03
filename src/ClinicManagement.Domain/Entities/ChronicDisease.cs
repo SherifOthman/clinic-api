@@ -2,10 +2,13 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class ChronicDisease : AuditableEntity
+public class ChronicDisease : BaseEntity
 {
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
     public string? DescriptionEn { get; set; }
     public string? DescriptionAr { get; set; }
+    
+    // Navigation properties
+    public ICollection<ClinicPatientChronicDisease> ClinicPatients { get; set; } = new List<ClinicPatientChronicDisease>();
 }

@@ -12,8 +12,8 @@ public class MeasurementAttribute : BaseEntity
     public string Name { get; set; } = null!;
     public MeasurementDataType DataType { get; set; }
     
-    /// <summary>
-    /// Default flag for system-defined measurements per specialty
-    /// </summary>
-    public bool IsDefault { get; set; } = false;
+    // Navigation properties
+    public ICollection<MedicalVisitMeasurement> VisitMeasurements { get; set; } = new List<MedicalVisitMeasurement>();
+    public ICollection<DoctorMeasurementAttribute> DoctorMeasurements { get; set; } = new List<DoctorMeasurementAttribute>();
+    public ICollection<SpecializationMeasurementAttribute> SpecializationDefaults { get; set; } = new List<SpecializationMeasurementAttribute>();
 }

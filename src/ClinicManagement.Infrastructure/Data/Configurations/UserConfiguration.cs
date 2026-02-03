@@ -22,9 +22,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.Property(u => u.City)
-            .HasMaxLength(100);
-
         builder.Property(u => u.CreatedAt)
             .IsRequired();
 

@@ -54,6 +54,7 @@ public static class MessageCodes
         public const string OPERATION_NOT_ALLOWED = "BUSINESS.OPERATION.NOT_ALLOWED";
         public const string INVALID_OPERATION = "BUSINESS.OPERATION.INVALID";
         public const string CHRONIC_DISEASE_NOT_FOUND = "BUSINESS.CHRONIC_DISEASE.NOT_FOUND";
+        public const string CHRONIC_DISEASE_ALREADY_EXISTS = "BUSINESS.CHRONIC_DISEASE.ALREADY_EXISTS";
     }
 
     public static class Exception

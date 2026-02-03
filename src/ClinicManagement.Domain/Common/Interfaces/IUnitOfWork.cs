@@ -7,6 +7,11 @@ public interface IUnitOfWork : IDisposable
     IUserRepository Users { get; }
     IChronicDiseaseRepository ChronicDiseases { get; }
     IRefreshTokenRepository RefreshTokens { get; }
+    IMedicalServiceRepository MedicalServices { get; }
+    IMedicineRepository Medicines { get; }
+    IMedicalSupplyRepository MedicalSupplies { get; }
+    IInvoiceRepository Invoices { get; }
+    IPaymentRepository Payments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

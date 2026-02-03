@@ -8,8 +8,14 @@ public class PrescriptionItem : BaseEntity
 {
     public Guid PrescriptionId { get; set; }
     public Prescription Prescription { get; set; } = null!;
-    
-    public ServiceType ItemType { get; set; } // Medication / Lab / Radiology
-    public Guid ReferenceId { get; set; } // points to actual item
-    public string Instructions { get; set; } = null!;
+
+    public string DrugName { get; set; } = null!;
+
+    public string? Dosage { get; set; } 
+
+    public int FrequencyPerDay { get; set; } 
+
+    public int DurationInDays { get; set; } 
+
+    public string? Instructions { get; set; } 
 }

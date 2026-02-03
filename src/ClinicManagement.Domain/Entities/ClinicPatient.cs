@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
@@ -16,9 +17,9 @@ public class ClinicPatient : AuditableEntity
     public Patient Patient { get; set; } = null!;
     
     public string FullName { get; set; } = null!;
-    public string Gender { get; set; } = null!;
+    public Gender Gender { get; set; }
     public string City { get; set; } = null!;
-    public string Address { get; set; } = null!;
+    public string? Address { get; set; } = null!;
     public DateTime DateOfBirth { get; set; }
     
     /// <summary>
@@ -27,4 +28,7 @@ public class ClinicPatient : AuditableEntity
     public string MedicalFileNumber { get; set; } = null!;
     
     public ICollection<ClinicPatientPhone> PhoneNumbers { get; set; } = new List<ClinicPatientPhone>();
+    public ICollection<ClinicPatientChronicDisease> ChronicDiseases { get; set; } = new List<ClinicPatientChronicDisease>();
+    public ICollection<MedicalFile> MedicalFiles { get; set; } = new List<MedicalFile>();
+    public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }

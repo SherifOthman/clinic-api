@@ -3,7 +3,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class ClinicMedication : AuditableEntity
+public class ClinicMedication : BaseEntity
 {
     public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
