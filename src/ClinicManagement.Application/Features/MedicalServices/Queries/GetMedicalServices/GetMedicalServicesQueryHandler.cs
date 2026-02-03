@@ -1,0 +1,25 @@
+using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.DTOs;
+using Mapster;
+using MediatR;
+
+namespace ClinicManagement.Application.Features.MedicalServices.Queries.GetMedicalServices;
+
+public class GetMedicalServicesQueryHandler : IRequestHandler<GetMedicalServicesQuery, Result<IEnumerable<MedicalServiceDto>>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public GetMedicalServicesQueryHandler(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result<IEnumerable<MedicalServiceDto>>> Handle(GetMedicalServicesQuery request, CancellationToken cancellationToken)
+    {
+        var services = await _unitOfWork.MedicalServices.GetByClinicIdAsync(request.ClinicBranchId, cancellationToken);
+        var servicesDto = services.Adapt<IEnumerable<MedicalServiceDto>>();
+        
+        return Result<IEnumerable<MedicalServiceDto>>.Success(servicesDto);
+    }
+}

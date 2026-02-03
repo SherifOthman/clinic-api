@@ -16,6 +16,20 @@ public interface IApplicationDbContext
     DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices { get; }
     DbSet<AppointmentType> AppointmentTypes { get; }
     
+    // New pharmacy and billing entities
+    DbSet<Medicine> Medicines { get; }
+    DbSet<MedicalSupply> MedicalSupplies { get; }
+    DbSet<MedicalService> MedicalServices { get; }
+    DbSet<Invoice> Invoices { get; }
+    DbSet<InvoiceItem> InvoiceItems { get; }
+    DbSet<Payment> Payments { get; }
+    
+    // Measurement entities
+    DbSet<MeasurementAttribute> MeasurementAttributes { get; }
+    DbSet<MedicalVisitMeasurement> MedicalVisitMeasurements { get; }
+    DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes { get; }
+    DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes { get; }
+    
     DatabaseFacade Database { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

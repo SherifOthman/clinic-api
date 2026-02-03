@@ -47,5 +47,51 @@ public static class MappingConfig
         
         // User to UserDto mapping is handled automatically by Mapster
         // since property names match between User entity and UserDto
+        
+        // New pharmacy and billing mappings
+        TypeAdapterConfig<Medicine, MedicineDto>
+            .NewConfig()
+            .Map(dest => dest.StripPrice, src => src.StripPrice)
+            .Map(dest => dest.FullBoxesInStock, src => src.FullBoxesInStock)
+            .Map(dest => dest.RemainingStrips, src => src.RemainingStrips)
+            .Map(dest => dest.IsLowStock, src => src.IsLowStock)
+            .Map(dest => dest.HasStock, src => src.HasStock);
+
+        TypeAdapterConfig<MedicalSupply, MedicalSupplyDto>
+            .NewConfig()
+            .Map(dest => dest.IsLowStock, src => src.IsLowStock)
+            .Map(dest => dest.HasStock, src => src.HasStock);
+
+        TypeAdapterConfig<MedicalService, MedicalServiceDto>
+            .NewConfig();
+
+        TypeAdapterConfig<Invoice, InvoiceDto>
+            .NewConfig()
+            .Map(dest => dest.FinalAmount, src => src.FinalAmount)
+            .Map(dest => dest.TotalPaid, src => src.TotalPaid)
+            .Map(dest => dest.RemainingAmount, src => src.RemainingAmount)
+            .Map(dest => dest.IsFullyPaid, src => src.IsFullyPaid)
+            .Map(dest => dest.IsOverdue, src => src.IsOverdue);
+
+        TypeAdapterConfig<InvoiceItem, InvoiceItemDto>
+            .NewConfig()
+            .Map(dest => dest.LineTotal, src => src.LineTotal);
+
+        TypeAdapterConfig<Payment, PaymentDto>
+            .NewConfig();
+
+        // Measurement mappings
+        TypeAdapterConfig<MeasurementAttribute, MeasurementAttributeDto>
+            .NewConfig();
+        
+        TypeAdapterConfig<MedicalVisitMeasurement, MedicalVisitMeasurementDto>
+            .NewConfig()
+            .Map(dest => dest.MeasurementName, src => src.MeasurementAttribute.Name)
+            .Map(dest => dest.Value, src => src.GetValue());
+
+        TypeAdapterConfig<DoctorMeasurementAttribute, DoctorMeasurementAttributeDto>
+            .NewConfig()
+            .Map(dest => dest.MeasurementName, src => src.MeasurementAttribute.Name)
+            .Map(dest => dest.DataType, src => src.MeasurementAttribute.DataType.ToString());
     }
 }

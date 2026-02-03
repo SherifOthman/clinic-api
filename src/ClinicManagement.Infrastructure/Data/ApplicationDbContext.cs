@@ -20,6 +20,20 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
     public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
+    
+    // New pharmacy and billing entities
+    public DbSet<Medicine> Medicines => Set<Medicine>();
+    public DbSet<MedicalSupply> MedicalSupplies => Set<MedicalSupply>();
+    public DbSet<MedicalService> MedicalServices => Set<MedicalService>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    
+    // Measurement entities
+    public DbSet<MeasurementAttribute> MeasurementAttributes => Set<MeasurementAttribute>();
+    public DbSet<MedicalVisitMeasurement> MedicalVisitMeasurements => Set<MedicalVisitMeasurement>();
+    public DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes => Set<DoctorMeasurementAttribute>();
+    public DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes => Set<SpecializationMeasurementAttribute>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider) : base(options)
     {

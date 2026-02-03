@@ -18,6 +18,11 @@ public class UnitOfWork : IUnitOfWork
     public IUserRepository Users => field ??= new UserRepository(_context, _currentUserService, _userManager);
     public IChronicDiseaseRepository ChronicDiseases => field ??= new ChronicDiseaseRepository(_context);
     public IRefreshTokenRepository RefreshTokens => field ??= new RefreshTokenRepository(_context, _currentUserService, _dateTimeProvider);
+    public IMedicalServiceRepository MedicalServices => field ??= new MedicalServiceRepository(_context);
+    public IMedicineRepository Medicines => field ??= new MedicineRepository(_context);
+    public IMedicalSupplyRepository MedicalSupplies => field ??= new MedicalSupplyRepository(_context);
+    public IInvoiceRepository Invoices => field ??= new InvoiceRepository(_context);
+    public IPaymentRepository Payments => field ??= new PaymentRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {
