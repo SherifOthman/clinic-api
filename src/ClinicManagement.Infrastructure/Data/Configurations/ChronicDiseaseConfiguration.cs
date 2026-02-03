@@ -21,15 +21,8 @@ public class ChronicDiseaseConfiguration : IEntityTypeConfiguration<ChronicDisea
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt).IsRequired();
 
-        // Relationships
-        builder.HasMany(cd => cd.PatientChronicDiseases)
-            .WithOne(pcd => pcd.ChronicDisease)
-            .HasForeignKey(pcd => pcd.ChronicDiseaseId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         // Indexes
         builder.HasIndex(cd => cd.NameEn);
         builder.HasIndex(cd => cd.NameAr);
-        builder.HasIndex(cd => cd.IsActive);
     }
 }

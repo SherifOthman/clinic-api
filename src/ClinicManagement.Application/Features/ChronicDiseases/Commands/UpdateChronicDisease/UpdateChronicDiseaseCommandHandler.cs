@@ -36,7 +36,6 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
         chronicDisease.NameAr = request.NameAr;
         chronicDisease.DescriptionEn = request.DescriptionEn;
         chronicDisease.DescriptionAr = request.DescriptionAr;
-        chronicDisease.IsActive = request.IsActive;
 
         await _unitOfWork.ChronicDiseases.UpdateAsync(chronicDisease, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -51,8 +50,7 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
             DescriptionEn = chronicDisease.DescriptionEn,
             DescriptionAr = chronicDisease.DescriptionAr,
             Name = chronicDisease.NameEn, // Default to English
-            Description = chronicDisease.DescriptionEn,
-            IsActive = chronicDisease.IsActive
+            Description = chronicDisease.DescriptionEn
         };
         
         return Result<ChronicDiseaseDto>.Ok(dto);

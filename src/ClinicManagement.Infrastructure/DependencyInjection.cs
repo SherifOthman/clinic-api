@@ -9,12 +9,10 @@ using ClinicManagement.Infrastructure.Data.Repositories;
 using ClinicManagement.Infrastructure.Options;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -95,35 +93,26 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-        services.AddScoped<IFileSystem, FileSystemService>();
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IClinicManagementService, ClinicManagementService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();
-        services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
 
         services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
-        services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IChronicDiseaseRepository, ChronicDiseaseRepository>();
 
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
         services.Configure<CookieSettings>(configuration.GetSection("Cookie"));
-        services.Configure<GeoNamesOptions>(configuration.GetSection("GeoNames"));
-        services.Configure<LocationCacheOptions>(configuration.GetSection(LocationCacheOptions.SectionName));
 
-        services.AddHttpClient<IGeoNamesClient, GeoNamesApiClient>();
-        services.AddScoped<ILocationsService, GeoNamesLocationService>();
-
-        services.AddScoped<IRateLimitService, RateLimitService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
-        services.AddHostedService<CleanupBackgroundService>();
         services.AddHostedService<RefreshTokenCleanupService>();
 
         return services;

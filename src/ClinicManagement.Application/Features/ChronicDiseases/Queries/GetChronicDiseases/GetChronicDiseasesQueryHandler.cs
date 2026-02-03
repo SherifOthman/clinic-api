@@ -17,7 +17,7 @@ public class GetChronicDiseasesQueryHandler : IRequestHandler<GetChronicDiseases
 
     public async Task<Result<List<ChronicDiseaseDto>>> Handle(GetChronicDiseasesQuery request, CancellationToken cancellationToken)
     {
-        var chronicDiseases = await _unitOfWork.ChronicDiseases.GetActiveAsync(cancellationToken);
+        var chronicDiseases = await _unitOfWork.ChronicDiseases.GetAllAsync(cancellationToken);
         var chronicDiseaseDtos = chronicDiseases.Select(cd => new ChronicDiseaseDto
         {
             Id = cd.Id,
@@ -27,8 +27,7 @@ public class GetChronicDiseasesQueryHandler : IRequestHandler<GetChronicDiseases
             DescriptionAr = cd.DescriptionAr,
             // Set Name and Description based on request language or default to English
             Name = request.Language?.ToLower() == "ar" ? cd.NameAr : cd.NameEn,
-            Description = request.Language?.ToLower() == "ar" ? cd.DescriptionAr : cd.DescriptionEn,
-            IsActive = cd.IsActive
+            Description = request.Language?.ToLower() == "ar" ? cd.DescriptionAr : cd.DescriptionEn
         }).ToList();
         
         return Result<List<ChronicDiseaseDto>>.Ok(chronicDiseaseDtos);

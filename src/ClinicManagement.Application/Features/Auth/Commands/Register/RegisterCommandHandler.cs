@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
@@ -13,18 +12,15 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
 {
     private readonly IUserManagementService _userManagementService;
     private readonly IEmailConfirmationService _emailConfirmationService;
-    private readonly IPhoneNumberValidationService _phoneNumberValidationService;
     private readonly ILogger<RegisterCommandHandler> _logger;
 
     public RegisterCommandHandler(
         IUserManagementService userManagementService, 
         IEmailConfirmationService emailConfirmationService,
-        IPhoneNumberValidationService phoneNumberValidationService,
         ILogger<RegisterCommandHandler> logger)
     {
         _userManagementService = userManagementService;
         _emailConfirmationService = emailConfirmationService;
-        _phoneNumberValidationService = phoneNumberValidationService;
         _logger = logger;
     }
 
@@ -45,12 +41,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
         }
 
         var user = request.Adapt<User>();
-        
-        // Format phone number to E.164 format for consistent storage
-        if (!string.IsNullOrEmpty(request.PhoneNumber))
-        {
-            user.PhoneNumber = _phoneNumberValidationService.GetE164Format(request.PhoneNumber);
-        }
         
         var result = await _userManagementService.CreateUserAsync(user, request.Password, cancellationToken);
         if (!result.Success)

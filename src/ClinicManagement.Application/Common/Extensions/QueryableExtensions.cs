@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Domain.Common.Models;
+﻿using ClinicManagement.Application.Common.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Common.Extensions;
@@ -19,4 +19,4 @@ public static class QueryableExtensions
 
         return new PagedResult<T>(items, totalCount, request.PageNumber, request.PageSize);
     }
-    }
+}

@@ -43,8 +43,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         try
         {
             // Update user properties
-            user.FirstName = request.FirstName.Trim();
-            user.LastName = request.LastName.Trim();
+            user.FullName = request.FullName.Trim();
             user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
 
             await _unitOfWork.Users.UpdateAsync(user, cancellationToken);

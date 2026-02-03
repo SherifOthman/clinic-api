@@ -6,17 +6,11 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
 {
     public UpdateProfileCommandValidator()
     {
-        RuleFor(x => x.FirstName)
+        RuleFor(x => x.FullName)
             .NotEmpty()
-            .WithMessage("First name is required")
-            .MaximumLength(50)
-            .WithMessage("First name must not exceed 50 characters");
-
-        RuleFor(x => x.LastName)
-            .NotEmpty()
-            .WithMessage("Last name is required")
-            .MaximumLength(50)
-            .WithMessage("Last name must not exceed 50 characters");
+            .WithMessage("Full name is required")
+            .MaximumLength(100)
+            .WithMessage("Full name must not exceed 100 characters");
 
         RuleFor(x => x.PhoneNumber)
             .MaximumLength(20)

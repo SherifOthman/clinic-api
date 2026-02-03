@@ -45,7 +45,6 @@ public static class DependencyInjection
     public static WebApplication UseAppConfigurations(this WebApplication app)
     {
         app.UseMiddleware<GlobalExceptionMiddleware>();
-        app.UseMiddleware<RateLimitMiddleware>();
 
         //if (app.Environment.IsDevelopment())
         //{

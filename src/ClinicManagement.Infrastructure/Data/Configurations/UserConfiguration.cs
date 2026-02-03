@@ -10,13 +10,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.FirstName)
+        builder.Property(u => u.FullName)
             .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(u => u.LastName)
-            .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(200);
 
         builder.Property(u => u.Email)
             .IsRequired()
@@ -26,32 +22,19 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
-        // User location from onboarding
-        builder.Property(u => u.Country)
-            .HasMaxLength(100);
-
         builder.Property(u => u.City)
             .HasMaxLength(100);
 
+        builder.Property(u => u.CreatedAt)
+            .IsRequired();
+
         // Relationships
-        builder.HasOne(u => u.Clinic)
-            .WithMany(c => c.Users)
-            .HasForeignKey(u => u.ClinicId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(u => u.CurrentClinic)
-            .WithMany(c => c.CurrentUsers)
-            .HasForeignKey(u => u.CurrentClinicId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(u => u.Specialization)
-            .WithMany(s => s.Users)
-            .HasForeignKey(u => u.SpecializationId)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasMany(u => u.RefreshTokens)
+            .WithOne(rt => rt.User)
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(u => u.Email);
         builder.HasIndex(u => u.UserName);
-        builder.HasIndex(u => u.ClinicId);
-        builder.HasIndex(u => u.CurrentClinicId);
     }
 }

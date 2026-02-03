@@ -30,7 +30,7 @@ public class EmailConfirmationService : IEmailConfirmationService
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var confirmationLink = $"{_options.FrontendUrl}/confirm-email?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
         
-        var emailBody = EmailTemplates.GetEmailConfirmationTemplate(user.FirstName, confirmationLink);
+        var emailBody = EmailTemplates.GetEmailConfirmationTemplate(user.FullName, confirmationLink);
         
         await _emailSender.SendEmailAsync(
             user.Email!,

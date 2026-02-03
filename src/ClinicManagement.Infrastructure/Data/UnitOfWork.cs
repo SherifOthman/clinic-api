@@ -16,18 +16,8 @@ public class UnitOfWork : IUnitOfWork
     private IDbContextTransaction? _transaction;
 
     public IUserRepository Users => field ??= new UserRepository(_context, _currentUserService, _userManager);
-    public IPatientRepository Patients => field ??= new PatientRepository(_context, _currentUserService);
     public IChronicDiseaseRepository ChronicDiseases => field ??= new ChronicDiseaseRepository(_context);
-    public IClinicRepository Clinics => field ??= new ClinicRepository(_context);
-    
-    // Basic entities using simple base repository
-    public IRepository<ClinicBranch> ClinicBranches => field ??= new BaseRepository<ClinicBranch>(_context);
-    public IRepository<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers => field ??= new BaseRepository<ClinicBranchPhoneNumber>(_context);
-    
-    public ISubscriptionPlanRepository SubscriptionPlans => field ??= new SubscriptionPlanRepository(_context);
-    public IRateLimitRepository RateLimitEntries => field ??= new RateLimitRepository(_context);
     public IRefreshTokenRepository RefreshTokens => field ??= new RefreshTokenRepository(_context, _currentUserService, _dateTimeProvider);
-    public IUserClinicRepository UserClinics => field ??= new UserClinicRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

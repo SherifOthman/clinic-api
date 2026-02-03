@@ -1,7 +1,6 @@
 ﻿
 using ClinicManagement.Application.Common.Behaviors;
 using ClinicManagement.Application.Common.Mappings;
-using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.Options;
 using FluentValidation;
 using Mapster;
@@ -26,9 +25,6 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-        
-        // Register phone number validation service
-        services.AddScoped<IPhoneNumberValidationService, PhoneNumberValidationService>();
         
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));

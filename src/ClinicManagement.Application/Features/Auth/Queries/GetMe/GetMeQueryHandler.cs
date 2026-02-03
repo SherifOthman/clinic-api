@@ -36,23 +36,14 @@ public class GetMeQueryHandler : IRequestHandler<GetMeQuery, Result<UserDto>>
 
         var userDto = user.Adapt<UserDto>();
         
-        // Get user roles to determine onboarding completion logic
+        // Get user roles
         var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
         
         // Set the roles on the DTO
         userDto.Roles = userRoles.ToList();
         
-        // Only ClinicOwners need onboarding - all other roles are considered complete by default
-        if (userRoles.Contains("ClinicOwner"))
-        {
-            // ClinicOwners need to have a ClinicId to be considered onboarding complete
-            userDto.OnboardingCompleted = user.ClinicId.HasValue;
-        }
-        else
-        {
-            // Admin, Doctor, Receptionist roles don't need onboarding
-            userDto.OnboardingCompleted = true;
-        }
+        // For simplified auth system, onboarding is always complete
+        userDto.OnboardingCompleted = true;
         
         return Result<UserDto>.Ok(userDto);
     }

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Common.Constants;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.ChronicDiseases.Commands.CreateChronicDisease;
 using ClinicManagement.Application.Features.ChronicDiseases.Commands.DeleteChronicDisease;
@@ -6,7 +7,6 @@ using ClinicManagement.Application.Features.ChronicDiseases.Commands.UpdateChron
 using ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChronicDisease;
 using ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChronicDiseases;
 using ClinicManagement.Application.Features.ChronicDiseases.Queries.GetChronicDiseasesWithPagination;
-using ClinicManagement.Domain.Common.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

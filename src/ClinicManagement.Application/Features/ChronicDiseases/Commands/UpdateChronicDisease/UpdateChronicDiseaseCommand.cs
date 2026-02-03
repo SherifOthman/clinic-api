@@ -11,5 +11,4 @@ public class UpdateChronicDiseaseCommand : IRequest<Result<ChronicDiseaseDto>>
     public string NameAr { get; set; } = string.Empty;
     public string? DescriptionEn { get; set; }
     public string? DescriptionAr { get; set; }
-    public bool IsActive { get; set; }
 }

@@ -57,13 +57,13 @@ public class TokenService : ITokenService
 
     public async Task<string> GenerateRefreshTokenAsync(User user, CancellationToken cancellationToken = default)
     {
-        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, cancellationToken);
+        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
         return refreshToken.Token;
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
+        await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, null, null, cancellationToken);
     }
 
     public ClaimsPrincipal? ValidateAccessToken(string token)

@@ -88,6 +88,22 @@ public static class MessageCodes
     // Essential field validation codes
     public static class Fields
     {
+        public const string FIRST_NAME_REQUIRED = "FIELD.FIRST_NAME.REQUIRED";
+        public const string FIRST_NAME_MIN_LENGTH = "FIELD.FIRST_NAME.MIN_LENGTH";
+        public const string FIRST_NAME_MAX_LENGTH = "FIELD.FIRST_NAME.MAX_LENGTH";
+        public const string FIRST_NAME_INVALID_CHARACTERS = "FIELD.FIRST_NAME.INVALID_CHARACTERS";
+        
+        public const string LAST_NAME_REQUIRED = "FIELD.LAST_NAME.REQUIRED";
+        public const string LAST_NAME_MIN_LENGTH = "FIELD.LAST_NAME.MIN_LENGTH";
+        public const string LAST_NAME_MAX_LENGTH = "FIELD.LAST_NAME.MAX_LENGTH";
+        public const string LAST_NAME_INVALID_CHARACTERS = "FIELD.LAST_NAME.INVALID_CHARACTERS";
+        
+        public const string USERNAME_REQUIRED = "FIELD.USERNAME.REQUIRED";
+        public const string USERNAME_MIN_LENGTH = "FIELD.USERNAME.MIN_LENGTH";
+        public const string USERNAME_MAX_LENGTH = "FIELD.USERNAME.MAX_LENGTH";
+        public const string USERNAME_INVALID_CHARACTERS = "FIELD.USERNAME.INVALID_CHARACTERS";
+        public const string USERNAME_UNDERSCORE_POSITION = "FIELD.USERNAME.UNDERSCORE_POSITION";
+        
         public const string FULL_NAME_REQUIRED = "FIELD.FULL_NAME.REQUIRED";
         public const string FULL_NAME_MIN_LENGTH = "FIELD.FULL_NAME.MIN_LENGTH";
         public const string FULL_NAME_MAX_LENGTH = "FIELD.FULL_NAME.MAX_LENGTH";
@@ -108,5 +124,8 @@ public static class MessageCodes
         
         public const string CURRENT_PASSWORD_REQUIRED = "FIELD.CURRENT_PASSWORD.REQUIRED";
         public const string NEW_PASSWORD_REQUIRED = "FIELD.NEW_PASSWORD.REQUIRED";
+        public const string PASSWORD_DIFFERENT_REQUIRED = "FIELD.PASSWORD.DIFFERENT_REQUIRED";
+        
+        public const string PHONE_NUMBER_MAX_LENGTH = "FIELD.PHONE_NUMBER.MAX_LENGTH";
     }
 }
