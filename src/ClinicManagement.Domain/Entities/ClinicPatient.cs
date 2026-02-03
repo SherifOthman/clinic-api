@@ -20,8 +20,7 @@ public class ClinicPatient: AuditableEntity
     public List<ChronicDisease> chronicDiseases { get; set; } = new();
     public List<PatientPhone> PhoneNumbers { get; set; } = new();
     
-    // New relationships for transactions, visits, and measurements
+    // New relationships for transactions and visits
     public ICollection<PatientTransaction> Transactions { get; set; } = new List<PatientTransaction>();
     public ICollection<Visit> Visits { get; set; } = new List<Visit>();
-    public ICollection<PatientMeasurement> Measurements { get; set; } = new List<PatientMeasurement>();
 }

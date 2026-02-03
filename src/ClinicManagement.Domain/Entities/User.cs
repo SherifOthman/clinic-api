@@ -16,5 +16,6 @@ public class User : IdentityUser<Guid>
     
     // New relationships for visits and measurements
     public virtual ICollection<Visit> VisitsAsDoctor { get; set; } = new List<Visit>();
-    public virtual ICollection<PatientMeasurement> MeasurementsTaken { get; set; } = new List<PatientMeasurement>();
+    public virtual ICollection<VisitMeasurement> MeasurementsTaken { get; set; } = new List<VisitMeasurement>();
+    public virtual ICollection<DoctorMeasurement> DoctorMeasurements { get; set; } = new List<DoctorMeasurement>();
 }

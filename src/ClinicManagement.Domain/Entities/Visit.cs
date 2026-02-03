@@ -19,5 +19,5 @@ public class Visit : AuditableEntity
     
     // Related transactions and measurements
     public ICollection<PatientTransaction> Transactions { get; set; } = new List<PatientTransaction>();
-    public ICollection<PatientMeasurement> Measurements { get; set; } = new List<PatientMeasurement>();
+    public ICollection<VisitMeasurement> Measurements { get; set; } = new List<VisitMeasurement>();
 }
