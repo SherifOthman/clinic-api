@@ -72,7 +72,7 @@ public class RefreshTokenService : IRefreshTokenService
             refreshToken.RevokedByIp = ipAddress ?? _currentUserService.IpAddress;
             refreshToken.ReplacedByToken = replacedByToken;
 
-            await _unitOfWork.RefreshTokens.UpdateAsync(refreshToken, cancellationToken);
+            _unitOfWork.RefreshTokens.Update(refreshToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Revoked refresh token for user {UserId} from IP {IpAddress}", 

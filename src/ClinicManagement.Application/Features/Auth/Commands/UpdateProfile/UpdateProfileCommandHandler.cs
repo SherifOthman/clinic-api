@@ -46,7 +46,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             user.FullName = request.FullName.Trim();
             user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
 
-            await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
+            _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Profile updated successfully for user {UserId}", userId);

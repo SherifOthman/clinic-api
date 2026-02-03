@@ -37,7 +37,7 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
         chronicDisease.DescriptionEn = request.DescriptionEn;
         chronicDisease.DescriptionAr = request.DescriptionAr;
 
-        await _unitOfWork.ChronicDiseases.UpdateAsync(chronicDisease, cancellationToken);
+        _unitOfWork.ChronicDiseases.Update(chronicDisease);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Chronic disease {DiseaseId} updated successfully", request.Id);

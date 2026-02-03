@@ -30,7 +30,7 @@ public class RemoveChronicDiseaseCommandHandler : IRequestHandler<RemoveChronicD
             return Result.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
-        await _clinicPatientChronicDiseaseRepository.DeleteAsync(clinicPatientChronicDisease, cancellationToken);
+        _clinicPatientChronicDiseaseRepository.Delete(clinicPatientChronicDisease);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();

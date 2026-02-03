@@ -35,6 +35,11 @@ public class ChronicDiseaseRepository : BaseRepository<ChronicDisease>, IChronic
         base.Update(entity);
     }
 
+    public new void Delete(ChronicDisease entity)
+    {
+        base.Delete(entity);
+    }
+
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.AsNoTracking().AnyAsync(e => e.Id == id, cancellationToken);

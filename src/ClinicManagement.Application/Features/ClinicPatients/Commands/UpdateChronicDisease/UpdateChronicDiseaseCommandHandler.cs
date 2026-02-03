@@ -38,7 +38,7 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
         clinicPatientChronicDisease.Notes = request.UpdateData.Notes;
         clinicPatientChronicDisease.IsActive = request.UpdateData.IsActive;
 
-        await _clinicPatientChronicDiseaseRepository.UpdateAsync(clinicPatientChronicDisease, cancellationToken);
+        _clinicPatientChronicDiseaseRepository.Update(clinicPatientChronicDisease);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Get the updated entity with navigation properties

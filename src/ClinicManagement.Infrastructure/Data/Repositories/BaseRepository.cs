@@ -98,17 +98,4 @@ public class BaseRepository<T> : IRepository<T> where T : class
     {
         _dbSet.Remove(entity);
     }
-
-    // Keep the old methods for backward compatibility but mark as obsolete
-    [Obsolete("Use Update(T entity) instead")]
-    public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        _dbSet.Update(entity);
-    }
-
-    [Obsolete("Use Delete(T entity) instead")]
-    public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        _dbSet.Remove(entity);
-    }
 }

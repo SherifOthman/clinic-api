@@ -3,15 +3,12 @@ using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Domain.Common.Interfaces;
 
-public interface IChronicDiseaseRepository
+public interface IChronicDiseaseRepository : IRepository<ChronicDisease>
 {
-    Task<ChronicDisease?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<IEnumerable<ChronicDisease>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<IEnumerable<ChronicDisease>> GetActiveAsync(CancellationToken cancellationToken = default);
-    Task<PagedResult<ChronicDisease>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default);
     Task<PagedResult<ChronicDisease>> GetActivePagedAsync(PaginationRequest request, CancellationToken cancellationToken = default);
     Task<ChronicDisease> AddAsync(ChronicDisease entity, CancellationToken cancellationToken = default);
-    Task<ChronicDisease> UpdateAsync(ChronicDisease entity, CancellationToken cancellationToken = default);
-    Task DeleteAsync(ChronicDisease entity, CancellationToken cancellationToken = default);
+    void Update(ChronicDisease entity);
+    void Delete(ChronicDisease entity);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
 }
