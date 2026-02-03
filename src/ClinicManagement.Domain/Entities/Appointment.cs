@@ -1,0 +1,30 @@
+using System;
+using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Enums;
+
+namespace ClinicManagement.Domain.Entities;
+
+/// <summary>
+/// Appointment for consultation/cash payment
+/// </summary>
+public class Appointment : AuditableEntity
+{
+    public Guid ClinicBranchId { get; set; }
+    public ClinicBranch ClinicBranch { get; set; } = null!;
+    
+    public Guid ClinicPatientId { get; set; }
+    public ClinicPatient ClinicPatient { get; set; } = null!;
+    
+    public Guid DoctorId { get; set; }
+    public Staff Doctor { get; set; } = null!;
+    
+    public DateTime AppointmentDate { get; set; }
+    public short QueueNumber { get; set; }
+    public AppointmentStatus Status { get; set; }
+    
+    // Payment related to the consultation only
+    public decimal Price { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount => Price - DiscountAmount - PaidAmount;
+}

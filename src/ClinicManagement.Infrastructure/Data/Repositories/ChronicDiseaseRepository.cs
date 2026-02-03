@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Common.Models;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,12 @@ public class ChronicDiseaseRepository : BaseRepository<ChronicDisease>, IChronic
     {
         // Since we removed IsActive, just return all chronic diseases
         return await GetAllAsync(cancellationToken);
+    }
+
+    public async Task<PagedResult<ChronicDisease>> GetActivePagedAsync(PaginationRequest request, CancellationToken cancellationToken = default)
+    {
+        // Since we removed IsActive, just return paginated results for all chronic diseases
+        return await GetPagedAsync(request, cancellationToken);
     }
 
     public new async Task<ChronicDisease> AddAsync(ChronicDisease entity, CancellationToken cancellationToken = default)

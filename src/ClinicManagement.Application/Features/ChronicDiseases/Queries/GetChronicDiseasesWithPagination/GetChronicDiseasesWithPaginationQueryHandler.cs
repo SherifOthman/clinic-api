@@ -1,8 +1,7 @@
-﻿using ClinicManagement.Application.Common.Extensions;
-using ClinicManagement.Application.Common.Models;
+﻿using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Common.Models;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -30,9 +29,7 @@ public class GetChronicDiseasesWithPaginationQueryHandler : IRequestHandler<GetC
             PageSize = request.PageSize
         };
 
-        var query = (await _unitOfWork.ChronicDiseases.GetAllAsync(cancellationToken)).AsQueryable();
-        
-        var pagedResult = await query.ToPaginatedResultAsync(paginationRequest, cancellationToken);
+        var pagedResult = await _unitOfWork.ChronicDiseases.GetPagedAsync(paginationRequest, cancellationToken);
         var dtos = pagedResult.Items.Adapt<IEnumerable<ChronicDiseaseDto>>();
         
         var result = new PagedResult<ChronicDiseaseDto>(

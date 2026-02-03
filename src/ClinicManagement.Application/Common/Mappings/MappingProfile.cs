@@ -1,20 +1,25 @@
 ﻿using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 
 namespace ClinicManagement.Application.Common.Mappings;
 
+/// <summary>
+/// Centralized mapping configuration for the application.
+/// Only contains mappings that are actually used.
+/// </summary>
 public static class MappingConfig
 {
     public static void RegisterMappings()
     {
-        // ChronicDisease mapping - set Name and Description based on current language
+        // ChronicDisease to ChronicDiseaseDto mapping
+        // Maps language-specific fields and sets default display values
         TypeAdapterConfig<ChronicDisease, ChronicDiseaseDto>
             .NewConfig()
-            .Map(dest => dest.Name, src => src.NameEn) // Default to English, will be handled in service layer
-            .Map(dest => dest.Description, src => src.DescriptionEn);
+            .Map(dest => dest.Name, src => src.NameEn) // Default to English
+            .Map(dest => dest.Description, src => src.DescriptionEn); // Default to English
         
-        // All other DTOs will be mapped automatically since properties have the same names
+        // User to UserDto mapping is handled automatically by Mapster
+        // since property names match between User entity and UserDto
     }
 }

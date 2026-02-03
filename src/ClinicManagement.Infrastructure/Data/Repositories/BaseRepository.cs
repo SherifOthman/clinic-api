@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Common.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
@@ -23,6 +24,18 @@ public class BaseRepository<T> : IRepository<T> where T : class
     public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);
+    }
+
+    public virtual async Task<PagedResult<T>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default)
+    {
+        var totalCount = await _dbSet.CountAsync(cancellationToken);
+        
+        var items = await _dbSet
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<T>(items, totalCount, request.PageNumber, request.PageSize);
     }
 
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)

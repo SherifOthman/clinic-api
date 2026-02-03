@@ -1,9 +1,9 @@
 using ClinicManagement.Application.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Templates;
 using ClinicManagement.Application.Options;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Infrastructure.Templates;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
