@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -21,8 +22,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<ClinicBranch> ClinicBranches => Set<ClinicBranch>();
-    public DbSet<ClinicPatient> ClinicPatients => Set<ClinicPatient>();
-    public DbSet<ClinicPatientChronicDisease> ClinicPatientChronicDiseases => Set<ClinicPatientChronicDisease>();
+    public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<MedicalFile> MedicalFiles => Set<MedicalFile>();
     public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
@@ -78,5 +78,41 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
 
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        
+        // EF 10 Named Query Filters
+        ConfigureNamedQueryFilters(builder);
+    }
+
+    private void ConfigureNamedQueryFilters(ModelBuilder builder)
+    {
+        // EF 10 Named Query Filters for Multi-tenancy
+        builder.Entity<Patient>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, p => _currentUserService.ClinicId == null || p.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, p => !p.IsDeleted);
+
+        builder.Entity<Staff>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, s => _currentUserService.ClinicId == null || s.ClinicId == _currentUserService.ClinicId);
+
+        builder.Entity<ClinicBranch>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, cb => _currentUserService.ClinicId == null || cb.ClinicId == _currentUserService.ClinicId);
+
+        builder.Entity<Clinic>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, c => _currentUserService.ClinicId == null || c.Id == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, c => !c.IsDeleted);
+
+        builder.Entity<Appointment>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, a => _currentUserService.ClinicId == null || a.Patient.ClinicId == _currentUserService.ClinicId);
+
+        builder.Entity<Invoice>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, i => _currentUserService.ClinicId == null || i.ClinicId == _currentUserService.ClinicId);
+
+        builder.Entity<Medicine>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, m => _currentUserService.ClinicId == null || m.ClinicBranch.ClinicId == _currentUserService.ClinicId);
+
+        builder.Entity<MedicalService>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId);
+
+        builder.Entity<MedicalSupply>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId);
     }
 }

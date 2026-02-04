@@ -1,0 +1,72 @@
+using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
+using Mapster;
+using MediatR;
+using ClinicManagement.Domain.Entities;
+
+namespace ClinicManagement.Application.Features.Patients.Commands.AddChronicDisease;
+
+public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDiseaseCommand, Result<PatientChronicDiseaseDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public AddChronicDiseaseCommandHandler(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result<PatientChronicDiseaseDto>> Handle(AddChronicDiseaseCommand request, CancellationToken cancellationToken)
+    {
+        // Check if chronic disease exists
+        var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdAsync(request.ChronicDisease.ChronicDiseaseId, cancellationToken);
+        if (chronicDisease == null)
+        {
+            return Result<PatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+        }
+
+        // Check if the relationship already exists
+        var exists = await _unitOfWork.PatientChronicDiseases.ExistsAsync(
+            request.PatientId, 
+            request.ChronicDisease.ChronicDiseaseId, 
+            cancellationToken);
+
+        if (exists)
+        {
+            return Result<PatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_ALREADY_EXISTS);
+        }
+
+        // Create the relationship - using the current entity structure
+        var PatientChronicDisease = new PatientChronicDisease
+        {
+            PatientId = request.PatientId,
+            ChronicDiseaseId = request.ChronicDisease.ChronicDiseaseId
+        };
+
+        await _unitOfWork.PatientChronicDiseases.AddAsync(PatientChronicDisease, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Get the created entity with navigation properties
+        var createdEntity = await _unitOfWork.PatientChronicDiseases.GetByPatientAndDiseaseAsync(
+            request.PatientId, 
+            request.ChronicDisease.ChronicDiseaseId, 
+            cancellationToken);
+
+        // Map to DTO with the available properties
+        var dto = new PatientChronicDiseaseDto
+        {
+            Id = createdEntity!.Id,
+            PatientId = createdEntity.PatientId,
+            ChronicDiseaseId = createdEntity.ChronicDiseaseId,
+            DiagnosedDate = request.ChronicDisease.DiagnosedDate,
+            Status = request.ChronicDisease.Status,
+            Notes = request.ChronicDisease.Notes,
+            IsActive = request.ChronicDisease.IsActive,
+            CreatedAt = createdEntity.CreatedAt,
+            UpdatedAt = createdEntity.UpdatedAt
+        };
+        
+        return Result<PatientChronicDiseaseDto>.Ok(dto);
+    }
+}

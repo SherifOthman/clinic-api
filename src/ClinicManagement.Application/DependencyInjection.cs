@@ -1,4 +1,3 @@
-
 using ClinicManagement.Application.Common.Behaviors;
 using ClinicManagement.Application.Common.Mappings;
 using ClinicManagement.Application.Options;
@@ -24,6 +23,7 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         
+        // Keep only validation behavior - simple and essential
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));

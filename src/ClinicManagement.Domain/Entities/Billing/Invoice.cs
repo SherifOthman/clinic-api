@@ -12,7 +12,7 @@ public class Invoice : AuditableEntity
 {
     public string InvoiceNumber { get; set; } = null!; // Human-readable: INV-2024-001
     public Guid ClinicId { get; set; }
-    public Guid ClinicPatientId { get; set; }
+    public Guid PatientId { get; set; }
     
     // Optional link to visit or appointment
     public Guid? MedicalVisitId { get; set; }
@@ -32,7 +32,7 @@ public class Invoice : AuditableEntity
 
     // Navigation properties
     public Clinic Clinic { get; set; } = null!;
-    public ClinicPatient ClinicPatient { get; set; } = null!;
+    public Patient Patient { get; set; } = null!;
     public ICollection<InvoiceItem> Items { get; set; } = new List<InvoiceItem>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
@@ -175,7 +175,7 @@ public class Invoice : AuditableEntity
         if (ClinicId == Guid.Empty)
             throw new InvalidBusinessOperationException("Clinic ID is required", MessageCodes.Domain.INVOICE_VALIDATION_FAILED);
             
-        if (ClinicPatientId == Guid.Empty)
+        if (PatientId == Guid.Empty)
             throw new InvalidBusinessOperationException("Patient ID is required", MessageCodes.Domain.INVOICE_VALIDATION_FAILED);
             
         if (Discount < 0)

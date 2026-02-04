@@ -1,15 +1,15 @@
 using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
-namespace ClinicManagement.Application.Features.ClinicPatients.Commands.AddChronicDisease;
+namespace ClinicManagement.Application.Features.Patients.Commands.AddChronicDisease;
 
 public class AddChronicDiseaseCommandValidator : AbstractValidator<AddChronicDiseaseCommand>
 {
     public AddChronicDiseaseCommandValidator()
     {
-        RuleFor(x => x.ClinicPatientId)
+        RuleFor(x => x.PatientId)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.ClinicPatient.ID_REQUIRED);
+            .WithErrorCode(MessageCodes.Patient.ID_REQUIRED);
 
         RuleFor(x => x.ChronicDisease.ChronicDiseaseId)
             .NotEmpty()

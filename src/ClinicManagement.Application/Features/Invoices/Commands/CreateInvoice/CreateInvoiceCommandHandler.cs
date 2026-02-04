@@ -32,31 +32,31 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
     public async Task<Result<Guid>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Creating invoice for patient {PatientId} with {ItemCount} items", 
-            request.ClinicPatientId, request.Items.Count);
+            request.PatientId, request.Items.Count);
 
         try
         {
             // Validate clinic patient exists
-            var clinicPatient = await _unitOfWork.ClinicPatients.GetByIdAsync(request.ClinicPatientId, cancellationToken);
-            if (clinicPatient == null)
+            var Patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientId, cancellationToken);
+            if (Patient == null)
             {
-                _logger.LogWarning("Attempted to create invoice for non-existent patient {PatientId}", request.ClinicPatientId);
+                _logger.LogWarning("Attempted to create invoice for non-existent patient {PatientId}", request.PatientId);
                 return Result<Guid>.Fail(MessageCodes.Invoice.PATIENT_REQUIRED);
             }
 
             _logger.LogDebug("Found clinic patient {PatientId} for clinic {ClinicId}", 
-                clinicPatient.Id, clinicPatient.ClinicId);
+                Patient.Id, Patient.ClinicId);
 
             // Generate invoice number
-            var invoiceNumber = await _codeGeneratorService.GenerateInvoiceNumberAsync(clinicPatient.ClinicId, cancellationToken);
+            var invoiceNumber = await _codeGeneratorService.GenerateInvoiceNumberAsync(Patient.ClinicId, cancellationToken);
             _logger.LogDebug("Generated invoice number: {InvoiceNumber}", invoiceNumber);
 
             // Create invoice entity
             var invoice = new Invoice
             {
                 InvoiceNumber = invoiceNumber,
-                ClinicId = clinicPatient.ClinicId,
-                ClinicPatientId = request.ClinicPatientId,
+                ClinicId = Patient.ClinicId,
+                PatientId = request.PatientId,
                 MedicalVisitId = request.MedicalVisitId,
                 Discount = request.Discount,
                 Status = InvoiceStatus.Draft,
@@ -93,7 +93,7 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Successfully created invoice {InvoiceNumber} with ID {InvoiceId} for patient {PatientId}. Amount: {Amount}", 
-                invoice.InvoiceNumber, invoice.Id, request.ClinicPatientId, invoice.FinalAmount);
+                invoice.InvoiceNumber, invoice.Id, request.PatientId, invoice.FinalAmount);
 
             return Result<Guid>.Ok(invoice.Id);
         }
@@ -114,7 +114,7 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating invoice for patient {PatientId}", request.ClinicPatientId);
+            _logger.LogError(ex, "Error creating invoice for patient {PatientId}", request.PatientId);
             throw;
         }
     }

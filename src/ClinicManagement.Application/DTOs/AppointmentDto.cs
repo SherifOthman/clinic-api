@@ -5,8 +5,9 @@ namespace ClinicManagement.Application.DTOs;
 public class AppointmentDto
 {
     public Guid Id { get; set; }
+    public string AppointmentNumber { get; set; } = string.Empty;
     public Guid ClinicBranchId { get; set; }
-    public Guid ClinicPatientId { get; set; }
+    public Guid PatientId { get; set; }
     public Guid DoctorId { get; set; }
     public Guid AppointmentTypeId { get; set; }
     public DateTime AppointmentDate { get; set; }
@@ -22,13 +23,15 @@ public class AppointmentDto
     // Navigation properties
     public string? PatientName { get; set; }
     public string? DoctorName { get; set; }
+    public string? AppointmentTypeName { get; set; }
+    public string? ClinicBranchName { get; set; }
     public AppointmentTypeDto? AppointmentType { get; set; }
 }
 
 public class CreateAppointmentDto
 {
     public Guid ClinicBranchId { get; set; }
-    public Guid ClinicPatientId { get; set; }
+    public Guid PatientId { get; set; }
     public Guid DoctorId { get; set; }
     public Guid AppointmentTypeId { get; set; }
     public DateTime AppointmentDate { get; set; }

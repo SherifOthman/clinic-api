@@ -11,7 +11,7 @@ public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppoint
             .NotEmpty()
             .WithMessage(MessageCodes.Common.CLINIC_BRANCH_REQUIRED);
 
-        RuleFor(x => x.Appointment.ClinicPatientId)
+        RuleFor(x => x.Appointment.PatientId)
             .NotEmpty()
             .WithMessage(MessageCodes.Appointment.PATIENT_REQUIRED);
 

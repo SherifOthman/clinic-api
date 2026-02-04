@@ -9,8 +9,8 @@ public class MedicalFile : BaseEntity
     public Guid? MedicalVisitId { get; set; }
     public MedicalVisit? MedicalVisit { get; set; }
     
-    public Guid ClinicPatientId { get; set; }
-    public ClinicPatient ClinicPatient { get; set; } = null!;
+    public Guid PatientId { get; set; }
+    public Patient Patient { get; set; } = null!;
     
     public string FilePath { get; set; } = null!;
     public MedicalFileType FileType { get; set; } // Lab / Radiology

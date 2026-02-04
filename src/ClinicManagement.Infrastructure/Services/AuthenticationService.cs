@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -14,6 +15,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IUserManagementService _userManagementService;
     private readonly IEmailConfirmationService _emailConfirmationService;
     private readonly IRefreshTokenService _refreshTokenService;
+    private readonly IApplicationDbContext _context;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
@@ -21,12 +23,14 @@ public class AuthenticationService : IAuthenticationService
         IUserManagementService userManagementService,
         IEmailConfirmationService emailConfirmationService,
         IRefreshTokenService refreshTokenService,
+        IApplicationDbContext context,
         ILogger<AuthenticationService> logger)
     {
         _tokenService = tokenService;
         _userManagementService = userManagementService;
         _emailConfirmationService = emailConfirmationService;
         _refreshTokenService = refreshTokenService;
+        _context = context;
         _logger = logger;
     }
 
@@ -50,9 +54,21 @@ public class AuthenticationService : IAuthenticationService
             return Result<TokenRefreshResult>.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
         }
 
-        // Generate new tokens
+        // Get user roles and clinic information
         var userRoles = await _userManagementService.GetUserRolesAsync(tokenEntity.User, cancellationToken);
-        var newAccessToken = _tokenService.GenerateAccessToken(tokenEntity.User, userRoles);
+        
+        // Get clinic ID for staff members during token refresh
+        Guid? clinicId = null;
+        var staff = await _context.Staff
+            .Where(s => s.UserId == tokenEntity.UserId && s.IsActive)
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        if (staff != null)
+        {
+            clinicId = staff.ClinicId;
+        }
+        
+        var newAccessToken = _tokenService.GenerateAccessToken(tokenEntity.User, userRoles, clinicId);
         var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(tokenEntity.UserId, null, cancellationToken);
 
         // Revoke old refresh token
@@ -90,12 +106,26 @@ public class AuthenticationService : IAuthenticationService
                 return Result<LoginResult>.Fail(MessageCodes.Authentication.EMAIL_NOT_CONFIRMED);
             }
 
+            // Get user roles and clinic information
             var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
-            var accessToken = _tokenService.GenerateAccessToken(user, userRoles);
+            
+            // Get clinic ID for staff members
+            Guid? clinicId = null;
+            var staff = await _context.Staff
+                .Where(s => s.UserId == user.Id && s.IsActive)
+                .FirstOrDefaultAsync(cancellationToken);
+            
+            if (staff != null)
+            {
+                clinicId = staff.ClinicId;
+            }
+
+            // Generate tokens with clinic claims
+            var accessToken = _tokenService.GenerateAccessToken(user, userRoles, clinicId);
             var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
-            _logger.LogInformation("User {UserId} ({Email}) logged in successfully with roles: {Roles}", 
-                user.Id, user.Email, string.Join(", ", userRoles));
+            _logger.LogInformation("User {UserId} ({Email}) logged in successfully with roles: {Roles}, ClinicId: {ClinicId}", 
+                user.Id, user.Email, string.Join(", ", userRoles), clinicId);
 
             return Result<LoginResult>.Ok(new LoginResult
             {

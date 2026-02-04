@@ -1,64 +1,86 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
-using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Appointments.Queries.GetAppointments;
 
 public class GetAppointmentsQueryHandler : IRequestHandler<GetAppointmentsQuery, Result<IEnumerable<AppointmentDto>>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public GetAppointmentsQueryHandler(IUnitOfWork unitOfWork)
+    public GetAppointmentsQueryHandler(IApplicationDbContext context)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<Result<IEnumerable<AppointmentDto>>> Handle(GetAppointmentsQuery request, CancellationToken cancellationToken)
     {
-        IEnumerable<Appointment> appointments;
+        var query = _context.Appointments
+            .AsNoTracking()
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+                .ThenInclude(d => d.User)
+            .Include(a => a.AppointmentType)
+            .Include(a => a.ClinicBranch)
+            .AsQueryable();
 
-        // Apply filters based on query parameters
-        if (request.Date.HasValue && request.DoctorId.HasValue)
+        // Apply filters
+        if (request.Date.HasValue)
         {
-            appointments = await _unitOfWork.Appointments.GetByDoctorAndDateAsync(request.DoctorId.Value, request.Date.Value, cancellationToken);
-        }
-        else if (request.Date.HasValue)
-        {
-            appointments = await _unitOfWork.Appointments.GetByDateAsync(request.Date.Value, cancellationToken);
-        }
-        else if (request.PatientId.HasValue)
-        {
-            appointments = await _unitOfWork.Appointments.GetByPatientAsync(request.PatientId.Value, cancellationToken);
-        }
-        else if (request.AppointmentTypeId.HasValue)
-        {
-            appointments = await _unitOfWork.Appointments.GetByTypeAsync(request.AppointmentTypeId.Value, cancellationToken);
-        }
-        else if (request.Status.HasValue)
-        {
-            appointments = await _unitOfWork.Appointments.GetByStatusAsync(request.Status.Value, cancellationToken);
-        }
-        else
-        {
-            // Get all appointments (consider adding pagination in real scenarios)
-            appointments = await _unitOfWork.Appointments.GetAllAsync(cancellationToken);
+            query = query.Where(a => a.AppointmentDate.Date == request.Date.Value.Date);
         }
 
-        // Apply additional filters if needed
-        if (request.AppointmentTypeId.HasValue && !request.Date.HasValue)
+        if (request.DoctorId.HasValue)
         {
-            appointments = appointments.Where(a => a.AppointmentTypeId == request.AppointmentTypeId.Value);
+            query = query.Where(a => a.DoctorId == request.DoctorId.Value);
         }
 
-        if (request.Status.HasValue && !request.Date.HasValue)
+        if (request.PatientId.HasValue)
         {
-            appointments = appointments.Where(a => a.Status == request.Status.Value);
+            query = query.Where(a => a.PatientId == request.PatientId.Value);
         }
 
-        var dtos = appointments.Adapt<IEnumerable<AppointmentDto>>();
-        return Result<IEnumerable<AppointmentDto>>.Ok(dtos);
+        if (request.AppointmentTypeId.HasValue)
+        {
+            query = query.Where(a => a.AppointmentTypeId == request.AppointmentTypeId.Value);
+        }
+
+        if (request.Status.HasValue)
+        {
+            query = query.Where(a => a.Status == request.Status.Value);
+        }
+
+        // Order by appointment date and queue number
+        query = query.OrderBy(a => a.AppointmentDate)
+                    .ThenBy(a => a.QueueNumber);
+
+        // Project to DTO to avoid loading full entities
+        var appointments = await query
+            .Select(a => new AppointmentDto
+            {
+                Id = a.Id,
+                AppointmentNumber = a.AppointmentNumber,
+                AppointmentDate = a.AppointmentDate,
+                QueueNumber = a.QueueNumber,
+                Status = a.Status,
+                FinalPrice = a.FinalPrice,
+                DiscountAmount = a.DiscountAmount,
+                PaidAmount = a.PaidAmount,
+                RemainingAmount = a.RemainingAmount,
+                ClinicBranchId = a.ClinicBranchId,
+                PatientId = a.PatientId,
+                DoctorId = a.DoctorId,
+                AppointmentTypeId = a.AppointmentTypeId,
+                // Navigation properties
+                PatientName = $"{a.Patient.FirstName} {a.Patient.LastName}",
+                DoctorName = $"{a.Doctor.User.FirstName} {a.Doctor.User.LastName}",
+                AppointmentTypeName = a.AppointmentType.NameEn, // Using English name as default
+                ClinicBranchName = a.ClinicBranch.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        return Result<IEnumerable<AppointmentDto>>.Ok(appointments);
     }
 }

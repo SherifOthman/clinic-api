@@ -13,8 +13,8 @@ public class Appointment : AuditableEntity
     public Guid ClinicBranchId { get; set; }
     public ClinicBranch ClinicBranch { get; set; } = null!;
     
-    public Guid ClinicPatientId { get; set; }
-    public ClinicPatient ClinicPatient { get; set; } = null!;
+    public Guid PatientId { get; set; }
+    public Patient Patient { get; set; } = null!;
     
     public Guid DoctorId { get; set; }
     public Staff Doctor { get; set; } = null!;

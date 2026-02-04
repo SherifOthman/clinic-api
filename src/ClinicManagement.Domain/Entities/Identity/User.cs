@@ -7,10 +7,11 @@ namespace ClinicManagement.Domain.Entities;
 /// Business logic and roles are handled through ASP.NET Identity Claims/Roles.
 /// </summary>
 public class User : IdentityUser<Guid>
-{
-    public string FullName { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    
-    // Navigation properties
+{   
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public Guid ClinicId { get; set; }
+    public string? ProfileImageUrl { get; set; }
+
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

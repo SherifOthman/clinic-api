@@ -24,8 +24,10 @@ public class UnitOfWork : IUnitOfWork
     public IInvoiceRepository Invoices => field ??= new InvoiceRepository(_context);
     public IPaymentRepository Payments => field ??= new PaymentRepository(_context);
     public IClinicBranchRepository ClinicBranches => field ??= new ClinicBranchRepository(_context);
-    public IClinicPatientRepository ClinicPatients => field ??= new ClinicPatientRepository(_context);
+    public IPatientRepository Patients => field ??= new PatientRepository(_context);
+    public IPatientChronicDiseaseRepository PatientChronicDiseases => field ??= new PatientChronicDiseaseRepository(_context);
     public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
+    public IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices => field ??= new ClinicBranchAppointmentPriceRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

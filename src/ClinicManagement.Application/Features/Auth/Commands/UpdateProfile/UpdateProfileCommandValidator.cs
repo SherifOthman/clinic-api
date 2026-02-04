@@ -7,15 +7,26 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
 {
     public UpdateProfileCommandValidator()
     {
-        RuleFor(x => x.FullName)
+        RuleFor(x => x.FirstName)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Fields.FULL_NAME_REQUIRED)
-            .MaximumLength(100)
-            .WithErrorCode(MessageCodes.Fields.FULL_NAME_MAX_LENGTH);
+            .WithErrorCode(MessageCodes.Fields.FIRST_NAME_REQUIRED)
+            .MaximumLength(50)
+            .WithErrorCode(MessageCodes.Fields.FIRST_NAME_MAX_LENGTH);
+
+        RuleFor(x => x.LastName)
+            .NotEmpty()
+            .WithErrorCode(MessageCodes.Fields.LAST_NAME_REQUIRED)
+            .MaximumLength(50)
+            .WithErrorCode(MessageCodes.Fields.LAST_NAME_MAX_LENGTH);
 
         RuleFor(x => x.PhoneNumber)
             .MaximumLength(20)
             .WithErrorCode(MessageCodes.Fields.PHONE_NUMBER_MAX_LENGTH)
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+
+        RuleFor(x => x.ProfileImageUrl)
+            .MaximumLength(500)
+            .WithErrorCode(MessageCodes.Fields.PROFILE_IMAGE_URL_MAX_LENGTH)
+            .When(x => !string.IsNullOrEmpty(x.ProfileImageUrl));
     }
 }

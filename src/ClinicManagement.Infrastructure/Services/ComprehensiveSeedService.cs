@@ -110,7 +110,8 @@ public class ComprehensiveSeedService : IComprehensiveSeedService
         {
             UserName = "superadmin@clinic.com",
             Email = "superadmin@clinic.com",
-            FullName = "System Administrator",
+            FirstName = "System",
+            LastName = "Administrator",
             EmailConfirmed = true
         };
 

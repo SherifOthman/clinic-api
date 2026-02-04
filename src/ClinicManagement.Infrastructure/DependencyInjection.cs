@@ -22,21 +22,20 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // Caching
         services.AddMemoryCache();
 
+        // Database
         services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
-            
-            // Suppress the pending model changes warning for EF Core 10 Named Query Filters
-            options.ConfigureWarnings(warnings => 
-                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
         
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
+        // Identity
         services.AddIdentity<User, IdentityRole<Guid>>(options =>
         {
             options.Password.RequireDigit = true;
@@ -50,6 +49,7 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
+        // JWT Authentication
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() 
             ?? throw new InvalidOperationException("JWT configuration is missing");
 
@@ -91,6 +91,7 @@ public static class DependencyInjection
 
         services.AddAuthorization();
 
+        // Core Services
         services.AddHttpContextAccessor();
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserManagementService, UserManagementService>();
@@ -104,24 +105,26 @@ public static class DependencyInjection
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();
 
+        // Repositories
         services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IChronicDiseaseRepository, ChronicDiseaseRepository>();
         services.AddScoped<ISpecializationRepository, SpecializationRepository>();
         services.AddScoped<IDoctorRepository, DoctorRepository>();
-        services.AddScoped<IClinicPatientChronicDiseaseRepository, ClinicPatientChronicDiseaseRepository>();
+        services.AddScoped<IPatientChronicDiseaseRepository, PatientChronicDiseaseRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentTypeRepository, AppointmentTypeRepository>();
         services.AddScoped<IClinicBranchAppointmentPriceRepository, ClinicBranchAppointmentPriceRepository>();
 
+        // Configuration Options
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
         services.Configure<CookieSettings>(configuration.GetSection("Cookie"));
 
+        // Background Services
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
         services.AddScoped<IComprehensiveSeedService, ComprehensiveSeedService>();
-
         services.AddHostedService<RefreshTokenCleanupService>();
 
         return services;

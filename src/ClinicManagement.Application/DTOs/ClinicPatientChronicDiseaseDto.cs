@@ -1,9 +1,9 @@
 namespace ClinicManagement.Application.DTOs;
 
-public class ClinicPatientChronicDiseaseDto
+public class PatientChronicDiseaseDto
 {
     public Guid Id { get; set; }
-    public Guid ClinicPatientId { get; set; }
+    public Guid PatientId { get; set; }
     public Guid ChronicDiseaseId { get; set; }
     public DateTime? DiagnosedDate { get; set; }
     public string? Status { get; set; }
@@ -16,7 +16,7 @@ public class ClinicPatientChronicDiseaseDto
     public ChronicDiseaseDto? ChronicDisease { get; set; }
 }
 
-public class CreateClinicPatientChronicDiseaseDto
+public class CreatePatientChronicDiseaseDto
 {
     public Guid ChronicDiseaseId { get; set; }
     public DateTime? DiagnosedDate { get; set; }
@@ -25,7 +25,7 @@ public class CreateClinicPatientChronicDiseaseDto
     public bool IsActive { get; set; } = true;
 }
 
-public class UpdateClinicPatientChronicDiseaseDto
+public class UpdatePatientChronicDiseaseDto
 {
     public DateTime? DiagnosedDate { get; set; }
     public string? Status { get; set; }

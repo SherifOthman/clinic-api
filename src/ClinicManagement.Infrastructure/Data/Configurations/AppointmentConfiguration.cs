@@ -45,9 +45,9 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .HasForeignKey(a => a.ClinicBranchId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(a => a.ClinicPatient)
+        builder.HasOne(a => a.Patient)
             .WithMany()
-            .HasForeignKey(a => a.ClinicPatientId)
+            .HasForeignKey(a => a.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(a => a.Doctor)
@@ -66,6 +66,6 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.HasIndex(a => a.AppointmentTypeId);
         builder.HasIndex(a => new { a.ClinicBranchId, a.AppointmentDate });
         builder.HasIndex(a => new { a.DoctorId, a.AppointmentDate });
-        builder.HasIndex(a => new { a.ClinicPatientId, a.AppointmentDate });
+        builder.HasIndex(a => new { a.PatientId, a.AppointmentDate });
     }
 }

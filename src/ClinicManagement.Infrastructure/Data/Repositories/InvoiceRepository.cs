@@ -23,7 +23,7 @@ public class InvoiceRepository : BaseRepository<Invoice>, IInvoiceRepository
         // Apply search
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(i => i.ClinicPatient.FullName.Contains(request.SearchTerm));
+            query = query.Where(i => (i.Patient.FirstName + " " + i.Patient.LastName).Contains(request.SearchTerm));
         }
 
         // Apply filters
@@ -81,11 +81,11 @@ public class InvoiceRepository : BaseRepository<Invoice>, IInvoiceRepository
             .FirstOrDefaultAsync(i => i.Id == id && i.ClinicId == clinicId, cancellationToken);
     }
 
-    public async Task<IEnumerable<Invoice>> GetByPatientIdAsync(Guid clinicPatientId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Invoice>> GetByPatientIdAsync(Guid PatientId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .AsNoTracking()
-            .Where(i => i.ClinicPatientId == clinicPatientId)
+            .Where(i => i.PatientId == PatientId)
             .Include(i => i.Items)
             .Include(i => i.Payments)
             .OrderByDescending(i => i.CreatedAt)

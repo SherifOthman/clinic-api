@@ -30,16 +30,23 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Name, user.FullName)
+            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim())
         };
 
+        // Add roles
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+        // CRITICAL: Add ClinicId claim for multi-tenancy
+        if (clinicId.HasValue)
+        {
+            claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -52,7 +59,12 @@ public class TokenService : ITokenService
             signingCredentials: credentials
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        
+        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId}", 
+            user.Id, clinicId?.ToString() ?? "None");
+            
+        return tokenString;
     }
 
     public async Task<string> GenerateRefreshTokenAsync(User user, CancellationToken cancellationToken = default)

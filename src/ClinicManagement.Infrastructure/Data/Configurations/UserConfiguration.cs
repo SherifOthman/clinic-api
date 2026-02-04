@@ -10,9 +10,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.FullName)
+        builder.Property(u => u.FirstName)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(100);
+
+        builder.Property(u => u.LastName)
+            .IsRequired()
+            .HasMaxLength(100);
 
         builder.Property(u => u.Email)
             .IsRequired()
@@ -22,8 +26,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.Property(u => u.CreatedAt)
+        builder.Property(u => u.ClinicId)
             .IsRequired();
+
+        builder.Property(u => u.ProfileImageUrl)
+            .HasMaxLength(500);
 
         // Relationships
         builder.HasMany(u => u.RefreshTokens)

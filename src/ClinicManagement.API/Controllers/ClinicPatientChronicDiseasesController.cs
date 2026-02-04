@@ -1,31 +1,31 @@
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Features.ClinicPatients.Commands.AddChronicDisease;
-using ClinicManagement.Application.Features.ClinicPatients.Commands.RemoveChronicDisease;
-using ClinicManagement.Application.Features.ClinicPatients.Commands.UpdateChronicDisease;
-using ClinicManagement.Application.Features.ClinicPatients.Queries.GetChronicDiseases;
+using ClinicManagement.Application.Features.Patients.Commands.AddChronicDisease;
+using ClinicManagement.Application.Features.Patients.Commands.RemoveChronicDisease;
+using ClinicManagement.Application.Features.Patients.Commands.UpdateChronicDisease;
+using ClinicManagement.Application.Features.Patients.Queries.GetChronicDiseases;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
 [ApiController]
-[Route("api/clinic-patients/{clinicPatientId}/chronic-diseases")]
-public class ClinicPatientChronicDiseasesController : BaseApiController
+[Route("api/clinic-patients/{PatientId}/chronic-diseases")]
+public class PatientChronicDiseasesController : BaseApiController
 {
-    public ClinicPatientChronicDiseasesController(IMediator mediator) : base(mediator)
+    public PatientChronicDiseasesController(IMediator mediator) : base(mediator)
     {
     }
 
     /// <summary>
     /// Get all chronic diseases for a clinic patient
     /// </summary>
-    /// <param name="clinicPatientId">The clinic patient ID</param>
+    /// <param name="PatientId">The clinic patient ID</param>
     /// <param name="activeOnly">Whether to return only active chronic diseases</param>
     /// <returns>List of chronic diseases</returns>
     [HttpGet]
-    public async Task<IActionResult> GetChronicDiseases(Guid clinicPatientId, [FromQuery] bool activeOnly = false)
+    public async Task<IActionResult> GetChronicDiseases(Guid PatientId, [FromQuery] bool activeOnly = false)
     {
-        var query = new GetChronicDiseasesQuery(clinicPatientId, activeOnly);
+        var query = new GetChronicDiseasesQuery(PatientId, activeOnly);
         var result = await Mediator.Send(query);
         return HandleResult(result);
     }
@@ -33,28 +33,28 @@ public class ClinicPatientChronicDiseasesController : BaseApiController
     /// <summary>
     /// Add a chronic disease to a clinic patient
     /// </summary>
-    /// <param name="clinicPatientId">The clinic patient ID</param>
+    /// <param name="PatientId">The clinic patient ID</param>
     /// <param name="createDto">The chronic disease data</param>
     /// <returns>The created chronic disease relationship</returns>
     [HttpPost]
-    public async Task<IActionResult> AddChronicDisease(Guid clinicPatientId, [FromBody] CreateClinicPatientChronicDiseaseDto createDto)
+    public async Task<IActionResult> AddChronicDisease(Guid PatientId, [FromBody] CreatePatientChronicDiseaseDto createDto)
     {
-        var command = new AddChronicDiseaseCommand(clinicPatientId, createDto);
+        var command = new AddChronicDiseaseCommand(PatientId, createDto);
         var result = await Mediator.Send(command);
-        return HandleCreateResult(result, nameof(GetChronicDiseases), new { clinicPatientId });
+        return HandleCreateResult(result, nameof(GetChronicDiseases), new { PatientId });
     }
 
     /// <summary>
     /// Update a chronic disease relationship for a clinic patient
     /// </summary>
-    /// <param name="clinicPatientId">The clinic patient ID</param>
+    /// <param name="PatientId">The clinic patient ID</param>
     /// <param name="chronicDiseaseId">The chronic disease ID</param>
     /// <param name="updateDto">The update data</param>
     /// <returns>The updated chronic disease relationship</returns>
     [HttpPut("{chronicDiseaseId}")]
-    public async Task<IActionResult> UpdateChronicDisease(Guid clinicPatientId, Guid chronicDiseaseId, [FromBody] UpdateClinicPatientChronicDiseaseDto updateDto)
+    public async Task<IActionResult> UpdateChronicDisease(Guid PatientId, Guid chronicDiseaseId, [FromBody] UpdatePatientChronicDiseaseDto updateDto)
     {
-        var command = new UpdateChronicDiseaseCommand(clinicPatientId, chronicDiseaseId, updateDto);
+        var command = new UpdateChronicDiseaseCommand(PatientId, chronicDiseaseId, updateDto);
         var result = await Mediator.Send(command);
         return HandleResult(result);
     }
@@ -62,13 +62,13 @@ public class ClinicPatientChronicDiseasesController : BaseApiController
     /// <summary>
     /// Remove a chronic disease from a clinic patient
     /// </summary>
-    /// <param name="clinicPatientId">The clinic patient ID</param>
+    /// <param name="PatientId">The clinic patient ID</param>
     /// <param name="chronicDiseaseId">The chronic disease ID</param>
     /// <returns>Success or error result</returns>
     [HttpDelete("{chronicDiseaseId}")]
-    public async Task<IActionResult> RemoveChronicDisease(Guid clinicPatientId, Guid chronicDiseaseId)
+    public async Task<IActionResult> RemoveChronicDisease(Guid PatientId, Guid chronicDiseaseId)
     {
-        var command = new RemoveChronicDiseaseCommand(clinicPatientId, chronicDiseaseId);
+        var command = new RemoveChronicDiseaseCommand(PatientId, chronicDiseaseId);
         var result = await Mediator.Send(command);
         return HandleDeleteResult(result);
     }

@@ -12,6 +12,7 @@ using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
+using ClinicManagement.Application.Features.Auth.Commands.UpdateProfileImage;
 using ClinicManagement.Application.Features.Auth.Queries.GetMe;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -138,6 +139,18 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateProfile(UpdateProfileCommand command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    [HttpPut("profile/image")]
+    [Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateProfileImage(UpdateProfileImageCommand command, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult(result);

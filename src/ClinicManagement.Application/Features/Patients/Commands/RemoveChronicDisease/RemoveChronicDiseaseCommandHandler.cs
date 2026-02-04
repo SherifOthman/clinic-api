@@ -3,34 +3,34 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.ClinicPatients.Commands.RemoveChronicDisease;
+namespace ClinicManagement.Application.Features.Patients.Commands.RemoveChronicDisease;
 
 public class RemoveChronicDiseaseCommandHandler : IRequestHandler<RemoveChronicDiseaseCommand, Result>
 {
-    private readonly IClinicPatientChronicDiseaseRepository _clinicPatientChronicDiseaseRepository;
+    private readonly IPatientChronicDiseaseRepository _PatientChronicDiseaseRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public RemoveChronicDiseaseCommandHandler(
-        IClinicPatientChronicDiseaseRepository clinicPatientChronicDiseaseRepository,
+        IPatientChronicDiseaseRepository PatientChronicDiseaseRepository,
         IUnitOfWork unitOfWork)
     {
-        _clinicPatientChronicDiseaseRepository = clinicPatientChronicDiseaseRepository;
+        _PatientChronicDiseaseRepository = PatientChronicDiseaseRepository;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(RemoveChronicDiseaseCommand request, CancellationToken cancellationToken)
     {
-        var clinicPatientChronicDisease = await _clinicPatientChronicDiseaseRepository.GetByClinicPatientAndDiseaseAsync(
-            request.ClinicPatientId, 
+        var PatientChronicDisease = await _PatientChronicDiseaseRepository.GetByPatientAndDiseaseAsync(
+            request.PatientId, 
             request.ChronicDiseaseId, 
             cancellationToken);
 
-        if (clinicPatientChronicDisease == null)
+        if (PatientChronicDisease == null)
         {
             return Result.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
-        _clinicPatientChronicDiseaseRepository.Delete(clinicPatientChronicDisease);
+        _PatientChronicDiseaseRepository.Delete(PatientChronicDisease);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();

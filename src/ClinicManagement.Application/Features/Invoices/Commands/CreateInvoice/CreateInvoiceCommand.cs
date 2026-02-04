@@ -6,7 +6,7 @@ namespace ClinicManagement.Application.Features.Invoices.Commands.CreateInvoice;
 
 public record CreateInvoiceCommand : IRequest<Result<Guid>>
 {
-    public Guid ClinicPatientId { get; init; }
+    public Guid PatientId { get; init; }
     public Guid? MedicalVisitId { get; init; }
     public decimal Discount { get; init; }
     public DateTime? DueDate { get; init; }

@@ -150,9 +150,10 @@ public static class MessageCodes
         public const string PRICE_CANNOT_BE_NEGATIVE = "APPOINTMENT.PRICE.CANNOT_BE_NEGATIVE";
         public const string DISCOUNT_CANNOT_BE_NEGATIVE = "APPOINTMENT.DISCOUNT.CANNOT_BE_NEGATIVE";
         public const string PAID_AMOUNT_CANNOT_BE_NEGATIVE = "APPOINTMENT.PAID_AMOUNT.CANNOT_BE_NEGATIVE";
+        public const string QUEUE_NUMBER_CONFLICT = "APPOINTMENT.QUEUE_NUMBER.CONFLICT";
     }
 
-    public static class ClinicPatient
+    public static class Patient
     {
         public const string NOT_FOUND = "CLINIC_PATIENT.NOT_FOUND";
         public const string ALREADY_EXISTS = "CLINIC_PATIENT.ALREADY_EXISTS";
@@ -265,5 +266,8 @@ public static class MessageCodes
         public const string PASSWORD_DIFFERENT_REQUIRED = "FIELD.PASSWORD.DIFFERENT_REQUIRED";
         
         public const string PHONE_NUMBER_MAX_LENGTH = "FIELD.PHONE_NUMBER.MAX_LENGTH";
+        
+        public const string PROFILE_IMAGE_URL_REQUIRED = "FIELD.PROFILE_IMAGE_URL.REQUIRED";
+        public const string PROFILE_IMAGE_URL_MAX_LENGTH = "FIELD.PROFILE_IMAGE_URL.MAX_LENGTH";
     }
 }

@@ -36,7 +36,7 @@ public class CodeGeneratorService : ICodeGeneratorService
     {
         var year = DateTime.UtcNow.Year;
         var count = await _context.MedicalFiles
-            .Where(mf => mf.ClinicPatient.ClinicId == clinicId && mf.UploadedAt.Year == year)
+            .Where(mf => mf.Patient.ClinicId == clinicId && mf.UploadedAt.Year == year)
             .CountAsync(cancellationToken);
         
         return $"MF-{year}-{(count + 1):D3}";
@@ -45,7 +45,7 @@ public class CodeGeneratorService : ICodeGeneratorService
     public async Task<string> GeneratePatientNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
     {
         var year = DateTime.UtcNow.Year;
-        var count = await _context.ClinicPatients
+        var count = await _context.Patients
             .Where(cp => cp.ClinicId == clinicId && cp.CreatedAt.Year == year)
             .CountAsync(cancellationToken);
         

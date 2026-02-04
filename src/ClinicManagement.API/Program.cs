@@ -1,58 +1,42 @@
-using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
-using ClinicManagement.Infrastructure.Services;
-using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .CreateLogger();
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-try
+// Add application layers
+builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// Add CORS
+builder.Services.AddCors(options =>
 {
-    Log.Information("Starting Clinic Management API");
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://yourdomain.com")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
-    builder.Host.UseSerilog();
+var app = builder.Build();
 
-    builder.Services.AddApi(builder.Configuration);
-    builder.Services.AddInfrastructure(builder.Configuration);
-    builder.Services.AddApplication(builder.Configuration);
-
-    var app = builder.Build();
-
-    Log.Information("Application built successfully");
-
-    // Temporarily disable database initialization to test application startup
-    // using (var scope = app.Services.CreateScope())
-    // {
-    //     try
-    //     {
-    //         Log.Information("Creating service scope for database initialization...");
-    //         var databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
-    //         Log.Information("Database initializer service resolved, calling InitializeAsync...");
-    //         await databaseInitializer.InitializeAsync();
-    //         Log.Information("Database initialization completed successfully");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Log.Fatal(ex, "Database initialization failed: {Message}", ex.Message);
-    //         throw;
-    //     }
-    // }
-
-    Log.Information("Configuring application middleware...");
-    app.UseAppConfigurations();
-
-    await app.RunAsync();
-}
-catch (Exception ex)
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
 {
-    Log.Fatal(ex, "Application terminated unexpectedly");
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-finally
-{
-    Log.CloseAndFlush();
-}
+
+app.UseHttpsRedirection();
+app.UseCors("AllowSpecificOrigins");
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();

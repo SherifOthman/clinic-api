@@ -13,8 +13,8 @@ public interface IApplicationDbContext
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Specialization> Specializations { get; }
     DbSet<Doctor> Doctors { get; }
-    DbSet<ClinicPatient> ClinicPatients { get; }
-    DbSet<ClinicPatientChronicDisease> ClinicPatientChronicDiseases { get; }
+    DbSet<Patient> Patients { get; }
+    DbSet<PatientChronicDisease> PatientChronicDiseases { get; }
     DbSet<Appointment> Appointments { get; }
     DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices { get; }
     DbSet<AppointmentType> AppointmentTypes { get; }

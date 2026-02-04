@@ -42,9 +42,11 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
 
         try
         {
-            // Update user properties
-            user.FullName = request.FullName.Trim();
+            // Update user properties directly
+            user.FirstName = request.FirstName.Trim();
+            user.LastName = request.LastName.Trim();
             user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+            user.ProfileImageUrl = string.IsNullOrWhiteSpace(request.ProfileImageUrl) ? null : request.ProfileImageUrl.Trim();
 
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

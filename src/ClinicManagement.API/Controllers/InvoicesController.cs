@@ -52,6 +52,6 @@ public class InvoicesController : BaseApiController
     public async Task<IActionResult> CreateInvoice(CreateInvoiceCommand command)
     {
         var result = await Mediator.Send(command);
-        return HandleCreateResult(result, nameof(GetInvoices), new { clinicId = command.ClinicPatientId }); // Use patient ID as placeholder
+        return HandleCreateResult(result, nameof(GetInvoices), new { clinicId = command.PatientId }); // Use patient ID as placeholder
     }
 }

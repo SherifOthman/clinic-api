@@ -6,7 +6,7 @@ public class InvoiceDto
 {
     public Guid Id { get; set; }
     public Guid ClinicId { get; set; }
-    public Guid ClinicPatientId { get; set; }
+    public Guid PatientId { get; set; }
     public Guid? MedicalVisitId { get; set; }
     
     public decimal TotalAmount { get; set; }

@@ -25,9 +25,9 @@ public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
             .HasForeignKey(i => i.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(i => i.ClinicPatient)
+        builder.HasOne(i => i.Patient)
             .WithMany(cp => cp.Invoices)
-            .HasForeignKey(i => i.ClinicPatientId)
+            .HasForeignKey(i => i.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(i => i.MedicalVisit)

@@ -7,7 +7,7 @@ public class CreateInvoiceCommandValidator : AbstractValidator<CreateInvoiceComm
 {
     public CreateInvoiceCommandValidator()
     {
-        RuleFor(x => x.ClinicPatientId)
+        RuleFor(x => x.PatientId)
             .NotEmpty().WithErrorCode(MessageCodes.Invoice.PATIENT_REQUIRED);
 
         RuleFor(x => x.Discount)

@@ -30,9 +30,9 @@ public static class MappingConfig
             .NewConfig()
             .Map(dest => dest.Specialization, src => src.Specialization);
         
-        // ClinicPatientChronicDisease to ClinicPatientChronicDiseaseDto mapping
+        // PatientChronicDisease to PatientChronicDiseaseDto mapping
         // Includes chronic disease navigation property
-        TypeAdapterConfig<ClinicPatientChronicDisease, ClinicPatientChronicDiseaseDto>
+        TypeAdapterConfig<PatientChronicDisease, PatientChronicDiseaseDto>
             .NewConfig()
             .Map(dest => dest.ChronicDisease, src => src.ChronicDisease);
         
@@ -40,8 +40,8 @@ public static class MappingConfig
         // Includes patient and doctor names
         TypeAdapterConfig<Appointment, AppointmentDto>
             .NewConfig()
-            .Map(dest => dest.PatientName, src => src.ClinicPatient.FullName)
-            .Map(dest => dest.DoctorName, src => src.Doctor.User.FullName)
+            .Map(dest => dest.PatientName, src => $"{src.Patient.FirstName} {src.Patient.LastName}".Trim())
+            .Map(dest => dest.DoctorName, src => $"{src.Doctor.User.FirstName} {src.Doctor.User.LastName}".Trim())
             .Map(dest => dest.AppointmentType, src => src.AppointmentType)
             .Map(dest => dest.RemainingAmount, src => src.FinalPrice - src.DiscountAmount - src.PaidAmount);
         
