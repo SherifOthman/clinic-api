@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
 
@@ -8,42 +9,42 @@ namespace ClinicManagement.Application.Features.Appointments.Queries.GetAppointm
 
 public class GetAppointmentsQueryHandler : IRequestHandler<GetAppointmentsQuery, Result<IEnumerable<AppointmentDto>>>
 {
-    private readonly IAppointmentRepository _appointmentRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetAppointmentsQueryHandler(IAppointmentRepository appointmentRepository)
+    public GetAppointmentsQueryHandler(IUnitOfWork unitOfWork)
     {
-        _appointmentRepository = appointmentRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<IEnumerable<AppointmentDto>>> Handle(GetAppointmentsQuery request, CancellationToken cancellationToken)
     {
-        IEnumerable<Domain.Entities.Appointment> appointments;
+        IEnumerable<Appointment> appointments;
 
         // Apply filters based on query parameters
         if (request.Date.HasValue && request.DoctorId.HasValue)
         {
-            appointments = await _appointmentRepository.GetByDoctorAndDateAsync(request.DoctorId.Value, request.Date.Value, cancellationToken);
+            appointments = await _unitOfWork.Appointments.GetByDoctorAndDateAsync(request.DoctorId.Value, request.Date.Value, cancellationToken);
         }
         else if (request.Date.HasValue)
         {
-            appointments = await _appointmentRepository.GetByDateAsync(request.Date.Value, cancellationToken);
+            appointments = await _unitOfWork.Appointments.GetByDateAsync(request.Date.Value, cancellationToken);
         }
         else if (request.PatientId.HasValue)
         {
-            appointments = await _appointmentRepository.GetByPatientAsync(request.PatientId.Value, cancellationToken);
+            appointments = await _unitOfWork.Appointments.GetByPatientAsync(request.PatientId.Value, cancellationToken);
         }
         else if (request.AppointmentTypeId.HasValue)
         {
-            appointments = await _appointmentRepository.GetByTypeAsync(request.AppointmentTypeId.Value, cancellationToken);
+            appointments = await _unitOfWork.Appointments.GetByTypeAsync(request.AppointmentTypeId.Value, cancellationToken);
         }
         else if (request.Status.HasValue)
         {
-            appointments = await _appointmentRepository.GetByStatusAsync(request.Status.Value, cancellationToken);
+            appointments = await _unitOfWork.Appointments.GetByStatusAsync(request.Status.Value, cancellationToken);
         }
         else
         {
             // Get all appointments (consider adding pagination in real scenarios)
-            appointments = await _appointmentRepository.GetAllAsync(cancellationToken);
+            appointments = await _unitOfWork.Appointments.GetAllAsync(cancellationToken);
         }
 
         // Apply additional filters if needed

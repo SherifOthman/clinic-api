@@ -13,6 +13,7 @@ public interface IUnitOfWork : IDisposable
     IPaymentRepository Payments { get; }
     IClinicBranchRepository ClinicBranches { get; }
     IClinicPatientRepository ClinicPatients { get; }
+    IAppointmentRepository Appointments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

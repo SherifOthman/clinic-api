@@ -25,6 +25,7 @@ public class UnitOfWork : IUnitOfWork
     public IPaymentRepository Payments => field ??= new PaymentRepository(_context);
     public IClinicBranchRepository ClinicBranches => field ??= new ClinicBranchRepository(_context);
     public IClinicPatientRepository ClinicPatients => field ??= new ClinicPatientRepository(_context);
+    public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {
