@@ -3,9 +3,9 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
-using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.MedicalSupplies.Queries.GetMedicalSupplies;
 
