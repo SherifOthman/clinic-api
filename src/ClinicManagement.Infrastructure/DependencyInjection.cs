@@ -120,7 +120,7 @@ public static class DependencyInjection
 
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
-        services.AddScoped<ISimpleSeedService, SimpleSeedService>();
+        services.AddScoped<IComprehensiveSeedService, ComprehensiveSeedService>();
 
         services.AddHostedService<RefreshTokenCleanupService>();
 

@@ -12,12 +12,12 @@ public interface IDatabaseInitializationService
 public class DatabaseInitializationService : IDatabaseInitializationService
 {
     private readonly ApplicationDbContext _context;
-    private readonly ISimpleSeedService _seedService;
+    private readonly IComprehensiveSeedService _seedService;
     private readonly ILogger<DatabaseInitializationService> _logger;
 
     public DatabaseInitializationService(
         ApplicationDbContext context,
-        ISimpleSeedService seedService,
+        IComprehensiveSeedService seedService,
         ILogger<DatabaseInitializationService> logger)
     {
         _context = context;
@@ -59,10 +59,10 @@ public class DatabaseInitializationService : IDatabaseInitializationService
                 _logger.LogInformation("No pending migrations found");
             }
             
-            // Seed basic data
-            _logger.LogInformation("Starting basic data seeding...");
-            await _seedService.SeedBasicDataAsync();
-            _logger.LogInformation("Basic data seeding completed");
+            // Seed comprehensive data
+            _logger.LogInformation("Starting comprehensive data seeding...");
+            await _seedService.SeedAllDataAsync();
+            _logger.LogInformation("Comprehensive data seeding completed");
             
             _logger.LogInformation("Database initialization completed successfully");
         }

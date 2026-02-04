@@ -21,17 +21,21 @@ public class CreateMeasurementAttributeCommandHandler : IRequestHandler<CreateMe
         // Check if measurement attribute with same name already exists
         var existingAttribute = await _context.MeasurementAttributes
             .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Name.ToLower() == request.Name.ToLower(), cancellationToken);
+            .FirstOrDefaultAsync(m => m.NameEn.ToLower() == request.NameEn.ToLower() || 
+                                     m.NameAr.ToLower() == request.NameAr.ToLower(), cancellationToken);
         
         if (existingAttribute != null)
         {
-            return Result<Guid>.FailField("name", MessageCodes.Measurement.ATTRIBUTE_ALREADY_EXISTS);
+            return Result<Guid>.FailField("nameEn", MessageCodes.Measurement.ATTRIBUTE_ALREADY_EXISTS);
         }
 
         var attribute = new MeasurementAttribute
         {
             Id = Guid.NewGuid(),
-            Name = request.Name,
+            NameEn = request.NameEn,
+            NameAr = request.NameAr,
+            DescriptionEn = request.DescriptionEn,
+            DescriptionAr = request.DescriptionAr,
             DataType = request.DataType
         };
 

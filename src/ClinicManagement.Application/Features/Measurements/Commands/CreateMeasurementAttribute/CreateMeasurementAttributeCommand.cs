@@ -6,6 +6,9 @@ namespace ClinicManagement.Application.Features.Measurements.Commands.CreateMeas
 
 public record CreateMeasurementAttributeCommand : IRequest<Result<Guid>>
 {
-    public string Name { get; init; } = null!;
+    public string NameEn { get; init; } = null!;
+    public string NameAr { get; init; } = null!;
+    public string? DescriptionEn { get; init; }
+    public string? DescriptionAr { get; init; }
     public MeasurementDataType DataType { get; init; }
 }

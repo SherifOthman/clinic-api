@@ -86,12 +86,12 @@ public static class MappingConfig
         
         TypeAdapterConfig<MedicalVisitMeasurement, MedicalVisitMeasurementDto>
             .NewConfig()
-            .Map(dest => dest.MeasurementName, src => src.MeasurementAttribute.Name)
+            .Map(dest => dest.MeasurementName, src => src.MeasurementAttribute.NameEn)
             .Map(dest => dest.Value, src => src.GetValue());
 
         TypeAdapterConfig<DoctorMeasurementAttribute, DoctorMeasurementAttributeDto>
             .NewConfig()
-            .Map(dest => dest.MeasurementName, src => src.MeasurementAttribute.Name)
+            .Map(dest => dest.MeasurementName, src => src.MeasurementAttribute.NameEn)
             .Map(dest => dest.DataType, src => src.MeasurementAttribute.DataType.ToString());
     }
 }

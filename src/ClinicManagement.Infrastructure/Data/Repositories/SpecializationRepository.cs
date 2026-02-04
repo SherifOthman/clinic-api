@@ -14,13 +14,13 @@ public class SpecializationRepository : BaseRepository<Specialization>, ISpecial
     {
         return await _context.Specializations
             .Where(s => s.IsActive)
-            .OrderBy(s => s.Name)
+            .OrderBy(s => s.NameEn)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<Specialization?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         return await _context.Specializations
-            .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
+            .FirstOrDefaultAsync(s => s.NameEn == name || s.NameAr == name, cancellationToken);
     }
 }

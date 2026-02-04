@@ -10,12 +10,22 @@ public class MeasurementAttributeConfiguration : IEntityTypeConfiguration<Measur
     {
         builder.HasKey(ma => ma.Id);
 
-        builder.Property(ma => ma.Name)
+        builder.Property(ma => ma.NameEn)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.HasIndex(ma => ma.Name)
-            .IsUnique();
+        builder.Property(ma => ma.NameAr)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(ma => ma.DescriptionEn)
+            .HasMaxLength(500);
+
+        builder.Property(ma => ma.DescriptionAr)
+            .HasMaxLength(500);
+
+        builder.HasIndex(ma => ma.NameEn);
+        builder.HasIndex(ma => ma.NameAr);
 
         builder.HasMany(ma => ma.VisitMeasurements)
             .WithOne(vm => vm.MeasurementAttribute)

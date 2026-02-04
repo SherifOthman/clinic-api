@@ -135,6 +135,7 @@ public static class MessageCodes
         public const string INVALID_VALUE_FOR_TYPE = "MEASUREMENT.INVALID_VALUE_FOR_TYPE";
         public const string NAME_REQUIRED = "MEASUREMENT.NAME.REQUIRED";
         public const string NAME_TOO_LONG = "MEASUREMENT.NAME.TOO_LONG";
+        public const string DESCRIPTION_TOO_LONG = "MEASUREMENT.DESCRIPTION.TOO_LONG";
         public const string VALUE_REQUIRED = "MEASUREMENT.VALUE.REQUIRED";
     }
 

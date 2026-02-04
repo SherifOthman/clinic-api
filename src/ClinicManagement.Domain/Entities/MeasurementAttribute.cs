@@ -9,7 +9,10 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class MeasurementAttribute : BaseEntity
 {
-    public string Name { get; set; } = null!;
+    public string NameEn { get; set; } = null!;
+    public string NameAr { get; set; } = null!;
+    public string? DescriptionEn { get; set; }
+    public string? DescriptionAr { get; set; }
     public MeasurementDataType DataType { get; set; }
     
     // Navigation properties
