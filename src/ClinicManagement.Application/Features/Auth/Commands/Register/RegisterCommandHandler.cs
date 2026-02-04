@@ -1,10 +1,10 @@
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
