@@ -59,10 +59,10 @@ public class DatabaseInitializationService : IDatabaseInitializationService
                 _logger.LogInformation("No pending migrations found");
             }
             
-            // Seed comprehensive data
-            _logger.LogInformation("Starting comprehensive data seeding...");
-            await _seedService.SeedAllDataAsync();
-            _logger.LogInformation("Comprehensive data seeding completed");
+            // Seed reference data
+            _logger.LogInformation("Starting reference data seeding...");
+            await _seedService.SeedReferenceDataAsync();
+            _logger.LogInformation("Reference data seeding completed");
             
             _logger.LogInformation("Database initialization completed successfully");
         }
