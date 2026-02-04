@@ -91,7 +91,7 @@ A healthcare management API that supports multiple clinics with role-based acces
 
 - ✅ Expired refresh token cleanup (every 6 hours)
 - ✅ Rate limit entries cleanup (every 1 hour)
-- ✅ Database initialization with seed data
+- ✅ Database initialization with reference data seeding
 
 ### **Email System**
 
@@ -99,6 +99,17 @@ A healthcare management API that supports multiple clinics with role-based acces
 - ✅ Gmail SMTP integration (configured)
 - ✅ Email confirmation templates
 - ✅ Password reset email templates
+
+### **Reference Data Management**
+
+- ✅ Automated seeding of essential reference data
+- ✅ Medical specializations (10 specializations)
+- ✅ Chronic diseases (10 common conditions)
+- ✅ Measurement attributes (10 vital signs)
+- ✅ Appointment types (8 standard types)
+- ✅ System roles and super admin user
+- ✅ Subscription plans with feature flags
+- ✅ Specialization-measurement relationships
 
 ## 🏗️ **Clean Architecture**
 
@@ -133,7 +144,30 @@ A healthcare management API that supports multiple clinics with role-based acces
 - **RefreshToken** - Token management with revocation
 - **RateLimitEntry** - API protection
 
-## � **API Endpoints (50+ endpoints)**
+## 🌱 **Database Seeding**
+
+The application automatically seeds essential reference data on first run:
+
+**System Data:**
+
+- Super Admin user (superadmin@clinic.com)
+- 7 system roles (SuperAdmin, ClinicOwner, Doctor, etc.)
+
+**Medical Reference Data:**
+
+- 10 medical specializations (Cardiology, Pediatrics, etc.)
+- 10 vital sign measurements (Blood Pressure, Heart Rate, etc.)
+- 10 chronic diseases (Diabetes, Hypertension, etc.)
+- 8 appointment types (Initial Consultation, Follow-up, etc.)
+
+**Business Data:**
+
+- 2 subscription plans (Basic, Professional)
+- Specialization-measurement relationships
+
+_Note: No sample user data is seeded - users create their own clinics and patients through the application._
+
+## 📡 **API Endpoints (50+ endpoints)**
 
 **Authentication (13 endpoints)**
 
@@ -178,27 +212,30 @@ A healthcare management API that supports multiple clinics with role-based acces
 
 ```bash
 # Prerequisites: .NET 10, SQL Server LocalDB
-git clone <repo>
-cd "Clinic API"
+git clone https://github.com/SherifOthman/clinic-api.git
+cd clinic-api
 dotnet restore
 dotnet ef database update --project src/ClinicManagement.Infrastructure
 dotnet run --project src/ClinicManagement.API
 # Access: http://localhost:5000/swagger
 ```
 
+**Default Super Admin:**
+
+- Email: `superadmin@clinic.com`
+- Password: `SuperAdmin123!`
+
 ## 🎯 **Subscription Plans**
 
-**Solo Practice** - $29.99/month
+**Basic Plan** - $99/month
 
-- 1 clinic, 1 branch, 100 patients, basic reporting
+- 3 branches, 10 staff, 1000 patients/month, 500 appointments/month
+- 10GB storage, inventory management, reporting, backup & restore
 
-**Growing Clinic** - $79.99/month
+**Professional Plan** - $199/month
 
-- 3 clinics, 10 branches, 1000 patients, advanced reporting
-
-**Healthcare Network** - $199.99/month
-
-- Unlimited clinics/branches, unlimited patients, API access, priority support
+- 10 branches, 50 staff, 10000 patients/month, 2000 appointments/month
+- 50GB storage, API access, custom branding, priority support, integrations
 
 ## 📊 **Project Stats**
 
@@ -208,6 +245,7 @@ dotnet run --project src/ClinicManagement.API
 - **CQRS Handlers**: 40+
 - **Background Services**: 2
 - **External Integrations**: 3 (GeoNames, Gmail SMTP, REST Countries)
+- **Reference Data Items**: 40+ (specializations, diseases, measurements, etc.)
 
 ---
 
