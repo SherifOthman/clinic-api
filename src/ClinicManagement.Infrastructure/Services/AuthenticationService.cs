@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 

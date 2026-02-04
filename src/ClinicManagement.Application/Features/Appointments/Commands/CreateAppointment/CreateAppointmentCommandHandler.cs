@@ -2,10 +2,10 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Common.Enums;
 using Mapster;
 using MediatR;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.Appointments.Commands.CreateAppointment;
 

@@ -2,8 +2,8 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
 using MediatR;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.Payments.Commands.CreatePayment;
 
