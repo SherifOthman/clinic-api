@@ -1,9 +1,9 @@
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.Measurements.Commands.CreateMeasurementAttribute;
 

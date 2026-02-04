@@ -1,7 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
-using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;

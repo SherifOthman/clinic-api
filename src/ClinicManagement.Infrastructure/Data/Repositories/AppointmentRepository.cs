@@ -1,6 +1,6 @@
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Common.Enums;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Common.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;

@@ -2,10 +2,10 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.ChronicDiseases.Commands.UpdateChronicDisease;
 
