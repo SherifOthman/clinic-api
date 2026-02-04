@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Domain.Common.Interfaces;
 

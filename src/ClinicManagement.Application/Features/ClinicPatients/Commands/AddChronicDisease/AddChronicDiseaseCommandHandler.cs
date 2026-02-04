@@ -2,9 +2,9 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
-using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.ClinicPatients.Commands.AddChronicDisease;
 
