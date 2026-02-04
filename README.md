@@ -142,9 +142,8 @@ ionships
 **Patient Management:**
 
 - **Patient** - Patient master records
-- **ClinicPatient** - Clinic-specific patient data
-- **ClinicPatientPhone** - Multiple phone numbers
-- **ClinicPatientChronicDisease** - Patient chronic conditions
+- **PatientPhone** - Multiple phone numbers
+- **PatientChronicDisease** - Patient chronic conditions
 
 **Appointments & Medical:**
 

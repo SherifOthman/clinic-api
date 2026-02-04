@@ -28,6 +28,7 @@ public class UnitOfWork : IUnitOfWork
     public IPatientChronicDiseaseRepository PatientChronicDiseases => field ??= new PatientChronicDiseaseRepository(_context);
     public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
     public IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices => field ??= new ClinicBranchAppointmentPriceRepository(_context);
+    public IMeasurementAttributeRepository MeasurementAttributes => field ??= new MeasurementAttributeRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

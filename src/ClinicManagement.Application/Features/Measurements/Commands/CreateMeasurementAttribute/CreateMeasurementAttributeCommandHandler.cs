@@ -1,30 +1,26 @@
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.Measurements.Commands.CreateMeasurementAttribute;
 
 public class CreateMeasurementAttributeCommandHandler : IRequestHandler<CreateMeasurementAttributeCommand, Result<Guid>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CreateMeasurementAttributeCommandHandler(IApplicationDbContext context)
+    public CreateMeasurementAttributeCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreateMeasurementAttributeCommand request, CancellationToken cancellationToken)
     {
         // Check if measurement attribute with same name already exists
-        var existingAttribute = await _context.MeasurementAttributes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.NameEn.ToLower() == request.NameEn.ToLower() || 
-                                     m.NameAr.ToLower() == request.NameAr.ToLower(), cancellationToken);
+        var exists = await _unitOfWork.MeasurementAttributes.ExistsByNameAsync(request.NameEn, request.NameAr, cancellationToken);
         
-        if (existingAttribute != null)
+        if (exists)
         {
             return Result<Guid>.FailField("nameEn", MessageCodes.Measurement.ATTRIBUTE_ALREADY_EXISTS);
         }
@@ -39,8 +35,8 @@ public class CreateMeasurementAttributeCommandHandler : IRequestHandler<CreateMe
             DataType = request.DataType
         };
 
-        _context.MeasurementAttributes.Add(attribute);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.MeasurementAttributes.AddAsync(attribute, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Ok(attribute.Id);
     }

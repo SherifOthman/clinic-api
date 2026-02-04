@@ -155,9 +155,9 @@ public static class MessageCodes
 
     public static class Patient
     {
-        public const string NOT_FOUND = "CLINIC_PATIENT.NOT_FOUND";
-        public const string ALREADY_EXISTS = "CLINIC_PATIENT.ALREADY_EXISTS";
-        public const string ID_REQUIRED = "CLINIC_PATIENT.ID.REQUIRED";
+        public const string NOT_FOUND = "PATIENT.NOT_FOUND";
+        public const string ALREADY_EXISTS = "PATIENT.ALREADY_EXISTS";
+        public const string ID_REQUIRED = "PATIENT.ID.REQUIRED";
     }
 
     public static class ChronicDisease

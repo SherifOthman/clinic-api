@@ -116,6 +116,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentTypeRepository, AppointmentTypeRepository>();
         services.AddScoped<IClinicBranchAppointmentPriceRepository, ClinicBranchAppointmentPriceRepository>();
+        services.AddScoped<IMeasurementAttributeRepository, MeasurementAttributeRepository>();
 
         // Configuration Options
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClinicManagement.API.Controllers;
 
 [ApiController]
-[Route("api/clinic-patients/{PatientId}/chronic-diseases")]
+[Route("api/patients/{PatientId}/chronic-diseases")]
 public class PatientChronicDiseasesController : BaseApiController
 {
     public PatientChronicDiseasesController(IMediator mediator) : base(mediator)
@@ -17,9 +17,9 @@ public class PatientChronicDiseasesController : BaseApiController
     }
 
     /// <summary>
-    /// Get all chronic diseases for a clinic patient
+    /// Get all chronic diseases for a patient
     /// </summary>
-    /// <param name="PatientId">The clinic patient ID</param>
+    /// <param name="PatientId">The patient ID</param>
     /// <param name="activeOnly">Whether to return only active chronic diseases</param>
     /// <returns>List of chronic diseases</returns>
     [HttpGet]

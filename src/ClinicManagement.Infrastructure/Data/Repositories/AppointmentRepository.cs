@@ -111,4 +111,53 @@ public class AppointmentRepository : BaseRepository<Appointment>, IAppointmentRe
         return await _context.Appointments
             .CountAsync(a => a.DoctorId == doctorId && a.AppointmentDate.Date == date.Date, cancellationToken);
     }
+
+    public async Task<IEnumerable<Appointment>> GetWithFiltersAsync(
+        DateTime? date = null,
+        Guid? doctorId = null,
+        Guid? patientId = null,
+        Guid? appointmentTypeId = null,
+        AppointmentStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Appointments
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+                .ThenInclude(d => d.User)
+            .Include(a => a.AppointmentType)
+            .Include(a => a.ClinicBranch)
+            .AsQueryable();
+
+        // Apply filters
+        if (date.HasValue)
+        {
+            query = query.Where(a => a.AppointmentDate.Date == date.Value.Date);
+        }
+
+        if (doctorId.HasValue)
+        {
+            query = query.Where(a => a.DoctorId == doctorId.Value);
+        }
+
+        if (patientId.HasValue)
+        {
+            query = query.Where(a => a.PatientId == patientId.Value);
+        }
+
+        if (appointmentTypeId.HasValue)
+        {
+            query = query.Where(a => a.AppointmentTypeId == appointmentTypeId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(a => a.Status == status.Value);
+        }
+
+        // Order by appointment date and queue number
+        return await query
+            .OrderBy(a => a.AppointmentDate)
+            .ThenBy(a => a.QueueNumber)
+            .ToListAsync(cancellationToken);
+    }
 }

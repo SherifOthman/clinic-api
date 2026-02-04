@@ -16,6 +16,7 @@ public interface IUnitOfWork : IDisposable
     IPatientChronicDiseaseRepository PatientChronicDiseases { get; }
     IAppointmentRepository Appointments { get; }
     IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices { get; }
+    IMeasurementAttributeRepository MeasurementAttributes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

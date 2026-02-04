@@ -13,4 +13,11 @@ public interface IAppointmentRepository : IRepository<Appointment>
     Task<Appointment?> GetByQueueNumberAsync(DateTime date, Guid doctorId, short queueNumber, CancellationToken cancellationToken = default);
     Task<short> GetNextQueueNumberAsync(DateTime date, Guid doctorId, CancellationToken cancellationToken = default);
     Task<bool> HasConflictingAppointmentAsync(Guid doctorId, DateTime appointmentDate, short queueNumber, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Appointment>> GetWithFiltersAsync(
+        DateTime? date = null,
+        Guid? doctorId = null,
+        Guid? patientId = null,
+        Guid? appointmentTypeId = null,
+        AppointmentStatus? status = null,
+        CancellationToken cancellationToken = default);
 }
