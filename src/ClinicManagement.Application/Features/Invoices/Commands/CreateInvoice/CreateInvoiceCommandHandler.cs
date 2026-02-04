@@ -4,9 +4,9 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Enums;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Exceptions;
-using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Features.Invoices.Commands.CreateInvoice;
 

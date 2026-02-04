@@ -1,5 +1,5 @@
-using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Application.Common.Models;
 
 namespace ClinicManagement.Application.Common.Interfaces;
 
