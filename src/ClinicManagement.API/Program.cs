@@ -23,13 +23,27 @@ try
 
     var app = builder.Build();
 
-    // Temporarily disable database initialization to test app startup
+    Log.Information("Application built successfully");
+
+    // Temporarily disable database initialization to test application startup
     // using (var scope = app.Services.CreateScope())
     // {
-    //     var databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
-    //     await databaseInitializer.InitializeAsync();
+    //     try
+    //     {
+    //         Log.Information("Creating service scope for database initialization...");
+    //         var databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
+    //         Log.Information("Database initializer service resolved, calling InitializeAsync...");
+    //         await databaseInitializer.InitializeAsync();
+    //         Log.Information("Database initialization completed successfully");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Log.Fatal(ex, "Database initialization failed: {Message}", ex.Message);
+    //         throw;
+    //     }
     // }
 
+    Log.Information("Configuring application middleware...");
     app.UseAppConfigurations();
 
     await app.RunAsync();

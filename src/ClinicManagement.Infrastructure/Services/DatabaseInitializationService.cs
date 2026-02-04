@@ -12,13 +12,16 @@ public interface IDatabaseInitializationService
 public class DatabaseInitializationService : IDatabaseInitializationService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ISimpleSeedService _seedService;
     private readonly ILogger<DatabaseInitializationService> _logger;
 
     public DatabaseInitializationService(
         ApplicationDbContext context,
+        ISimpleSeedService seedService,
         ILogger<DatabaseInitializationService> logger)
     {
         _context = context;
+        _seedService = seedService;
         _logger = logger;
     }
 
@@ -29,6 +32,7 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             _logger.LogInformation("Starting database initialization...");
             
             // Check if database exists
+            _logger.LogInformation("Testing database connection...");
             var canConnect = await _context.Database.CanConnectAsync();
             _logger.LogInformation("Database connection test: {CanConnect}", canConnect);
             
@@ -36,6 +40,7 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             {
                 _logger.LogWarning("Cannot connect to database. Creating database...");
                 await _context.Database.EnsureCreatedAsync();
+                _logger.LogInformation("Database created successfully");
             }
             
             // Apply pending migrations
@@ -53,6 +58,11 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             {
                 _logger.LogInformation("No pending migrations found");
             }
+            
+            // Seed basic data
+            _logger.LogInformation("Starting basic data seeding...");
+            await _seedService.SeedBasicDataAsync();
+            _logger.LogInformation("Basic data seeding completed");
             
             _logger.LogInformation("Database initialization completed successfully");
         }

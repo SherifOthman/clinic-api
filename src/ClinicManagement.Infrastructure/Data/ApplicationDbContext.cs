@@ -18,6 +18,9 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Specialization> Specializations => Set<Specialization>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<Clinic> Clinics => Set<Clinic>();
+    public DbSet<ClinicBranch> ClinicBranches => Set<ClinicBranch>();
     public DbSet<ClinicPatient> ClinicPatients => Set<ClinicPatient>();
     public DbSet<ClinicPatientChronicDisease> ClinicPatientChronicDiseases => Set<ClinicPatientChronicDisease>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
