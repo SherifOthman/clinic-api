@@ -2,6 +2,7 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Infrastructure.Common.Extensions;
 using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Infrastructure.Services;
@@ -18,7 +19,7 @@ public class UserManagementService : IUserManagementService
     public async Task<Result> CreateUserAsync(User user, string password, CancellationToken cancellationToken = default)
     {
         var result = await _userManager.CreateAsync(user, password);
-        return MapIdentityResult(result);
+        return result.ToResult();
     }
 
     public async Task<bool> CheckPasswordAsync(User user, string password, CancellationToken cancellationToken = default)
@@ -49,28 +50,6 @@ public class UserManagementService : IUserManagementService
     public async Task<Result> AddToRoleAsync(User user, string role, CancellationToken cancellationToken = default)
     {
         var result = await _userManager.AddToRoleAsync(user, role);
-        return MapIdentityResult(result);
+        return result.ToResult();
     }
-
-    private static Result MapIdentityResult(IdentityResult identityResult)
-    {
-        if (identityResult.Succeeded)
-            return Result.Ok();
-
-        var errors = identityResult.Errors.Select(e => new ErrorItem(
-            field: GetFieldNameFromErrorCode(e.Code),
-            code: e.Description
-        )).ToList();
-
-        return Result.Fail(errors);
-    }
-
-    private static string GetFieldNameFromErrorCode(string errorCode) => errorCode switch
-    {
-        "DuplicateEmail" or "InvalidEmail" => "Email",
-        "DuplicateUserName" or "InvalidUserName" => "UserName",
-        "PasswordTooShort" or "PasswordRequiresDigit" or "PasswordRequiresLower" 
-            or "PasswordRequiresUpper" or "PasswordRequiresNonAlphanumeric" => "Password",
-        _ => string.Empty
-    };
 }

@@ -4,6 +4,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Templates;
 using ClinicManagement.Application.Options;
+using ClinicManagement.Infrastructure.Common.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
@@ -44,7 +45,8 @@ public class EmailConfirmationService : IEmailConfirmationService
     public async Task<Result> ConfirmEmailAsync(User user, string token, CancellationToken cancellationToken = default)
     {
         var result = await _userManager.ConfirmEmailAsync(user, token);
-        return MapIdentityResult(result);
+        
+        return result.ToResult();
     }
 
     public async Task<bool> IsEmailConfirmedAsync(User user, CancellationToken cancellationToken = default)
@@ -56,26 +58,4 @@ public class EmailConfirmationService : IEmailConfirmationService
     {
         return await _userManager.GenerateEmailConfirmationTokenAsync(user);
     }
-
-    private static Result MapIdentityResult(IdentityResult identityResult)
-    {
-        if (identityResult.Succeeded)
-            return Result.Ok();
-
-        var errors = identityResult.Errors.Select(e => new ErrorItem(
-            field: GetFieldNameFromErrorCode(e.Code),
-            code: e.Description
-        )).ToList();
-
-        return Result.Fail(errors);
-    }
-
-    private static string GetFieldNameFromErrorCode(string errorCode) => errorCode switch
-    {
-        "DuplicateEmail" or "InvalidEmail" => "Email",
-        "DuplicateUserName" or "InvalidUserName" => "UserName",
-        "PasswordTooShort" or "PasswordRequiresDigit" or "PasswordRequiresLower" 
-            or "PasswordRequiresUpper" or "PasswordRequiresNonAlphanumeric" => "Password",
-        _ => string.Empty
-    };
 }
