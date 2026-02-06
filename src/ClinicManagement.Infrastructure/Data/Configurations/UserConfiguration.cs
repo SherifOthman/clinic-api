@@ -27,7 +27,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(256);
 
         builder.Property(u => u.ClinicId)
-            .IsRequired();
+            .IsRequired(false); // Nullable for SuperAdmin
 
         builder.Property(u => u.UserType)
             .IsRequired()
@@ -36,11 +36,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.ProfileImageUrl)
             .HasMaxLength(500);
 
-        // Relationship with Clinic
+        // Relationship with Clinic (optional for SuperAdmin)
         builder.HasOne(u => u.Clinic)
             .WithMany()
             .HasForeignKey(u => u.ClinicId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
         // Relationships with RefreshTokens
         builder.HasMany(u => u.RefreshTokens)
