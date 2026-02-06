@@ -11,4 +11,5 @@ public interface IUserManagementService
     Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
     Task<User?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<IList<string>> GetUserRolesAsync(User user, CancellationToken cancellationToken = default);
+    Task<Result> AddToRoleAsync(User user, string role, CancellationToken cancellationToken = default);
 }

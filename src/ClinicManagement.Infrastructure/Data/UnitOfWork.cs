@@ -23,14 +23,26 @@ public class UnitOfWork : IUnitOfWork
     public IMedicalSupplyRepository MedicalSupplies => field ??= new MedicalSupplyRepository(_context);
     public IInvoiceRepository Invoices => field ??= new InvoiceRepository(_context);
     public IPaymentRepository Payments => field ??= new PaymentRepository(_context);
+    public IClinicRepository Clinics => field ??= new ClinicRepository(_context);
     public IClinicBranchRepository ClinicBranches => field ??= new ClinicBranchRepository(_context);
+    public IClinicBranchPhoneNumberRepository ClinicBranchPhoneNumbers => field ??= new ClinicBranchPhoneNumberRepository(_context);
+    public IClinicOwnerRepository ClinicOwners => field ??= new ClinicOwnerRepository(_context);
+    public IDoctorRepository Doctors => field ??= new DoctorRepository(_context);
+    public IReceptionistRepository Receptionists => field ??= new ReceptionistRepository(_context);
+    public IStaffInvitationRepository StaffInvitations => field ??= new StaffInvitationRepository(_context);
     public IPatientRepository Patients => field ??= new PatientRepository(_context);
     public IPatientChronicDiseaseRepository PatientChronicDiseases => field ??= new PatientChronicDiseaseRepository(_context);
     public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
     public IAppointmentTypeRepository AppointmentTypes => field ??= new AppointmentTypeRepository(_context);
     public ISpecializationRepository Specializations => field ??= new SpecializationRepository(_context);
+    public ISubscriptionPlanRepository SubscriptionPlans => field ??= new SubscriptionPlanRepository(_context);
     public IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices => field ??= new ClinicBranchAppointmentPriceRepository(_context);
     public IMeasurementAttributeRepository MeasurementAttributes => field ??= new MeasurementAttributeRepository(_context);
+    
+    // Location repositories for GeoNames snapshot architecture
+    public ICountryRepository Countries => field ??= new CountryRepository(_context);
+    public IStateRepository States => field ??= new StateRepository(_context);
+    public ICityRepository Cities => field ??= new CityRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

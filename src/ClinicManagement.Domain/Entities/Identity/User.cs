@@ -14,6 +14,7 @@ public class User : IdentityUser<Guid>
     public Guid ClinicId { get; set; }
     public UserType UserType { get; set; }
     public string? ProfileImageUrl { get; set; }
+    public bool OnboardingCompleted { get; set; }
 
     // Navigation properties
     public virtual Clinic Clinic { get; set; } = null!;

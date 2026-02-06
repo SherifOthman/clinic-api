@@ -42,8 +42,8 @@ public class GetMeQueryHandler : IRequestHandler<GetMeQuery, Result<UserDto>>
         // Set the roles on the DTO
         userDto.Roles = userRoles.ToList();
         
-        // For simplified auth system, onboarding is always complete
-        userDto.OnboardingCompleted = true;
+        // Set actual onboarding status from user entity
+        userDto.OnboardingCompleted = user.OnboardingCompleted;
         
         return Result<UserDto>.Ok(userDto);
     }

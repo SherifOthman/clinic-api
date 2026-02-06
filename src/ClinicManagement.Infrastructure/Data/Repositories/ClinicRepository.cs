@@ -3,9 +3,9 @@ using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
 
-public class DoctorRepository : BaseRepository<Doctor>, IDoctorRepository
+public class ClinicRepository : BaseRepository<Clinic>, IClinicRepository
 {
-    public DoctorRepository(ApplicationDbContext context) : base(context)
+    public ClinicRepository(ApplicationDbContext context) : base(context)
     {
     }
 }

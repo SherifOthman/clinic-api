@@ -46,6 +46,12 @@ public class UserManagementService : IUserManagementService
         return await _userManager.GetRolesAsync(user);
     }
 
+    public async Task<Result> AddToRoleAsync(User user, string role, CancellationToken cancellationToken = default)
+    {
+        var result = await _userManager.AddToRoleAsync(user, role);
+        return MapIdentityResult(result);
+    }
+
     private static Result MapIdentityResult(IdentityResult identityResult)
     {
         if (identityResult.Succeeded)

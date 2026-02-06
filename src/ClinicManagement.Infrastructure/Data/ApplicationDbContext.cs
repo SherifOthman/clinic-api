@@ -32,6 +32,15 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
     public DbSet<Receptionist> Receptionists => Set<Receptionist>();
     
+    // Location entities
+    public DbSet<Country> Countries => Set<Country>();
+    public DbSet<State> States => Set<State>();
+    public DbSet<City> Cities => Set<City>();
+    public DbSet<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers => Set<ClinicBranchPhoneNumber>();
+    
+    // Staff invitation
+    public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
+    
     // New pharmacy and billing entities
     public DbSet<Medicine> Medicines => Set<Medicine>();
     public DbSet<MedicalSupply> MedicalSupplies => Set<MedicalSupply>();
