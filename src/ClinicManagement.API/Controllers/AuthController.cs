@@ -1,7 +1,5 @@
-using ClinicManagement.API.Extensions;
 using ClinicManagement.API.Models;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
@@ -26,7 +24,9 @@ public class AuthController : BaseApiController
 {
     private readonly IMediator _mediator;
 
-    public AuthController(IMediator mediator) { _mediator = mediator;
+    public AuthController(IMediator mediator)
+    { 
+        _mediator = mediator;
     }
 
     [HttpPost("register")]
