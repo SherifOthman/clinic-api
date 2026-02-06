@@ -35,7 +35,7 @@ try
         try
         {
             var dbInitializer = services.GetRequiredService<ClinicManagement.Infrastructure.Services.IDatabaseInitializationService>();
-            await dbInitializer.InitializeAsync();
+            dbInitializer.InitializeAsync().GetAwaiter().GetResult();
             Log.Information("Database initialized and seeded successfully");
         }
         catch (Exception ex)

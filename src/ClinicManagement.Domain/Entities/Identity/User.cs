@@ -11,13 +11,13 @@ public class User : IdentityUser<Guid>
 {   
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public Guid ClinicId { get; set; }
+    public Guid? ClinicId { get; set; }
     public UserType UserType { get; set; }
     public string? ProfileImageUrl { get; set; }
     public bool OnboardingCompleted { get; set; }
 
     // Navigation properties
-    public virtual Clinic Clinic { get; set; } = null!;
+    public virtual Clinic? Clinic { get; set; }
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     
     // Type-specific navigation properties (one-to-one)

@@ -112,14 +112,17 @@ public class ComprehensiveSeedService : IComprehensiveSeedService
             return;
         }
 
-        // Create SuperAdmin user
+        // Create SuperAdmin user (no clinic association)
         var superAdmin = new User
         {
             UserName = "superadmin@clinic.com",
             Email = "superadmin@clinic.com",
             FirstName = "System",
             LastName = "Administrator",
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            ClinicId = null, // SuperAdmin doesn't belong to any clinic
+            UserType = UserType.SuperAdmin,
+            OnboardingCompleted = true
         };
 
         var result = await _userManager.CreateAsync(superAdmin, "SuperAdmin123!");

@@ -68,8 +68,14 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
             return Result<StaffInvitationDto>.FailField(nameof(dto.Email), MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
         }
 
+        // Ensure user has a clinic
+        if (!user.ClinicId.HasValue)
+        {
+            return Result<StaffInvitationDto>.Fail("USER.NO_CLINIC");
+        }
+
         // Check if there's already a pending invitation for this email
-        var existingInvitation = await _unitOfWork.StaffInvitations.GetPendingInvitationByEmailAsync(dto.Email, user.ClinicId, cancellationToken);
+        var existingInvitation = await _unitOfWork.StaffInvitations.GetPendingInvitationByEmailAsync(dto.Email, user.ClinicId.Value, cancellationToken);
         if (existingInvitation != null)
         {
             return Result<StaffInvitationDto>.FailField(nameof(dto.Email), "INVITATION.ALREADY_PENDING");
@@ -87,7 +93,7 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             UserType = dto.UserType,
-            ClinicId = user.ClinicId,
+            ClinicId = user.ClinicId.Value,
             InvitedByUserId = user.Id,
             Token = token,
             ExpiresAt = DateTime.UtcNow.AddDays(7), // 7 days expiration
