@@ -93,6 +93,7 @@ public static class DependencyInjection
 
         // Core Services
         services.AddHttpContextAccessor();
+        services.AddHttpClient<IGeoNamesService, GeoNamesService>();
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
