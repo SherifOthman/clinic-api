@@ -101,7 +101,7 @@ public static class DependencyInjection
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
-        services.AddScoped<ILocationSeedingService, LocationSeedingService>();
+        services.AddScoped<ILocationReferenceService, LocationReferenceService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();

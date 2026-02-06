@@ -12,16 +12,16 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ILocationSeedingService _locationSeedingService;
+    private readonly ILocationReferenceService _locationReferenceService;
 
     public CompleteOnboardingCommandHandler(
         IUnitOfWork unitOfWork, 
         ICurrentUserService currentUserService,
-        ILocationSeedingService locationSeedingService)
+        ILocationReferenceService locationReferenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _locationSeedingService = locationSeedingService;
+        _locationReferenceService = locationReferenceService;
     }
 
     public async Task<Result> Handle(CompleteOnboardingCommand request, CancellationToken cancellationToken)
@@ -65,9 +65,10 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
             return Result.FailField(nameof(dto.SubscriptionPlanId), MessageCodes.Business.ENTITY_NOT_FOUND);
         }
 
-        // Lazy seed location data (GeoNames snapshot architecture)
-        // This ensures Country -> State -> City hierarchy exists
-        var cityId = await _locationSeedingService.EnsureLocationExistsAsync(
+        // Resolve location references at runtime (GeoNames snapshot architecture)
+        // This creates Country -> State -> City hierarchy ONLY if they don't exist
+        // Triggered by user action (onboarding), NOT at startup or migration time
+        var cityId = await _locationReferenceService.ResolveLocationAsync(
             dto.Location.CountryGeonameId,
             new CountrySnapshotData(
                 dto.Location.CountryIso2Code,
