@@ -105,11 +105,18 @@ public class ComprehensiveSeedService : IComprehensiveSeedService
         _logger.LogInformation("Seeding super admin user...");
 
         // Check if superadmin already exists
-        var existingAdmin = await _userManager.FindByEmailAsync("superadmin@clinic.com");
-        if (existingAdmin != null)
+        try
         {
-            _logger.LogInformation("Super admin user already exists. Skipping.");
-            return;
+            var existingAdmin = await _userManager.FindByEmailAsync("superadmin@clinic.com");
+            if (existingAdmin != null)
+            {
+                _logger.LogInformation("Super admin user already exists. Skipping.");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checking for existing superadmin, will attempt to create");
         }
 
         // Create SuperAdmin user (no clinic association)
