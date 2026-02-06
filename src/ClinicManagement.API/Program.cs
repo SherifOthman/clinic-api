@@ -1,4 +1,4 @@
-using ClinicManagement.API.Middleware;
+using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
 using Serilog;
@@ -21,48 +21,18 @@ try
     // Add Serilog
     builder.Host.UseSerilog();
 
-    // Add services to the container
-    builder.Services.AddControllers();
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-
     // Add application layers
+    builder.Services.AddApi(builder.Configuration);
     builder.Services.AddApplication(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
 
-    // Add CORS
-    builder.Services.AddCors(options =>
-    {
-        options.AddPolicy("AllowSpecificOrigins", policy =>
-        {
-            policy.WithOrigins("http://localhost:3000", "https://yourdomain.com")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        });
-    });
-
     var app = builder.Build();
-
-    // Configure the HTTP request pipeline
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
 
     // Add Serilog request logging
     app.UseSerilogRequestLogging();
 
-    // Add exception handling middleware (order matters!)
-    app.UseMiddleware<DomainExceptionMiddleware>();
-    app.UseMiddleware<GlobalExceptionMiddleware>();
-
-    app.UseHttpsRedirection();
-    app.UseCors("AllowSpecificOrigins");
-    app.UseAuthentication();
-    app.UseAuthorization();
-    app.MapControllers();
+    // Use app configurations (includes middleware, CORS, auth, etc.)
+    app.UseAppConfigurations();
 
     Log.Information("Clinic Management API started successfully");
     app.Run();

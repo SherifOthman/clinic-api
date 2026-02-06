@@ -44,8 +44,8 @@ public class SubscriptionPlan : BaseEntity
     // Display order for UI
     public int DisplayOrder { get; set; }
     
-    // Navigation properties
-    public virtual ICollection<Clinic> Clinics { get; set; } = new List<Clinic>();
+    // NOTE: No navigation property to Clinics to avoid shadow property creation
+    // Relationship is defined in ClinicConfiguration
     
     /// <summary>
     /// Calculates the yearly discount percentage

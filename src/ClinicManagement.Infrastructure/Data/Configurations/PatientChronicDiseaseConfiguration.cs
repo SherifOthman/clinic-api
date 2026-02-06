@@ -19,7 +19,7 @@ public class PatientChronicDiseaseConfiguration : IEntityTypeConfiguration<Patie
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(pcd => pcd.ChronicDisease)
-            .WithMany()
+            .WithMany(cd => cd.Patients)
             .HasForeignKey(pcd => pcd.ChronicDiseaseId)
             .OnDelete(DeleteBehavior.Restrict);
 
