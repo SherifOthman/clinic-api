@@ -44,7 +44,7 @@ public class PatientChronicDiseaseRepository : BaseRepository<PatientChronicDise
         return await _context.PatientChronicDiseases
             .Include(pcd => pcd.Patient)
             .Where(pcd => pcd.ChronicDiseaseId == chronicDiseaseId)
-            .OrderBy(pcd => $"{pcd.Patient.FirstName} {pcd.Patient.LastName}")
+            .OrderBy(pcd => pcd.Patient.FullName)
             .ToListAsync(cancellationToken);
     }
 }

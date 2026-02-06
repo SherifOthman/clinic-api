@@ -16,7 +16,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
         return await _dbSet
             .AsNoTracking()
             .Where(p => p.ClinicId == clinicId)
-            .OrderBy(p => $"{p.FirstName} {p.LastName}")
+            .OrderBy(p => p.FullName)
             .ToListAsync(cancellationToken);
     }
 
@@ -30,7 +30,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(p => 
-                (p.FirstName + " " + p.LastName).Contains(request.SearchTerm) ||
+                p.FullName.Contains(request.SearchTerm) ||
                 p.PatientCode.Contains(request.SearchTerm));
         }
 
@@ -39,10 +39,10 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
         // Apply sorting
         query = request.SortBy?.ToLower() switch
         {
-            "fullname" => request.IsAscending ? query.OrderBy(p => p.FirstName).ThenBy(p => p.LastName) : query.OrderByDescending(p => p.FirstName).ThenByDescending(p => p.LastName),
+            "fullname" => request.IsAscending ? query.OrderBy(p => p.FullName) : query.OrderByDescending(p => p.FullName),
             "patientcode" => request.IsAscending ? query.OrderBy(p => p.PatientCode) : query.OrderByDescending(p => p.PatientCode),
             "createdat" => request.IsAscending ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt),
-            _ => query.OrderBy(p => p.FirstName).ThenBy(p => p.LastName)
+            _ => query.OrderBy(p => p.FullName)
         };
 
         var items = await query
@@ -72,7 +72,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(p => 
-                (p.FirstName + " " + p.LastName).Contains(request.SearchTerm) ||
+                p.FullName.Contains(request.SearchTerm) ||
                 p.PatientCode.Contains(request.SearchTerm));
         }
 
@@ -83,10 +83,10 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
     {
         return request.SortBy?.ToLower() switch
         {
-            "fullname" => request.IsAscending ? query.OrderBy(p => p.FirstName).ThenBy(p => p.LastName) : query.OrderByDescending(p => p.FirstName).ThenByDescending(p => p.LastName),
+            "fullname" => request.IsAscending ? query.OrderBy(p => p.FullName) : query.OrderByDescending(p => p.FullName),
             "patientcode" => request.IsAscending ? query.OrderBy(p => p.PatientCode) : query.OrderByDescending(p => p.PatientCode),
             "createdat" => request.IsAscending ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt),
-            _ => query.OrderBy(p => p.FirstName).ThenBy(p => p.LastName)
+            _ => query.OrderBy(p => p.FullName)
         };
     }
 }

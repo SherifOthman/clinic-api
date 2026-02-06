@@ -40,7 +40,7 @@ public static class MappingConfig
         // Includes patient and doctor names
         TypeAdapterConfig<Appointment, AppointmentDto>
             .NewConfig()
-            .Map(dest => dest.PatientName, src => $"{src.Patient.FirstName} {src.Patient.LastName}".Trim())
+            .Map(dest => dest.PatientName, src => src.Patient.FullName)
             .Map(dest => dest.DoctorName, src => $"{src.Doctor.User.FirstName} {src.Doctor.User.LastName}".Trim())
             .Map(dest => dest.AppointmentType, src => src.AppointmentType)
             .Map(dest => dest.RemainingAmount, src => src.FinalPrice - src.DiscountAmount - src.PaidAmount);

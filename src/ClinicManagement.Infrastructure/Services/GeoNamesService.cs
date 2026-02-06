@@ -1,8 +1,10 @@
 using System.Text.Json;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Application.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
@@ -16,18 +18,19 @@ public class GeoNamesService : IGeoNamesService
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
     private readonly ILogger<GeoNamesService> _logger;
-    private const string GeoNamesUsername = "sheriff_ali";
-    private const string BaseUrl = "http://api.geonames.org";
+    private readonly GeoNamesOptions _options;
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
     public GeoNamesService(
         HttpClient httpClient,
         IMemoryCache cache,
-        ILogger<GeoNamesService> logger)
+        ILogger<GeoNamesService> logger,
+        IOptions<GeoNamesOptions> options)
     {
         _httpClient = httpClient;
         _cache = cache;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task<List<GeoNamesCountryDto>> GetCountriesAsync(CancellationToken cancellationToken = default)
@@ -45,7 +48,7 @@ public class GeoNamesService : IGeoNamesService
 
         try
         {
-            var url = $"{BaseUrl}/countryInfoJSON?username={GeoNamesUsername}";
+            var url = $"{_options.BaseUrl}/countryInfoJSON?username={_options.Username}";
             var response = await _httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -101,7 +104,7 @@ public class GeoNamesService : IGeoNamesService
 
         try
         {
-            var url = $"{BaseUrl}/childrenJSON?geonameId={countryGeonameId}&username={GeoNamesUsername}";
+            var url = $"{_options.BaseUrl}/childrenJSON?geonameId={countryGeonameId}&username={_options.Username}";
             var response = await _httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -151,7 +154,7 @@ public class GeoNamesService : IGeoNamesService
 
         try
         {
-            var url = $"{BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={GeoNamesUsername}";
+            var url = $"{_options.BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={_options.Username}";
             var response = await _httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
 

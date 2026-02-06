@@ -23,7 +23,7 @@ public class InvoiceRepository : BaseRepository<Invoice>, IInvoiceRepository
         // Apply search
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(i => (i.Patient.FirstName + " " + i.Patient.LastName).Contains(request.SearchTerm));
+            query = query.Where(i => i.Patient.FullName.Contains(request.SearchTerm));
         }
 
         // Apply filters

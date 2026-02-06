@@ -124,6 +124,7 @@ public static class DependencyInjection
         // Configuration Options
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
         services.Configure<CookieSettings>(configuration.GetSection("Cookie"));
+        services.Configure<GeoNamesOptions>(configuration.GetSection(GeoNamesOptions.SectionName));
 
         // Background Services
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
