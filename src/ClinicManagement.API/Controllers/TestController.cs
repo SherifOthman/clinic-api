@@ -31,7 +31,16 @@ public class TestController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Seed data test failed: {Message}", ex.Message);
-            return BadRequest(new { error = ex.Message });
+            
+            // Return detailed error information
+            return BadRequest(new 
+            { 
+                error = ex.Message,
+                innerError = ex.InnerException?.Message,
+                stackTrace = ex.StackTrace,
+                innerStackTrace = ex.InnerException?.StackTrace,
+                fullException = ex.ToString()
+            });
         }
     }
 }
