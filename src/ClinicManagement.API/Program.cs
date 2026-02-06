@@ -28,6 +28,22 @@ try
 
     var app = builder.Build();
 
+    // Initialize database and seed data
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var dbInitializer = services.GetRequiredService<ClinicManagement.Infrastructure.Services.IDatabaseInitializationService>();
+            await dbInitializer.InitializeAsync();
+            Log.Information("Database initialized and seeded successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while initializing the database");
+        }
+    }
+
     // Add Serilog request logging
     app.UseSerilogRequestLogging();
 
