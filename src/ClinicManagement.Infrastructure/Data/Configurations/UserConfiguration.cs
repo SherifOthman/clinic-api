@@ -29,16 +29,30 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.ClinicId)
             .IsRequired();
 
+        builder.Property(u => u.UserType)
+            .IsRequired()
+            .HasConversion<int>();
+
         builder.Property(u => u.ProfileImageUrl)
             .HasMaxLength(500);
 
-        // Relationships
+        // Relationship with Clinic
+        builder.HasOne(u => u.Clinic)
+            .WithMany()
+            .HasForeignKey(u => u.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Relationships with RefreshTokens
         builder.HasMany(u => u.RefreshTokens)
             .WithOne(rt => rt.User)
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Indexes
         builder.HasIndex(u => u.Email);
         builder.HasIndex(u => u.UserName);
+        builder.HasIndex(u => u.ClinicId);
+        builder.HasIndex(u => u.UserType);
     }
 }
+

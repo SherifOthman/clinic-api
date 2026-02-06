@@ -28,6 +28,14 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
     public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
     
+    // User type entities
+    public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
+    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
+    public DbSet<Nurse> Nurses => Set<Nurse>();
+    public DbSet<Pharmacist> Pharmacists => Set<Pharmacist>();
+    public DbSet<LabTechnician> LabTechnicians => Set<LabTechnician>();
+    public DbSet<Accountant> Accountants => Set<Accountant>();
+    
     // New pharmacy and billing entities
     public DbSet<Medicine> Medicines => Set<Medicine>();
     public DbSet<MedicalSupply> MedicalSupplies => Set<MedicalSupply>();

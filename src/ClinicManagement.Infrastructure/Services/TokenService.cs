@@ -36,17 +36,16 @@ public class TokenService : ITokenService
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim())
+            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim()),
+            new("UserType", user.UserType.ToString())
         };
 
         // Add roles
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        // CRITICAL: Add ClinicId claim for multi-tenancy
-        if (clinicId.HasValue)
-        {
-            claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));
-        }
+        // CRITICAL: Add ClinicId claim for multi-tenancy (use user's ClinicId)
+        var effectiveClinicId = clinicId ?? user.ClinicId;
+        claims.Add(new Claim("ClinicId", effectiveClinicId.ToString()));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -61,8 +60,8 @@ public class TokenService : ITokenService
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
         
-        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId}", 
-            user.Id, clinicId?.ToString() ?? "None");
+        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId} and type {UserType}", 
+            user.Id, effectiveClinicId, user.UserType);
             
         return tokenString;
     }
