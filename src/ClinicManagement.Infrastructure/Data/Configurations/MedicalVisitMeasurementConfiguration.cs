@@ -22,7 +22,7 @@ public class MedicalVisitMeasurementConfiguration : IEntityTypeConfiguration<Med
         builder.HasOne(mvm => mvm.MedicalVisit)
             .WithMany(mv => mv.Measurements)
             .HasForeignKey(mvm => mvm.MedicalVisitId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(mvm => mvm.MeasurementAttribute)
             .WithMany(ma => ma.VisitMeasurements)

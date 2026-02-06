@@ -11,6 +11,8 @@ using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerificatio
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfileImage;
+using ClinicManagement.Application.Features.Auth.Commands.UploadProfileImage;
+using ClinicManagement.Application.Features.Auth.Commands.DeleteProfileImage;
 using ClinicManagement.Application.Features.Auth.Queries.GetMe;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -153,6 +155,33 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateProfileImage(UpdateProfileImageCommand command, CancellationToken cancellationToken)
     {
+        var result = await _mediator.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    [HttpPost("profile/image/upload")]
+    [Authorize]
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UploadProfileImage([FromForm] IFormFile file, CancellationToken cancellationToken)
+    {
+        var command = new UploadProfileImageCommand { File = file };
+        var result = await _mediator.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
+
+    [HttpDelete("profile/image")]
+    [Authorize]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteProfileImage(CancellationToken cancellationToken)
+    {
+        var command = new DeleteProfileImageCommand();
         var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }

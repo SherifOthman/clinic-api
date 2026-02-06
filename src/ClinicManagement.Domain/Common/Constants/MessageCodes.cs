@@ -45,6 +45,9 @@ public static class MessageCodes
         public const string PASSWORD_NO_SPACES = "VALIDATION.PASSWORD.NO_SPACES";
         public const string PASSWORDS_MUST_MATCH = "VALIDATION.PASSWORD.MUST_MATCH";
         public const string GENERAL_VALIDATION_ERROR = "VALIDATION.GENERAL.ERROR";
+        public const string PROFILE_IMAGE_REQUIRED = "VALIDATION.PROFILE_IMAGE.REQUIRED";
+        public const string PROFILE_IMAGE_SIZE_EXCEEDED = "VALIDATION.PROFILE_IMAGE.SIZE_EXCEEDED";
+        public const string PROFILE_IMAGE_INVALID_TYPE = "VALIDATION.PROFILE_IMAGE.INVALID_TYPE";
     }
 
     public static class Business
@@ -187,6 +190,7 @@ public static class MessageCodes
         public const string OPERATION_NOT_ALLOWED = "EXCEPTION.OPERATION.NOT_ALLOWED";
         public const string INVALID_ARGUMENT = "EXCEPTION.ARGUMENT.INVALID";
         public const string INTERNAL_ERROR = "EXCEPTION.INTERNAL.ERROR";
+        public const string INTERNAL_SERVER_ERROR = "EXCEPTION.INTERNAL.SERVER_ERROR";
     }
 
     public static class Domain

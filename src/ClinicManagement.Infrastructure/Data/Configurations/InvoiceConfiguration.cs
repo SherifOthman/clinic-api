@@ -36,7 +36,7 @@ public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
         builder.HasOne(i => i.MedicalVisit)
             .WithMany(mv => mv.Invoices)
             .HasForeignKey(i => i.MedicalVisitId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasMany(i => i.Items)
             .WithOne(ii => ii.Invoice)

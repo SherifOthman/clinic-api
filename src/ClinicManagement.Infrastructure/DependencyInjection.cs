@@ -105,6 +105,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         // Repositories
         services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));

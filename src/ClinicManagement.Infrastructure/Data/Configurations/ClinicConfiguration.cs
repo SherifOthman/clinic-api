@@ -27,16 +27,6 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
             .HasForeignKey(c => c.SubscriptionPlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(c => c.Branches)
-            .WithOne(cb => cb.Clinic)
-            .HasForeignKey(cb => cb.ClinicId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(c => c.Invoices)
-            .WithOne(i => i.Clinic)
-            .HasForeignKey(i => i.ClinicId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         // Indexes
         builder.HasIndex(c => c.Name);
         builder.HasIndex(c => c.OwnerUserId);
