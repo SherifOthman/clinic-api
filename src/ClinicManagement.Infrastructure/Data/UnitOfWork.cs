@@ -27,6 +27,8 @@ public class UnitOfWork : IUnitOfWork
     public IPatientRepository Patients => field ??= new PatientRepository(_context);
     public IPatientChronicDiseaseRepository PatientChronicDiseases => field ??= new PatientChronicDiseaseRepository(_context);
     public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
+    public IAppointmentTypeRepository AppointmentTypes => field ??= new AppointmentTypeRepository(_context);
+    public ISpecializationRepository Specializations => field ??= new SpecializationRepository(_context);
     public IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices => field ??= new ClinicBranchAppointmentPriceRepository(_context);
     public IMeasurementAttributeRepository MeasurementAttributes => field ??= new MeasurementAttributeRepository(_context);
 

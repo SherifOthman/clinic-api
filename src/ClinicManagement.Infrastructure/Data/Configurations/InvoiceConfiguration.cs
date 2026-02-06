@@ -20,6 +20,9 @@ public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
         builder.Property(i => i.Discount)
             .HasPrecision(18, 2);
 
+        builder.Property(i => i.TaxAmount)
+            .HasPrecision(18, 2);
+
         builder.HasOne(i => i.Clinic)
             .WithMany(c => c.Invoices)
             .HasForeignKey(i => i.ClinicId)

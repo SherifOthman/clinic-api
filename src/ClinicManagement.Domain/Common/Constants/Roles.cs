@@ -5,22 +5,16 @@ namespace ClinicManagement.Domain.Common.Constants;
 /// </summary>
 public static class Roles
 {
+    public const string SuperAdmin = "SuperAdmin";
     public const string ClinicOwner = "ClinicOwner";
     public const string Doctor = "Doctor";
     public const string Receptionist = "Receptionist";
-    public const string Nurse = "Nurse";
-    public const string Pharmacist = "Pharmacist";
-    public const string LabTechnician = "LabTechnician";
-    public const string Accountant = "Accountant";
 
     public static readonly string[] AllRoles = 
     {
+        SuperAdmin,
         ClinicOwner,
         Doctor,
-        Receptionist,
-        Nurse,
-        Pharmacist,
-        LabTechnician,
-        Accountant
+        Receptionist
     };
 }

@@ -3,7 +3,6 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -15,7 +14,6 @@ public class AuthenticationService : IAuthenticationService
     private readonly IUserManagementService _userManagementService;
     private readonly IEmailConfirmationService _emailConfirmationService;
     private readonly IRefreshTokenService _refreshTokenService;
-    private readonly IApplicationDbContext _context;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
@@ -23,14 +21,12 @@ public class AuthenticationService : IAuthenticationService
         IUserManagementService userManagementService,
         IEmailConfirmationService emailConfirmationService,
         IRefreshTokenService refreshTokenService,
-        IApplicationDbContext context,
         ILogger<AuthenticationService> logger)
     {
         _tokenService = tokenService;
         _userManagementService = userManagementService;
         _emailConfirmationService = emailConfirmationService;
         _refreshTokenService = refreshTokenService;
-        _context = context;
         _logger = logger;
     }
 
@@ -57,16 +53,8 @@ public class AuthenticationService : IAuthenticationService
         // Get user roles and clinic information
         var userRoles = await _userManagementService.GetUserRolesAsync(tokenEntity.User, cancellationToken);
         
-        // Get clinic ID for staff members during token refresh
-        Guid? clinicId = null;
-        var staff = await _context.Staff
-            .Where(s => s.UserId == tokenEntity.UserId && s.IsActive)
-            .FirstOrDefaultAsync(cancellationToken);
-        
-        if (staff != null)
-        {
-            clinicId = staff.ClinicId;
-        }
+        // Clinic ID is stored directly on the User entity
+        var clinicId = tokenEntity.User.ClinicId;
         
         var newAccessToken = _tokenService.GenerateAccessToken(tokenEntity.User, userRoles, clinicId);
         var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(tokenEntity.UserId, null, cancellationToken);
@@ -109,16 +97,8 @@ public class AuthenticationService : IAuthenticationService
             // Get user roles and clinic information
             var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
             
-            // Get clinic ID for staff members
-            Guid? clinicId = null;
-            var staff = await _context.Staff
-                .Where(s => s.UserId == user.Id && s.IsActive)
-                .FirstOrDefaultAsync(cancellationToken);
-            
-            if (staff != null)
-            {
-                clinicId = staff.ClinicId;
-            }
+            // Clinic ID is stored directly on the User entity
+            var clinicId = user.ClinicId;
 
             // Generate tokens with clinic claims
             var accessToken = _tokenService.GenerateAccessToken(user, userRoles, clinicId);

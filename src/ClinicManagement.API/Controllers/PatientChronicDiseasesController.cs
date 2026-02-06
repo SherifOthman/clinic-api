@@ -12,8 +12,9 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/patients/{PatientId}/chronic-diseases")]
 public class PatientChronicDiseasesController : BaseApiController
 {
-    public PatientChronicDiseasesController(IMediator mediator) : base(mediator)
-    {
+    private readonly IMediator _mediator;
+
+    public PatientChronicDiseasesController(IMediator mediator) { _mediator = mediator;
     }
 
     /// <summary>
@@ -26,7 +27,7 @@ public class PatientChronicDiseasesController : BaseApiController
     public async Task<IActionResult> GetChronicDiseases(Guid PatientId, [FromQuery] bool activeOnly = false)
     {
         var query = new GetChronicDiseasesQuery(PatientId, activeOnly);
-        var result = await Mediator.Send(query);
+        var result = await _mediator.Send(query);
         return HandleResult(result);
     }
 
@@ -40,7 +41,7 @@ public class PatientChronicDiseasesController : BaseApiController
     public async Task<IActionResult> AddChronicDisease(Guid PatientId, [FromBody] CreatePatientChronicDiseaseDto createDto)
     {
         var command = new AddChronicDiseaseCommand(PatientId, createDto);
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleCreateResult(result, nameof(GetChronicDiseases), new { PatientId });
     }
 
@@ -55,7 +56,7 @@ public class PatientChronicDiseasesController : BaseApiController
     public async Task<IActionResult> UpdateChronicDisease(Guid PatientId, Guid chronicDiseaseId, [FromBody] UpdatePatientChronicDiseaseDto updateDto)
     {
         var command = new UpdateChronicDiseaseCommand(PatientId, chronicDiseaseId, updateDto);
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleResult(result);
     }
 
@@ -69,7 +70,7 @@ public class PatientChronicDiseasesController : BaseApiController
     public async Task<IActionResult> RemoveChronicDisease(Guid PatientId, Guid chronicDiseaseId)
     {
         var command = new RemoveChronicDiseaseCommand(PatientId, chronicDiseaseId);
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleDeleteResult(result);
     }
 }

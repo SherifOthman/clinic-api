@@ -20,4 +20,5 @@ public class Doctor : AuditableEntity
     public virtual Specialization Specialization { get; set; } = null!;
     public ICollection<DoctorMeasurementAttribute> MeasurementAttributes { get; set; } = new List<DoctorMeasurementAttribute>();
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    public ICollection<DoctorWorkingDay> WorkingDays { get; set; } = new List<DoctorWorkingDay>();
 }

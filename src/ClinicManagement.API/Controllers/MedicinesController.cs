@@ -13,8 +13,9 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/[controller]")]
 public class MedicinesController : BaseApiController
 {
-    public MedicinesController(IMediator mediator) : base(mediator)
-    {
+    private readonly IMediator _mediator;
+
+    public MedicinesController(IMediator mediator) { _mediator = mediator;
     }
 
     [HttpGet("branch/{branchId}")]
@@ -41,21 +42,21 @@ public class MedicinesController : BaseApiController
             paginationRequest.Filters.Add("isLowStock", isLowStock.Value);
         }
 
-        var result = await Mediator.Send(new GetMedicinesQuery(branchId, paginationRequest));
+        var result = await _mediator.Send(new GetMedicinesQuery(branchId, paginationRequest));
         return HandleResult(result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetMedicine(Guid id)
     {
-        var result = await Mediator.Send(new GetMedicineQuery(id));
+        var result = await _mediator.Send(new GetMedicineQuery(id));
         return HandleResult(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateMedicine(CreateMedicineCommand command)
     {
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleCreateResult(result, nameof(GetMedicine), new { id = result.Value });
     }
 
@@ -67,14 +68,14 @@ public class MedicinesController : BaseApiController
             return BadRequest("ID mismatch");
         }
 
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleResult(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMedicine(Guid id)
     {
-        var result = await Mediator.Send(new DeleteMedicineCommand(id));
+        var result = await _mediator.Send(new DeleteMedicineCommand(id));
         return HandleDeleteResult(result);
     }
 }

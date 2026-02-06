@@ -17,14 +17,15 @@ namespace ClinicManagement.API.Controllers;
 [Authorize]
 public class ChronicDiseasesController : BaseApiController
 {
-    public ChronicDiseasesController(IMediator mediator) : base(mediator)
-    {
+    private readonly IMediator _mediator;
+
+    public ChronicDiseasesController(IMediator mediator) { _mediator = mediator;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetChronicDiseases([FromQuery] string? language = null)
     {
-        var result = await Mediator.Send(new GetChronicDiseasesQuery(language));
+        var result = await _mediator.Send(new GetChronicDiseasesQuery(language));
         return HandleResult(result);
     }
 
@@ -34,7 +35,7 @@ public class ChronicDiseasesController : BaseApiController
         [FromQuery] GetChronicDiseasesWithPaginationQuery query,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(query, cancellationToken);
         return HandleResult(result);
     }
 
@@ -44,7 +45,7 @@ public class ChronicDiseasesController : BaseApiController
     public async Task<IActionResult> GetChronicDisease(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetChronicDiseaseQuery { Id = id };
-        var result = await Mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(query, cancellationToken);
         return HandleResult(result);
     }
 
@@ -52,7 +53,7 @@ public class ChronicDiseasesController : BaseApiController
     [ProducesResponseType(typeof(ChronicDiseaseDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateChronicDisease(CreateChronicDiseaseCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleCreateResult(result, nameof(GetChronicDisease), new { id = result.Value?.Id });
     }
 
@@ -64,7 +65,7 @@ public class ChronicDiseasesController : BaseApiController
         if (id != command.Id)
             return BadRequest(MessageCodes.Controller.ID_MISMATCH);
 
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -74,7 +75,7 @@ public class ChronicDiseasesController : BaseApiController
     public async Task<IActionResult> DeleteChronicDisease(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteChronicDiseaseCommand { Id = id };
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleDeleteResult(result);
     }
 }

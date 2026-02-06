@@ -24,8 +24,9 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/auth")]
 public class AuthController : BaseApiController
 {
-    public AuthController(IMediator mediator) : base(mediator)
-    {
+    private readonly IMediator _mediator;
+
+    public AuthController(IMediator mediator) { _mediator = mediator;
     }
 
     [HttpPost("register")]
@@ -35,7 +36,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -46,7 +47,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -55,7 +56,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
         var command = new LogoutCommand();
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         
         return HandleResult(result);
     }
@@ -68,7 +69,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
         var query = new GetMeQuery();
-        var result = await Mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(query, cancellationToken);
 
         if (!result.Success)
             return Unauthorized(new ApiError(result.Code ?? MessageCodes.Authentication.AUTHENTICATION_FAILED));
@@ -83,7 +84,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError),StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ConfirmEmail(ConfirmEmailCommand command, CancellationToken cancellationToken)
     {
-       var result = await Mediator.Send(command, cancellationToken);
+       var result = await _mediator.Send(command, cancellationToken);
        return HandleResult(result);
     }
 
@@ -94,7 +95,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -105,7 +106,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword(ResetPasswordCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -116,7 +117,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResendEmailVerification(ResendEmailVerificationCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -128,7 +129,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -140,7 +141,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateProfile(UpdateProfileCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 
@@ -152,7 +153,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateProfileImage(UpdateProfileImageCommand command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
         return HandleResult(result);
     }
 }

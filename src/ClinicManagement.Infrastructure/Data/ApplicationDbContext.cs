@@ -14,11 +14,11 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
-    public DbSet<Staff> Staff => Set<Staff>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Specialization> Specializations => Set<Specialization>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<DoctorWorkingDay> DoctorWorkingDays => Set<DoctorWorkingDay>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<ClinicBranch> ClinicBranches => Set<ClinicBranch>();
@@ -31,10 +31,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     // User type entities
     public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
     public DbSet<Receptionist> Receptionists => Set<Receptionist>();
-    public DbSet<Nurse> Nurses => Set<Nurse>();
-    public DbSet<Pharmacist> Pharmacists => Set<Pharmacist>();
-    public DbSet<LabTechnician> LabTechnicians => Set<LabTechnician>();
-    public DbSet<Accountant> Accountants => Set<Accountant>();
     
     // New pharmacy and billing entities
     public DbSet<Medicine> Medicines => Set<Medicine>();
@@ -97,9 +93,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         builder.Entity<Patient>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, p => _currentUserService.ClinicId == null || p.ClinicId == _currentUserService.ClinicId)
             .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, p => !p.IsDeleted);
-
-        builder.Entity<Staff>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, s => _currentUserService.ClinicId == null || s.ClinicId == _currentUserService.ClinicId);
 
         builder.Entity<ClinicBranch>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, cb => _currentUserService.ClinicId == null || cb.ClinicId == _currentUserService.ClinicId);

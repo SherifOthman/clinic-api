@@ -10,8 +10,9 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/[controller]")]
 public class MedicalSuppliesController : BaseApiController
 {
-    public MedicalSuppliesController(IMediator mediator) : base(mediator)
-    {
+    private readonly IMediator _mediator;
+
+    public MedicalSuppliesController(IMediator mediator) { _mediator = mediator;
     }
 
     [HttpGet("branch/{branchId}")]
@@ -38,14 +39,14 @@ public class MedicalSuppliesController : BaseApiController
             paginationRequest.Filters.Add("isLowStock", isLowStock.Value);
         }
 
-        var result = await Mediator.Send(new GetMedicalSuppliesQuery(branchId, paginationRequest));
+        var result = await _mediator.Send(new GetMedicalSuppliesQuery(branchId, paginationRequest));
         return HandleResult(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateMedicalSupply(CreateMedicalSupplyCommand command)
     {
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleCreateResult(result, nameof(GetMedicalSupplies), new { branchId = command.ClinicBranchId });
     }
 }

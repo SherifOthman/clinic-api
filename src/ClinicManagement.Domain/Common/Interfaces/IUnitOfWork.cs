@@ -15,6 +15,8 @@ public interface IUnitOfWork : IDisposable
     IPatientRepository Patients { get; }
     IPatientChronicDiseaseRepository PatientChronicDiseases { get; }
     IAppointmentRepository Appointments { get; }
+    IAppointmentTypeRepository AppointmentTypes { get; }
+    ISpecializationRepository Specializations { get; }
     IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices { get; }
     IMeasurementAttributeRepository MeasurementAttributes { get; }
 

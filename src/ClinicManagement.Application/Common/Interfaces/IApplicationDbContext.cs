@@ -7,7 +7,6 @@ namespace ClinicManagement.Application.Common.Interfaces;
 public interface IApplicationDbContext
 {
     DbSet<User> Users { get; }
-    DbSet<Staff> Staff { get; }
     DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     DbSet<ChronicDisease> ChronicDiseases { get; }
     DbSet<RefreshToken> RefreshTokens { get; }

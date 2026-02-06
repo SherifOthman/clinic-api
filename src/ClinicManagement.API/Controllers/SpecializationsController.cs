@@ -1,6 +1,5 @@
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Interfaces;
-using Mapster;
+using ClinicManagement.Application.Features.Specializations.Queries.GetSpecializations;
+using ClinicManagement.Application.Features.Specializations.Queries.GetSpecializationById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,32 +9,26 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/[controller]")]
 public class SpecializationsController : BaseApiController
 {
-    private readonly ISpecializationRepository _specializationRepository;
+    private readonly IMediator _mediator;
 
-    public SpecializationsController(IMediator mediator, ISpecializationRepository specializationRepository) 
-        : base(mediator)
+    public SpecializationsController(IMediator mediator) 
     {
-        _specializationRepository = specializationRepository;
+        _mediator = mediator;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SpecializationDto>>> GetSpecializations()
+    public async Task<IActionResult> GetSpecializations()
     {
-        var specializations = await _specializationRepository.GetActiveSpecializationsAsync();
-        var specializationDtos = specializations.Adapt<IEnumerable<SpecializationDto>>();
-        return Ok(specializationDtos);
+        var query = new GetSpecializationsQuery();
+        var result = await _mediator.Send(query);
+        return HandleResult(result);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<SpecializationDto>> GetSpecialization(Guid id)
+    public async Task<IActionResult> GetSpecialization(Guid id)
     {
-        var specialization = await _specializationRepository.GetByIdAsync(id);
-        if (specialization == null)
-        {
-            return NotFound();
-        }
-
-        var specializationDto = specialization.Adapt<SpecializationDto>();
-        return Ok(specializationDto);
+        var query = new GetSpecializationByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return HandleResult(result);
     }
 }

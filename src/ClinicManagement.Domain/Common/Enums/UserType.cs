@@ -6,7 +6,12 @@ namespace ClinicManagement.Domain.Common.Enums;
 public enum UserType
 {
     /// <summary>
-    /// Clinic owner with full administrative access
+    /// Super admin with system-wide access across all clinics
+    /// </summary>
+    SuperAdmin = 0,
+    
+    /// <summary>
+    /// Clinic owner with full administrative access to their clinic
     /// </summary>
     ClinicOwner = 1,
     
@@ -18,25 +23,5 @@ public enum UserType
     /// <summary>
     /// Receptionist handling appointments and front desk operations
     /// </summary>
-    Receptionist = 3,
-    
-    /// <summary>
-    /// Nurse providing patient care and assistance
-    /// </summary>
-    Nurse = 4,
-    
-    /// <summary>
-    /// Pharmacist managing medicine inventory and dispensing
-    /// </summary>
-    Pharmacist = 5,
-    
-    /// <summary>
-    /// Lab technician handling laboratory tests and results
-    /// </summary>
-    LabTechnician = 6,
-    
-    /// <summary>
-    /// Accountant managing financial operations
-    /// </summary>
-    Accountant = 7
+    Receptionist = 3
 }

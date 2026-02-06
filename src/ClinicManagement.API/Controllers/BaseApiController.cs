@@ -1,8 +1,6 @@
 using ClinicManagement.API.Extensions;
 using ClinicManagement.API.Models;
 using ClinicManagement.Application.Common.Models;
-using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
@@ -14,13 +12,6 @@ namespace ClinicManagement.API.Controllers;
 [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
 public abstract class BaseApiController : ControllerBase
 {
-    protected readonly IMediator Mediator;
-
-    protected BaseApiController(IMediator mediator)
-    {
-        Mediator = mediator;
-    }
-
     protected IActionResult HandleResult<T>(Result<T> result)
     {
         if (result.Success)

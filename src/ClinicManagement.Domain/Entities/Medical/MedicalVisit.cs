@@ -17,7 +17,7 @@ public class MedicalVisit : BaseEntity
     public Patient Patient { get; set; } = null!;
     
     public Guid DoctorId { get; set; }
-    public Staff Doctor { get; set; } = null!;
+    public Doctor Doctor { get; set; } = null!;
     
     public Guid AppointmentId { get; set; }
     public Appointment Appointment { get; set; } = null!;

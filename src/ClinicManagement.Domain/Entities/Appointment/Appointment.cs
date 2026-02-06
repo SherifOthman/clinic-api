@@ -17,7 +17,7 @@ public class Appointment : AuditableEntity
     public Patient Patient { get; set; } = null!;
     
     public Guid DoctorId { get; set; }
-    public Staff Doctor { get; set; } = null!;
+    public Doctor Doctor { get; set; } = null!;
     
     public Guid AppointmentTypeId { get; set; }
     public AppointmentType AppointmentType { get; set; } = null!;

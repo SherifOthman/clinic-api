@@ -83,11 +83,8 @@ public class ComprehensiveSeedService : IComprehensiveSeedService
         {
             "SuperAdmin",
             "ClinicOwner", 
-            "ClinicAdmin",
             "Doctor",
-            "Nurse",
-            "Receptionist",
-            "Patient"
+            "Receptionist"
         };
 
         foreach (var roleName in roles)

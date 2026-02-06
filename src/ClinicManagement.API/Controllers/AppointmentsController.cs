@@ -1,8 +1,8 @@
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Appointments.Commands.CreateAppointment;
 using ClinicManagement.Application.Features.Appointments.Queries.GetAppointments;
+using ClinicManagement.Application.Features.Appointments.Queries.GetAppointmentTypes;
 using ClinicManagement.Domain.Common.Enums;
-using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,11 +12,11 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/[controller]")]
 public class AppointmentsController : BaseApiController
 {
-    private readonly IAppointmentTypeRepository _appointmentTypeRepository;
+    private readonly IMediator _mediator;
 
-    public AppointmentsController(IMediator mediator, IAppointmentTypeRepository appointmentTypeRepository) : base(mediator)
+    public AppointmentsController(IMediator mediator) 
     {
-        _appointmentTypeRepository = appointmentTypeRepository;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ public class AppointmentsController : BaseApiController
         [FromQuery] AppointmentStatus? status = null)
     {
         var query = new GetAppointmentsQuery(date, doctorId, patientId, appointmentTypeId, status);
-        var result = await Mediator.Send(query);
+        var result = await _mediator.Send(query);
         return HandleResult(result);
     }
 
@@ -50,7 +50,7 @@ public class AppointmentsController : BaseApiController
     public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto createDto)
     {
         var command = new CreateAppointmentCommand(createDto);
-        var result = await Mediator.Send(command);
+        var result = await _mediator.Send(command);
         return HandleCreateResult(result, nameof(GetAppointments), null);
     }
 
@@ -61,7 +61,8 @@ public class AppointmentsController : BaseApiController
     [HttpGet("types")]
     public async Task<IActionResult> GetAppointmentTypes()
     {
-        var appointmentTypes = await _appointmentTypeRepository.GetActiveAsync();
-        return Ok(appointmentTypes);
+        var query = new GetAppointmentTypesQuery();
+        var result = await _mediator.Send(query);
+        return HandleResult(result);
     }
 }

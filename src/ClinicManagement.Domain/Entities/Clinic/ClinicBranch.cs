@@ -12,7 +12,7 @@ public class ClinicBranch : AuditableEntity
     public string Name { get; set; } = null!;
     public string Address { get; set; } = null!;
     
-    public ICollection<ClinicBranchWorkingDay> WorkingDays { get; set; } = new List<ClinicBranchWorkingDay>();
+    public ICollection<DoctorWorkingDay> DoctorWorkingDays { get; set; } = new List<DoctorWorkingDay>();
     public ICollection<ClinicBranchAppointmentPrice> AppointmentPrices { get; set; } = new List<ClinicBranchAppointmentPrice>();
     public ICollection<MedicalService> MedicalServices { get; set; } = new List<MedicalService>();
     public ICollection<Medicine> Medicines { get; set; } = new List<Medicine>();
