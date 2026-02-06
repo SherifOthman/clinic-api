@@ -48,16 +48,18 @@ public class ComprehensiveSeedService : IComprehensiveSeedService
         {
             _logger.LogInformation("Starting reference data seeding...");
 
-            // Check if data already exists
+            // Always seed roles and superadmin (they check internally if they exist)
+            await SeedRolesAsync();
+            await SeedSuperAdminAsync();
+
+            // Check if other reference data already exists
             if (await _context.Specializations.AnyAsync())
             {
-                _logger.LogInformation("Reference data already exists. Skipping seeding.");
+                _logger.LogInformation("Reference data already exists. Skipping reference data seeding.");
                 return;
             }
 
             // Seed reference data only - in order of dependencies
-            await SeedRolesAsync();
-            await SeedSuperAdminAsync();
             await SeedSpecializationsAsync();
             await SeedMeasurementAttributesAsync();
             await SeedChronicDiseasesAsync();
@@ -101,6 +103,14 @@ public class ComprehensiveSeedService : IComprehensiveSeedService
     private async Task SeedSuperAdminAsync()
     {
         _logger.LogInformation("Seeding super admin user...");
+
+        // Check if superadmin already exists
+        var existingAdmin = await _userManager.FindByEmailAsync("superadmin@clinic.com");
+        if (existingAdmin != null)
+        {
+            _logger.LogInformation("Super admin user already exists. Skipping.");
+            return;
+        }
 
         // Create SuperAdmin user
         var superAdmin = new User
