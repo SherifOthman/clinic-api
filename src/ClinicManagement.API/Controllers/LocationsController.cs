@@ -3,7 +3,6 @@ using ClinicManagement.Application.Features.Locations.Queries.GetCountries;
 using ClinicManagement.Application.Features.Locations.Queries.GetStates;
 using ClinicManagement.Application.Features.Locations.Queries.GetCities;
 using ClinicManagement.Application.Features.Locations.Queries.ValidatePhone;
-using ClinicManagement.Application.Features.Locations.Queries.GetPhoneCodes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -55,17 +54,6 @@ public class LocationsController : BaseApiController
     public async Task<IActionResult> GetCities([FromQuery] int stateGeonameId, CancellationToken cancellationToken)
     {
         var query = new GetCitiesQuery(stateGeonameId);
-        var result = await _mediator.Send(query, cancellationToken);
-        return HandleResult(result);
-    }
-
-    /// <summary>
-    /// Get country phone codes (cached for 24 hours)
-    /// </summary>
-    [HttpGet("phone-codes")]
-    public async Task<IActionResult> GetPhoneCodes(CancellationToken cancellationToken)
-    {
-        var query = new GetPhoneCodesQuery();
         var result = await _mediator.Send(query, cancellationToken);
         return HandleResult(result);
     }

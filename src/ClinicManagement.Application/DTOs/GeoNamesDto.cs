@@ -50,14 +50,3 @@ public class ValidatePhoneResponse
     public string? CountryCode { get; set; } // ISO2 code
     public string? ErrorMessage { get; set; }
 }
-
-/// <summary>
-/// Country phone code DTO
-/// </summary>
-public class CountryPhoneCodeDto
-{
-    public string Name { get; set; } = null!;
-    public string Code { get; set; } = null!; // ISO2 code
-    public string PhoneCode { get; set; } = null!; // e.g., "+20", "+966"
-    public string Flag { get; set; } = null!; // Unicode flag emoji
-}

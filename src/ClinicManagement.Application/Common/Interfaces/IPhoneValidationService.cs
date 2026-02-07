@@ -14,10 +14,4 @@ public interface IPhoneValidationService
     /// <param name="countryCode">Optional ISO2 country code for better validation</param>
     /// <returns>Validation result with formatted number</returns>
     ValidatePhoneResponse ValidatePhoneNumber(string phoneNumber, string? countryCode = null);
-
-    /// <summary>
-    /// Get list of country phone codes
-    /// </summary>
-    /// <returns>List of countries with their phone codes</returns>
-    List<CountryPhoneCodeDto> GetCountryPhoneCodes();
 }
