@@ -121,7 +121,7 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
 
     private string GetBaseUrl()
     {
-        // TODO: Get from configuration
+        // TODO: Move to configuration
         return "https://clinic.example.com";
     }
 

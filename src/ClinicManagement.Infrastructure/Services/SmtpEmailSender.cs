@@ -26,7 +26,6 @@ public class SmtpEmailSender : IEmailSender
         {
             _logger.LogInformation("Sending email to {Email} with subject: {Subject}", toEmail, subject);
 
-            // Replace frontend URL placeholder in email template
             htmlMessage = htmlMessage.Replace("{{FRONTEND_URL}}", _options.FrontendUrl);
 
             var email = new MimeMessage();
@@ -40,17 +39,10 @@ public class SmtpEmailSender : IEmailSender
             };
             email.Body = bodyBuilder.ToMessageBody();
 
-            // Connect to SMTP server
             await _smtpClient.ConnectAsync(_options.Host, _options.Port,
                 MailKit.Security.SecureSocketOptions.StartTls, cancellationToken);
-            
-            // Authenticate
             await _smtpClient.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
-            
-            // Send email
             await _smtpClient.SendAsync(email, cancellationToken);
-            
-            // Disconnect
             await _smtpClient.DisconnectAsync(true, cancellationToken);
 
             _logger.LogInformation("Email sent successfully to {Email}", toEmail);

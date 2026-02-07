@@ -40,10 +40,9 @@ public class TokenService : ITokenService
             new("UserType", user.UserType.ToString())
         };
 
-        // Add roles
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        // CRITICAL: Add ClinicId claim for multi-tenancy (use user's ClinicId)
+        // CRITICAL: ClinicId claim required for multi-tenancy isolation
         var effectiveClinicId = clinicId ?? user.ClinicId;
         claims.Add(new Claim("ClinicId", effectiveClinicId.ToString()));
 

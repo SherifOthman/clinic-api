@@ -26,26 +26,19 @@ public class LocalFileStorageService : IFileStorageService
                 throw new ArgumentException("File is empty or null");
             }
 
-            // Create unique filename
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            
-            // Build folder path: wwwroot/uploads/{folder}
             var folderPath = Path.Combine(_environment.WebRootPath, UploadsFolder, folder);
             
-            // Ensure directory exists
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
             }
 
-            // Full file path
             var filePath = Path.Combine(folderPath, fileName);
 
-            // Save file
             await using var stream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(stream, cancellationToken);
 
-            // Return relative path for storage in database
             var relativePath = $"/{UploadsFolder}/{folder}/{fileName}";
             
             _logger.LogInformation("File uploaded successfully: {FilePath}", relativePath);
@@ -68,7 +61,6 @@ public class LocalFileStorageService : IFileStorageService
                 return false;
             }
 
-            // Remove leading slash if present
             var cleanPath = filePath.TrimStart('/');
             var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
 
@@ -107,14 +99,12 @@ public class LocalFileStorageService : IFileStorageService
             return false;
         }
 
-        // Check file size
         if (file.Length > maxSizeInBytes)
         {
             _logger.LogWarning("File size exceeds limit: {Size} bytes", file.Length);
             return false;
         }
 
-        // Check file extension
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
         {

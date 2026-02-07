@@ -5,7 +5,7 @@ using PhoneNumbers;
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
-/// Phone validation service using libphonenumber
+/// Validates and formats phone numbers using libphonenumber library
 /// </summary>
 public class PhoneValidationService : IPhoneValidationService
 {
@@ -20,17 +20,14 @@ public class PhoneValidationService : IPhoneValidationService
     {
         try
         {
-            // Try to parse the phone number
             PhoneNumber parsedNumber;
             
             if (!string.IsNullOrEmpty(countryCode))
             {
-                // Parse with country code hint
                 parsedNumber = _phoneUtil.Parse(phoneNumber, countryCode);
             }
             else
             {
-                // Try to parse as international format (must start with +)
                 if (!phoneNumber.StartsWith("+"))
                 {
                     return new ValidatePhoneResponse
@@ -44,7 +41,6 @@ public class PhoneValidationService : IPhoneValidationService
                 parsedNumber = _phoneUtil.Parse(phoneNumber, null);
             }
 
-            // Validate the parsed number
             var isValid = _phoneUtil.IsValidNumber(parsedNumber);
             
             if (!isValid)
@@ -58,7 +54,6 @@ public class PhoneValidationService : IPhoneValidationService
                 };
             }
 
-            // Format to E.164
             var formattedNumber = _phoneUtil.Format(parsedNumber, PhoneNumberFormat.E164);
             var detectedCountryCode = _phoneUtil.GetRegionCodeForNumber(parsedNumber);
 
@@ -95,9 +90,7 @@ public class PhoneValidationService : IPhoneValidationService
 
     public List<CountryPhoneCodeDto> GetCountryPhoneCodes()
     {
-        // Get supported regions from libphonenumber
         var supportedRegions = _phoneUtil.GetSupportedRegions();
-        
         var phoneCodes = new List<CountryPhoneCodeDto>();
 
         foreach (var region in supportedRegions)
@@ -105,7 +98,7 @@ public class PhoneValidationService : IPhoneValidationService
             try
             {
                 var countryCode = _phoneUtil.GetCountryCodeForRegion(region);
-                if (countryCode == 0) continue; // Skip invalid regions
+                if (countryCode == 0) continue;
 
                 var countryName = GetCountryName(region);
                 var flag = GetFlagEmoji(region);
@@ -120,18 +113,15 @@ public class PhoneValidationService : IPhoneValidationService
             }
             catch
             {
-                // Skip regions that cause errors
                 continue;
             }
         }
 
-        // Sort by country name
         return phoneCodes.OrderBy(c => c.Name).ToList();
     }
 
     private static string GetCountryName(string countryCode)
     {
-        // Map of ISO2 codes to country names (common ones)
         var countryNames = new Dictionary<string, string>
         {
             { "EG", "Egypt" },
@@ -220,15 +210,11 @@ public class PhoneValidationService : IPhoneValidationService
 
     private static string GetFlagEmoji(string countryCode)
     {
-        // Convert ISO2 country code to flag emoji
-        // Each letter is converted to its regional indicator symbol
         if (string.IsNullOrEmpty(countryCode) || countryCode.Length != 2)
             return "🏳️";
 
-        // Ensure uppercase
         countryCode = countryCode.ToUpper();
         
-        // Convert each character to regional indicator symbol
         var firstChar = char.ConvertFromUtf32(0x1F1E6 + (countryCode[0] - 'A'));
         var secondChar = char.ConvertFromUtf32(0x1F1E6 + (countryCode[1] - 'A'));
         return firstChar + secondChar;

@@ -27,10 +27,8 @@ public class CookieService : ICookieService
         }
 
         var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromMinutes(_cookieSettings.ExpiryInMinutes));
-        
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.AccessToken, accessToken, cookieOptions);
         
-        // Log cookie setting for debugging
         var context = _httpContextAccessor.HttpContext;
         var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
         logger?.LogInformation("Access token cookie set: Secure={Secure}, SameSite={SameSite}, HttpOnly={HttpOnly}, Expiry={Expiry}", 
@@ -45,7 +43,6 @@ public class CookieService : ICookieService
         }
 
         var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays));
-        
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.RefreshToken, refreshToken, cookieOptions);
     }
 
@@ -54,7 +51,6 @@ public class CookieService : ICookieService
         var context = _httpContextAccessor.HttpContext;
         var token = context?.Request.Cookies[CookieConstants.AccessToken];
         
-        // Log cookie retrieval for debugging
         var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
         logger?.LogInformation("Access token cookie retrieval: Found={Found}, Origin={Origin}", 
             !string.IsNullOrEmpty(token), context?.Request.Headers.Origin.FirstOrDefault() ?? "none");
@@ -77,28 +73,22 @@ public class CookieService : ICookieService
         context.Response.Cookies.Append(CookieConstants.AccessToken, "", expiredOptions);
         context.Response.Cookies.Append(CookieConstants.RefreshToken, "", expiredOptions);
         
-        // Log cookie clearing for debugging
         var logger = context.RequestServices.GetService<ILogger<CookieService>>();
         logger?.LogInformation("Authentication cookies cleared");
     }
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
     {
-        // For cross-origin HTTPS requests, cookies must be:
-        // 1. Secure=true (HTTPS only)
-        // 2. SameSite=None (allow cross-origin)
-        // 3. HttpOnly=true (security)
-        // 4. No Domain restriction (let browser handle it)
-        
+        // Cross-origin HTTPS cookie requirements: Secure=true, SameSite=None, HttpOnly=true
         return new CookieOptions
         {
-            HttpOnly = true,                    // Prevents XSS attacks
-            Secure = true,                      // Required for SameSite=None
-            SameSite = SameSiteMode.None,       // Allow cross-origin requests
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.Add(expiry),
-            Path = "/",                         // Available to entire application
-            IsEssential = true,                 // GDPR compliance - essential for authentication
-            Domain = null                       // Let browser handle domain automatically
+            Path = "/",
+            IsEssential = true,
+            Domain = null
         };
     }
 }
