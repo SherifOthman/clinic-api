@@ -103,6 +103,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
         services.AddScoped<ILocationReferenceService, LocationReferenceService>();
+        services.AddScoped<IPhoneValidationService, PhoneValidationService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailSmtpClient, MailKitSmtpClient>();

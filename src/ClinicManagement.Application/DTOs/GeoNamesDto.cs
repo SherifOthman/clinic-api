@@ -29,3 +29,35 @@ public class GeoNamesResponse<T>
 {
     public List<T> Geonames { get; set; } = new();
 }
+
+/// <summary>
+/// Phone validation request
+/// </summary>
+public class ValidatePhoneRequest
+{
+    public string PhoneNumber { get; set; } = null!;
+    public string? CountryCode { get; set; } // ISO2 code (optional, for better validation)
+}
+
+/// <summary>
+/// Phone validation response
+/// </summary>
+public class ValidatePhoneResponse
+{
+    public bool IsValid { get; set; }
+    public string FormattedNumber { get; set; } = null!; // E.164 format
+    public string OriginalNumber { get; set; } = null!;
+    public string? CountryCode { get; set; } // ISO2 code
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// Country phone code DTO
+/// </summary>
+public class CountryPhoneCodeDto
+{
+    public string Name { get; set; } = null!;
+    public string Code { get; set; } = null!; // ISO2 code
+    public string PhoneCode { get; set; } = null!; // e.g., "+20", "+966"
+    public string Flag { get; set; } = null!; // Unicode flag emoji
+}
