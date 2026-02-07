@@ -17,9 +17,5 @@ public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCo
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithErrorCode(MessageCodes.Fields.PASSWORD_COMPLEXITY)
             .Must(password => !password.Contains(" ")).WithErrorCode(MessageCodes.Fields.PASSWORD_NO_SPACES)
             .NotEqual(x => x.CurrentPassword).WithErrorCode(MessageCodes.Fields.PASSWORD_DIFFERENT_REQUIRED);
-
-        RuleFor(x => x.ConfirmPassword)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.CONFIRM_PASSWORD_REQUIRED)
-            .Equal(x => x.NewPassword).WithErrorCode(MessageCodes.Fields.PASSWORDS_MUST_MATCH);
     }
 }

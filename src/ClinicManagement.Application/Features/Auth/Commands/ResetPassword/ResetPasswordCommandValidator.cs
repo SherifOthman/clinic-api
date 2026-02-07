@@ -20,9 +20,5 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
             .MaximumLength(128).WithErrorCode(MessageCodes.Fields.PASSWORD_MAX_LENGTH)
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)").WithErrorCode(MessageCodes.Fields.PASSWORD_COMPLEXITY)
             .Must(password => !password.Contains(" ")).WithErrorCode(MessageCodes.Fields.PASSWORD_NO_SPACES);
-
-        RuleFor(x => x.ConfirmPassword)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.CONFIRM_PASSWORD_REQUIRED)
-            .Equal(x => x.NewPassword).WithErrorCode(MessageCodes.Fields.PASSWORDS_MUST_MATCH);
     }
 }
