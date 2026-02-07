@@ -269,7 +269,9 @@ public static class MessageCodes
         public const string NEW_PASSWORD_REQUIRED = "FIELD.NEW_PASSWORD.REQUIRED";
         public const string PASSWORD_DIFFERENT_REQUIRED = "FIELD.PASSWORD.DIFFERENT_REQUIRED";
         
+        public const string PHONE_NUMBER_REQUIRED = "FIELD.PHONE_NUMBER.REQUIRED";
         public const string PHONE_NUMBER_MAX_LENGTH = "FIELD.PHONE_NUMBER.MAX_LENGTH";
+        public const string PHONE_NUMBER_INVALID = "FIELD.PHONE_NUMBER.INVALID";
         
         public const string PROFILE_IMAGE_URL_REQUIRED = "FIELD.PROFILE_IMAGE_URL.REQUIRED";
         public const string PROFILE_IMAGE_URL_MAX_LENGTH = "FIELD.PROFILE_IMAGE_URL.MAX_LENGTH";

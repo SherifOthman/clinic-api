@@ -12,24 +12,24 @@ public class CompleteOnboardingCommandValidator : AbstractValidator<CompleteOnbo
     {
         _phoneValidationService = phoneValidationService;
 
-        RuleFor(x => x.ClinicName)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.CLINIC_NAME_REQUIRED)
-            .MaximumLength(200).WithErrorCode(MessageCodes.Fields.CLINIC_NAME_MAX_LENGTH);
+        RuleFor(x => x.Dto.ClinicName)
+            .NotEmpty().WithErrorCode(MessageCodes.Validation.REQUIRED_FIELD)
+            .MaximumLength(200).WithErrorCode(MessageCodes.Validation.INVALID_LENGTH);
 
-        RuleFor(x => x.BranchName)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.BRANCH_NAME_REQUIRED)
-            .MaximumLength(200).WithErrorCode(MessageCodes.Fields.BRANCH_NAME_MAX_LENGTH);
+        RuleFor(x => x.Dto.BranchName)
+            .NotEmpty().WithErrorCode(MessageCodes.Validation.REQUIRED_FIELD)
+            .MaximumLength(200).WithErrorCode(MessageCodes.Validation.INVALID_LENGTH);
 
-        RuleFor(x => x.BranchAddress)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.BRANCH_ADDRESS_REQUIRED)
-            .MaximumLength(500).WithErrorCode(MessageCodes.Fields.BRANCH_ADDRESS_MAX_LENGTH);
+        RuleFor(x => x.Dto.BranchAddress)
+            .NotEmpty().WithErrorCode(MessageCodes.Validation.REQUIRED_FIELD)
+            .MaximumLength(500).WithErrorCode(MessageCodes.Validation.INVALID_LENGTH);
 
-        RuleFor(x => x.BranchPhoneNumbers)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.PHONE_NUMBERS_REQUIRED)
+        RuleFor(x => x.Dto.BranchPhoneNumbers)
+            .NotEmpty().WithErrorCode(MessageCodes.Validation.REQUIRED_FIELD)
             .Must(phones => phones != null && phones.Count > 0)
-            .WithErrorCode(MessageCodes.Fields.PHONE_NUMBERS_REQUIRED);
+            .WithErrorCode(MessageCodes.Validation.REQUIRED_FIELD);
 
-        RuleForEach(x => x.BranchPhoneNumbers)
+        RuleForEach(x => x.Dto.BranchPhoneNumbers)
             .ChildRules(phone =>
             {
                 phone.RuleFor(p => p.PhoneNumber)
