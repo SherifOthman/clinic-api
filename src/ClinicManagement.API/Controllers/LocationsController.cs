@@ -2,7 +2,6 @@ using ClinicManagement.Application.DTOs;
 using ClinicManagement.Application.Features.Locations.Queries.GetCountries;
 using ClinicManagement.Application.Features.Locations.Queries.GetStates;
 using ClinicManagement.Application.Features.Locations.Queries.GetCities;
-using ClinicManagement.Application.Features.Locations.Queries.ValidatePhone;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -54,17 +53,6 @@ public class LocationsController : BaseApiController
     public async Task<IActionResult> GetCities([FromQuery] int stateGeonameId, CancellationToken cancellationToken)
     {
         var query = new GetCitiesQuery(stateGeonameId);
-        var result = await _mediator.Send(query, cancellationToken);
-        return HandleResult(result);
-    }
-
-    /// <summary>
-    /// Validate and format a phone number
-    /// </summary>
-    [HttpPost("validate-phone")]
-    public async Task<IActionResult> ValidatePhone([FromBody] ValidatePhoneRequest request, CancellationToken cancellationToken)
-    {
-        var query = new ValidatePhoneQuery(request.PhoneNumber, request.CountryCode);
         var result = await _mediator.Send(query, cancellationToken);
         return HandleResult(result);
     }

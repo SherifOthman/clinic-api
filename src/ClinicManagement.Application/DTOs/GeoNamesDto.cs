@@ -29,24 +29,3 @@ public class GeoNamesResponse<T>
 {
     public List<T> Geonames { get; set; } = new();
 }
-
-/// <summary>
-/// Phone validation request
-/// </summary>
-public class ValidatePhoneRequest
-{
-    public string PhoneNumber { get; set; } = null!;
-    public string? CountryCode { get; set; } // ISO2 code (optional, for better validation)
-}
-
-/// <summary>
-/// Phone validation response
-/// </summary>
-public class ValidatePhoneResponse
-{
-    public bool IsValid { get; set; }
-    public string FormattedNumber { get; set; } = null!; // E.164 format
-    public string OriginalNumber { get; set; } = null!;
-    public string? CountryCode { get; set; } // ISO2 code
-    public string? ErrorMessage { get; set; }
-}

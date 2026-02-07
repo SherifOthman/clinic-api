@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
@@ -5,8 +6,12 @@ namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
 public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
-    public RegisterCommandValidator()
+    private readonly IPhoneValidationService _phoneValidationService;
+
+    public RegisterCommandValidator(IPhoneValidationService phoneValidationService)
     {
+        _phoneValidationService = phoneValidationService;
+
         RuleFor(x => x.FirstName)
             .NotEmpty().WithErrorCode(MessageCodes.Fields.FIRST_NAME_REQUIRED)
             .MinimumLength(2).WithErrorCode(MessageCodes.Fields.FIRST_NAME_MIN_LENGTH)
@@ -40,7 +45,15 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .Must(password => string.IsNullOrEmpty(password) || !password.Contains(" ")).WithErrorCode(MessageCodes.Fields.PASSWORD_NO_SPACES);
 
         RuleFor(x => x.PhoneNumber)
-            .MaximumLength(20).WithErrorCode(MessageCodes.Fields.PHONE_NUMBER_MAX_LENGTH)
+            .Must(BeValidPhoneNumber).WithErrorCode(MessageCodes.Fields.PHONE_NUMBER_INVALID)
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+    }
+
+    private bool BeValidPhoneNumber(string? phoneNumber)
+    {
+        if (string.IsNullOrEmpty(phoneNumber)) return true;
+        
+        var result = _phoneValidationService.ValidatePhoneNumber(phoneNumber);
+        return result.IsValid;
     }
 }

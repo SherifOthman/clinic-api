@@ -1,11 +1,11 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.DTOs;
 using PhoneNumbers;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
 /// Validates and formats phone numbers using libphonenumber library
+/// Used internally by validators to ensure phone numbers are valid
 /// </summary>
 public class PhoneValidationService : IPhoneValidationService
 {
@@ -16,7 +16,7 @@ public class PhoneValidationService : IPhoneValidationService
         _phoneUtil = PhoneNumberUtil.GetInstance();
     }
 
-    public ValidatePhoneResponse ValidatePhoneNumber(string phoneNumber, string? countryCode = null)
+    public PhoneValidationResult ValidatePhoneNumber(string phoneNumber, string? countryCode = null)
     {
         try
         {
@@ -30,11 +30,10 @@ public class PhoneValidationService : IPhoneValidationService
             {
                 if (!phoneNumber.StartsWith("+"))
                 {
-                    return new ValidatePhoneResponse
+                    return new PhoneValidationResult
                     {
                         IsValid = false,
                         FormattedNumber = phoneNumber,
-                        OriginalNumber = phoneNumber,
                         ErrorMessage = "Phone number must start with + or provide a country code"
                     };
                 }
@@ -45,11 +44,10 @@ public class PhoneValidationService : IPhoneValidationService
             
             if (!isValid)
             {
-                return new ValidatePhoneResponse
+                return new PhoneValidationResult
                 {
                     IsValid = false,
                     FormattedNumber = phoneNumber,
-                    OriginalNumber = phoneNumber,
                     ErrorMessage = "Invalid phone number for the specified country"
                 };
             }
@@ -57,32 +55,28 @@ public class PhoneValidationService : IPhoneValidationService
             var formattedNumber = _phoneUtil.Format(parsedNumber, PhoneNumberFormat.E164);
             var detectedCountryCode = _phoneUtil.GetRegionCodeForNumber(parsedNumber);
 
-            return new ValidatePhoneResponse
+            return new PhoneValidationResult
             {
                 IsValid = true,
                 FormattedNumber = formattedNumber,
-                OriginalNumber = phoneNumber,
-                CountryCode = detectedCountryCode,
-                ErrorMessage = null
+                CountryCode = detectedCountryCode
             };
         }
         catch (NumberParseException ex)
         {
-            return new ValidatePhoneResponse
+            return new PhoneValidationResult
             {
                 IsValid = false,
                 FormattedNumber = phoneNumber,
-                OriginalNumber = phoneNumber,
                 ErrorMessage = $"Failed to parse phone number: {ex.Message}"
             };
         }
         catch (Exception ex)
         {
-            return new ValidatePhoneResponse
+            return new PhoneValidationResult
             {
                 IsValid = false,
                 FormattedNumber = phoneNumber,
-                OriginalNumber = phoneNumber,
                 ErrorMessage = $"Validation error: {ex.Message}"
             };
         }
