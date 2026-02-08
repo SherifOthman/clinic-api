@@ -10,18 +10,15 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 
 public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, Result>
 {
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IUserManagementService _userManagementService;
     private readonly IEmailConfirmationService _emailConfirmationService;
     private readonly ILogger<ConfirmEmailCommandHandler> _logger;
 
     public ConfirmEmailCommandHandler(
-        IUnitOfWork unitOfWork,
         IUserManagementService userManagementService,
         IEmailConfirmationService emailConfirmationService,
         ILogger<ConfirmEmailCommandHandler> logger)
     {
-        _unitOfWork = unitOfWork;
         _userManagementService = userManagementService;
         _emailConfirmationService = emailConfirmationService;
         _logger = logger;
@@ -33,7 +30,7 @@ public class ConfirmEmailCommandHandler : IRequestHandler<ConfirmEmailCommand, R
         if (user == null)
         {
             _logger.LogWarning("Email confirmation attempt for non-existent user: {Email}", request.Email);
-            return Result.FailField("email", MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result.Fail( MessageCodes.Authentication.USER_NOT_FOUND);
         }
 
         if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))

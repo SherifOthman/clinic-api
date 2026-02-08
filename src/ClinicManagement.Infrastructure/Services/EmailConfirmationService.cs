@@ -7,6 +7,7 @@ using ClinicManagement.Application.Options;
 using ClinicManagement.Infrastructure.Common.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
@@ -15,15 +16,18 @@ public class EmailConfirmationService : IEmailConfirmationService
     private readonly UserManager<User> _userManager;
     private readonly IEmailSender _emailSender;
     private readonly SmtpOptions _options;
+    private readonly ILogger<EmailConfirmationService> _logger;
 
     public EmailConfirmationService(
         UserManager<User> userManager,
         IEmailSender emailSender,
-        IOptions<SmtpOptions> options)
+        IOptions<SmtpOptions> options,
+        ILogger<EmailConfirmationService> logger)
     {
         _userManager = userManager;
         _emailSender = emailSender;
         _options = options.Value;
+        _logger = logger;
     }
 
     public async Task<Result> SendConfirmationEmailAsync(User user, CancellationToken cancellationToken = default)
@@ -46,16 +50,18 @@ public class EmailConfirmationService : IEmailConfirmationService
     {
         var result = await _userManager.ConfirmEmailAsync(user, token);
         
+        if (!result.Succeeded)
+        {
+            _logger.LogWarning("Email confirmation failed for {Email}. Errors: {Errors}", 
+                user.Email, 
+                string.Join(", ", result.Errors.Select(e => $"{e.Code}: {e.Description}")));
+        }
+        
         return result.ToResult();
     }
 
     public async Task<bool> IsEmailConfirmedAsync(User user, CancellationToken cancellationToken = default)
     {
         return await _userManager.IsEmailConfirmedAsync(user);
-    }
-
-    public async Task<string> GenerateEmailConfirmationTokenAsync(User user, CancellationToken cancellationToken = default)
-    {
-        return await _userManager.GenerateEmailConfirmationTokenAsync(user);
     }
 }

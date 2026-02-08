@@ -117,8 +117,8 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
             .HasQueryFilter(QueryFilterConstants.TenantFilter, c => _currentUserService.ClinicId == null || c.Id == _currentUserService.ClinicId)
             .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, c => !c.IsDeleted);
 
-        builder.Entity<User>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, u => _currentUserService.ClinicId == null || u.ClinicId == _currentUserService.ClinicId);
+        //builder.Entity<User>()
+        //    .HasQueryFilter(QueryFilterConstants.TenantFilter, u => _currentUserService.ClinicId == null || u.ClinicId == _currentUserService.ClinicId);
 
         builder.Entity<ClinicOwner>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, co => _currentUserService.ClinicId == null || co.User.ClinicId == _currentUserService.ClinicId);
