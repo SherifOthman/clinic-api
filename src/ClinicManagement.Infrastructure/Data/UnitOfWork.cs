@@ -39,10 +39,7 @@ public class UnitOfWork : IUnitOfWork
     public IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices => field ??= new ClinicBranchAppointmentPriceRepository(_context);
     public IMeasurementAttributeRepository MeasurementAttributes => field ??= new MeasurementAttributeRepository(_context);
     
-    // Location repositories for GeoNames snapshot architecture
-    public ICountryRepository Countries => field ??= new CountryRepository(_context);
-    public IStateRepository States => field ??= new StateRepository(_context);
-    public ICityRepository Cities => field ??= new CityRepository(_context);
+    public ILocationSnapshotRepository LocationSnapshots => field ??= new LocationSnapshotRepository(_context);
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, UserManager<User> userManager)
     {

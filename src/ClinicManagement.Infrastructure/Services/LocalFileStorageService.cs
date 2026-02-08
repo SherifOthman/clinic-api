@@ -1,7 +1,9 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Options;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
@@ -9,12 +11,16 @@ public class LocalFileStorageService : IFileStorageService
 {
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<LocalFileStorageService> _logger;
-    private const string UploadsFolder = "uploads";
+    private readonly FileStorageOptions _options;
 
-    public LocalFileStorageService(IWebHostEnvironment environment, ILogger<LocalFileStorageService> logger)
+    public LocalFileStorageService(
+        IWebHostEnvironment environment, 
+        ILogger<LocalFileStorageService> logger,
+        IOptions<FileStorageOptions> options)
     {
         _environment = environment;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string folder, CancellationToken cancellationToken = default)
@@ -26,8 +32,15 @@ public class LocalFileStorageService : IFileStorageService
                 throw new ArgumentException("File is empty or null");
             }
 
+            // Validate file size
+            if (file.Length > _options.MaxFileSizeBytes)
+            {
+                throw new ArgumentException($"File size exceeds maximum allowed size of {_options.MaxFileSizeBytes} bytes");
+            }
+
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var folderPath = Path.Combine(_environment.WebRootPath, UploadsFolder, folder);
+            var uploadsPath = _options.UploadPath.Replace("wwwroot/", "").Replace("wwwroot\\", "");
+            var folderPath = Path.Combine(_environment.WebRootPath, uploadsPath, folder);
             
             if (!Directory.Exists(folderPath))
             {
@@ -39,7 +52,7 @@ public class LocalFileStorageService : IFileStorageService
             await using var stream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(stream, cancellationToken);
 
-            var relativePath = $"/{UploadsFolder}/{folder}/{fileName}";
+            var relativePath = $"{_options.BaseUrl}/{folder}/{fileName}";
             
             _logger.LogInformation("File uploaded successfully: {FilePath}", relativePath);
             

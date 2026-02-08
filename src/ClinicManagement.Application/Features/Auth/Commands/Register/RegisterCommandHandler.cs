@@ -40,7 +40,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
             return Result.FailField("username", MessageCodes.Validation.USERNAME_ALREADY_TAKEN);
         }
 
-        var user = request.Adapt<User>();
+        var user = request.Adapt<User>();   
         
         var result = await _userManagementService.CreateUserAsync(user, request.Password, cancellationToken);
         if (!result.Success)

@@ -27,10 +27,7 @@ public interface IUnitOfWork : IDisposable
     IClinicBranchAppointmentPriceRepository ClinicBranchAppointmentPrices { get; }
     IMeasurementAttributeRepository MeasurementAttributes { get; }
     
-    // Location repositories for GeoNames snapshot architecture
-    ICountryRepository Countries { get; }
-    IStateRepository States { get; }
-    ICityRepository Cities { get; }
+    ILocationSnapshotRepository LocationSnapshots { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

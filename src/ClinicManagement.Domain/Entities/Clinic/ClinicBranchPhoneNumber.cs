@@ -8,5 +8,6 @@ public class ClinicBranchPhoneNumber : BaseEntity
     public ClinicBranch ClinicBranch { get; set; } = null!;
     
     public string PhoneNumber { get; set; } = null!;
-    public string? Label { get; set; } // e.g., "Main", "Emergency", "Reception"
+    
+    public string? Label { get; set; }
 }

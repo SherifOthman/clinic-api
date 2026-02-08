@@ -5,19 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// On-demand location reference resolver for GeoNames snapshot architecture.
-/// 
-/// CRITICAL DESIGN: This is NOT database seeding or startup initialization.
-/// Location snapshots are created lazily during user operations (registration, onboarding, profile updates).
-/// 
-/// Architecture:
-/// - Client fetches location data from GeoNames API
-/// - Service creates local snapshots only if missing (idempotent)
-/// - Returns CityId for foreign key relationships
-/// - Transaction-safe, no runtime GeoNames dependency
-/// - Never runs at startup, migrations, or as background job
-/// </summary>
 public class LocationReferenceService : ILocationReferenceService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -29,7 +16,7 @@ public class LocationReferenceService : ILocationReferenceService
         _logger = logger;
     }
 
-    public async Task<int> ResolveLocationAsync(
+    public async Task ResolveLocationAsync(
         int countryGeonameId,
         CountrySnapshotData countryData,
         int stateGeonameId,
@@ -38,102 +25,54 @@ public class LocationReferenceService : ILocationReferenceService
         CitySnapshotData cityData,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting location resolution - Country: {CountryGeonameId}, State: {StateGeonameId}, City: {CityGeonameId}",
+        _logger.LogInformation("Creating location snapshots - Country: {CountryId}, State: {StateId}, City: {CityId}",
             countryGeonameId, stateGeonameId, cityGeonameId);
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var country = await _unitOfWork.Countries.GetByGeonameIdAsync(countryGeonameId, cancellationToken);
-            if (country == null)
-            {
-                _logger.LogInformation("Country not found in local database, creating snapshot - GeonameId: {GeonameId}, Name: {NameEn}",
-                    countryGeonameId, countryData.NameEn);
-
-                country = new Country
-                {
-                    GeonameId = countryGeonameId,
-                    Iso2Code = countryData.Iso2Code,
-                    PhoneCode = countryData.PhoneCode,
-                    NameEn = countryData.NameEn,
-                    NameAr = countryData.NameAr
-                };
-                await _unitOfWork.Countries.AddAsync(country);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation("Country snapshot created - Id: {CountryId}, GeonameId: {GeonameId}",
-                    country.Id, country.GeonameId);
-            }
-            else
-            {
-                _logger.LogDebug("Country already exists in local database - Id: {CountryId}, GeonameId: {GeonameId}",
-                    country.Id, country.GeonameId);
-            }
-
-            var state = await _unitOfWork.States.GetByGeonameIdAsync(stateGeonameId, cancellationToken);
-            if (state == null)
-            {
-                _logger.LogInformation("State not found in local database, creating snapshot - GeonameId: {GeonameId}, Name: {NameEn}",
-                    stateGeonameId, stateData.NameEn);
-
-                state = new State
-                {
-                    GeonameId = stateGeonameId,
-                    CountryId = country.Id,
-                    NameEn = stateData.NameEn,
-                    NameAr = stateData.NameAr
-                };
-                await _unitOfWork.States.AddAsync(state);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation("State snapshot created - Id: {StateId}, GeonameId: {GeonameId}, CountryId: {CountryId}",
-                    state.Id, state.GeonameId, state.CountryId);
-            }
-            else
-            {
-                _logger.LogDebug("State already exists in local database - Id: {StateId}, GeonameId: {GeonameId}",
-                    state.Id, state.GeonameId);
-            }
-
-            var city = await _unitOfWork.Cities.GetByGeonameIdAsync(cityGeonameId, cancellationToken);
-            if (city == null)
-            {
-                _logger.LogInformation("City not found in local database, creating snapshot - GeonameId: {GeonameId}, Name: {NameEn}",
-                    cityGeonameId, cityData.NameEn);
-
-                city = new City
-                {
-                    GeonameId = cityGeonameId,
-                    StateId = state.Id,
-                    NameEn = cityData.NameEn,
-                    NameAr = cityData.NameAr
-                };
-                await _unitOfWork.Cities.AddAsync(city);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation("City snapshot created - Id: {CityId}, GeonameId: {GeonameId}, StateId: {StateId}",
-                    city.Id, city.GeonameId, city.StateId);
-            }
-            else
-            {
-                _logger.LogDebug("City already exists in local database - Id: {CityId}, GeonameId: {GeonameId}",
-                    city.Id, city.GeonameId);
-            }
+            await EnsureLocationSnapshotAsync(countryGeonameId, LocationType.Country, countryData.NameEn, countryData.NameAr, cancellationToken);
+            await EnsureLocationSnapshotAsync(stateGeonameId, LocationType.State, stateData.NameEn, stateData.NameAr, cancellationToken);
+            await EnsureLocationSnapshotAsync(cityGeonameId, LocationType.City, cityData.NameEn, cityData.NameAr, cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            _logger.LogInformation("Location resolution completed successfully - CityId: {CityId}", city.Id);
-
-            return city.Id;
+            _logger.LogInformation("Location snapshots created successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Location resolution failed - Country: {CountryGeonameId}, State: {StateGeonameId}, City: {CityGeonameId}",
-                countryGeonameId, stateGeonameId, cityGeonameId);
-
+            _logger.LogError(ex, "Failed to create location snapshots");
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
+        }
+    }
+
+    private async Task EnsureLocationSnapshotAsync(
+        int geoNameId,
+        LocationType type,
+        string nameEn,
+        string nameAr,
+        CancellationToken cancellationToken)
+    {
+        var existing = await _unitOfWork.LocationSnapshots.GetByGeoNameIdAsync(geoNameId, cancellationToken);
+
+        if (existing == null)
+        {
+            var snapshot = new LocationSnapshot
+            {
+                GeoNameId = geoNameId,
+                Type = type,
+                NameEn = nameEn,
+                NameAr = nameAr,
+                Provider = "GeoNames",
+                LastSyncedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.LocationSnapshots.AddAsync(snapshot);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Created location snapshot - GeoNameId: {GeoNameId}, Type: {Type}", geoNameId, type);
         }
     }
 }

@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ClinicManagement.Infrastructure.Data.Configurations;
 
-public class ClinicBranchPhoneNumberConfiguration : IEntityTypeConfiguration<ClinicBranchPhoneNumber>
+public class PatientPhoneConfiguration : IEntityTypeConfiguration<PatientPhone>
 {
-    public void Configure(EntityTypeBuilder<ClinicBranchPhoneNumber> builder)
+    public void Configure(EntityTypeBuilder<PatientPhone> builder)
     {
-        builder.ToTable("ClinicBranchPhoneNumbers");
+        builder.ToTable("PatientPhones");
 
         builder.HasKey(p => p.Id);
 
@@ -16,12 +16,12 @@ public class ClinicBranchPhoneNumberConfiguration : IEntityTypeConfiguration<Cli
             .IsRequired()
             .HasMaxLength(20);
 
-        builder.Property(p => p.Label)
-            .HasMaxLength(50);
+        builder.Property(p => p.IsPrimary)
+            .IsRequired();
 
-        builder.HasOne(p => p.ClinicBranch)
-            .WithMany(cb => cb.PhoneNumbers)
-            .HasForeignKey(p => p.ClinicBranchId)
+        builder.HasOne(p => p.Patient)
+            .WithMany(pt => pt.PhoneNumbers)
+            .HasForeignKey(p => p.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(p => p.PhoneNumber);

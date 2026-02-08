@@ -1,7 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Options;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Middleware;
 

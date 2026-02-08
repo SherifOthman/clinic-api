@@ -9,17 +9,23 @@ using Microsoft.Extensions.Options;
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
-/// GeoNames proxy service with memory caching
-/// Acts as backend proxy to protect GeoNames rate limits
-/// Frontend communicates ONLY with this service, NEVER directly with GeoNames
+/// Enhanced GeoNames proxy service with BILINGUAL support (Arabic + English)
+/// 
+/// CRITICAL ARCHITECTURE:
+/// - Frontend NEVER calls GeoNames directly
+/// - Backend acts as proxy with caching
+/// - Fetches data in BOTH languages (EN + AR)
+/// - Merges results by GeonameId
+/// - Returns unified bilingual DTOs
+/// - 24-hour memory cache
+/// - Resilient to GeoNames outages
 /// </summary>
-public class GeoNamesService : IGeoNamesService
+public partial class GeoNamesService : IGeoNamesService
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
     private readonly ILogger<GeoNamesService> _logger;
     private readonly GeoNamesOptions _options;
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
     public GeoNamesService(
         HttpClient httpClient,
@@ -35,50 +41,32 @@ public class GeoNamesService : IGeoNamesService
 
     public async Task<List<GeoNamesCountryDto>> GetCountriesAsync(CancellationToken cancellationToken = default)
     {
-        const string cacheKey = "geonames:countries";
+        const string cacheKey = "geonames:countries:bilingual";
 
-        // Try get from cache
         if (_cache.TryGetValue(cacheKey, out List<GeoNamesCountryDto>? cachedCountries))
         {
             _logger.LogDebug("Countries retrieved from cache");
             return cachedCountries!;
         }
 
-        _logger.LogInformation("Fetching countries from GeoNames API");
+        _logger.LogInformation("Fetching countries from GeoNames API (bilingual)");
 
         try
         {
-            var url = $"{_options.BaseUrl}/countryInfoJSON?username={_options.Username}";
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            // Fetch English data
+            var countriesEn = await FetchCountriesInLanguageAsync("en", cancellationToken);
+            
+            // Fetch Arabic data
+            var countriesAr = await FetchCountriesInLanguageAsync("ar", cancellationToken);
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<GeoNamesCountryInfoResponse>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            // Merge by GeonameId
+            var countries = MergeCountryData(countriesEn, countriesAr);
 
-            if (result?.Geonames == null || result.Geonames.Count == 0)
-            {
-                _logger.LogWarning("No countries returned from GeoNames API");
-                return new List<GeoNamesCountryDto>();
-            }
+            // Cache with configured duration
+            _cache.Set(cacheKey, countries, _options.CountriesCacheDuration);
 
-            var countries = result.Geonames
-                .Select(c => new GeoNamesCountryDto
-                {
-                    GeonameId = c.GeonameId,
-                    CountryCode = c.CountryCode,
-                    CountryName = c.CountryName,
-                    CountryNameAr = null // GeoNames doesn't provide Arabic names in country info
-                })
-                .OrderBy(c => c.CountryName)
-                .ToList();
-
-            // Cache for 24 hours
-            _cache.Set(cacheKey, countries, CacheDuration);
-
-            _logger.LogInformation("Fetched and cached {Count} countries from GeoNames", countries.Count);
+            _logger.LogInformation("Fetched and cached {Count} countries (bilingual) for {Duration}", 
+                countries.Count, _options.CountriesCacheDuration);
 
             return countries;
         }
@@ -91,44 +79,35 @@ public class GeoNamesService : IGeoNamesService
 
     public async Task<List<GeoNamesLocationDto>> GetStatesAsync(int countryGeonameId, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"geonames:states:{countryGeonameId}";
+        var cacheKey = $"geonames:states:{countryGeonameId}:bilingual";
 
-        // Try get from cache
         if (_cache.TryGetValue(cacheKey, out List<GeoNamesLocationDto>? cachedStates))
         {
             _logger.LogDebug("States for country {CountryGeonameId} retrieved from cache", countryGeonameId);
             return cachedStates!;
         }
 
-        _logger.LogInformation("Fetching states for country {CountryGeonameId} from GeoNames API", countryGeonameId);
+        _logger.LogInformation("Fetching states for country {CountryGeonameId} from GeoNames API (bilingual)", countryGeonameId);
 
         try
         {
-            var url = $"{_options.BaseUrl}/childrenJSON?geonameId={countryGeonameId}&username={_options.Username}";
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            // Fetch English data
+            var statesEn = await FetchChildrenInLanguageAsync(countryGeonameId, "en", cancellationToken);
+            
+            // Fetch Arabic data
+            var statesAr = await FetchChildrenInLanguageAsync(countryGeonameId, "ar", cancellationToken);
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<GeoNamesResponse<GeoNamesLocationDto>>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            // Filter for ADM1 (administrative division level 1) and merge
+            var states = MergeLocationData(
+                statesEn.Where(s => s.Fcode.StartsWith("ADM1")).ToList(),
+                statesAr.Where(s => s.Fcode.StartsWith("ADM1")).ToList()
+            );
 
-            if (result?.Geonames == null || result.Geonames.Count == 0)
-            {
-                _logger.LogWarning("No states returned from GeoNames API for country {CountryGeonameId}", countryGeonameId);
-                return new List<GeoNamesLocationDto>();
-            }
+            // Cache with configured duration
+            _cache.Set(cacheKey, states, _options.StatesCacheDuration);
 
-            var states = result.Geonames
-                .Where(s => s.Fcode.StartsWith("ADM1")) // Administrative division level 1
-                .OrderBy(s => s.Name)
-                .ToList();
-
-            // Cache for 24 hours
-            _cache.Set(cacheKey, states, CacheDuration);
-
-            _logger.LogInformation("Fetched and cached {Count} states for country {CountryGeonameId}", states.Count, countryGeonameId);
+            _logger.LogInformation("Fetched and cached {Count} states for country {CountryGeonameId} (bilingual) for {Duration}", 
+                states.Count, countryGeonameId, _options.StatesCacheDuration);
 
             return states;
         }
@@ -141,44 +120,35 @@ public class GeoNamesService : IGeoNamesService
 
     public async Task<List<GeoNamesLocationDto>> GetCitiesAsync(int stateGeonameId, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"geonames:cities:{stateGeonameId}";
+        var cacheKey = $"geonames:cities:{stateGeonameId}:bilingual";
 
-        // Try get from cache
         if (_cache.TryGetValue(cacheKey, out List<GeoNamesLocationDto>? cachedCities))
         {
             _logger.LogDebug("Cities for state {StateGeonameId} retrieved from cache", stateGeonameId);
             return cachedCities!;
         }
 
-        _logger.LogInformation("Fetching cities for state {StateGeonameId} from GeoNames API", stateGeonameId);
+        _logger.LogInformation("Fetching cities for state {StateGeonameId} from GeoNames API (bilingual)", stateGeonameId);
 
         try
         {
-            var url = $"{_options.BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={_options.Username}";
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            // Fetch English data
+            var citiesEn = await FetchChildrenInLanguageAsync(stateGeonameId, "en", cancellationToken);
+            
+            // Fetch Arabic data
+            var citiesAr = await FetchChildrenInLanguageAsync(stateGeonameId, "ar", cancellationToken);
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<GeoNamesResponse<GeoNamesLocationDto>>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            // Filter for PPL (populated places) and merge
+            var cities = MergeLocationData(
+                citiesEn.Where(c => c.Fcode.StartsWith("ADM2")).ToList(),
+                citiesAr.Where(c => c.Fcode.StartsWith("ADM2")).ToList()
+            );
 
-            if (result?.Geonames == null || result.Geonames.Count == 0)
-            {
-                _logger.LogWarning("No cities returned from GeoNames API for state {StateGeonameId}", stateGeonameId);
-                return new List<GeoNamesLocationDto>();
-            }
+            // Cache with configured duration
+            _cache.Set(cacheKey, cities, _options.CitiesCacheDuration);
 
-            var cities = result.Geonames
-                .Where(c => c.Fcode.StartsWith("PPL")) // Populated places (cities/towns)
-                .OrderBy(c => c.Name)
-                .ToList();
-
-            // Cache for 24 hours
-            _cache.Set(cacheKey, cities, CacheDuration);
-
-            _logger.LogInformation("Fetched and cached {Count} cities for state {StateGeonameId}", cities.Count, stateGeonameId);
+            _logger.LogInformation("Fetched and cached {Count} cities for state {StateGeonameId} (bilingual) for {Duration}", 
+                cities.Count, stateGeonameId, _options.CitiesCacheDuration);
 
             return cities;
         }
@@ -189,7 +159,90 @@ public class GeoNamesService : IGeoNamesService
         }
     }
 
-    // Internal response models for GeoNames API
+    #region Private Helper Methods
+
+    private async Task<List<GeoNamesCountryInfo>> FetchCountriesInLanguageAsync(
+        string language, 
+        CancellationToken cancellationToken)
+    {
+        var url = $"{_options.BaseUrl}/countryInfoJSON?username={_options.Username}&lang={language}";
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<GeoNamesCountryInfoResponse>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        return result?.Geonames ?? new List<GeoNamesCountryInfo>();
+    }
+
+    private async Task<List<GeoNamesChildInfo>> FetchChildrenInLanguageAsync(
+        int parentGeonameId,
+        string language,
+        CancellationToken cancellationToken)
+    {
+        var url = $"{_options.BaseUrl}/childrenJSON?geonameId={parentGeonameId}&username={_options.Username}&lang={language}";
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<GeoNamesResponse<GeoNamesChildInfo>>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        return result?.Geonames ?? new List<GeoNamesChildInfo>();
+    }
+
+    private List<GeoNamesCountryDto> MergeCountryData(
+        List<GeoNamesCountryInfo> englishData,
+        List<GeoNamesCountryInfo> arabicData)
+    {
+        var arabicDict = arabicData.ToDictionary(c => c.GeonameId, c => c.CountryName);
+
+        return englishData
+            .Select(en => new GeoNamesCountryDto
+            {
+                GeonameId = en.GeonameId,
+                CountryCode = en.CountryCode,
+                PhoneCode = en.CountryCode, // Will be enhanced with actual phone codes
+                Name = new BilingualName
+                {
+                    En = en.CountryName,
+                    Ar = arabicDict.TryGetValue(en.GeonameId, out var arName) ? arName : en.CountryName
+                }
+            })
+            .OrderBy(c => c.Name.En)
+            .ToList();
+    }
+
+    private List<GeoNamesLocationDto> MergeLocationData(
+        List<GeoNamesChildInfo> englishData,
+        List<GeoNamesChildInfo> arabicData)
+    {
+        var arabicDict = arabicData.ToDictionary(c => c.GeonameId, c => c.Name);
+
+        return englishData
+            .Select(en => new GeoNamesLocationDto
+            {
+                GeonameId = en.GeonameId,
+                Fcode = en.Fcode,
+                Name = new BilingualName
+                {
+                    En = en.Name,
+                    Ar = arabicDict.TryGetValue(en.GeonameId, out var arName) ? arName : en.Name
+                }
+            })
+            .OrderBy(l => l.Name.En)
+            .ToList();
+    }
+
+    #endregion
+
+    #region Internal Response Models
+
     private class GeoNamesCountryInfoResponse
     {
         public List<GeoNamesCountryInfo> Geonames { get; set; } = new();
@@ -201,4 +254,13 @@ public class GeoNamesService : IGeoNamesService
         public string CountryCode { get; set; } = null!;
         public string CountryName { get; set; } = null!;
     }
+
+    private class GeoNamesChildInfo
+    {
+        public int GeonameId { get; set; }
+        public string Name { get; set; } = null!;
+        public string Fcode { get; set; } = null!;
+    }
+
+    #endregion
 }

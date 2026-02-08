@@ -85,11 +85,8 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         _logger.LogInformation("Subscription plan validated: {PlanName} (ID: {PlanId})", 
             subscriptionPlan.Name, subscriptionPlanId);
 
-        // Resolve location references at runtime (GeoNames snapshot architecture)
-        _logger.LogInformation("Resolving location: Country GeonameId: {CountryId}, State GeonameId: {StateId}, City GeonameId: {CityId}",
-            dto.Location.CountryGeonameId, dto.Location.StateGeonameId, dto.Location.CityGeonameId);
-
-        var cityId = await _locationReferenceService.ResolveLocationAsync(
+        // Create location snapshots for display purposes
+        await _locationReferenceService.ResolveLocationAsync(
             dto.Location.CountryGeonameId,
             new CountrySnapshotData(
                 dto.Location.CountryIso2Code,
@@ -105,8 +102,6 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
                 dto.Location.CityNameEn,
                 dto.Location.CityNameAr),
             cancellationToken);
-
-        _logger.LogInformation("Location resolved successfully - CityId: {CityId}", cityId);
 
         // Create clinic
         var clinic = new Clinic
@@ -129,13 +124,14 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
 
         _logger.LogInformation("User updated with ClinicId and onboarding completed - UserId: {UserId}", user.Id);
 
-        // Create clinic branch with CityId only (Country/State derived through joins)
         var branch = new ClinicBranch
         {
             ClinicId = clinic.Id,
             Name = dto.BranchName,
-            Address = dto.BranchAddress,
-            CityId = cityId // Store only CityId - snapshot architecture
+            AddressLine = dto.BranchAddress,
+            CountryGeoNameId = dto.Location.CountryGeonameId,
+            StateGeoNameId = dto.Location.StateGeonameId,
+            CityGeoNameId = dto.Location.CityGeonameId
         };
 
         await _unitOfWork.ClinicBranches.AddAsync(branch);
@@ -144,7 +140,6 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         _logger.LogInformation("Clinic branch created - BranchId: {BranchId}, Name: {BranchName}", 
             branch.Id, branch.Name);
 
-        // Add phone numbers
         foreach (var phoneDto in dto.BranchPhoneNumbers)
         {
             var phone = new ClinicBranchPhoneNumber

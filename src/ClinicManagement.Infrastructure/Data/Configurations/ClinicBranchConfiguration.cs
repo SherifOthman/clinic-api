@@ -16,22 +16,26 @@ public class ClinicBranchConfiguration : IEntityTypeConfiguration<ClinicBranch>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(cb => cb.Address)
+        builder.Property(cb => cb.AddressLine)
             .IsRequired()
             .HasMaxLength(500);
+
+        builder.Property(cb => cb.CountryGeoNameId)
+            .IsRequired();
+
+        builder.Property(cb => cb.StateGeoNameId)
+            .IsRequired();
+
+        builder.Property(cb => cb.CityGeoNameId)
+            .IsRequired();
 
         builder.HasOne(cb => cb.Clinic)
             .WithMany(c => c.Branches)
             .HasForeignKey(cb => cb.ClinicId)
             .OnDelete(DeleteBehavior.NoAction);
 
-        // Store only CityId - Country and State derived through joins
-        builder.HasOne(cb => cb.City)
-            .WithMany()
-            .HasForeignKey(cb => cb.CityId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Index on CityId for efficient location-based queries
-        builder.HasIndex(cb => cb.CityId);
+        builder.HasIndex(cb => cb.CityGeoNameId);
+        builder.HasIndex(cb => cb.StateGeoNameId);
+        builder.HasIndex(cb => cb.CountryGeoNameId);
     }
 }

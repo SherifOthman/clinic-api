@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<DoctorWorkingDay> DoctorWorkingDays => Set<DoctorWorkingDay>();
     public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<PatientPhone> PatientPhones => Set<PatientPhone>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<ClinicBranch> ClinicBranches => Set<ClinicBranch>();
     public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
@@ -32,10 +33,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
     public DbSet<Receptionist> Receptionists => Set<Receptionist>();
     
-    // Location entities
-    public DbSet<Country> Countries => Set<Country>();
-    public DbSet<State> States => Set<State>();
-    public DbSet<City> Cities => Set<City>();
+    public DbSet<LocationSnapshot> LocationSnapshots => Set<LocationSnapshot>();
     public DbSet<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers => Set<ClinicBranchPhoneNumber>();
     
     // Staff invitation

@@ -5,18 +5,16 @@ using ClinicManagement.Domain.Common.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-/// <summary>
-/// Clinic-specific snapshot of patient
-/// </summary>
 public class Patient : AuditableEntity
 {
-    public string PatientCode { get; set; } = null!; // Human-readable: PAT-2024-0001
+    public string PatientCode { get; set; } = null!;
     public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;   
     public string FullName { get; set; } = null!;
     public Gender Gender { get; set; }
-    public string City { get; set; } = null!;
-    public string? Address { get; set; } = null!;
+    
+    public int? CityGeoNameId { get; set; }
+    
     public DateTime DateOfBirth { get; set; }
     
     public ICollection<PatientPhone> PhoneNumbers { get; set; } = new List<PatientPhone>();
