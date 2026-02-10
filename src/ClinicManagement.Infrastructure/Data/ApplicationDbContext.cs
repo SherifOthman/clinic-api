@@ -103,7 +103,8 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
             .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, p => !p.IsDeleted);
 
         builder.Entity<PatientChronicDisease>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, pcd => _currentUserService.ClinicId == null || pcd.Patient.ClinicId == _currentUserService.ClinicId);
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, pcd => _currentUserService.ClinicId == null || pcd.Patient.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, pcd => !pcd.IsDeleted);
 
         builder.Entity<PatientPhone>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, pp => _currentUserService.ClinicId == null || pp.Patient.ClinicId == _currentUserService.ClinicId);
@@ -115,6 +116,10 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         builder.Entity<Clinic>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, c => _currentUserService.ClinicId == null || c.Id == _currentUserService.ClinicId)
             .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, c => !c.IsDeleted);
+        
+        builder.Entity<ClinicBranch>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, cb => _currentUserService.ClinicId == null || cb.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, cb => !cb.IsDeleted);
 
         //builder.Entity<User>()
         //    .HasQueryFilter(QueryFilterConstants.TenantFilter, u => _currentUserService.ClinicId == null || u.ClinicId == _currentUserService.ClinicId);
@@ -145,7 +150,8 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
 
         // ClinicBranch and related entities
         builder.Entity<ClinicBranch>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, cb => _currentUserService.ClinicId == null || cb.ClinicId == _currentUserService.ClinicId);
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, cb => _currentUserService.ClinicId == null || cb.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, cb => !cb.IsDeleted);
 
         builder.Entity<ClinicBranchPhoneNumber>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, cbpn => _currentUserService.ClinicId == null || cbpn.ClinicBranch.ClinicId == _currentUserService.ClinicId);
@@ -158,7 +164,21 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
 
         // Appointment and related entities
         builder.Entity<Appointment>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, a => _currentUserService.ClinicId == null || a.Patient.ClinicId == _currentUserService.ClinicId);
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, a => _currentUserService.ClinicId == null || a.Patient.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, a => !a.IsDeleted);
+        
+        // Inventory entities (Medicine, MedicalService, MedicalSupply)
+        builder.Entity<Medicine>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, m => _currentUserService.ClinicId == null || m.ClinicBranch.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, m => !m.IsDeleted);
+
+        builder.Entity<MedicalService>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, ms => !ms.IsDeleted);
+
+        builder.Entity<MedicalSupply>()
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, ms => !ms.IsDeleted);
 
         builder.Entity<MedicalVisit>()
             .HasQueryFilter(QueryFilterConstants.TenantFilter, mv => _currentUserService.ClinicId == null || mv.Appointment.Patient.ClinicId == _currentUserService.ClinicId);
@@ -190,12 +210,15 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
 
         // Inventory entities (Medicine, MedicalService, MedicalSupply)
         builder.Entity<Medicine>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, m => _currentUserService.ClinicId == null || m.ClinicBranch.ClinicId == _currentUserService.ClinicId);
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, m => _currentUserService.ClinicId == null || m.ClinicBranch.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, m => !m.IsDeleted);
 
         builder.Entity<MedicalService>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId);
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, ms => !ms.IsDeleted);
 
         builder.Entity<MedicalSupply>()
-            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId);
+            .HasQueryFilter(QueryFilterConstants.TenantFilter, ms => _currentUserService.ClinicId == null || ms.ClinicBranch.ClinicId == _currentUserService.ClinicId)
+            .HasQueryFilter(QueryFilterConstants.SoftDeleteFilter, ms => !ms.IsDeleted);
     }
 }
