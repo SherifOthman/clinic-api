@@ -15,19 +15,12 @@ public class CompleteOnboardingDto
 
 /// <summary>
 /// Location data with GeoNames IDs only
-/// Names are fetched from cache or GeoNames API when needed
+/// All location details (names, codes) are fetched from cache or GeoNames API when needed
 /// </summary>
 public class LocationDataDto
 {
-    // Country
     public int CountryGeonameId { get; set; }
-    public string CountryIso2Code { get; set; } = null!;
-    public string CountryPhoneCode { get; set; } = null!;
-    
-    // State
     public int StateGeonameId { get; set; }
-    
-    // City
     public int CityGeonameId { get; set; }
 }
 
