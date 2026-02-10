@@ -5,7 +5,6 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Infrastructure.Data;
 using Mapster;
 using Microsoft.Extensions.Logging;
 
@@ -13,20 +12,17 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class UserRegistrationService : IUserRegistrationService
 {
-    private readonly ApplicationDbContext _context;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserManagementService _userManagementService;
     private readonly IEmailConfirmationService _emailConfirmationService;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
-        ApplicationDbContext context,
         IUnitOfWork unitOfWork,
         IUserManagementService userManagementService,
         IEmailConfirmationService emailConfirmationService,
         ILogger<UserRegistrationService> logger)
     {
-        _context = context;
         _unitOfWork = unitOfWork;
         _userManagementService = userManagementService;
         _emailConfirmationService = emailConfirmationService;
@@ -38,20 +34,24 @@ public class UserRegistrationService : IUserRegistrationService
         CancellationToken cancellationToken = default)
     {
         // Use explicit transaction to ensure all operations succeed or fail together
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        // This is needed because UserManager.CreateAsync and AddToRoleAsync auto-commit
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
         
         try
         {
             // Validate email and username uniqueness
             var validationResult = await ValidateUserUniquenessAsync(request, cancellationToken);
             if (validationResult.IsFailure)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 return validationResult;
+            }
 
             // Create user and assign role (these call SaveChanges internally via UserManager)
             var userIdResult = await CreateUserWithRoleAsync(request, cancellationToken);
             if (userIdResult.IsFailure)
             {
-                await transaction.RollbackAsync(cancellationToken);
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 return userIdResult;
             }
 
@@ -64,7 +64,7 @@ public class UserRegistrationService : IUserRegistrationService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Commit transaction - all operations succeeded
-            await transaction.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // Send confirmation email (outside transaction - non-critical)
             await SendConfirmationEmailIfNeededAsync(request, userId, cancellationToken);
@@ -76,7 +76,7 @@ public class UserRegistrationService : IUserRegistrationService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             _logger.LogError(ex, "Error during user registration for {Email}", request.Email);
             return Result<Guid>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
         }

@@ -19,6 +19,11 @@ public interface IUnitOfWork : IDisposable
     // Use for: MeasurementAttribute, SubscriptionPlan, PatientChronicDisease, etc.
     IRepository<T> Repository<T>() where T : class;
 
+    // Transaction management (for operations that need explicit transactions like user registration)
+    Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+    Task CommitTransactionAsync(CancellationToken cancellationToken = default);
+    Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+
     // Save changes
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

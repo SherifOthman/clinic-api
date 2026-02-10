@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Infrastructure.Data.Repositories;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ClinicManagement.Infrastructure.Data;
 
@@ -9,6 +10,7 @@ public class UnitOfWork : IUnitOfWork
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly Dictionary<Type, object> _repositories;
+    private IDbContextTransaction? _currentTransaction;
 
     // Specific repositories
     private IPatientRepository? _patients;
@@ -54,6 +56,52 @@ public class UnitOfWork : IUnitOfWork
         return (IRepository<T>)_repositories[type];
     }
 
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_currentTransaction != null)
+        {
+            throw new InvalidOperationException("A transaction is already in progress.");
+        }
+
+        _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_currentTransaction == null)
+        {
+            throw new InvalidOperationException("No transaction in progress.");
+        }
+
+        try
+        {
+            await _currentTransaction.CommitAsync(cancellationToken);
+        }
+        finally
+        {
+            await _currentTransaction.DisposeAsync();
+            _currentTransaction = null;
+        }
+    }
+
+    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_currentTransaction == null)
+        {
+            throw new InvalidOperationException("No transaction in progress.");
+        }
+
+        try
+        {
+            await _currentTransaction.RollbackAsync(cancellationToken);
+        }
+        finally
+        {
+            await _currentTransaction.DisposeAsync();
+            _currentTransaction = null;
+        }
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);
@@ -61,6 +109,7 @@ public class UnitOfWork : IUnitOfWork
 
     public void Dispose()
     {
+        _currentTransaction?.Dispose();
         _context.Dispose();
     }
 }
