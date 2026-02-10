@@ -2,6 +2,8 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Entities.Outbox;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +14,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
 {
     private readonly ICurrentUserService _currentUserService;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IPublisher _publisher;
 
     public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
@@ -46,20 +49,25 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     
+    // Outbox pattern for reliable event publishing
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    
     // Measurement entities
     public DbSet<MeasurementAttribute> MeasurementAttributes => Set<MeasurementAttribute>();
     public DbSet<MedicalVisitMeasurement> MedicalVisitMeasurements => Set<MedicalVisitMeasurement>();
     public DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes => Set<DoctorMeasurementAttribute>();
     public DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes => Set<SpecializationMeasurementAttribute>();
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider) : base(options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService, IDateTimeProvider dateTimeProvider, IPublisher publisher) : base(options)
     {
         _currentUserService = currentUserService;
         _dateTimeProvider = dateTimeProvider;
+        _publisher = publisher;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Update audit fields
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)
@@ -72,7 +80,38 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);   
+        // Collect domain events before saving
+        var aggregatesWithEvents = ChangeTracker.Entries<AggregateRoot>()
+            .Where(e => e.Entity.DomainEvents.Any())
+            .Select(e => e.Entity)
+            .ToList();
+
+        // Save changes to database
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // Dispatch domain events AFTER successful save
+        // This ensures events are only published if the transaction succeeds
+        await DispatchDomainEventsAsync(aggregatesWithEvents, cancellationToken);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Dispatches domain events for all aggregates that have events
+    /// Events are dispatched AFTER the transaction commits to ensure consistency
+    /// </summary>
+    private async Task DispatchDomainEventsAsync(List<AggregateRoot> aggregates, CancellationToken cancellationToken)
+    {
+        foreach (var aggregate in aggregates)
+        {
+            var events = aggregate.DomainEvents.ToList();
+            aggregate.ClearDomainEvents();
+
+            foreach (var domainEvent in events)
+            {
+                await _publisher.Publish(domainEvent, cancellationToken);
+            }
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

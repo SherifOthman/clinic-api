@@ -1,11 +1,8 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using FluentValidation;
-using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,7 +29,7 @@ public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDisease
         var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdAsync(request.ChronicDisease.ChronicDiseaseId, cancellationToken);
         if (chronicDisease == null)
         {
-            return Result<PatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+            return Result<PatientChronicDiseaseDto>.FailValidation("chronicDisease.chronicDiseaseId", "Chronic disease not found");
         }
 
         // Check if the relationship already exists
@@ -41,7 +38,7 @@ public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDisease
 
         if (exists)
         {
-            return Result<PatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_ALREADY_EXISTS);
+            return Result<PatientChronicDiseaseDto>.FailBusiness("CHRONIC_DISEASE_ALREADY_EXISTS", "Patient already has this chronic disease");
         }
 
         // Create the relationship - using the current entity structure

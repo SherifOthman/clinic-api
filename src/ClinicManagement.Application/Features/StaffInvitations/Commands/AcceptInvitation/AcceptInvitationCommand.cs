@@ -33,7 +33,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         // Validate passwords match
         if (dto.Password != dto.ConfirmPassword)
         {
-            return Result.FailField(nameof(dto.ConfirmPassword), MessageCodes.Validation.PASSWORDS_MUST_MATCH);
+            return Result.FailValidation(nameof(dto.ConfirmPassword), "Passwords must match");
         }
 
         // Find invitation by token
@@ -42,19 +42,19 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         
         if (invitation == null)
         {
-            return Result.Fail(MessageCodes.Invitation.INVALID_TOKEN);
+            return Result.FailBusiness("INVALID_TOKEN", "Invalid invitation token");
         }
 
         // Check if already accepted
         if (invitation.IsAccepted)
         {
-            return Result.Fail(MessageCodes.Invitation.ALREADY_ACCEPTED);
+            return Result.FailBusiness("ALREADY_ACCEPTED", "This invitation has already been accepted");
         }
 
         // Check if expired
         if (invitation.ExpiresAt < DateTime.UtcNow)
         {
-            return Result.Fail(MessageCodes.Invitation.EXPIRED);
+            return Result.FailBusiness("INVITATION_EXPIRED", "This invitation has expired");
         }
 
         // Register user using the shared service
@@ -70,10 +70,10 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         var registrationResult = await _userRegistrationService.RegisterUserAsync(registrationRequest, cancellationToken);
         if (registrationResult.IsFailure)
         {
-            if (registrationResult.Errors != null && registrationResult.Errors.Any())
-                return Result.Fail(registrationResult.Errors);
+            if (registrationResult.ValidationErrors != null && registrationResult.ValidationErrors.Any())
+                return Result.FailValidation(registrationResult.ValidationErrors);
             
-            return Result.Fail(registrationResult.Code ?? MessageCodes.Authentication.REGISTRATION_FAILED);
+            return Result.FailSystem("REGISTRATION_FAILED", registrationResult.Message ?? "User registration failed");
         }
 
         // Mark invitation as accepted

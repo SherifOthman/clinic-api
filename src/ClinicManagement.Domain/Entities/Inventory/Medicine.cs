@@ -2,33 +2,38 @@ using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Enums;
 using ClinicManagement.Domain.Common.Exceptions;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Events;
 
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// Medicine entity - manages inventory in boxes and strips with comprehensive business logic
+/// Medicine aggregate root - manages inventory in boxes and strips with comprehensive business logic
+/// Enforces business rules and maintains consistency
 /// </summary>
-public class Medicine : AuditableEntity
+public class Medicine : AggregateRoot
 {
-    public Guid ClinicBranchId { get; set; } // Linked to branch, not clinic
-    public string Name { get; set; } = null!; // Medicine name only
-    public string? Description { get; set; }
-    public string? Manufacturer { get; set; }
-    public string? BatchNumber { get; set; }
-    public DateTime? ExpiryDate { get; set; }
+    // Private constructor for EF Core
+    private Medicine() { }
+
+    public Guid ClinicBranchId { get; private set; }
+    public string Name { get; private set; } = null!;
+    public string? Description { get; private set; }
+    public string? Manufacturer { get; private set; }
+    public string? BatchNumber { get; private set; }
+    public DateTime? ExpiryDate { get; private set; }
     
     // Pricing - boxes and strips
-    public decimal BoxPrice { get; set; }
-    public int StripsPerBox { get; set; } // How many strips per box
+    public decimal BoxPrice { get; private set; }
+    public int StripsPerBox { get; private set; }
     
     // Inventory measured in strips (smallest unit)
-    public int TotalStripsInStock { get; set; }
-    public int MinimumStockLevel { get; set; } = 10;
-    public int ReorderLevel { get; set; } = 20;
+    public int TotalStripsInStock { get; private set; }
+    public int MinimumStockLevel { get; private set; } = 10;
+    public int ReorderLevel { get; private set; } = 20;
     
     // Status
-    public bool IsActive { get; set; } = true;
-    public bool IsDiscontinued { get; set; } = false;
+    public bool IsActive { get; private set; } = true;
+    public bool IsDiscontinued { get; private set; } = false;
 
     // Navigation properties
     public ClinicBranch ClinicBranch { get; set; } = null!;
@@ -67,6 +72,91 @@ public class Medicine : AuditableEntity
     /// Calculates the total inventory value
     /// </summary>
     public decimal InventoryValue => (FullBoxesInStock * BoxPrice) + (RemainingStrips * StripPrice);
+
+    /// <summary>
+    /// Factory method to create a new medicine
+    /// Ensures all invariants are met and raises domain event
+    /// </summary>
+    public static Medicine Create(
+        Guid clinicBranchId,
+        string name,
+        decimal boxPrice,
+        int stripsPerBox,
+        int initialStock = 0,
+        string? description = null,
+        string? manufacturer = null,
+        string? batchNumber = null,
+        DateTime? expiryDate = null,
+        int minimumStockLevel = 10,
+        int reorderLevel = 20)
+    {
+        // Validate inputs
+        if (clinicBranchId == Guid.Empty)
+            throw new InvalidBusinessOperationException("Clinic branch ID is required");
+        
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidBusinessOperationException("Medicine name is required");
+        
+        if (boxPrice <= 0)
+            throw new InvalidBusinessOperationException("Box price must be positive");
+        
+        if (stripsPerBox <= 0)
+            throw new InvalidBusinessOperationException("Strips per box must be positive");
+        
+        if (initialStock < 0)
+            throw new InvalidBusinessOperationException("Initial stock cannot be negative");
+        
+        if (minimumStockLevel < 0)
+            throw new InvalidBusinessOperationException("Minimum stock level cannot be negative");
+        
+        if (reorderLevel < minimumStockLevel)
+            throw new InvalidBusinessOperationException("Reorder level cannot be less than minimum stock level");
+        
+        if (expiryDate.HasValue && expiryDate.Value.Date <= DateTime.UtcNow.Date)
+            throw new InvalidBusinessOperationException("Expiry date must be in the future");
+
+        var medicine = new Medicine
+        {
+            ClinicBranchId = clinicBranchId,
+            Name = name,
+            Description = description,
+            Manufacturer = manufacturer,
+            BatchNumber = batchNumber,
+            ExpiryDate = expiryDate,
+            BoxPrice = boxPrice,
+            StripsPerBox = stripsPerBox,
+            TotalStripsInStock = initialStock,
+            MinimumStockLevel = minimumStockLevel,
+            ReorderLevel = reorderLevel,
+            IsActive = true,
+            IsDiscontinued = false
+        };
+
+        // Raise domain event
+        medicine.AddDomainEvent(new MedicineCreatedEvent(
+            medicine.Id,
+            medicine.ClinicBranchId,
+            medicine.Name,
+            medicine.BoxPrice,
+            medicine.StripsPerBox,
+            medicine.TotalStripsInStock
+        ));
+
+        // Check if stock is low on creation
+        if (medicine.IsLowStock || medicine.NeedsReorder)
+        {
+            medicine.AddDomainEvent(new MedicineStockLowEvent(
+                medicine.Id,
+                medicine.Name,
+                medicine.TotalStripsInStock,
+                medicine.MinimumStockLevel,
+                medicine.ReorderLevel,
+                medicine.NeedsReorder
+            ));
+        }
+
+        return medicine;
+    }
     
     /// <summary>
     /// Adds stock to the medicine inventory
@@ -77,14 +167,20 @@ public class Medicine : AuditableEntity
     public void AddStock(int strips, string? reason = null)
     {
         if (strips <= 0) 
-            throw new InvalidBusinessOperationException("Strips to add must be positive", MessageCodes.Domain.INVALID_BUSINESS_OPERATION);
+            throw new InvalidBusinessOperationException("Strips to add must be positive");
         if (IsDiscontinued) 
-            throw new DiscontinuedMedicineException(MessageCodes.Domain.DISCONTINUED_MEDICINE);
+            throw new DiscontinuedMedicineException("Cannot add stock to discontinued medicine");
         
         TotalStripsInStock += strips;
         
-        // Log the stock movement (this could be expanded to a separate StockMovement entity)
-        // For now, we'll just update the stock
+        // Raise domain event
+        AddDomainEvent(new MedicineStockAddedEvent(
+            Id,
+            Name,
+            strips,
+            TotalStripsInStock,
+            reason
+        ));
     }
     
     /// <summary>
@@ -97,11 +193,33 @@ public class Medicine : AuditableEntity
     public void RemoveStock(int strips, string? reason = null)
     {
         if (strips <= 0) 
-            throw new InvalidBusinessOperationException("Strips to remove must be positive", MessageCodes.Domain.INVALID_BUSINESS_OPERATION);
+            throw new InvalidBusinessOperationException("Strips to remove must be positive");
         if (strips > TotalStripsInStock) 
-            throw new InsufficientStockException(strips, TotalStripsInStock, MessageCodes.Domain.INSUFFICIENT_STOCK);
+            throw new InsufficientStockException(strips, TotalStripsInStock);
         
         TotalStripsInStock -= strips;
+        
+        // Raise domain event
+        AddDomainEvent(new MedicineStockRemovedEvent(
+            Id,
+            Name,
+            strips,
+            TotalStripsInStock,
+            reason
+        ));
+        
+        // Check if stock is now low
+        if (IsLowStock || NeedsReorder)
+        {
+            AddDomainEvent(new MedicineStockLowEvent(
+                Id,
+                Name,
+                TotalStripsInStock,
+                MinimumStockLevel,
+                ReorderLevel,
+                NeedsReorder
+            ));
+        }
     }
     
     /// <summary>
@@ -123,7 +241,7 @@ public class Medicine : AuditableEntity
     public decimal CalculatePrice(int strips)
     {
         if (strips <= 0) 
-            throw new InvalidBusinessOperationException("Strips must be positive", MessageCodes.Domain.INVALID_BUSINESS_OPERATION);
+            throw new InvalidBusinessOperationException("Strips must be positive");
         
         return strips * StripPrice;
     }
@@ -138,7 +256,7 @@ public class Medicine : AuditableEntity
     public decimal CalculatePrice(int boxes, int strips)
     {
         if (boxes < 0 || strips < 0) 
-            throw new InvalidBusinessOperationException("Boxes and strips cannot be negative", MessageCodes.Domain.INVALID_BUSINESS_OPERATION);
+            throw new InvalidBusinessOperationException("Boxes and strips cannot be negative");
         
         return (boxes * BoxPrice) + (strips * StripPrice);
     }
@@ -152,7 +270,13 @@ public class Medicine : AuditableEntity
         IsDiscontinued = true;
         IsActive = false;
         
-        // Could log the reason in a separate audit table
+        // Raise domain event
+        AddDomainEvent(new MedicineDiscontinuedEvent(
+            Id,
+            Name,
+            TotalStripsInStock,
+            reason
+        ));
     }
     
     /// <summary>
@@ -162,10 +286,49 @@ public class Medicine : AuditableEntity
     public void Reactivate()
     {
         if (IsExpired && ExpiryDate.HasValue) 
-            throw new ExpiredMedicineException(ExpiryDate.Value, MessageCodes.Domain.EXPIRED_MEDICINE);
+            throw new ExpiredMedicineException(ExpiryDate.Value);
         
         IsDiscontinued = false;
         IsActive = true;
+    }
+
+    /// <summary>
+    /// Updates medicine information
+    /// </summary>
+    public void UpdateInfo(
+        string name,
+        decimal boxPrice,
+        int stripsPerBox,
+        int minimumStockLevel,
+        int? reorderLevel = null,
+        string? description = null,
+        string? manufacturer = null,
+        string? batchNumber = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidBusinessOperationException("Medicine name is required");
+        
+        if (boxPrice <= 0)
+            throw new InvalidBusinessOperationException("Box price must be positive");
+        
+        if (stripsPerBox <= 0)
+            throw new InvalidBusinessOperationException("Strips per box must be positive");
+        
+        if (minimumStockLevel < 0)
+            throw new InvalidBusinessOperationException("Minimum stock level cannot be negative");
+        
+        var effectiveReorderLevel = reorderLevel ?? minimumStockLevel * 2;
+        if (effectiveReorderLevel < minimumStockLevel)
+            throw new InvalidBusinessOperationException("Reorder level cannot be less than minimum stock level");
+
+        Name = name;
+        BoxPrice = boxPrice;
+        StripsPerBox = stripsPerBox;
+        MinimumStockLevel = minimumStockLevel;
+        ReorderLevel = effectiveReorderLevel;
+        Description = description;
+        Manufacturer = manufacturer;
+        BatchNumber = batchNumber;
     }
     
     /// <summary>
@@ -176,7 +339,7 @@ public class Medicine : AuditableEntity
     public void UpdateExpiryDate(DateTime newExpiryDate)
     {
         if (newExpiryDate.Date <= DateTime.UtcNow.Date)
-            throw new InvalidBusinessOperationException("Expiry date must be in the future", MessageCodes.Domain.INVALID_EXPIRY_DATE);
+            throw new InvalidBusinessOperationException("Expiry date must be in the future");
             
         ExpiryDate = newExpiryDate;
     }
@@ -188,21 +351,21 @@ public class Medicine : AuditableEntity
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
-            throw new InvalidBusinessOperationException("Medicine name is required", MessageCodes.Domain.MEDICINE_VALIDATION_FAILED);
+            throw new InvalidBusinessOperationException("Medicine name is required");
             
         if (BoxPrice <= 0)
-            throw new InvalidBusinessOperationException("Box price must be positive", MessageCodes.Domain.MEDICINE_VALIDATION_FAILED);
+            throw new InvalidBusinessOperationException("Box price must be positive");
             
         if (StripsPerBox <= 0)
-            throw new InvalidBusinessOperationException("Strips per box must be positive", MessageCodes.Domain.MEDICINE_VALIDATION_FAILED);
+            throw new InvalidBusinessOperationException("Strips per box must be positive");
             
         if (TotalStripsInStock < 0)
-            throw new InvalidBusinessOperationException("Stock cannot be negative", MessageCodes.Domain.MEDICINE_VALIDATION_FAILED);
+            throw new InvalidBusinessOperationException("Stock cannot be negative");
             
         if (MinimumStockLevel < 0)
-            throw new InvalidBusinessOperationException("Minimum stock level cannot be negative", MessageCodes.Domain.MEDICINE_VALIDATION_FAILED);
+            throw new InvalidBusinessOperationException("Minimum stock level cannot be negative");
             
         if (ReorderLevel < MinimumStockLevel)
-            throw new InvalidBusinessOperationException("Reorder level cannot be less than minimum stock level", MessageCodes.Domain.MEDICINE_VALIDATION_FAILED);
+            throw new InvalidBusinessOperationException("Reorder level cannot be less than minimum stock level");
     }
 }

@@ -1,7 +1,3 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.UpdateProfileImage;
@@ -12,8 +8,8 @@ public class UpdateProfileImageCommandValidator : AbstractValidator<UpdateProfil
     {
         RuleFor(x => x.ProfileImageUrl)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Fields.PROFILE_IMAGE_URL_REQUIRED)
+            .WithMessage("Profile image URL is required")
             .MaximumLength(500)
-            .WithErrorCode(MessageCodes.Fields.PROFILE_IMAGE_URL_MAX_LENGTH);
+            .WithMessage("Profile image URL cannot exceed 500 characters");
     }
 }

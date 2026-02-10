@@ -7,18 +7,18 @@ public class UpdatePatientCommandValidator : AbstractValidator<UpdatePatientComm
     public UpdatePatientCommandValidator()
     {
         RuleFor(x => x.Id)
-            .NotEmpty();
+            .NotEmpty().WithMessage("Patient ID is required");
 
         RuleFor(x => x.Dto.FullName)
-            .NotEmpty()
-            .MaximumLength(200);
+            .NotEmpty().WithMessage("Full name is required")
+            .MaximumLength(200).WithMessage("Full name cannot exceed 200 characters");
 
         RuleFor(x => x.Dto.Gender)
-            .IsInEnum();
+            .IsInEnum().WithMessage("Invalid gender");
 
         RuleFor(x => x.Dto.DateOfBirth)
-            .NotEmpty()
-            .LessThan(DateTime.UtcNow);
+            .NotEmpty().WithMessage("Date of birth is required")
+            .LessThan(DateTime.UtcNow).WithMessage("Date of birth cannot be in the future");
 
         RuleFor(x => x.Dto.PhoneNumbers)
             .NotEmpty()
@@ -28,8 +28,8 @@ public class UpdatePatientCommandValidator : AbstractValidator<UpdatePatientComm
             .ChildRules(phone =>
             {
                 phone.RuleFor(p => p.PhoneNumber)
-                    .NotEmpty()
-                    .MaximumLength(20);
+                    .NotEmpty().WithMessage("Phone number is required")
+                    .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters");
             });
     }
 }

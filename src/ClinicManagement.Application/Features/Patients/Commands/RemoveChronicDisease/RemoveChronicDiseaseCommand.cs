@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
@@ -29,7 +28,7 @@ public class RemoveChronicDiseaseCommandHandler : IRequestHandler<RemoveChronicD
 
         if (PatientChronicDisease == null)
         {
-            return Result.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+            return Result.FailSystem("NOT_FOUND", "Chronic disease relationship not found");
         }
 
         _unitOfWork.Repository<PatientChronicDisease>().Delete(PatientChronicDisease);

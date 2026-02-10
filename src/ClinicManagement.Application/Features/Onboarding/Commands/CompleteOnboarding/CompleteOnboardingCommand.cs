@@ -42,14 +42,14 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         if (userId == null)
         {
             _logger.LogWarning("Onboarding failed: User not authenticated");
-            return Result.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result.FailSystem("UNAUTHENTICATED", "User is not authenticated");
         }
 
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId.Value, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("Onboarding failed: User not found - UserId: {UserId}", userId.Value);
-            return Result.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result.FailSystem("NOT_FOUND", "User not found");
         }
 
         _logger.LogInformation("Processing onboarding for user: {UserId}, Email: {Email}", user.Id, user.Email);
@@ -59,14 +59,14 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         {
             _logger.LogWarning("Onboarding failed: User is not a clinic owner - UserId: {UserId}, UserType: {UserType}", 
                 user.Id, user.UserType);
-            return Result.Fail(MessageCodes.Authorization.ACCESS_DENIED);
+            return Result.FailBusiness("ACCESS_DENIED", "Only clinic owners can complete onboarding");
         }
 
         // Check if already onboarded
         if (user.OnboardingCompleted)
         {
             _logger.LogWarning("Onboarding failed: User already completed onboarding - UserId: {UserId}", user.Id);
-            return Result.Fail(MessageCodes.Business.OPERATION_NOT_ALLOWED);
+            return Result.FailBusiness("ALREADY_ONBOARDED", "User has already completed onboarding");
         }
 
         // Validate subscription plan
@@ -74,7 +74,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         {
             _logger.LogWarning("Onboarding failed: Invalid subscription plan ID format - Value: {SubscriptionPlanId}", 
                 dto.SubscriptionPlanId);
-            return Result.FailField(nameof(dto.SubscriptionPlanId), MessageCodes.Validation.INVALID_FORMAT);
+            return Result.FailValidation(nameof(dto.SubscriptionPlanId), "Invalid subscription plan ID format");
         }
 
         var subscriptionPlan = await _unitOfWork.Repository<SubscriptionPlan>().GetByIdAsync(subscriptionPlanId, cancellationToken);
@@ -82,7 +82,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         {
             _logger.LogWarning("Onboarding failed: Subscription plan not found or inactive - PlanId: {PlanId}", 
                 subscriptionPlanId);
-            return Result.FailField(nameof(dto.SubscriptionPlanId), MessageCodes.Business.ENTITY_NOT_FOUND);
+            return Result.FailValidation(nameof(dto.SubscriptionPlanId), "Subscription plan not found or is inactive");
         }
 
         _logger.LogInformation("Subscription plan validated: {PlanName} (ID: {PlanId})", 

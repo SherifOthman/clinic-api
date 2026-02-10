@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,52 @@ public class BaseRepository<T> : IRepository<T> where T : class
     public virtual async Task<IEnumerable<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
         return await _dbSet.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Find entities that match the specification
+    /// </summary>
+    public virtual async Task<IEnumerable<T>> FindAsync(Specification<T> specification, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AsNoTracking()
+            .Where(specification.ToExpression())
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Find entities that match the specification with pagination
+    /// </summary>
+    public virtual async Task<PagedResult<T>> FindPagedAsync(
+        Specification<T> specification, 
+        PaginationRequest request, 
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.AsNoTracking().Where(specification.ToExpression());
+        
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<T>(items, totalCount, request.PageNumber, request.PageSize);
+    }
+
+    /// <summary>
+    /// Count entities that match the specification
+    /// </summary>
+    public virtual async Task<int> CountAsync(Specification<T> specification, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.CountAsync(specification.ToExpression(), cancellationToken);
+    }
+
+    /// <summary>
+    /// Check if any entity matches the specification
+    /// </summary>
+    public virtual async Task<bool> AnyAsync(Specification<T> specification, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AnyAsync(specification.ToExpression(), cancellationToken);
     }
 
     public virtual async Task<PagedResult<T>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default)

@@ -58,19 +58,19 @@ public class AppointmentRepository : BaseRepository<Appointment>, IAppointmentRe
         return await query.OrderBy(a => a.QueueNumber).ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetNextQueueNumberAsync(Guid clinicBranchId, DateTime date, CancellationToken cancellationToken = default)
+    public async Task<int> GetNextQueueNumberAsync(Guid doctorId, DateTime date, CancellationToken cancellationToken = default)
     {
         var maxQueueNumber = await _dbSet
-            .Where(a => a.ClinicBranchId == clinicBranchId && a.AppointmentDate.Date == date.Date)
+            .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == date.Date)
             .MaxAsync(a => (int?)a.QueueNumber, cancellationToken);
 
         return (maxQueueNumber ?? 0) + 1;
     }
 
-    public async Task<bool> HasQueueConflictAsync(Guid clinicBranchId, DateTime date, int queueNumber, CancellationToken cancellationToken = default)
+    public async Task<bool> HasQueueConflictAsync(Guid doctorId, DateTime date, int queueNumber, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .AnyAsync(a => a.ClinicBranchId == clinicBranchId 
+            .AnyAsync(a => a.DoctorId == doctorId 
                 && a.AppointmentDate.Date == date.Date 
                 && a.QueueNumber == queueNumber, 
                 cancellationToken);
@@ -136,9 +136,6 @@ public class AppointmentRepository : BaseRepository<Appointment>, IAppointmentRe
             "status" => request.IsAscending 
                 ? query.OrderBy(a => a.Status) 
                 : query.OrderByDescending(a => a.Status),
-            "finalprice" or "price" => request.IsAscending 
-                ? query.OrderBy(a => a.FinalPrice) 
-                : query.OrderByDescending(a => a.FinalPrice),
             "createdat" => request.IsAscending 
                 ? query.OrderBy(a => a.CreatedAt) 
                 : query.OrderByDescending(a => a.CreatedAt),

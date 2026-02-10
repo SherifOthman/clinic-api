@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
@@ -29,7 +28,7 @@ public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand,
 
         if (patient == null)
         {
-            return Result<bool>.Fail(MessageCodes.Patient.NOT_FOUND);
+            return Result<bool>.FailSystem("NOT_FOUND", "Patient not found");
         }
 
         _unitOfWork.Patients.Delete(patient);

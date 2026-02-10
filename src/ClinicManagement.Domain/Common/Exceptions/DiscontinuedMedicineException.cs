@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Common.Exceptions;
 /// </summary>
 public class DiscontinuedMedicineException : DomainException
 {
-    public DiscontinuedMedicineException(string errorCode) 
+    public DiscontinuedMedicineException(string? errorCode = null) 
         : base("Cannot perform operation on discontinued medicine", errorCode)
     {
     }

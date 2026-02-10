@@ -78,14 +78,14 @@ public class RegisterCommandHandlerTests
 
         _userRegistrationService
             .RegisterUserAsync(Arg.Any<UserRegistrationRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Result<Guid>.Fail(MessageCodes.Authentication.USER_CREATION_FAILED));
+            .Returns(Result<Guid>.FailSystem("REGISTRATION_FAILED", "User creation failed"));
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Code.Should().Be(MessageCodes.Authentication.USER_CREATION_FAILED);
+        result.Code.Should().Be("REGISTRATION_FAILED");
     }
 
     [Fact]
@@ -100,24 +100,23 @@ public class RegisterCommandHandlerTests
             Password = "Password123!"
         };
 
-        var fieldErrors = new[]
+        var validationErrors = new Dictionary<string, List<string>>
         {
-            new ErrorItem("email", MessageCodes.Validation.EMAIL_ALREADY_REGISTERED)
+            ["email"] = new List<string> { "Email is already registered" }
         };
 
         _userRegistrationService
             .RegisterUserAsync(Arg.Any<UserRegistrationRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Result<Guid>.Fail(fieldErrors));
+            .Returns(Result<Guid>.FailValidation(validationErrors));
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Errors.Should().NotBeNull();
-        result.Errors.Should().ContainSingle(e => 
-            e.Field == "email" && 
-            e.Code == MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
+        result.ValidationErrors.Should().NotBeNull();
+        result.ValidationErrors.Should().ContainKey("email");
+        result.ValidationErrors["email"].Should().Contain("Email is already registered");
     }
 
     [Fact]

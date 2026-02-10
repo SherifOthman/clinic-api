@@ -6,6 +6,7 @@ using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ClinicManagement.Application.Features.Appointments.Queries.GetAppointments;
 
@@ -30,11 +31,13 @@ public class GetAppointmentsQueryHandler : IRequestHandler<GetAppointmentsQuery,
 
     public async Task<Result<IEnumerable<AppointmentDto>>> Handle(GetAppointmentsQuery request, CancellationToken cancellationToken)
     {
-        // Get all appointments and filter in memory
-        // Note: In production, you'd want to add clinic/branch filtering at the database level
-        var allAppointments = await _unitOfWork.Appointments.GetAllAsync(cancellationToken);
+        var clinicId = _currentUserService.GetRequiredClinicId();
         
-        var filtered = allAppointments.AsEnumerable();
+        // Get all appointments (filtered by clinic through global query filter)
+        var appointments = await _unitOfWork.Appointments.GetAllAsync(cancellationToken);
+        
+        // Apply filters in memory
+        var filtered = appointments.AsEnumerable();
         
         if (request.Date.HasValue)
         {
@@ -61,7 +64,12 @@ public class GetAppointmentsQueryHandler : IRequestHandler<GetAppointmentsQuery,
             filtered = filtered.Where(a => a.Status == request.Status.Value);
         }
 
-        var appointmentDtos = filtered.Adapt<IEnumerable<AppointmentDto>>();
+        // Sort results
+        var sortedAppointments = filtered
+            .OrderByDescending(a => a.AppointmentDate)
+            .ThenBy(a => a.QueueNumber);
+
+        var appointmentDtos = sortedAppointments.Adapt<IEnumerable<AppointmentDto>>();
         return Result<IEnumerable<AppointmentDto>>.Ok(appointmentDtos);
     }
 }

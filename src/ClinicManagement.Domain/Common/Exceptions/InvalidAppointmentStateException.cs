@@ -10,8 +10,8 @@ public class InvalidAppointmentStateException : DomainException
     public AppointmentStatus CurrentStatus { get; }
     public string Operation { get; }
 
-    public InvalidAppointmentStateException(AppointmentStatus currentStatus, string operation, string errorCode) 
-        : base($"Cannot {operation} appointment in {currentStatus} status", errorCode)
+    public InvalidAppointmentStateException(AppointmentStatus currentStatus, string operation, string? errorCode = null) 
+        : base($"Cannot {operation} appointment in {currentStatus} status", errorCode ?? string.Empty)
     {
         CurrentStatus = currentStatus;
         Operation = operation;

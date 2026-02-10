@@ -1,8 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -33,7 +31,7 @@ public class DeleteChronicDiseaseCommandHandler : IRequestHandler<DeleteChronicD
         if (chronicDisease == null)
         {
             _logger.LogWarning("Chronic disease {DiseaseId} not found for deletion", request.Id);
-            return Result<Unit>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+            return Result<Unit>.FailSystem("NOT_FOUND", "Chronic disease not found");
         }
 
         _unitOfWork.ChronicDiseases.Delete(chronicDisease);

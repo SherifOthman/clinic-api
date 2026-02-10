@@ -25,24 +25,8 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .IsRequired()
             .HasConversion<byte>();
 
-        builder.Property(a => a.FinalPrice)
-            .IsRequired()
-            .HasColumnType("decimal(18,2)");
-
-        builder.Property(a => a.DiscountAmount)
-            .IsRequired()
-            .HasColumnType("decimal(18,2)")
-            .HasDefaultValue(0);
-
-        builder.Property(a => a.PaidAmount)
-            .IsRequired()
-            .HasColumnType("decimal(18,2)")
-            .HasDefaultValue(0);
-
         // Ignore calculated properties (not stored in database)
-        builder.Ignore(a => a.RemainingAmount);
-        builder.Ignore(a => a.IsFullyPaid);
-        builder.Ignore(a => a.IsPartiallyPaid);
+        builder.Ignore(a => a.IsConsultationFeePaid);
         builder.Ignore(a => a.IsPending);
         builder.Ignore(a => a.IsConfirmed);
         builder.Ignore(a => a.IsCompleted);
@@ -67,6 +51,11 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.HasOne(a => a.AppointmentType)
             .WithMany(at => at.Appointments)
             .HasForeignKey(a => a.AppointmentTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(a => a.Invoice)
+            .WithMany()
+            .HasForeignKey(a => a.InvoiceId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes

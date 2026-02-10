@@ -1,6 +1,3 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.MedicalSupplies.Commands.CreateMedicalSupply;
@@ -10,19 +7,19 @@ public class CreateMedicalSupplyCommandValidator : AbstractValidator<CreateMedic
     public CreateMedicalSupplyCommandValidator()
     {
         RuleFor(x => x.ClinicBranchId)
-            .NotEmpty().WithErrorCode(MessageCodes.Common.CLINIC_BRANCH_REQUIRED);
+            .NotEmpty().WithMessage("Clinic branch is required");
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithErrorCode(MessageCodes.MedicalSupply.NAME_REQUIRED)
-            .MaximumLength(200).WithErrorCode(MessageCodes.MedicalSupply.NAME_TOO_LONG);
+            .NotEmpty().WithMessage("Medical supply name is required")
+            .MaximumLength(200).WithMessage("Medical supply name cannot exceed 200 characters");
 
         RuleFor(x => x.UnitPrice)
-            .GreaterThan(0).WithErrorCode(MessageCodes.MedicalSupply.PRICE_MUST_BE_POSITIVE);
+            .GreaterThan(0).WithMessage("Unit price must be greater than zero");
 
         RuleFor(x => x.QuantityInStock)
-            .GreaterThanOrEqualTo(0).WithErrorCode(MessageCodes.MedicalSupply.STOCK_CANNOT_BE_NEGATIVE);
+            .GreaterThanOrEqualTo(0).WithMessage("Stock quantity cannot be negative");
 
         RuleFor(x => x.MinimumStockLevel)
-            .GreaterThanOrEqualTo(0).WithErrorCode(MessageCodes.MedicalSupply.MINIMUM_STOCK_CANNOT_BE_NEGATIVE);
+            .GreaterThanOrEqualTo(0).WithMessage("Minimum stock level cannot be negative");
     }
 }

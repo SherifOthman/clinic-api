@@ -1,10 +1,8 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using FluentValidation;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -38,14 +36,14 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         if (!_currentUserService.TryGetUserId(out var userId))
         {
             _logger.LogWarning("Unauthorized attempt to update profile image");
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<UserDto>.FailSystem("UNAUTHENTICATED", "User is not authenticated");
         }
 
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("User not found for profile image update: {UserId}", userId);
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result<UserDto>.FailSystem("NOT_FOUND", "User not found");
         }
 
         try
@@ -63,7 +61,7 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating profile image for user {UserId}", userId);
-            return Result<UserDto>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
+            return Result<UserDto>.FailSystem("INTERNAL_ERROR", "An error occurred while updating profile image");
         }
     }
 }

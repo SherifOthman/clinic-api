@@ -1,6 +1,3 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.MedicalServices.Commands.CreateMedicalService;
@@ -10,13 +7,13 @@ public class CreateMedicalServiceCommandValidator : AbstractValidator<CreateMedi
     public CreateMedicalServiceCommandValidator()
     {
         RuleFor(x => x.ClinicBranchId)
-            .NotEmpty().WithErrorCode(MessageCodes.Common.CLINIC_BRANCH_REQUIRED);
+            .NotEmpty().WithMessage("Clinic branch is required");
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithErrorCode(MessageCodes.MedicalService.NAME_REQUIRED)
-            .MaximumLength(200).WithErrorCode(MessageCodes.MedicalService.NAME_TOO_LONG);
+            .NotEmpty().WithMessage("Medical service name is required")
+            .MaximumLength(200).WithMessage("Medical service name cannot exceed 200 characters");
 
         RuleFor(x => x.DefaultPrice)
-            .GreaterThan(0).WithErrorCode(MessageCodes.MedicalService.PRICE_MUST_BE_POSITIVE);
+            .GreaterThan(0).WithMessage("Default price must be greater than zero");
     }
 }

@@ -17,10 +17,10 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
     public LoginCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.EMAIL_REQUIRED);
+            .NotEmpty().WithMessage("Email is required");
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithErrorCode(MessageCodes.Fields.PASSWORD_REQUIRED);
+            .NotEmpty().WithMessage("Password is required");
     }
 }
 
@@ -43,7 +43,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result>
         var loginResult = await _authenticationService.LoginAsync(request.Email, request.Password, cancellationToken);
 
         if (!loginResult.Success)
-            return Result.Fail(loginResult.Code!);
+            return Result.FailBusiness(loginResult.Code!, loginResult.Message!);
 
         var result = loginResult.Value!;
 

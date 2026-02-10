@@ -8,8 +8,8 @@ public class InvalidDiscountException : DomainException
     public decimal DiscountAmount { get; }
     public decimal SubtotalAmount { get; }
 
-    public InvalidDiscountException(decimal discountAmount, decimal subtotalAmount, string errorCode) 
-        : base($"Invalid discount. Discount: {discountAmount:C}, Subtotal: {subtotalAmount:C}", errorCode)
+    public InvalidDiscountException(decimal discountAmount, decimal subtotalAmount, string? errorCode = null) 
+        : base($"Invalid discount. Discount: {discountAmount:C}, Subtotal: {subtotalAmount:C}", errorCode ?? string.Empty)
     {
         DiscountAmount = discountAmount;
         SubtotalAmount = subtotalAmount;

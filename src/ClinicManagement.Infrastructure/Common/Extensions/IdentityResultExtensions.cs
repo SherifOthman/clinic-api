@@ -18,12 +18,17 @@ public static class IdentityResultExtensions
         if (identityResult.Succeeded)
             return Result.Ok();
 
-        var errors = identityResult.Errors.Select(e => new ErrorItem(
-            field: GetFieldNameFromErrorCode(e.Code),
-            code: e.Description
-        )).ToList();
+        var validationErrors = new Dictionary<string, List<string>>();
+        
+        foreach (var error in identityResult.Errors)
+        {
+            var field = GetFieldNameFromErrorCode(error.Code);
+            if (!validationErrors.ContainsKey(field))
+                validationErrors[field] = new List<string>();
+            validationErrors[field].Add(error.Description);
+        }
 
-        return Result.Fail(errors);
+        return Result.FailValidation(validationErrors);
     }
 
     /// <summary>
@@ -33,10 +38,10 @@ public static class IdentityResultExtensions
     /// <returns>The corresponding field name, or empty string if not mapped.</returns>
     private static string GetFieldNameFromErrorCode(string errorCode) => errorCode switch
     {
-        "DuplicateEmail" or "InvalidEmail" => "Email",
-        "DuplicateUserName" or "InvalidUserName" => "UserName",
+        "DuplicateEmail" or "InvalidEmail" => "email",
+        "DuplicateUserName" or "InvalidUserName" => "userName",
         "PasswordTooShort" or "PasswordRequiresDigit" or "PasswordRequiresLower" 
-            or "PasswordRequiresUpper" or "PasswordRequiresNonAlphanumeric" => "Password",
-        _ => string.Empty
+            or "PasswordRequiresUpper" or "PasswordRequiresNonAlphanumeric" => "password",
+        _ => "general"
     };
 }

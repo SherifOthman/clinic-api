@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
@@ -31,7 +30,7 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
 
         if (PatientChronicDisease == null)
         {
-            return Result<PatientChronicDiseaseDto>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+            return Result<PatientChronicDiseaseDto>.FailSystem("NOT_FOUND", "Chronic disease relationship not found");
         }
 
         // Note: The current PatientChronicDisease entity only has PatientId and ChronicDiseaseId

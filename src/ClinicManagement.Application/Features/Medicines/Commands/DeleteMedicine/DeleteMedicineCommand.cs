@@ -22,7 +22,7 @@ public class DeleteMedicineCommandHandler : IRequestHandler<DeleteMedicineComman
         
         if (medicine == null)
         {
-            return Result.Fail("Medicine not found.");
+            return Result.FailSystem("NOT_FOUND", "Medicine not found");
         }
 
         _unitOfWork.Medicines.Delete(medicine);

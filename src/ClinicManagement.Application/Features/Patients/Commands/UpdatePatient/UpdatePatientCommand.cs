@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using Mapster;
@@ -34,47 +33,61 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
 
         if (patient == null)
         {
-            return Result<PatientDto>.Fail(MessageCodes.Patient.NOT_FOUND);
+            return Result<PatientDto>.FailSystem("NOT_FOUND", "Patient not found");
         }
 
         // Load with includes for updating
         patient = await _unitOfWork.Patients.GetByIdWithIncludesAsync(request.Id, cancellationToken);
 
-        // Update basic info
-        patient!.FullName = dto.FullName;
-        patient.Gender = dto.Gender;
-        patient.DateOfBirth = dto.DateOfBirth;
-        patient.CityGeoNameId = dto.CityGeoNameId;
+        // Update basic info using domain method
+        patient!.UpdateInfo(dto.FullName, dto.Gender, dto.DateOfBirth, dto.CityGeoNameId);
 
-        // Update phone numbers
-        // Remove old ones
-        patient.PhoneNumbers.Clear();
+        // Update phone numbers - remove old ones and add new ones
+        var existingPhones = patient.PhoneNumbers.Select(p => p.PhoneNumber).ToList();
+        var newPhones = dto.PhoneNumbers.Select(p => p.PhoneNumber).ToList();
 
-        // Add new ones
-        foreach (var phoneDto in dto.PhoneNumbers)
+        // Remove phones that are no longer in the list
+        foreach (var phoneNumber in existingPhones)
         {
-            patient.PhoneNumbers.Add(new PatientPhone
+            if (!newPhones.Contains(phoneNumber))
             {
-                PhoneNumber = phoneDto.PhoneNumber,
-                IsPrimary = phoneDto.IsPrimary
-            });
+                patient.RemovePhoneNumber(phoneNumber);
+            }
         }
 
-        // Update chronic diseases
-        // Remove old ones
-        patient.ChronicDiseases.Clear();
-
-        // Add new ones
-        if (dto.ChronicDiseaseIds.Any())
+        // Add new phones that don't exist yet
+        foreach (var phoneDto in dto.PhoneNumbers)
         {
-            var chronicDiseases = await _unitOfWork.ChronicDiseases.GetByIdsAsync(dto.ChronicDiseaseIds, cancellationToken);
-
-            foreach (var disease in chronicDiseases)
+            if (!existingPhones.Contains(phoneDto.PhoneNumber))
             {
-                patient.ChronicDiseases.Add(new PatientChronicDisease
-                {
-                    ChronicDiseaseId = disease.Id
-                });
+                patient.AddPhoneNumber(phoneDto.PhoneNumber, phoneDto.IsPrimary);
+            }
+            else if (phoneDto.IsPrimary)
+            {
+                // Update primary status if needed
+                patient.SetPrimaryPhoneNumber(phoneDto.PhoneNumber);
+            }
+        }
+
+        // Update chronic diseases - remove old ones and add new ones
+        var existingDiseaseIds = patient.ChronicDiseases.Select(cd => cd.ChronicDiseaseId).ToList();
+        var newDiseaseIds = dto.ChronicDiseaseIds.ToList();
+
+        // Remove diseases that are no longer in the list
+        foreach (var diseaseId in existingDiseaseIds)
+        {
+            if (!newDiseaseIds.Contains(diseaseId))
+            {
+                patient.RemoveChronicDisease(diseaseId);
+            }
+        }
+
+        // Add new diseases that don't exist yet
+        foreach (var diseaseId in newDiseaseIds)
+        {
+            if (!existingDiseaseIds.Contains(diseaseId))
+            {
+                patient.AddChronicDisease(diseaseId);
             }
         }
 

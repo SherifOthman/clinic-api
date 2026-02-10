@@ -2,157 +2,337 @@ using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Enums;
 using ClinicManagement.Domain.Common.Exceptions;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Events;
 
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// Represents an invoice for medical services, medicines, and supplies
+/// Invoice aggregate root - manages invoice items and payments
+/// Enforces business rules and maintains consistency
 /// </summary>
-public class Invoice : AuditableEntity
+public class Invoice : AggregateRoot
 {
-    public string InvoiceNumber { get; set; } = null!; // Human-readable: INV-2024-001
-    public Guid ClinicId { get; set; }
-    public Guid PatientId { get; set; }
+    // Private collections - can only be modified through methods
+    private readonly List<InvoiceItem> _items = [];
+    private readonly List<Payment> _payments = [];
+
+    // Private constructor for EF Core
+    private Invoice() { }
+
+    public string InvoiceNumber { get; private set; } = null!;
+    public Guid ClinicId { get; private set; }
+    public Guid PatientId { get; private set; }
     
-    // Optional link to visit or appointment
-    public Guid? MedicalVisitId { get; set; }
-    public MedicalVisit? MedicalVisit { get; set; }
+    // Optional links (flexible for different scenarios)
+    public Guid? AppointmentId { get; private set; }  // Link to appointment (consultation fee)
+    public Guid? MedicalVisitId { get; private set; }  // Link to visit (services during visit)
     
-    public decimal TotalAmount { get; set; }
-    public decimal Discount { get; set; }
-    public decimal TaxAmount { get; set; }
+    public decimal TotalAmount { get; private set; }
+    public decimal Discount { get; private set; }
+    public decimal TaxAmount { get; private set; }
     
     // Invoice status and dates
-    public InvoiceStatus Status { get; set; } = InvoiceStatus.Draft;
-    public DateTime? IssuedDate { get; set; }
-    public DateTime? DueDate { get; set; }
+    public InvoiceStatus Status { get; private set; } = InvoiceStatus.Draft;
+    public DateTime? IssuedDate { get; private set; }
+    public DateTime? DueDate { get; private set; }
     
-    // Additional fields
-    public string? Notes { get; set; }
+    public string? Notes { get; private set; }
 
-    // Navigation properties
+    // Navigation properties (for queries only)
     public Clinic Clinic { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
-    public ICollection<InvoiceItem> Items { get; set; } = new List<InvoiceItem>();
-    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+    public Appointment? Appointment { get; set; }
+    public MedicalVisit? MedicalVisit { get; set; }
+    
+    // Read-only collections
+    public IReadOnlyCollection<InvoiceItem> Items => _items.AsReadOnly();
+    public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
 
     // Calculated properties
-    public decimal SubtotalAmount => Items.Sum(i => i.LineTotal);
+    public decimal SubtotalAmount => _items.Sum(i => i.LineTotal);
     public decimal FinalAmount => SubtotalAmount - Discount + TaxAmount;
-    public decimal TotalPaid => Payments.Where(p => p.Status == PaymentStatus.Paid).Sum(p => p.Amount);
+    public decimal TotalPaid => _payments.Where(p => p.Status == PaymentStatus.Paid).Sum(p => p.Amount);
     public decimal RemainingAmount => FinalAmount - TotalPaid;
     public bool IsFullyPaid => RemainingAmount <= 0;
     public bool IsOverdue => DueDate.HasValue && DueDate < DateTime.UtcNow && !IsFullyPaid && Status != InvoiceStatus.Cancelled;
     public bool IsPartiallyPaid => TotalPaid > 0 && !IsFullyPaid;
-    
-    /// <summary>
-    /// Calculates the discount percentage
-    /// </summary>
     public decimal DiscountPercentage => SubtotalAmount > 0 ? Math.Round((Discount / SubtotalAmount) * 100, 2) : 0;
-    
-    /// <summary>
-    /// Gets the number of days overdue
-    /// </summary>
     public int DaysOverdue => IsOverdue && DueDate.HasValue ? (DateTime.UtcNow.Date - DueDate.Value.Date).Days : 0;
     
     /// <summary>
-    /// Adds an item to the invoice and recalculates totals
+    /// Factory method to create a new invoice
     /// </summary>
-    /// <param name="item">The invoice item to add</param>
-    /// <exception cref="ArgumentNullException">Thrown when item is null</exception>
-    /// <exception cref="InvalidInvoiceStateException">Thrown when invoice is not in draft state</exception>
-    public void AddItem(InvoiceItem item)
+    public static Invoice Create(
+        string invoiceNumber,
+        Guid clinicId,
+        Guid patientId,
+        Guid? appointmentId = null,
+        Guid? medicalVisitId = null,
+        DateTime? dueDate = null)
     {
-        if (item == null) throw new ArgumentNullException(nameof(item));
-        if (Status != InvoiceStatus.Draft) 
-            throw new InvalidInvoiceStateException(Status, "add items", MessageCodes.Domain.INVALID_INVOICE_STATE);
+        if (string.IsNullOrWhiteSpace(invoiceNumber))
+            throw new InvalidBusinessOperationException("Invoice number is required");
         
-        Items.Add(item);
+        if (clinicId == Guid.Empty)
+            throw new InvalidBusinessOperationException("Clinic ID is required");
+        
+        if (patientId == Guid.Empty)
+            throw new InvalidBusinessOperationException("Patient ID is required");
+
+        return new Invoice
+        {
+            InvoiceNumber = invoiceNumber,
+            ClinicId = clinicId,
+            PatientId = patientId,
+            AppointmentId = appointmentId,
+            MedicalVisitId = medicalVisitId,
+            DueDate = dueDate,
+            Status = InvoiceStatus.Draft
+        };
+    }
+    
+    /// <summary>
+    /// Adds an item to the invoice
+    /// </summary>
+    public void AddItem(
+        Guid? medicalServiceId = null,
+        Guid? medicineId = null,
+        Guid? medicalSupplyId = null,
+        int quantity = 1,
+        decimal unitPrice = 0,
+        SaleUnit? saleUnit = null)
+    {
+        if (Status != InvoiceStatus.Draft) 
+            throw new InvalidInvoiceStateException(Status, "add items");
+        
+        // Validate that exactly one item type is specified
+        var itemCount = new[] { medicalServiceId, medicineId, medicalSupplyId }.Count(id => id.HasValue);
+        if (itemCount != 1)
+            throw new InvalidBusinessOperationException(
+                "Exactly one of MedicalServiceId, MedicineId, or MedicalSupplyId must be specified");
+        
+        if (quantity <= 0)
+            throw new InvalidBusinessOperationException("Quantity must be positive");
+        
+        if (unitPrice < 0)
+            throw new InvalidBusinessOperationException("Unit price cannot be negative");
+        
+        var item = new InvoiceItem
+        {
+            InvoiceId = Id,
+            MedicalServiceId = medicalServiceId,
+            MedicineId = medicineId,
+            MedicalSupplyId = medicalSupplyId,
+            Quantity = quantity,
+            UnitPrice = unitPrice,
+            SaleUnit = saleUnit
+        };
+        
+        _items.Add(item);
         RecalculateTotals();
     }
     
     /// <summary>
-    /// Removes an item from the invoice and recalculates totals
+    /// Removes an item from the invoice
     /// </summary>
-    /// <param name="item">The invoice item to remove</param>
-    /// <exception cref="ArgumentNullException">Thrown when item is null</exception>
-    /// <exception cref="InvalidInvoiceStateException">Thrown when invoice is not in draft state</exception>
-    public void RemoveItem(InvoiceItem item)
+    public void RemoveItem(Guid itemId)
     {
-        if (item == null) throw new ArgumentNullException(nameof(item));
         if (Status != InvoiceStatus.Draft) 
-            throw new InvalidInvoiceStateException(Status, "remove items", MessageCodes.Domain.INVALID_INVOICE_STATE);
+            throw new InvalidInvoiceStateException(Status, "remove items");
         
-        Items.Remove(item);
+        var item = _items.FirstOrDefault(i => i.Id == itemId);
+        if (item == null)
+            throw new InvalidBusinessOperationException("Item not found");
+        
+        _items.Remove(item);
+        RecalculateTotals();
+    }
+    
+    /// <summary>
+    /// Updates item quantity
+    /// </summary>
+    public void UpdateItemQuantity(Guid itemId, int newQuantity)
+    {
+        if (Status != InvoiceStatus.Draft) 
+            throw new InvalidInvoiceStateException(Status, "update items");
+        
+        if (newQuantity <= 0)
+            throw new InvalidBusinessOperationException("Quantity must be positive");
+        
+        var item = _items.FirstOrDefault(i => i.Id == itemId);
+        if (item == null)
+            throw new InvalidBusinessOperationException("Item not found");
+        
+        item.Quantity = newQuantity;
         RecalculateTotals();
     }
     
     /// <summary>
     /// Applies a discount to the invoice
     /// </summary>
-    /// <param name="discountAmount">The discount amount</param>
-    /// <exception cref="InvalidDiscountException">Thrown when discount is invalid</exception>
     public void ApplyDiscount(decimal discountAmount)
     {
         if (discountAmount < 0) 
-            throw new InvalidDiscountException(discountAmount, SubtotalAmount, MessageCodes.Domain.INVALID_DISCOUNT);
+            throw new InvalidDiscountException(discountAmount, SubtotalAmount);
+        
         if (discountAmount > SubtotalAmount) 
-            throw new InvalidDiscountException(discountAmount, SubtotalAmount, MessageCodes.Domain.INVALID_DISCOUNT);
+            throw new InvalidDiscountException(discountAmount, SubtotalAmount);
         
         Discount = discountAmount;
         RecalculateTotals();
     }
     
     /// <summary>
+    /// Applies a percentage discount
+    /// </summary>
+    public void ApplyPercentageDiscount(decimal percentage)
+    {
+        if (percentage < 0 || percentage > 100)
+            throw new InvalidDiscountException(percentage, 100);
+        
+        var discountAmount = SubtotalAmount * (percentage / 100);
+        ApplyDiscount(discountAmount);
+    }
+    
+    /// <summary>
+    /// Sets tax amount
+    /// </summary>
+    public void SetTax(decimal taxAmount)
+    {
+        if (taxAmount < 0)
+            throw new InvalidBusinessOperationException("Tax amount cannot be negative");
+        
+        TaxAmount = taxAmount;
+        RecalculateTotals();
+    }
+    
+    /// <summary>
     /// Issues the invoice (changes status from Draft to Issued)
     /// </summary>
-    /// <exception cref="InvalidInvoiceStateException">Thrown when invoice is not in draft state</exception>
-    /// <exception cref="InvalidBusinessOperationException">Thrown when invoice has no items</exception>
     public void Issue()
     {
         if (Status != InvoiceStatus.Draft) 
-            throw new InvalidInvoiceStateException(Status, "issue", MessageCodes.Domain.INVALID_INVOICE_STATE);
-        if (!Items.Any()) 
-            throw new InvalidBusinessOperationException("Cannot issue an invoice without items", MessageCodes.Domain.EMPTY_INVOICE_ITEMS);
+            throw new InvalidInvoiceStateException(Status, "issue");
+        
+        if (!_items.Any()) 
+            throw new InvalidBusinessOperationException("Cannot issue an invoice without items");
         
         Status = InvoiceStatus.Issued;
         IssuedDate = DateTime.UtcNow;
         
         // Set due date if not already set (default to 30 days)
-        if (!DueDate.HasValue)
-        {
-            DueDate = DateTime.UtcNow.AddDays(30);
-        }
+        DueDate ??= DateTime.UtcNow.AddDays(30);
+        
+        // Raise domain event
+        AddDomainEvent(new InvoiceIssuedEvent(
+            Id,
+            InvoiceNumber,
+            PatientId,
+            ClinicId,
+            SubtotalAmount,
+            Discount,
+            TaxAmount,
+            FinalAmount,
+            IssuedDate.Value
+        ));
     }
     
     /// <summary>
-    /// Marks the invoice as paid
+    /// Adds a payment to the invoice
     /// </summary>
-    /// <exception cref="InvalidInvoiceStateException">Thrown when invoice is cancelled</exception>
-    public void MarkAsPaid()
+    public void AddPayment(Guid paymentId, decimal amount, PaymentMethod method, string? referenceNumber = null)
     {
         if (Status == InvoiceStatus.Cancelled) 
-            throw new InvalidInvoiceStateException(Status, "mark as paid", MessageCodes.Domain.INVOICE_CANCELLED);
-        if (IsFullyPaid) return; // Already paid
+            throw new InvalidInvoiceStateException(Status, "add payment");
         
-        Status = InvoiceStatus.FullyPaid;
+        if (amount <= 0)
+            throw new InvalidBusinessOperationException("Payment amount must be positive");
+        
+        if (amount > RemainingAmount)
+            throw new InvalidBusinessOperationException(
+                $"Payment amount ({amount}) exceeds remaining amount ({RemainingAmount})");
+        
+        var payment = new Payment
+        {
+            Id = paymentId,
+            InvoiceId = Id,
+            Amount = amount,
+            PaymentMethod = method,
+            ReferenceNumber = referenceNumber,
+            PaymentDate = DateTime.UtcNow,
+            Status = PaymentStatus.Paid
+        };
+        
+        _payments.Add(payment);
+        
+        var wasFullyPaid = IsFullyPaid;
+        
+        // Update invoice status if fully paid
+        if (IsFullyPaid)
+        {
+            Status = InvoiceStatus.FullyPaid;
+        }
+        else if (TotalPaid > 0)
+        {
+            Status = InvoiceStatus.PartiallyPaid;
+        }
+        
+        // Raise payment recorded event
+        AddDomainEvent(new InvoicePaymentRecordedEvent(
+            Id,
+            InvoiceNumber,
+            PatientId,
+            amount,
+            method,
+            RemainingAmount,
+            IsFullyPaid
+        ));
+        
+        // Raise fully paid event if this payment completed the invoice
+        if (IsFullyPaid && !wasFullyPaid)
+        {
+            AddDomainEvent(new InvoiceFullyPaidEvent(
+                Id,
+                InvoiceNumber,
+                PatientId,
+                FinalAmount,
+                TotalPaid,
+                DateTime.UtcNow
+            ));
+        }
     }
     
     /// <summary>
     /// Cancels the invoice
     /// </summary>
-    /// <param name="reason">Reason for cancellation</param>
-    /// <exception cref="InvalidInvoiceStateException">Thrown when invoice is already paid</exception>
     public void Cancel(string? reason = null)
     {
         if (Status == InvoiceStatus.FullyPaid) 
-            throw new InvalidInvoiceStateException(Status, "cancel", MessageCodes.Domain.INVOICE_ALREADY_PAID);
+            throw new InvalidInvoiceStateException(Status, "cancel");
         
         Status = InvoiceStatus.Cancelled;
+        
         if (!string.IsNullOrEmpty(reason))
         {
             Notes = string.IsNullOrEmpty(Notes) ? $"Cancelled: {reason}" : $"{Notes}\nCancelled: {reason}";
         }
+        
+        // Raise domain event
+        AddDomainEvent(new InvoiceCancelledEvent(
+            Id,
+            InvoiceNumber,
+            PatientId,
+            FinalAmount,
+            reason ?? "No reason provided"
+        ));
+    }
+    
+    /// <summary>
+    /// Updates notes
+    /// </summary>
+    public void UpdateNotes(string? notes)
+    {
+        Notes = notes;
     }
     
     /// <summary>
@@ -160,28 +340,6 @@ public class Invoice : AuditableEntity
     /// </summary>
     private void RecalculateTotals()
     {
-        TotalAmount = SubtotalAmount;
-    }
-    
-    /// <summary>
-    /// Validates the invoice before saving
-    /// </summary>
-    /// <exception cref="InvalidBusinessOperationException">Thrown when validation fails</exception>
-    public void Validate()
-    {
-        if (string.IsNullOrEmpty(InvoiceNumber))
-            throw new InvalidBusinessOperationException("Invoice number is required", MessageCodes.Domain.INVOICE_VALIDATION_FAILED);
-            
-        if (ClinicId == Guid.Empty)
-            throw new InvalidBusinessOperationException("Clinic ID is required", MessageCodes.Domain.INVOICE_VALIDATION_FAILED);
-            
-        if (PatientId == Guid.Empty)
-            throw new InvalidBusinessOperationException("Patient ID is required", MessageCodes.Domain.INVOICE_VALIDATION_FAILED);
-            
-        if (Discount < 0)
-            throw new InvalidDiscountException(Discount, SubtotalAmount, MessageCodes.Domain.INVALID_DISCOUNT);
-            
-        if (Discount > SubtotalAmount)
-            throw new InvalidDiscountException(Discount, SubtotalAmount, MessageCodes.Domain.INVALID_DISCOUNT);
+        TotalAmount = SubtotalAmount - Discount + TaxAmount;
     }
 }

@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using Mapster;
@@ -39,13 +38,13 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
     {
         if (!_currentUserService.TryGetUserId(out var userId))
         {
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<UserDto>.FailSystem("UNAUTHENTICATED", "User is not authenticated");
         }
 
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result<UserDto>.FailSystem("NOT_FOUND", "User not found");
         }
 
         try
@@ -71,7 +70,7 @@ public class UploadProfileImageCommandHandler : IRequestHandler<UploadProfileIma
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading profile image for user {UserId}", userId);
-            return Result<UserDto>.Fail(MessageCodes.Exception.INTERNAL_SERVER_ERROR);
+            return Result<UserDto>.FailSystem("INTERNAL_ERROR", "An error occurred while uploading profile image");
         }
     }
 }

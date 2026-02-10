@@ -8,8 +8,8 @@ public class InsufficientStockException : DomainException
     public int RequestedQuantity { get; }
     public int AvailableQuantity { get; }
 
-    public InsufficientStockException(int requestedQuantity, int availableQuantity, string errorCode) 
-        : base($"Insufficient stock. Requested: {requestedQuantity}, Available: {availableQuantity}", errorCode)
+    public InsufficientStockException(int requestedQuantity, int availableQuantity, string? errorCode = null) 
+        : base($"Insufficient stock. Requested: {requestedQuantity}, Available: {availableQuantity}", errorCode ?? string.Empty)
     {
         RequestedQuantity = requestedQuantity;
         AvailableQuantity = availableQuantity;

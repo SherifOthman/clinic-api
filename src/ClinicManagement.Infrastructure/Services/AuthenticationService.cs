@@ -33,14 +33,14 @@ public class AuthenticationService : IAuthenticationService
         if (string.IsNullOrEmpty(refreshToken))
         {
             _logger.LogWarning("Refresh token attempt with empty token");
-            return Result<TokenRefreshResult>.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
+            return Result<TokenRefreshResult>.FailBusiness("INVALID_TOKEN", "Refresh token is required");
         }
 
         var tokenEntity = await _refreshTokenService.GetActiveRefreshTokenAsync(refreshToken, cancellationToken);
         if (tokenEntity == null)
         {
             _logger.LogWarning("Invalid refresh token used");
-            return Result<TokenRefreshResult>.Fail(MessageCodes.Authentication.INVALID_RESET_TOKEN);
+            return Result<TokenRefreshResult>.FailBusiness("INVALID_TOKEN", "Invalid or expired refresh token");
         }
 
         // Get user roles and clinic information
@@ -78,13 +78,13 @@ public class AuthenticationService : IAuthenticationService
             if (user == null || !await _userManagementService.CheckPasswordAsync(user, password, cancellationToken))
             {
                 _logger.LogWarning("Failed login attempt for: {Email} - Invalid credentials", email);
-                return Result<LoginResult>.Fail(MessageCodes.Authentication.INVALID_CREDENTIALS);
+                return Result<LoginResult>.FailBusiness("INVALID_CREDENTIALS", "Invalid email or password");
             }
 
             if (!await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
             {
                 _logger.LogWarning("Login attempt with unconfirmed email: {Email}", email);
-                return Result<LoginResult>.Fail(MessageCodes.Authentication.EMAIL_NOT_CONFIRMED);
+                return Result<LoginResult>.FailBusiness("EMAIL_NOT_CONFIRMED", "Please confirm your email before logging in");
             }
 
             // Get user roles and clinic information

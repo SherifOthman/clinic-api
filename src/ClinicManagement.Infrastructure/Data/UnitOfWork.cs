@@ -1,5 +1,8 @@
+using System.Text.Json;
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities.Outbox;
 using ClinicManagement.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -92,7 +95,59 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Get domain events from aggregates before saving
+        var domainEvents = GetDomainEvents();
+        
+        // Save domain events to outbox table
+        await SaveDomainEventsToOutboxAsync(domainEvents, cancellationToken);
+        
+        // Save all changes (including outbox messages) in one transaction
         return await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets all domain events from tracked aggregates
+    /// </summary>
+    private List<IDomainEvent> GetDomainEvents()
+    {
+        var domainEvents = new List<IDomainEvent>();
+
+        var aggregates = _context.ChangeTracker
+            .Entries<AggregateRoot>()
+            .Where(e => e.Entity.DomainEvents.Any())
+            .Select(e => e.Entity)
+            .ToList();
+
+        foreach (var aggregate in aggregates)
+        {
+            domainEvents.AddRange(aggregate.DomainEvents);
+            aggregate.ClearDomainEvents();
+        }
+
+        return domainEvents;
+    }
+
+    /// <summary>
+    /// Saves domain events to the outbox table for reliable processing
+    /// </summary>
+    private async Task SaveDomainEventsToOutboxAsync(
+        List<IDomainEvent> domainEvents, 
+        CancellationToken cancellationToken)
+    {
+        foreach (var domainEvent in domainEvents)
+        {
+            // Cast to DomainEvent to access OccurredOn
+            var @event = domainEvent as DomainEvent;
+            if (@event == null) continue;
+
+            var outboxMessage = OutboxMessage.Create(
+                type: @event.GetType().Name,
+                content: JsonSerializer.Serialize(@event, @event.GetType()),
+                occurredAt: @event.OccurredOn
+            );
+
+            await _context.OutboxMessages.AddAsync(outboxMessage, cancellationToken);
+        }
     }
 
     public void Dispose()

@@ -78,7 +78,7 @@ public class UserRegistrationService : IUserRegistrationService
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             _logger.LogError(ex, "Error during user registration for {Email}", request.Email);
-            return Result<Guid>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
+            return Result<Guid>.FailSystem("INTERNAL_ERROR", "An error occurred during registration");
         }
     }
 
@@ -90,7 +90,7 @@ public class UserRegistrationService : IUserRegistrationService
         if (existingUser != null)
         {
             _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
-            return Result<Guid>.FailField("email", MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
+            return Result<Guid>.FailValidation("email", "Email is already registered");
         }
 
         if (!string.IsNullOrEmpty(request.UserName))
@@ -99,7 +99,7 @@ public class UserRegistrationService : IUserRegistrationService
             if (existingUser != null)
             {
                 _logger.LogWarning("Registration attempt with existing username: {UserName}", request.UserName);
-                return Result<Guid>.FailField("userName", MessageCodes.Validation.USERNAME_ALREADY_TAKEN);
+                return Result<Guid>.FailValidation("userName", "Username is already taken");
             }
         }
 
@@ -122,9 +122,8 @@ public class UserRegistrationService : IUserRegistrationService
         var createResult = await _userManagementService.CreateUserAsync(user, request.Password, cancellationToken);
         if (createResult.IsFailure)
         {
-            var errorCode = createResult.Code ?? MessageCodes.Authentication.USER_CREATION_FAILED;
-            _logger.LogError("User creation failed for {Email}: {ErrorCode}", request.Email, errorCode);
-            return Result<Guid>.Fail(errorCode);
+            _logger.LogError("User creation failed for {Email}: {Message}", request.Email, createResult.Message);
+            return Result<Guid>.FailSystem("USER_CREATION_FAILED", createResult.Message ?? "Failed to create user account");
         }
 
         _logger.LogInformation("User created successfully: {UserId}, assigning role...", userId);
@@ -136,10 +135,9 @@ public class UserRegistrationService : IUserRegistrationService
         var roleResult = await _userManagementService.AddToRoleAsync(user, roleName, cancellationToken);
         if (roleResult.IsFailure)
         {
-            var errorCode = roleResult.Code ?? MessageCodes.Authentication.ROLE_ASSIGNMENT_FAILED;
-            _logger.LogError("Role assignment failed for {Email}, Role: {RoleName}, Error: {ErrorCode}", 
-                request.Email, roleName, errorCode);
-            return Result<Guid>.Fail(errorCode);
+            _logger.LogError("Role assignment failed for {Email}, Role: {RoleName}, Error: {Message}", 
+                request.Email, roleName, roleResult.Message);
+            return Result<Guid>.FailSystem("ROLE_ASSIGNMENT_FAILED", roleResult.Message ?? "Failed to assign user role");
         }
 
         _logger.LogInformation("Role {RoleName} assigned successfully to user {UserId}", roleName, userId);

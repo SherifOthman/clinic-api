@@ -44,14 +44,14 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var clinicBranch = await _unitOfWork.Repository<ClinicBranch>().GetByIdAsync(request.Appointment.ClinicBranchId, cancellationToken);
         if (clinicBranch == null)
         {
-            return Result<AppointmentDto>.Fail(MessageCodes.Common.CLINIC_BRANCH_NOT_FOUND);
+            return Result<AppointmentDto>.FailSystem("NOT_FOUND", "Clinic branch not found");
         }
 
         // Validate clinic patient exists and belongs to current clinic
         var Patient = await _unitOfWork.Patients.GetByIdAsync(request.Appointment.PatientId, cancellationToken);
         if (Patient == null)
         {
-            return Result<AppointmentDto>.FailField("appointment.PatientId", MessageCodes.Appointment.PATIENT_REQUIRED);
+            return Result<AppointmentDto>.FailValidation("appointment.PatientId", "Patient is required");
         }
 
         // Get the next queue number for the doctor on the appointment date
@@ -69,7 +69,10 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
 
         if (hasConflict)
         {
-            return Result<AppointmentDto>.Fail(MessageCodes.Appointment.QUEUE_NUMBER_CONFLICT);
+            return Result<AppointmentDto>.FailBusiness(
+                "QUEUE_NUMBER_CONFLICT",
+                "This queue number is already taken for the selected doctor and date",
+                new { doctorId = request.Appointment.DoctorId, date = request.Appointment.AppointmentDate.Date, queueNumber });
         }
 
         // Get the price for this appointment type at this clinic branch
@@ -80,7 +83,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
 
         if (pricing == null)
         {
-            return Result<AppointmentDto>.FailField("appointment.appointmentTypeId", MessageCodes.Appointment.TYPE_REQUIRED);
+            return Result<AppointmentDto>.FailValidation("appointment.appointmentTypeId", "Appointment type is required and must have pricing configured");
         }
 
         // Use custom price if provided, otherwise use the default price
@@ -89,23 +92,22 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         // Generate appointment number
         var appointmentNumber = await _codeGeneratorService.GenerateAppointmentNumberAsync(clinicId, cancellationToken);
 
-        // Create the appointment
-        var appointment = new Appointment
-        {
-            AppointmentNumber = appointmentNumber,
-            ClinicBranchId = request.Appointment.ClinicBranchId,
-            PatientId = request.Appointment.PatientId,
-            DoctorId = request.Appointment.DoctorId,
-            AppointmentDate = request.Appointment.AppointmentDate,
-            QueueNumber = (short)queueNumber,
-            Status = AppointmentStatus.Pending,
-            AppointmentTypeId = request.Appointment.AppointmentTypeId,
-            FinalPrice = finalPrice,
-            DiscountAmount = request.Appointment.DiscountAmount,
-            PaidAmount = request.Appointment.PaidAmount
-        };
+        // Create the appointment using factory method (no payment tracking)
+        var appointment = Appointment.Create(
+            appointmentNumber,
+            request.Appointment.ClinicBranchId,
+            request.Appointment.PatientId,
+            request.Appointment.DoctorId,
+            request.Appointment.AppointmentTypeId,
+            request.Appointment.AppointmentDate,
+            (short)queueNumber
+        );
 
         await _unitOfWork.Appointments.AddAsync(appointment, cancellationToken);
+        
+        // TODO: Create invoice for consultation fee if payment is required
+        // This should be done in a separate handler or service
+        // For now, just create the appointment
         
         // Single SaveChanges - atomic transaction
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -121,14 +123,15 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
             AppointmentDate = appointment.AppointmentDate,
             QueueNumber = appointment.QueueNumber,
             Status = appointment.Status,
-            FinalPrice = appointment.FinalPrice,
-            DiscountAmount = appointment.DiscountAmount,
-            PaidAmount = appointment.PaidAmount,
-            RemainingAmount = appointment.RemainingAmount,
             ClinicBranchId = appointment.ClinicBranchId,
             PatientId = appointment.PatientId,
             DoctorId = appointment.DoctorId,
-            AppointmentTypeId = appointment.AppointmentTypeId
+            AppointmentTypeId = appointment.AppointmentTypeId,
+            // Payment info will come from linked invoice
+            FinalPrice = finalPrice,  // For display only
+            DiscountAmount = 0,
+            PaidAmount = 0,
+            RemainingAmount = finalPrice
         };
         
         return Result<AppointmentDto>.Ok(dto);

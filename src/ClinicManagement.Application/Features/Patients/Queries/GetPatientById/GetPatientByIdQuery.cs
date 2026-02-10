@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
@@ -31,7 +30,7 @@ public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, R
 
         if (patient == null)
         {
-            return Result<PatientDto>.Fail(MessageCodes.Patient.NOT_FOUND);
+            return Result<PatientDto>.FailSystem("NOT_FOUND", "Patient not found");
         }
 
         // Load with includes for DTO mapping

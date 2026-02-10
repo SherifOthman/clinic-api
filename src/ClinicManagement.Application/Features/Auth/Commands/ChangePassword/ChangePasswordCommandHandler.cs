@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
@@ -29,14 +28,14 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
     {
         var userId = _currentUserService.UserId;
         if (userId == null)
-            return Result.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result.FailSystem("UNAUTHENTICATED", "User is not authenticated");
 
         var user = await _userManagementService.GetUserByIdAsync(userId.Value, cancellationToken);
         if (user == null)
-            return Result.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result.FailSystem("NOT_FOUND", "User not found");
 
         if (!await _userManagementService.CheckPasswordAsync(user, request.CurrentPassword, cancellationToken))
-            return Result.FailField("currentPassword", MessageCodes.Authentication.INVALID_PASSWORD);
+            return Result.FailValidation("currentPassword", "Current password is incorrect");
 
         return Result.Ok();
     }

@@ -36,12 +36,12 @@ public class GlobalExceptionMiddleware
 
         var (statusCode, code) = exception switch
         {
-            ValidationException => (400, MessageCodes.Exception.VALIDATION_ERROR),
-            UnauthorizedAccessException => (403, MessageCodes.Exception.UNAUTHORIZED_ACCESS),
-            KeyNotFoundException => (404, MessageCodes.Exception.NOT_FOUND),
-            InvalidOperationException => (400, MessageCodes.Exception.OPERATION_NOT_ALLOWED),
-            ArgumentException => (400, MessageCodes.Exception.INVALID_ARGUMENT),
-            _ => (500, MessageCodes.Exception.INTERNAL_ERROR)
+            ValidationException => (400, "VALIDATION_ERROR"),
+            UnauthorizedAccessException => (403, "UNAUTHORIZED_ACCESS"),
+            KeyNotFoundException => (404, "NOT_FOUND"),
+            InvalidOperationException => (400, "OPERATION_NOT_ALLOWED"),
+            ArgumentException => (400, "INVALID_ARGUMENT"),
+            _ => (500, "INTERNAL_ERROR")
         };
 
         context.Response.StatusCode = statusCode;

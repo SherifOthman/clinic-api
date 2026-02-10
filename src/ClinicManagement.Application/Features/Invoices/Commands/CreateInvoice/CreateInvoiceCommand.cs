@@ -37,14 +37,14 @@ public class CreateInvoiceItemCommandValidator : AbstractValidator<CreateInvoice
     public CreateInvoiceItemCommandValidator()
     {
         RuleFor(x => x.Quantity)
-            .GreaterThan(0).WithErrorCode(MessageCodes.Invoice.INVALID_ITEM_QUANTITY);
+            .GreaterThan(0).WithMessage("Quantity must be greater than 0");
 
         RuleFor(x => x.UnitPrice)
-            .GreaterThan(0).WithErrorCode(MessageCodes.Invoice.INVALID_ITEM_PRICE);
+            .GreaterThan(0).WithMessage("Unit price must be greater than 0");
 
         RuleFor(x => x)
             .Must(item => item.MedicalServiceId.HasValue || item.MedicineId.HasValue || item.MedicalSupplyId.HasValue)
-            .WithErrorCode("INVOICE.ITEM.REQUIRED");
+            .WithMessage("At least one item type (service, medicine, or supply) must be specified");
     }
 }
 
@@ -74,55 +74,60 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
 
         try
         {
-            // Validate clinic patient exists
-            var Patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientId, cancellationToken);
-            if (Patient == null)
+            // Validate patient exists
+            var patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientId, cancellationToken);
+            if (patient == null)
             {
                 _logger.LogWarning("Attempted to create invoice for non-existent patient {PatientId}", request.PatientId);
-                return Result<Guid>.Fail(MessageCodes.Invoice.PATIENT_REQUIRED);
+                return Result<Guid>.FailSystem("NOT_FOUND", "Patient not found");
             }
 
-            _logger.LogDebug("Found clinic patient {PatientId} for clinic {ClinicId}", 
-                Patient.Id, Patient.ClinicId);
+            _logger.LogDebug("Found patient {PatientId} for clinic {ClinicId}", 
+                patient.Id, patient.ClinicId);
 
             // Generate invoice number
-            var invoiceNumber = await _codeGeneratorService.GenerateInvoiceNumberAsync(Patient.ClinicId, cancellationToken);
+            var invoiceNumber = await _codeGeneratorService.GenerateInvoiceNumberAsync(patient.ClinicId, cancellationToken);
             _logger.LogDebug("Generated invoice number: {InvoiceNumber}", invoiceNumber);
 
-            // Create invoice entity
-            var invoice = new Invoice
-            {
-                InvoiceNumber = invoiceNumber,
-                ClinicId = Patient.ClinicId,
-                PatientId = request.PatientId,
-                MedicalVisitId = request.MedicalVisitId,
-                Discount = request.Discount,
-                Status = InvoiceStatus.Draft,
-                DueDate = request.DueDate,
-                Notes = request.Notes
-            };
+            // Create invoice using factory method
+            var invoice = Invoice.Create(
+                invoiceNumber,
+                patient.ClinicId,
+                request.PatientId,
+                appointmentId: null,  // No appointment link for now
+                medicalVisitId: request.MedicalVisitId,
+                dueDate: request.DueDate);
 
-            // Add invoice items with validation
+            _logger.LogDebug("Created invoice with number {InvoiceNumber}", invoiceNumber);
+
+            // Add invoice items using aggregate method
             foreach (var itemCommand in request.Items)
             {
                 _logger.LogDebug("Adding invoice item: Service={ServiceId}, Medicine={MedicineId}, Supply={SupplyId}, Qty={Quantity}", 
                     itemCommand.MedicalServiceId, itemCommand.MedicineId, itemCommand.MedicalSupplyId, itemCommand.Quantity);
 
-                var item = new InvoiceItem
-                {
-                    MedicalServiceId = itemCommand.MedicalServiceId,
-                    MedicineId = itemCommand.MedicineId,
-                    MedicalSupplyId = itemCommand.MedicalSupplyId,
-                    Quantity = itemCommand.Quantity,
-                    UnitPrice = itemCommand.UnitPrice,
-                    SaleUnit = itemCommand.SaleUnit
-                };
-
-                invoice.AddItem(item);
+                invoice.AddItem(
+                    medicalServiceId: itemCommand.MedicalServiceId,
+                    medicineId: itemCommand.MedicineId,
+                    medicalSupplyId: itemCommand.MedicalSupplyId,
+                    quantity: itemCommand.Quantity,
+                    unitPrice: itemCommand.UnitPrice,
+                    saleUnit: itemCommand.SaleUnit);
             }
 
-            // Validate business rules
-            invoice.Validate();
+            // Apply discount if provided
+            if (request.Discount > 0)
+            {
+                invoice.ApplyDiscount(request.Discount);
+                _logger.LogDebug("Applied discount of {Discount} to invoice", request.Discount);
+            }
+
+            // Update notes if provided
+            if (!string.IsNullOrWhiteSpace(request.Notes))
+            {
+                invoice.UpdateNotes(request.Notes);
+            }
+
             _logger.LogDebug("Invoice validation passed. Total amount: {TotalAmount}, Final amount: {FinalAmount}", 
                 invoice.SubtotalAmount, invoice.FinalAmount);
 
@@ -138,22 +143,22 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
         catch (InvalidDiscountException ex)
         {
             _logger.LogWarning("Invalid discount for invoice: {ErrorCode} - {Message}", ex.ErrorCode, ex.Message);
-            return Result<Guid>.Fail(ex.ErrorCode);
+            return Result<Guid>.FailBusiness("INVALID_DISCOUNT", ex.Message);
         }
         catch (InvalidInvoiceStateException ex)
         {
             _logger.LogWarning("Invalid invoice state operation: {ErrorCode} - {Message}", ex.ErrorCode, ex.Message);
-            return Result<Guid>.Fail(ex.ErrorCode);
+            return Result<Guid>.FailBusiness("INVALID_INVOICE_STATE", ex.Message);
         }
         catch (InvalidBusinessOperationException ex)
         {
             _logger.LogWarning("Invalid business operation: {ErrorCode} - {Message}", ex.ErrorCode, ex.Message);
-            return Result<Guid>.Fail(ex.ErrorCode);
+            return Result<Guid>.FailBusiness("INVALID_OPERATION", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating invoice for patient {PatientId}", request.PatientId);
-            return Result<Guid>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
+            return Result<Guid>.FailSystem("INTERNAL_ERROR", "An error occurred while creating the invoice");
         }
     }
 }

@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
@@ -24,7 +23,7 @@ public class GetSpecializationByIdQueryHandler : IRequestHandler<GetSpecializati
         
         if (specialization == null)
         {
-            return Result<SpecializationDto>.Fail(MessageCodes.Business.ENTITY_NOT_FOUND);
+            return Result<SpecializationDto>.FailSystem("NOT_FOUND", "Specialization not found");
         }
 
         var specializationDto = specialization.Adapt<SpecializationDto>();

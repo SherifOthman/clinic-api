@@ -43,22 +43,31 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
     private static TResponse CreateFailureResult(IEnumerable<FluentValidation.Results.ValidationFailure> failures)
     {
-        var errorList = failures.ToErrorItemList();
+        // Convert FluentValidation failures to validation errors dictionary
+        var validationErrors = new Dictionary<string, List<string>>();
+        
+        foreach (var failure in failures)
+        {
+            var field = failure.PropertyName;
+            if (!validationErrors.ContainsKey(field))
+                validationErrors[field] = new List<string>();
+            validationErrors[field].Add(failure.ErrorMessage);
+        }
 
         // Handle Result<T> types using reflection (appropriate for generic pipeline behavior)
         if (typeof(TResponse).IsGenericType && typeof(TResponse).GetGenericTypeDefinition() == typeof(Result<>))
         {
-            // For Result<T>, we need to call Result<T>.Fail(errorList)
+            // For Result<T>, we need to call Result<T>.FailValidation(validationErrors)
             var resultType = typeof(TResponse);
-            var failMethod = resultType.GetMethod("Fail", new[] { typeof(IEnumerable<ErrorItem>) });
+            var failMethod = resultType.GetMethod("FailValidation", new[] { typeof(Dictionary<string, List<string>>) });
             
             if (failMethod != null)
             {
-                return (TResponse)failMethod.Invoke(null, new object[] { errorList })!;
+                return (TResponse)failMethod.Invoke(null, new object[] { validationErrors })!;
             }
         }
 
         // Handle non-generic Result type
-        return (TResponse)(object)Result.Fail(errorList);
+        return (TResponse)(object)Result.FailValidation(validationErrors);
     }
 }

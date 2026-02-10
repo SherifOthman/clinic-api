@@ -7,8 +7,8 @@ public class ExpiredMedicineException : DomainException
 {
     public DateTime ExpiryDate { get; }
 
-    public ExpiredMedicineException(DateTime expiryDate, string errorCode) 
-        : base($"Medicine expired on {expiryDate:yyyy-MM-dd}", errorCode)
+    public ExpiredMedicineException(DateTime expiryDate, string? errorCode = null) 
+        : base($"Medicine expired on {expiryDate:yyyy-MM-dd}", errorCode ?? string.Empty)
     {
         ExpiryDate = expiryDate;
     }

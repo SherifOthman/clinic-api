@@ -35,7 +35,7 @@ public class CreateMedicalServiceCommandHandler : IRequestHandler<CreateMedicalS
         
         if (!clinicBranchExists)
         {
-            return Result<Guid>.Fail(MessageCodes.Common.CLINIC_BRANCH_NOT_FOUND);
+            return Result<Guid>.FailSystem("NOT_FOUND", "Clinic branch not found");
         }
 
         // Check if medical service with same name already exists in this clinic branch
@@ -44,7 +44,7 @@ public class CreateMedicalServiceCommandHandler : IRequestHandler<CreateMedicalS
         
         if (existingService != null)
         {
-            return Result<Guid>.FailField("name", MessageCodes.MedicalService.ALREADY_EXISTS);
+            return Result<Guid>.FailValidation("name", "A medical service with this name already exists in this clinic branch");
         }
 
         var service = new MedicalService

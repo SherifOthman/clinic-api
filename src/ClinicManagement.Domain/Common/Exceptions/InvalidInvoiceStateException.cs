@@ -10,8 +10,8 @@ public class InvalidInvoiceStateException : DomainException
     public InvoiceStatus CurrentStatus { get; }
     public string Operation { get; }
 
-    public InvalidInvoiceStateException(InvoiceStatus currentStatus, string operation, string errorCode) 
-        : base($"Cannot {operation} invoice in {currentStatus} status", errorCode)
+    public InvalidInvoiceStateException(InvoiceStatus currentStatus, string operation, string? errorCode = null) 
+        : base($"Cannot {operation} invoice in {currentStatus} status", errorCode ?? string.Empty)
     {
         CurrentStatus = currentStatus;
         Operation = operation;

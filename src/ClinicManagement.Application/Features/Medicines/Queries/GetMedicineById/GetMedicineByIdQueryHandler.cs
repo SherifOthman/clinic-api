@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
@@ -24,7 +23,7 @@ public class GetMedicineByIdQueryHandler : IRequestHandler<GetMedicineByIdQuery,
         
         if (medicine == null)
         {
-            return Result<MedicineDto>.Fail(MessageCodes.Medicine.NOT_FOUND);
+            return Result<MedicineDto>.FailSystem("NOT_FOUND", "Medicine not found");
         }
 
         var medicineDto = medicine.Adapt<MedicineDto>();

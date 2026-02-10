@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +31,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         if (user == null)
         {
             _logger.LogWarning("Password reset attempted for non-existent email: {Email}", request.Email);
-            return Result.FailField("email", MessageCodes.Authentication.INVALID_RESET_TOKEN);
+            return Result.FailValidation("email", "Invalid reset token");
         }
 
         var result = await _userManagementService.ResetPasswordAsync(user, request.Token, request.NewPassword, cancellationToken);

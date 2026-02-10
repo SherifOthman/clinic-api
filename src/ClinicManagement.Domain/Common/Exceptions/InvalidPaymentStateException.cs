@@ -10,8 +10,8 @@ public class InvalidPaymentStateException : DomainException
     public PaymentStatus CurrentStatus { get; }
     public string Operation { get; }
 
-    public InvalidPaymentStateException(PaymentStatus currentStatus, string operation, string errorCode) 
-        : base($"Cannot {operation} payment in {currentStatus} status", errorCode)
+    public InvalidPaymentStateException(PaymentStatus currentStatus, string operation, string? errorCode = null) 
+        : base($"Cannot {operation} payment in {currentStatus} status", errorCode ?? string.Empty)
     {
         CurrentStatus = currentStatus;
         Operation = operation;

@@ -36,7 +36,7 @@ public class CreateMedicalSupplyCommandHandler : IRequestHandler<CreateMedicalSu
         
         if (!clinicBranchExists)
         {
-            return Result<Guid>.Fail(MessageCodes.Common.CLINIC_BRANCH_NOT_FOUND);
+            return Result<Guid>.FailSystem("NOT_FOUND", "Clinic branch not found");
         }
 
         // Check if medical supply with same name already exists in this clinic branch
@@ -45,7 +45,7 @@ public class CreateMedicalSupplyCommandHandler : IRequestHandler<CreateMedicalSu
         
         if (existingSupply != null)
         {
-            return Result<Guid>.FailField("name", MessageCodes.MedicalSupply.ALREADY_EXISTS);
+            return Result<Guid>.FailValidation("name", "A medical supply with this name already exists in this clinic branch");
         }
 
         var supply = new MedicalSupply

@@ -49,7 +49,7 @@ public class CreateMeasurementAttributeCommandHandler : IRequestHandler<CreateMe
         
         if (exists)
         {
-            return Result<Guid>.FailField("nameEn", MessageCodes.Measurement.ATTRIBUTE_ALREADY_EXISTS);
+            return Result<Guid>.FailValidation("nameEn", "A measurement attribute with this name already exists");
         }
 
         var attribute = new MeasurementAttribute

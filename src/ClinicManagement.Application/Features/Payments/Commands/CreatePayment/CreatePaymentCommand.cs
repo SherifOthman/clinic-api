@@ -36,7 +36,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         var invoice = await _unitOfWork.Invoices.GetByIdAsync(request.InvoiceId, cancellationToken);
         if (invoice == null)
         {
-            return Result<Guid>.Fail(MessageCodes.Invoice.NOT_FOUND);
+            return Result<Guid>.FailSystem("NOT_FOUND", "Invoice not found");
         }
 
         // Check if payment amount doesn't exceed remaining amount
@@ -46,7 +46,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         
         if (request.Amount > remainingAmount)
         {
-            return Result<Guid>.FailField("amount", MessageCodes.Payment.AMOUNT_EXCEEDS_REMAINING);
+            return Result<Guid>.FailValidation("amount", $"Payment amount cannot exceed remaining amount of {remainingAmount:C}");
         }
 
         var payment = new Payment

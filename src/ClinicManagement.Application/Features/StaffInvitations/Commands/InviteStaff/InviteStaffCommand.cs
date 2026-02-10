@@ -37,31 +37,31 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
         var userId = _currentUserService.UserId;
         if (userId == null)
         {
-            return Result<StaffInvitationDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<StaffInvitationDto>.FailSystem("UNAUTHENTICATED", "User is not authenticated");
         }
 
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId.Value, cancellationToken);
         if (user == null)
         {
-            return Result<StaffInvitationDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result<StaffInvitationDto>.FailSystem("NOT_FOUND", "User not found");
         }
 
         // Verify user is a clinic owner
         if (user.UserType != UserType.ClinicOwner)
         {
-            return Result<StaffInvitationDto>.Fail(MessageCodes.Authorization.ACCESS_DENIED);
+            return Result<StaffInvitationDto>.FailBusiness("ACCESS_DENIED", "Only clinic owners can invite staff");
         }
 
         // Verify user has completed onboarding
         if (!user.OnboardingCompleted)
         {
-            return Result<StaffInvitationDto>.Fail(MessageCodes.Business.OPERATION_NOT_ALLOWED);
+            return Result<StaffInvitationDto>.FailBusiness("ONBOARDING_REQUIRED", "You must complete onboarding before inviting staff");
         }
 
         // Validate UserType (only Doctor or Receptionist)
         if (dto.UserType != UserType.Doctor && dto.UserType != UserType.Receptionist)
         {
-            return Result<StaffInvitationDto>.FailField(nameof(dto.UserType), MessageCodes.Validation.INVALID_FORMAT);
+            return Result<StaffInvitationDto>.FailValidation(nameof(dto.UserType), "User type must be Doctor or Receptionist");
         }
 
         // Check if email already exists
@@ -70,13 +70,13 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
         
         if (existingUser != null)
         {
-            return Result<StaffInvitationDto>.FailField(nameof(dto.Email), MessageCodes.Validation.EMAIL_ALREADY_REGISTERED);
+            return Result<StaffInvitationDto>.FailValidation(nameof(dto.Email), "Email is already registered");
         }
 
         // Ensure user has a clinic
         if (!user.ClinicId.HasValue)
         {
-            return Result<StaffInvitationDto>.Fail(MessageCodes.Authentication.USER_NO_CLINIC);
+            return Result<StaffInvitationDto>.FailSystem("NO_CLINIC", "User does not have an associated clinic");
         }
 
         // Check if there's already a pending invitation for this email
@@ -85,7 +85,7 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
         
         if (existingInvitation != null)
         {
-            return Result<StaffInvitationDto>.FailField(nameof(dto.Email), MessageCodes.Invitation.ALREADY_PENDING);
+            return Result<StaffInvitationDto>.FailValidation(nameof(dto.Email), "A pending invitation already exists for this email");
         }
 
         // Generate GUID in code for transaction safety

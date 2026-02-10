@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
 using Mapster;
 using MediatR;
@@ -43,10 +42,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
         
         if (result.IsFailure)
         {
-            if (result.Errors != null && result.Errors.Any())
-                return Result.Fail(result.Errors);
+            // ValidationErrors are already in the correct format
+            if (result.HasValidationErrors)
+                return result;
             
-            return Result.Fail(result.Code ?? MessageCodes.Authentication.REGISTRATION_FAILED);
+            return Result.FailSystem("REGISTRATION_FAILED", "User registration failed");
         }
 
         _logger.LogInformation("Clinic owner registered successfully: {Email}", request.Email);

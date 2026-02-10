@@ -35,13 +35,13 @@ public class DeleteProfileImageCommandHandler : IRequestHandler<DeleteProfileIma
     {
         if (!_currentUserService.TryGetUserId(out var userId))
         {
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<UserDto>.FailSystem("UNAUTHENTICATED", "User is not authenticated");
         }
 
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result<UserDto>.FailSystem("NOT_FOUND", "User not found");
         }
 
         try
@@ -64,7 +64,7 @@ public class DeleteProfileImageCommandHandler : IRequestHandler<DeleteProfileIma
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting profile image for user {UserId}", userId);
-            return Result<UserDto>.Fail(MessageCodes.Exception.INTERNAL_SERVER_ERROR);
+            return Result<UserDto>.FailSystem("INTERNAL_ERROR", "An error occurred while deleting the profile image");
         }
     }
 }

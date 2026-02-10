@@ -1,7 +1,4 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
@@ -16,23 +13,23 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
 
         RuleFor(x => x.FirstName)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Fields.FIRST_NAME_REQUIRED)
+            .WithMessage("First name is required")
             .MaximumLength(50)
-            .WithErrorCode(MessageCodes.Fields.FIRST_NAME_MAX_LENGTH);
+            .WithMessage("First name cannot exceed 50 characters");
 
         RuleFor(x => x.LastName)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Fields.LAST_NAME_REQUIRED)
+            .WithMessage("Last name is required")
             .MaximumLength(50)
-            .WithErrorCode(MessageCodes.Fields.LAST_NAME_MAX_LENGTH);
+            .WithMessage("Last name cannot exceed 50 characters");
 
         RuleFor(x => x.PhoneNumber)
-            .Must(BeValidPhoneNumber).WithErrorCode(MessageCodes.Fields.PHONE_NUMBER_INVALID)
+            .Must(BeValidPhoneNumber).WithMessage("Phone number format is invalid")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
         RuleFor(x => x.ProfileImageUrl)
             .MaximumLength(500)
-            .WithErrorCode(MessageCodes.Fields.PROFILE_IMAGE_URL_MAX_LENGTH)
+            .WithMessage("Profile image URL cannot exceed 500 characters")
             .When(x => !string.IsNullOrEmpty(x.ProfileImageUrl));
     }
 

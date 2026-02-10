@@ -1,7 +1,3 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Appointments.Commands.CreateAppointment;
@@ -12,37 +8,37 @@ public class CreateAppointmentCommandValidator : AbstractValidator<CreateAppoint
     {
         RuleFor(x => x.Appointment.ClinicBranchId)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Common.CLINIC_BRANCH_REQUIRED);
+            .WithMessage("Clinic branch is required");
 
         RuleFor(x => x.Appointment.PatientId)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Appointment.PATIENT_REQUIRED);
+            .WithMessage("Patient is required");
 
         RuleFor(x => x.Appointment.DoctorId)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Appointment.DOCTOR_REQUIRED);
+            .WithMessage("Doctor is required");
 
         RuleFor(x => x.Appointment.AppointmentDate)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Appointment.DATE_REQUIRED)
+            .WithMessage("Appointment date is required")
             .GreaterThanOrEqualTo(DateTime.Today)
-            .WithErrorCode(MessageCodes.Appointment.DATE_IN_PAST);
+            .WithMessage("Appointment date cannot be in the past");
 
         RuleFor(x => x.Appointment.AppointmentTypeId)
             .NotEmpty()
-            .WithErrorCode(MessageCodes.Appointment.TYPE_REQUIRED);
+            .WithMessage("Appointment type is required");
 
         RuleFor(x => x.Appointment.CustomPrice)
             .GreaterThanOrEqualTo(0)
             .When(x => x.Appointment.CustomPrice.HasValue)
-            .WithErrorCode(MessageCodes.Appointment.PRICE_CANNOT_BE_NEGATIVE);
+            .WithMessage("Custom price cannot be negative");
 
         RuleFor(x => x.Appointment.DiscountAmount)
             .GreaterThanOrEqualTo(0)
-            .WithErrorCode(MessageCodes.Appointment.DISCOUNT_CANNOT_BE_NEGATIVE);
+            .WithMessage("Discount amount cannot be negative");
 
         RuleFor(x => x.Appointment.PaidAmount)
             .GreaterThanOrEqualTo(0)
-            .WithErrorCode(MessageCodes.Appointment.PAID_AMOUNT_CANNOT_BE_NEGATIVE);
+            .WithMessage("Paid amount cannot be negative");
     }
 }

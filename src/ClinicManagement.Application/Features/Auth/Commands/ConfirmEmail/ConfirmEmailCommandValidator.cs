@@ -7,10 +7,10 @@ internal class ConfirmEmailCommandValidator : AbstractValidator<ConfirmEmailComm
     public ConfirmEmailCommandValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty()
-            .EmailAddress();
+            .NotEmpty().WithMessage("Email is required")
+            .EmailAddress().WithMessage("Email format is invalid");
 
         RuleFor(x => x.Token)
-            .NotEmpty();
+            .NotEmpty().WithMessage("Confirmation token is required");
     }
 }

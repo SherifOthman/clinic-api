@@ -42,8 +42,8 @@ public static class MappingConfig
             .NewConfig()
             .Map(dest => dest.PatientName, src => src.Patient.FullName)
             .Map(dest => dest.DoctorName, src => $"{src.Doctor.User.FirstName} {src.Doctor.User.LastName}".Trim())
-            .Map(dest => dest.AppointmentType, src => src.AppointmentType)
-            .Map(dest => dest.RemainingAmount, src => src.FinalPrice - src.DiscountAmount - src.PaidAmount);
+            .Map(dest => dest.AppointmentType, src => src.AppointmentType);
+            // Note: Payment info now comes from linked Invoice, not from Appointment
         
         // User to UserDto mapping is handled automatically by Mapster
         // since property names match between User entity and UserDto

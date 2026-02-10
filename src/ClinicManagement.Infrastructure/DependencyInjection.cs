@@ -119,6 +119,7 @@ public static class DependencyInjection
         services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
         services.AddScoped<IComprehensiveSeedService, ComprehensiveSeedService>();
         services.AddHostedService<RefreshTokenCleanupService>();
+        services.AddHostedService<OutboxProcessorService>();  // Outbox pattern for reliable event publishing
 
         return services;
     }

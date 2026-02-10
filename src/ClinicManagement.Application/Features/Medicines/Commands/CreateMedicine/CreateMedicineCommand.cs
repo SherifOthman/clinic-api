@@ -1,10 +1,8 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Exceptions;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -59,7 +57,7 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
             {
                 _logger.LogWarning("Attempted to create medicine for non-existent clinic branch {ClinicBranchId}", 
                     request.ClinicBranchId);
-                return Result<Guid>.Fail(MessageCodes.Common.CLINIC_BRANCH_NOT_FOUND);
+                return Result<Guid>.FailSystem("NOT_FOUND", "Clinic branch not found");
             }
 
             // Check if medicine with same name already exists in this clinic branch
@@ -70,27 +68,23 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
             {
                 _logger.LogWarning("Medicine '{MedicineName}' already exists in clinic branch {ClinicBranchId}", 
                     request.Name, request.ClinicBranchId);
-                return Result<Guid>.FailField("name", MessageCodes.Medicine.ALREADY_EXISTS);
+                return Result<Guid>.FailValidation("name", "Medicine with this name already exists in this branch");
             }
 
-            // Create medicine entity
-            var medicine = new Medicine
-            {
-                ClinicBranchId = request.ClinicBranchId,
-                Name = request.Name,
-                Description = request.Description,
-                Manufacturer = request.Manufacturer,
-                BoxPrice = request.BoxPrice,
-                StripsPerBox = request.StripsPerBox,
-                TotalStripsInStock = request.TotalStripsInStock,
-                MinimumStockLevel = request.MinimumStockLevel,
-                ReorderLevel = request.ReorderLevel ?? request.MinimumStockLevel * 2, // Default reorder level
-                ExpiryDate = request.ExpiryDate,
-                BatchNumber = request.BatchNumber
-            };
-
-            // Validate business rules
-            medicine.Validate();
+            // Create medicine entity using factory method
+            var medicine = Medicine.Create(
+                clinicBranchId: request.ClinicBranchId,
+                name: request.Name,
+                boxPrice: request.BoxPrice,
+                stripsPerBox: request.StripsPerBox,
+                initialStock: request.TotalStripsInStock,
+                description: request.Description,
+                manufacturer: request.Manufacturer,
+                batchNumber: request.BatchNumber,
+                expiryDate: request.ExpiryDate,
+                minimumStockLevel: request.MinimumStockLevel,
+                reorderLevel: request.ReorderLevel ?? request.MinimumStockLevel * 2
+            );
             
             _logger.LogDebug("Medicine validation passed. Box price: {BoxPrice}, Strips per box: {StripsPerBox}, Stock: {Stock}", 
                 medicine.BoxPrice, medicine.StripsPerBox, medicine.TotalStripsInStock);
@@ -120,13 +114,13 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
         catch (InvalidBusinessOperationException ex)
         {
             _logger.LogWarning("Invalid business operation for medicine creation: {ErrorCode} - {Message}", ex.ErrorCode, ex.Message);
-            return Result<Guid>.Fail(ex.ErrorCode);
+            return Result<Guid>.FailBusiness("INVALID_OPERATION", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating medicine '{MedicineName}' for clinic branch {ClinicBranchId}", 
                 request.Name, request.ClinicBranchId);
-            return Result<Guid>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
+            return Result<Guid>.FailSystem("INTERNAL_ERROR", "An error occurred while creating medicine");
         }
     }
 }

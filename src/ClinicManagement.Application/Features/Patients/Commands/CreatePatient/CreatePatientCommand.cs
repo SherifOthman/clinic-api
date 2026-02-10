@@ -34,38 +34,28 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         // Generate unique patient code
         var patientCode = await _codeGenerator.GeneratePatientNumberAsync(clinicId, cancellationToken);
 
-        // Create patient
-        var patient = new Patient
-        {
-            PatientCode = patientCode,
-            ClinicId = clinicId,
-            FullName = dto.FullName,
-            Gender = dto.Gender,
-            DateOfBirth = dto.DateOfBirth,
-            CityGeoNameId = dto.CityGeoNameId
-        };
+        // Create patient using factory method - this raises PatientRegisteredEvent
+        var patient = Patient.Create(
+            patientCode,
+            clinicId,
+            dto.FullName,
+            dto.Gender,
+            dto.DateOfBirth,
+            dto.CityGeoNameId
+        );
 
-        // Add phone numbers
+        // Add phone numbers using behavior method
         foreach (var phoneDto in dto.PhoneNumbers)
         {
-            patient.PhoneNumbers.Add(new PatientPhone
-            {
-                PhoneNumber = phoneDto.PhoneNumber,
-                IsPrimary = phoneDto.IsPrimary
-            });
+            patient.AddPhoneNumber(phoneDto.PhoneNumber, phoneDto.IsPrimary);
         }
 
-        // Add chronic diseases
+        // Add chronic diseases using behavior method
         if (dto.ChronicDiseaseIds.Any())
         {
-            var chronicDiseases = await _unitOfWork.ChronicDiseases.GetByIdsAsync(dto.ChronicDiseaseIds, cancellationToken);
-
-            foreach (var disease in chronicDiseases)
+            foreach (var diseaseId in dto.ChronicDiseaseIds)
             {
-                patient.ChronicDiseases.Add(new PatientChronicDisease
-                {
-                    ChronicDiseaseId = disease.Id
-                });
+                patient.AddChronicDisease(diseaseId);
             }
         }
 

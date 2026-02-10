@@ -5,13 +5,13 @@ namespace ClinicManagement.Domain.Common.Exceptions;
 /// </summary>
 public class InvalidBusinessOperationException : DomainException
 {
-    public InvalidBusinessOperationException(string message, string errorCode) 
-        : base(message, errorCode)
+    public InvalidBusinessOperationException(string message, string? errorCode = null) 
+        : base(message, errorCode ?? string.Empty)
     {
     }
 
-    public InvalidBusinessOperationException(string message, string errorCode, Exception innerException) 
-        : base(message, errorCode, innerException)
+    public InvalidBusinessOperationException(string message, string? errorCode, Exception innerException) 
+        : base(message, errorCode ?? string.Empty, innerException)
     {
     }
 }

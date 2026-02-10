@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using Mapster;
 using MediatR;
 
@@ -26,11 +25,11 @@ public class GetMeQueryHandler : IRequestHandler<GetMeQuery, Result<UserDto>>
     {
         var userId = _currentUserService.UserId;
         if (userId == null)
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
+            return Result<UserDto>.FailSystem("UNAUTHENTICATED", "User is not authenticated");
 
         var user = await _userManagementService.GetUserByIdAsync(userId.Value, cancellationToken);
         if (user == null)
-            return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
+            return Result<UserDto>.FailSystem("NOT_FOUND", "User not found");
 
         var userDto = user.Adapt<UserDto>();
         

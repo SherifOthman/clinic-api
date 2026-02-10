@@ -1,9 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -38,7 +36,7 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
         if (chronicDisease == null)
         {
             _logger.LogWarning("Chronic disease {DiseaseId} not found for update", request.Id);
-            return Result<ChronicDiseaseDto>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
+            return Result<ChronicDiseaseDto>.FailSystem("NOT_FOUND", "Chronic disease not found");
         }
 
         chronicDisease.NameEn = request.NameEn;
