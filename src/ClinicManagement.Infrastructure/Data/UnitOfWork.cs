@@ -12,19 +12,6 @@ public class UnitOfWork : IUnitOfWork
     private readonly Dictionary<Type, object> _repositories;
     private IDbContextTransaction? _currentTransaction;
 
-    // Specific repositories
-    private IPatientRepository? _patients;
-    private IChronicDiseaseRepository? _chronicDiseases;
-    private ISpecializationRepository? _specializations;
-    private IMedicineRepository? _medicines;
-    private IMedicalSupplyRepository? _medicalSupplies;
-    private IMedicalServiceRepository? _medicalServices;
-    private IAppointmentRepository? _appointments;
-    private IInvoiceRepository? _invoices;
-    private IPaymentRepository? _payments;
-    private IMedicalFileRepository? _medicalFiles;
-    private IRefreshTokenRepository? _refreshTokens;
-
     public UnitOfWork(ApplicationDbContext context, IDateTimeProvider dateTimeProvider)
     {
         _context = context;
@@ -32,17 +19,18 @@ public class UnitOfWork : IUnitOfWork
         _repositories = new Dictionary<Type, object>();
     }
 
-    public IPatientRepository Patients => _patients ??= new PatientRepository(_context);
-    public IChronicDiseaseRepository ChronicDiseases => _chronicDiseases ??= new ChronicDiseaseRepository(_context);
-    public ISpecializationRepository Specializations => _specializations ??= new SpecializationRepository(_context);
-    public IMedicineRepository Medicines => _medicines ??= new MedicineRepository(_context);
-    public IMedicalSupplyRepository MedicalSupplies => _medicalSupplies ??= new MedicalSupplyRepository(_context);
-    public IMedicalServiceRepository MedicalServices => _medicalServices ??= new MedicalServiceRepository(_context);
-    public IAppointmentRepository Appointments => _appointments ??= new AppointmentRepository(_context);
-    public IInvoiceRepository Invoices => _invoices ??= new InvoiceRepository(_context);
-    public IPaymentRepository Payments => _payments ??= new PaymentRepository(_context);
-    public IMedicalFileRepository MedicalFiles => _medicalFiles ??= new MedicalFileRepository(_context);
-    public IRefreshTokenRepository RefreshTokens => _refreshTokens ??= new RefreshTokenRepository(_context, _dateTimeProvider);
+    // Specific repositories using C# 14 field keyword
+    public IPatientRepository Patients => field ??= new PatientRepository(_context);
+    public IChronicDiseaseRepository ChronicDiseases => field ??= new ChronicDiseaseRepository(_context);
+    public ISpecializationRepository Specializations => field ??= new SpecializationRepository(_context);
+    public IMedicineRepository Medicines => field ??= new MedicineRepository(_context);
+    public IMedicalSupplyRepository MedicalSupplies => field ??= new MedicalSupplyRepository(_context);
+    public IMedicalServiceRepository MedicalServices => field ??= new MedicalServiceRepository(_context);
+    public IAppointmentRepository Appointments => field ??= new AppointmentRepository(_context);
+    public IInvoiceRepository Invoices => field ??= new InvoiceRepository(_context);
+    public IPaymentRepository Payments => field ??= new PaymentRepository(_context);
+    public IMedicalFileRepository MedicalFiles => field ??= new MedicalFileRepository(_context);
+    public IRefreshTokenRepository RefreshTokens => field ??= new RefreshTokenRepository(_context, _dateTimeProvider);
 
     public IRepository<T> Repository<T>() where T : class
     {
