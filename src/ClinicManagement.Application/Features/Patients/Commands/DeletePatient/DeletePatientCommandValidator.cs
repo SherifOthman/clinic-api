@@ -1,0 +1,12 @@
+using FluentValidation;
+
+namespace ClinicManagement.Application.Features.Patients.Commands.DeletePatient;
+
+public class DeletePatientCommandValidator : AbstractValidator<DeletePatientCommand>
+{
+    public DeletePatientCommandValidator()
+    {
+        RuleFor(x => x.Id)
+            .NotEmpty();
+    }
+}
