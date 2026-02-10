@@ -38,7 +38,11 @@ public class UserRegistrationService : IUserRegistrationService
         if (validationResult.IsFailure)
             return validationResult;
 
-        var userId = await CreateUserWithRoleAsync(request, cancellationToken);
+        var userIdResult = await CreateUserWithRoleAsync(request, cancellationToken);
+        if (userIdResult.IsFailure)
+            return userIdResult;
+
+        var userId = userIdResult.Value;
         await CreateTypeSpecificEntityAsync(userId, request.UserType, cancellationToken);
         
         // Single SaveChanges - atomic transaction
@@ -76,7 +80,7 @@ public class UserRegistrationService : IUserRegistrationService
         return Result<Guid>.Ok(Guid.Empty); // Success, value not used
     }
 
-    private async Task<Guid> CreateUserWithRoleAsync(
+    private async Task<Result<Guid>> CreateUserWithRoleAsync(
         UserRegistrationRequest request, 
         CancellationToken cancellationToken)
     {
@@ -94,7 +98,7 @@ public class UserRegistrationService : IUserRegistrationService
         {
             var errorCode = createResult.Code ?? MessageCodes.Authentication.USER_CREATION_FAILED;
             _logger.LogError("User creation failed for {Email}: {ErrorCode}", request.Email, errorCode);
-            throw new InvalidOperationException($"User creation failed: {errorCode}");
+            return Result<Guid>.Fail(errorCode);
         }
 
         _logger.LogInformation("User created successfully: {UserId}, assigning role...", userId);
@@ -109,12 +113,12 @@ public class UserRegistrationService : IUserRegistrationService
             var errorCode = roleResult.Code ?? MessageCodes.Authentication.ROLE_ASSIGNMENT_FAILED;
             _logger.LogError("Role assignment failed for {Email}, Role: {RoleName}, Error: {ErrorCode}", 
                 request.Email, roleName, errorCode);
-            throw new InvalidOperationException($"Role assignment failed: {errorCode}");
+            return Result<Guid>.Fail(errorCode);
         }
 
         _logger.LogInformation("Role {RoleName} assigned successfully to user {UserId}", roleName, userId);
 
-        return userId;
+        return Result<Guid>.Ok(userId);
     }
 
     private async Task SendConfirmationEmailIfNeededAsync(

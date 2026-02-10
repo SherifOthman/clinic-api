@@ -44,8 +44,7 @@ public static class DependencyInjection
 
     public static WebApplication UseAppConfigurations(this WebApplication app)
     {
-        // Domain exception middleware should come first to handle domain-specific exceptions
-        app.UseMiddleware<DomainExceptionMiddleware>();
+        // Global exception middleware handles all unhandled exceptions
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
         //if (app.Environment.IsDevelopment())

@@ -33,10 +33,8 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         if (!failures.Any())
             return await next();
 
-        if (IsResultType(typeof(TResponse)))
-            return CreateFailureResult(failures);
-
-        throw new ValidationException(failures);
+        // Always return Result for validation failures
+        return CreateFailureResult(failures);
     }
 
     private static bool IsResultType(Type type) =>
