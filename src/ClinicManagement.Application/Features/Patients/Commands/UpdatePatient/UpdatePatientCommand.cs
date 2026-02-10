@@ -2,10 +2,10 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Patients.Commands.UpdatePatient;
 
@@ -13,14 +13,14 @@ public record UpdatePatientCommand(Guid Id, UpdatePatientDto Dto) : IRequest<Res
 
 public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand, Result<PatientDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
     public UpdatePatientCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
     }
 
@@ -30,18 +30,18 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         var clinicId = _currentUserService.ClinicId!.Value;
 
         // Get patient with related data
-        var patient = await _context.Patients
-            .Include(p => p.PhoneNumbers)
-            .Include(p => p.ChronicDiseases)
-            .FirstOrDefaultAsync(p => p.Id == request.Id && p.ClinicId == clinicId, cancellationToken);
+        var patient = await _unitOfWork.Patients.GetByIdForClinicAsync(request.Id, clinicId, cancellationToken);
 
         if (patient == null)
         {
             return Result<PatientDto>.Fail(MessageCodes.Patient.NOT_FOUND);
         }
 
+        // Load with includes for updating
+        patient = await _unitOfWork.Patients.GetByIdWithIncludesAsync(request.Id, cancellationToken);
+
         // Update basic info
-        patient.FullName = dto.FullName;
+        patient!.FullName = dto.FullName;
         patient.Gender = dto.Gender;
         patient.DateOfBirth = dto.DateOfBirth;
         patient.CityGeoNameId = dto.CityGeoNameId;
@@ -67,9 +67,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         // Add new ones
         if (dto.ChronicDiseaseIds.Any())
         {
-            var chronicDiseases = await _context.ChronicDiseases
-                .Where(cd => dto.ChronicDiseaseIds.Contains(cd.Id))
-                .ToListAsync(cancellationToken);
+            var chronicDiseases = await _unitOfWork.ChronicDiseases.GetByIdsAsync(dto.ChronicDiseaseIds, cancellationToken);
 
             foreach (var disease in chronicDiseases)
             {
@@ -80,16 +78,12 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Reload with fresh data
-        var updatedPatient = await _context.Patients
-            .Include(p => p.PhoneNumbers)
-            .Include(p => p.ChronicDiseases)
-                .ThenInclude(pcd => pcd.ChronicDisease)
-            .FirstAsync(p => p.Id == patient.Id, cancellationToken);
+        var updatedPatient = await _unitOfWork.Patients.GetByIdWithIncludesAsync(patient.Id, cancellationToken);
 
-        var patientDto = updatedPatient.Adapt<PatientDto>();
+        var patientDto = updatedPatient!.Adapt<PatientDto>();
         return Result<PatientDto>.Ok(patientDto);
     }
 }

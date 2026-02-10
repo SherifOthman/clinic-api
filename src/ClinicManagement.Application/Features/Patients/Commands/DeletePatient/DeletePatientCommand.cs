@@ -1,8 +1,8 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Patients.Commands.DeletePatient;
 
@@ -10,14 +10,14 @@ public record DeletePatientCommand(Guid Id) : IRequest<Result<bool>>;
 
 public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand, Result<bool>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
     public DeletePatientCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
     }
 
@@ -25,16 +25,15 @@ public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand,
     {
         var clinicId = _currentUserService.ClinicId!.Value;
 
-        var patient = await _context.Patients
-            .FirstOrDefaultAsync(p => p.Id == request.Id && p.ClinicId == clinicId, cancellationToken);
+        var patient = await _unitOfWork.Patients.GetByIdForClinicAsync(request.Id, clinicId, cancellationToken);
 
         if (patient == null)
         {
             return Result<bool>.Fail(MessageCodes.Patient.NOT_FOUND);
         }
 
-        _context.Patients.Remove(patient);
-        await _context.SaveChangesAsync(cancellationToken);
+        _unitOfWork.Patients.Delete(patient);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<bool>.Ok(true);
     }

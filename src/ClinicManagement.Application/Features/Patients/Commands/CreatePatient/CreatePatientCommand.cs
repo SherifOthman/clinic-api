@@ -1,10 +1,10 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Patients.Commands.CreatePatient;
 
@@ -12,16 +12,16 @@ public record CreatePatientCommand(CreatePatientDto Dto) : IRequest<Result<Patie
 
 public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand, Result<PatientDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICodeGeneratorService _codeGenerator;
 
     public CreatePatientCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         ICodeGeneratorService codeGenerator)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _codeGenerator = codeGenerator;
     }
@@ -58,9 +58,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         // Add chronic diseases
         if (dto.ChronicDiseaseIds.Any())
         {
-            var chronicDiseases = await _context.ChronicDiseases
-                .Where(cd => dto.ChronicDiseaseIds.Contains(cd.Id))
-                .ToListAsync(cancellationToken);
+            var chronicDiseases = await _unitOfWork.ChronicDiseases.GetByIdsAsync(dto.ChronicDiseaseIds, cancellationToken);
 
             foreach (var disease in chronicDiseases)
             {
@@ -71,17 +69,13 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
             }
         }
 
-        _context.Patients.Add(patient);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Load related data for response
-        var createdPatient = await _context.Patients
-            .Include(p => p.PhoneNumbers)
-            .Include(p => p.ChronicDiseases)
-                .ThenInclude(pcd => pcd.ChronicDisease)
-            .FirstAsync(p => p.Id == patient.Id, cancellationToken);
+        var createdPatient = await _unitOfWork.Patients.GetByIdWithIncludesAsync(patient.Id, cancellationToken);
 
-        var patientDto = createdPatient.Adapt<PatientDto>();
+        var patientDto = createdPatient!.Adapt<PatientDto>();
         return Result<PatientDto>.Ok(patientDto);
     }
 }

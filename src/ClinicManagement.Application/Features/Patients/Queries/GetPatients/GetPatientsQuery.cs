@@ -2,10 +2,10 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Patients.Queries.GetPatients;
 
@@ -26,14 +26,14 @@ public record GetPatientsQuery(
 
 public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<PagedResult<PatientDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
     public GetPatientsQueryHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
     }
 
@@ -41,113 +41,49 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
     {
         var clinicId = _currentUserService.ClinicId!.Value;
 
-        var query = _context.Patients
-            .Include(p => p.PhoneNumbers)
-            .Include(p => p.ChronicDiseases)
-                .ThenInclude(pcd => pcd.ChronicDisease)
-            .Where(p => p.ClinicId == clinicId)
-            .AsQueryable();
-
-        // Apply search filter
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
-            var searchTerm = request.SearchTerm.ToLower();
-            query = query.Where(p =>
-                p.FullName.ToLower().Contains(searchTerm) ||
-                p.PatientCode.ToLower().Contains(searchTerm) ||
-                p.PhoneNumbers.Any(ph => ph.PhoneNumber.Contains(searchTerm)));
-        }
-
-        // Apply filters
+        // Build filters dictionary
+        var filters = new Dictionary<string, object>();
+        
         if (request.Gender.HasValue)
-        {
-            query = query.Where(p => p.Gender == request.Gender.Value);
-        }
-
+            filters["gender"] = request.Gender.Value;
+        
         if (request.DateOfBirthFrom.HasValue)
-        {
-            query = query.Where(p => p.DateOfBirth >= request.DateOfBirthFrom.Value);
-        }
-
+            filters["dateOfBirthFrom"] = request.DateOfBirthFrom.Value;
+        
         if (request.DateOfBirthTo.HasValue)
-        {
-            query = query.Where(p => p.DateOfBirth <= request.DateOfBirthTo.Value);
-        }
-
+            filters["dateOfBirthTo"] = request.DateOfBirthTo.Value;
+        
         if (request.CreatedFrom.HasValue)
-        {
-            query = query.Where(p => p.CreatedAt >= request.CreatedFrom.Value);
-        }
-
+            filters["createdFrom"] = request.CreatedFrom.Value;
+        
         if (request.CreatedTo.HasValue)
+            filters["createdTo"] = request.CreatedTo.Value;
+        
+        if (request.MinAge.HasValue)
+            filters["minAge"] = request.MinAge.Value;
+        
+        if (request.MaxAge.HasValue)
+            filters["maxAge"] = request.MaxAge.Value;
+
+        var paginationRequest = new SearchablePaginationRequest
         {
-            query = query.Where(p => p.CreatedAt <= request.CreatedTo.Value);
-        }
+            SearchTerm = request.SearchTerm,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy,
+            SortDirection = request.SortDirection,
+            Filters = filters
+        };
 
-        // Age filtering (calculated on the fly)
-        if (request.MinAge.HasValue || request.MaxAge.HasValue)
-        {
-            var today = DateTime.UtcNow;
-            
-            if (request.MaxAge.HasValue)
-            {
-                var minDateOfBirth = today.AddYears(-request.MaxAge.Value - 1);
-                query = query.Where(p => p.DateOfBirth >= minDateOfBirth);
-            }
+        var pagedPatients = await _unitOfWork.Patients.GetPagedForClinicAsync(clinicId, paginationRequest, cancellationToken);
 
-            if (request.MinAge.HasValue)
-            {
-                var maxDateOfBirth = today.AddYears(-request.MinAge.Value);
-                query = query.Where(p => p.DateOfBirth <= maxDateOfBirth);
-            }
-        }
-
-        // Apply sorting
-        var isDescending = request.SortDirection.ToLower() == "desc";
-        query = ApplySorting(query, request.SortBy, isDescending);
-
-        // Get total count
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        // Apply pagination
-        var patients = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync(cancellationToken);
-
-        var dtos = patients.Adapt<List<PatientDto>>();
+        var dtos = pagedPatients.Items.Adapt<List<PatientDto>>();
         var pagedResult = new PagedResult<PatientDto>(
             dtos,
-            totalCount,
-            request.PageNumber,
-            request.PageSize);
+            pagedPatients.TotalCount,
+            pagedPatients.PageNumber,
+            pagedPatients.PageSize);
 
         return Result<PagedResult<PatientDto>>.Ok(pagedResult);
-    }
-
-    private static IQueryable<Domain.Entities.Patient> ApplySorting(
-        IQueryable<Domain.Entities.Patient> query,
-        string? sortBy,
-        bool sortDescending)
-    {
-        return sortBy?.ToLower() switch
-        {
-            "fullname" => sortDescending
-                ? query.OrderByDescending(p => p.FullName)
-                : query.OrderBy(p => p.FullName),
-            "patientcode" => sortDescending
-                ? query.OrderByDescending(p => p.PatientCode)
-                : query.OrderBy(p => p.PatientCode),
-            "dateofbirth" => sortDescending
-                ? query.OrderByDescending(p => p.DateOfBirth)
-                : query.OrderBy(p => p.DateOfBirth),
-            "gender" => sortDescending
-                ? query.OrderByDescending(p => p.Gender)
-                : query.OrderBy(p => p.Gender),
-            "createdat" => sortDescending
-                ? query.OrderByDescending(p => p.CreatedAt)
-                : query.OrderBy(p => p.CreatedAt),
-            _ => query.OrderByDescending(p => p.CreatedAt) // Default sort
-        };
     }
 }

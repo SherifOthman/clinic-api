@@ -17,4 +17,11 @@ public class ChronicDiseaseRepository : BaseRepository<ChronicDisease>, IChronic
             .OrderBy(cd => cd.NameEn)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<ChronicDisease>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Where(cd => ids.Contains(cd.Id))
+            .ToListAsync(cancellationToken);
+    }
 }

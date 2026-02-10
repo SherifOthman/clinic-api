@@ -1,23 +1,21 @@
 using ClinicManagement.Application.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using ClinicManagement.Domain.Common.Interfaces;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 public class CodeGeneratorService : ICodeGeneratorService
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CodeGeneratorService(IApplicationDbContext context)
+    public CodeGeneratorService(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<string> GenerateInvoiceNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
     {
         var year = DateTime.UtcNow.Year;
-        var count = await _context.Invoices
-            .Where(i => i.ClinicId == clinicId && i.CreatedAt.Year == year)
-            .CountAsync(cancellationToken);
+        var count = await _unitOfWork.Invoices.GetCountForClinicByYearAsync(clinicId, year, cancellationToken);
         
         return $"INV-{year}-{(count + 1):D3}";
     }
@@ -25,9 +23,7 @@ public class CodeGeneratorService : ICodeGeneratorService
     public async Task<string> GenerateAppointmentNumberAsync(Guid clinicBranchId, CancellationToken cancellationToken = default)
     {
         var year = DateTime.UtcNow.Year;
-        var count = await _context.Appointments
-            .Where(a => a.ClinicBranchId == clinicBranchId && a.CreatedAt.Year == year)
-            .CountAsync(cancellationToken);
+        var count = await _unitOfWork.Appointments.GetCountForClinicBranchByYearAsync(clinicBranchId, year, cancellationToken);
         
         return $"APT-{year}-{(count + 1):D3}";
     }
@@ -35,9 +31,7 @@ public class CodeGeneratorService : ICodeGeneratorService
     public async Task<string> GenerateMedicalFileNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
     {
         var year = DateTime.UtcNow.Year;
-        var count = await _context.MedicalFiles
-            .Where(mf => mf.Patient.ClinicId == clinicId && mf.UploadedAt.Year == year)
-            .CountAsync(cancellationToken);
+        var count = await _unitOfWork.MedicalFiles.GetCountForClinicByYearAsync(clinicId, year, cancellationToken);
         
         return $"MF-{year}-{(count + 1):D3}";
     }
@@ -45,9 +39,7 @@ public class CodeGeneratorService : ICodeGeneratorService
     public async Task<string> GeneratePatientNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
     {
         var year = DateTime.UtcNow.Year;
-        var count = await _context.Patients
-            .Where(cp => cp.ClinicId == clinicId && cp.CreatedAt.Year == year)
-            .CountAsync(cancellationToken);
+        var count = await _unitOfWork.Patients.GetCountForClinicByYearAsync(clinicId, year, cancellationToken);
         
         return $"PAT-{year}-{(count + 1):D4}";
     }

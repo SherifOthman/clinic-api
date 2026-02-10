@@ -11,6 +11,13 @@ public class AppointmentRepository : BaseRepository<Appointment>, IAppointmentRe
     {
     }
 
+    public async Task<int> GetCountForClinicBranchByYearAsync(Guid clinicBranchId, int year, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Where(a => a.ClinicBranchId == clinicBranchId && a.CreatedAt.Year == year)
+            .CountAsync(cancellationToken);
+    }
+
     public async Task<PagedResult<Appointment>> GetByClinicBranchIdPagedAsync(
         Guid clinicBranchId,
         int pageNumber,

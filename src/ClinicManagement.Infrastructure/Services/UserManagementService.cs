@@ -54,19 +54,7 @@ public class UserManagementService : IUserManagementService
 
     public async Task<Result> AddToRoleAsync(User user, string role, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Adding user {UserId} ({Email}) to role {Role}", user.Id, user.Email, role);
         var result = await _userManager.AddToRoleAsync(user, role);
-        
-        if (result.Succeeded)
-        {
-            _logger.LogInformation("Successfully added user {UserId} to role {Role}", user.Id, role);
-        }
-        else
-        {
-            _logger.LogError("Failed to add user {UserId} to role {Role}. Errors: {Errors}", 
-                user.Id, role, string.Join(", ", result.Errors.Select(e => e.Description)));
-        }
-        
         return result.ToResult();
     }
 

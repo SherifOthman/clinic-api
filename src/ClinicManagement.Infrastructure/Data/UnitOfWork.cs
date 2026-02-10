@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Infrastructure.Data.Repositories;
 
@@ -6,6 +7,7 @@ namespace ClinicManagement.Infrastructure.Data;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly Dictionary<Type, object> _repositories;
 
     // Specific repositories
@@ -18,10 +20,13 @@ public class UnitOfWork : IUnitOfWork
     private IAppointmentRepository? _appointments;
     private IInvoiceRepository? _invoices;
     private IPaymentRepository? _payments;
+    private IMedicalFileRepository? _medicalFiles;
+    private IRefreshTokenRepository? _refreshTokens;
 
-    public UnitOfWork(ApplicationDbContext context)
+    public UnitOfWork(ApplicationDbContext context, IDateTimeProvider dateTimeProvider)
     {
         _context = context;
+        _dateTimeProvider = dateTimeProvider;
         _repositories = new Dictionary<Type, object>();
     }
 
@@ -34,6 +39,8 @@ public class UnitOfWork : IUnitOfWork
     public IAppointmentRepository Appointments => _appointments ??= new AppointmentRepository(_context);
     public IInvoiceRepository Invoices => _invoices ??= new InvoiceRepository(_context);
     public IPaymentRepository Payments => _payments ??= new PaymentRepository(_context);
+    public IMedicalFileRepository MedicalFiles => _medicalFiles ??= new MedicalFileRepository(_context);
+    public IRefreshTokenRepository RefreshTokens => _refreshTokens ??= new RefreshTokenRepository(_context, _dateTimeProvider);
 
     public IRepository<T> Repository<T>() where T : class
     {

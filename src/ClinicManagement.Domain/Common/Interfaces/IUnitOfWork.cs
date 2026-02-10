@@ -12,6 +12,8 @@ public interface IUnitOfWork : IDisposable
     IAppointmentRepository Appointments { get; }
     IInvoiceRepository Invoices { get; }
     IPaymentRepository Payments { get; }
+    IMedicalFileRepository MedicalFiles { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     // Generic repository access for entities without specific repositories
     // Use for: MeasurementAttribute, SubscriptionPlan, PatientChronicDisease, etc.

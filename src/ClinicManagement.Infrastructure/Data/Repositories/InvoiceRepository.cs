@@ -1,6 +1,7 @@
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using ClinicManagement.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
 
@@ -8,6 +9,13 @@ public class InvoiceRepository : BaseRepository<Invoice>, IInvoiceRepository
 {
     public InvoiceRepository(ApplicationDbContext context) : base(context)
     {
+    }
+
+    public async Task<int> GetCountForClinicByYearAsync(Guid clinicId, int year, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Where(i => i.ClinicId == clinicId && i.CreatedAt.Year == year)
+            .CountAsync(cancellationToken);
     }
 
     protected override IQueryable<Invoice> ApplySearchAndFilters(IQueryable<Invoice> query, SearchablePaginationRequest request)

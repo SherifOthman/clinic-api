@@ -2,9 +2,9 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Patients.Queries.GetPatientById;
 
@@ -12,14 +12,14 @@ public record GetPatientByIdQuery(Guid Id) : IRequest<Result<PatientDto>>;
 
 public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, Result<PatientDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
     public GetPatientByIdQueryHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
     }
 
@@ -27,18 +27,17 @@ public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, R
     {
         var clinicId = _currentUserService.ClinicId!.Value;
 
-        var patient = await _context.Patients
-            .Include(p => p.PhoneNumbers)
-            .Include(p => p.ChronicDiseases)
-                .ThenInclude(pcd => pcd.ChronicDisease)
-            .FirstOrDefaultAsync(p => p.Id == request.Id && p.ClinicId == clinicId, cancellationToken);
+        var patient = await _unitOfWork.Patients.GetByIdForClinicAsync(request.Id, clinicId, cancellationToken);
 
         if (patient == null)
         {
             return Result<PatientDto>.Fail(MessageCodes.Patient.NOT_FOUND);
         }
 
-        var patientDto = patient.Adapt<PatientDto>();
+        // Load with includes for DTO mapping
+        patient = await _unitOfWork.Patients.GetByIdWithIncludesAsync(request.Id, cancellationToken);
+
+        var patientDto = patient!.Adapt<PatientDto>();
         return Result<PatientDto>.Ok(patientDto);
     }
 }

@@ -12,18 +12,18 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class UserRegistrationService : IUserRegistrationService
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IUserManagementService _userManagementService;
     private readonly IEmailConfirmationService _emailConfirmationService;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IUserManagementService userManagementService,
         IEmailConfirmationService emailConfirmationService,
         ILogger<UserRegistrationService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _userManagementService = userManagementService;
         _emailConfirmationService = emailConfirmationService;
         _logger = logger;
@@ -46,7 +46,7 @@ public class UserRegistrationService : IUserRegistrationService
         await CreateTypeSpecificEntityAsync(userId, request.UserType, cancellationToken);
         
         // Single SaveChanges - atomic transaction
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await SendConfirmationEmailIfNeededAsync(request, userId, cancellationToken);
 
@@ -158,7 +158,7 @@ public class UserRegistrationService : IUserRegistrationService
                     Id = Guid.NewGuid(),
                     UserId = userId
                 };
-                _context.Doctors.Add(doctor);
+                await _unitOfWork.Repository<Doctor>().AddAsync(doctor);
                 break;
 
             case UserType.Receptionist:
@@ -167,7 +167,7 @@ public class UserRegistrationService : IUserRegistrationService
                     Id = Guid.NewGuid(),
                     UserId = userId
                 };
-                _context.Receptionists.Add(receptionist);
+                await _unitOfWork.Repository<Receptionist>().AddAsync(receptionist);
                 break;
 
             case UserType.ClinicOwner:
