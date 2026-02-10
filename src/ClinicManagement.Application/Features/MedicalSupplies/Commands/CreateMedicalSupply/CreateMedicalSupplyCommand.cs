@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -20,17 +21,17 @@ public record CreateMedicalSupplyCommand : IRequest<Result<Guid>>
 
 public class CreateMedicalSupplyCommandHandler : IRequestHandler<CreateMedicalSupplyCommand, Result<Guid>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CreateMedicalSupplyCommandHandler(IApplicationDbContext context)
+    public CreateMedicalSupplyCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreateMedicalSupplyCommand request, CancellationToken cancellationToken)
     {
         // Check if clinic branch exists
-        var clinicBranchExists = await _context.ClinicBranches
+        var clinicBranchExists = await _unitOfWork.Repository<ClinicBranch>()
             .AnyAsync(cb => cb.Id == request.ClinicBranchId, cancellationToken);
         
         if (!clinicBranchExists)
@@ -39,9 +40,8 @@ public class CreateMedicalSupplyCommandHandler : IRequestHandler<CreateMedicalSu
         }
 
         // Check if medical supply with same name already exists in this clinic branch
-        var existingSupply = await _context.MedicalSupplies
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Name.ToLower() == request.Name.ToLower() && s.ClinicBranchId == request.ClinicBranchId, cancellationToken);
+        var existingSupply = await _unitOfWork.MedicalSupplies
+            .GetByNameAndClinicBranchAsync(request.Name, request.ClinicBranchId, cancellationToken);
         
         if (existingSupply != null)
         {
@@ -58,8 +58,8 @@ public class CreateMedicalSupplyCommandHandler : IRequestHandler<CreateMedicalSu
             MinimumStockLevel = request.MinimumStockLevel
         };
 
-        _context.MedicalSupplies.Add(supply);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.MedicalSupplies.AddAsync(supply, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Ok(supply.Id);
     }

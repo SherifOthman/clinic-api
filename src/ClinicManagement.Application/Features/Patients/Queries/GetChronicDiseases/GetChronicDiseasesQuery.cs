@@ -1,6 +1,8 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,23 +13,21 @@ public record GetChronicDiseasesQuery(Guid PatientId) : IRequest<Result<IEnumera
 
 public class GetChronicDiseasesQueryHandler : IRequestHandler<GetChronicDiseasesQuery, Result<IEnumerable<PatientChronicDiseaseDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetChronicDiseasesQueryHandler(IApplicationDbContext context)
+    public GetChronicDiseasesQueryHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<IEnumerable<PatientChronicDiseaseDto>>> Handle(GetChronicDiseasesQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.PatientChronicDiseases
-            .AsNoTracking()
-            .Where(pcd => pcd.PatientId == request.PatientId);
+        var chronicDiseases = await _unitOfWork.Repository<PatientChronicDisease>()
+            .GetAllAsync(pcd => pcd.PatientId == request.PatientId, cancellationToken);
 
         // Note: IsActive filter would require additional properties on the entity
         // Currently PatientChronicDisease is a simple junction table
         
-        var chronicDiseases = await query.ToListAsync(cancellationToken);
         var dtos = chronicDiseases.Adapt<IEnumerable<PatientChronicDiseaseDto>>();
         
         return Result<IEnumerable<PatientChronicDiseaseDto>>.Ok(dtos);

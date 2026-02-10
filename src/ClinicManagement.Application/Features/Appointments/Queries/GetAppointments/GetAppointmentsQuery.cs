@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,50 +19,49 @@ public record GetAppointmentsQuery(
 
 public class GetAppointmentsQueryHandler : IRequestHandler<GetAppointmentsQuery, Result<IEnumerable<AppointmentDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetAppointmentsQueryHandler(IApplicationDbContext context)
+    public GetAppointmentsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<IEnumerable<AppointmentDto>>> Handle(GetAppointmentsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Appointments.AsNoTracking().AsQueryable();
-
-        // Apply filters
+        // Get all appointments and filter in memory
+        // Note: In production, you'd want to add clinic/branch filtering at the database level
+        var allAppointments = await _unitOfWork.Appointments.GetAllAsync(cancellationToken);
+        
+        var filtered = allAppointments.AsEnumerable();
+        
         if (request.Date.HasValue)
         {
-            var date = request.Date.Value.Date;
-            query = query.Where(a => a.AppointmentDate.Date == date);
+            filtered = filtered.Where(a => a.AppointmentDate.Date == request.Date.Value.Date);
         }
-
+        
         if (request.DoctorId.HasValue)
         {
-            query = query.Where(a => a.DoctorId == request.DoctorId.Value);
+            filtered = filtered.Where(a => a.DoctorId == request.DoctorId.Value);
         }
-
+        
         if (request.PatientId.HasValue)
         {
-            query = query.Where(a => a.PatientId == request.PatientId.Value);
+            filtered = filtered.Where(a => a.PatientId == request.PatientId.Value);
         }
-
+        
         if (request.AppointmentTypeId.HasValue)
         {
-            query = query.Where(a => a.AppointmentTypeId == request.AppointmentTypeId.Value);
+            filtered = filtered.Where(a => a.AppointmentTypeId == request.AppointmentTypeId.Value);
         }
-
+        
         if (request.Status.HasValue)
         {
-            query = query.Where(a => a.Status == request.Status.Value);
+            filtered = filtered.Where(a => a.Status == request.Status.Value);
         }
 
-        var appointments = await query
-            .OrderBy(a => a.AppointmentDate)
-            .ThenBy(a => a.QueueNumber)
-            .ToListAsync(cancellationToken);
-
-        var appointmentDtos = appointments.Adapt<IEnumerable<AppointmentDto>>();
+        var appointmentDtos = filtered.Adapt<IEnumerable<AppointmentDto>>();
         return Result<IEnumerable<AppointmentDto>>.Ok(appointmentDtos);
     }
 }

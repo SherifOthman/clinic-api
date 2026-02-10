@@ -10,4 +10,7 @@ public interface IMedicalSupplyRepository : IRepository<MedicalSupply>
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<PagedResult<MedicalSupply>> GetPagedByClinicBranchAsync(Guid clinicBranchId, PaginationRequest request, CancellationToken cancellationToken = default);
+    Task<IEnumerable<MedicalSupply>> GetByClinicBranchAsync(Guid clinicBranchId, CancellationToken cancellationToken = default);
+    Task<MedicalSupply?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default);
 }

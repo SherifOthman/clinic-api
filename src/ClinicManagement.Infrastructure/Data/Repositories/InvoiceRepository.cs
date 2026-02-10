@@ -18,6 +18,30 @@ public class InvoiceRepository : BaseRepository<Invoice>, IInvoiceRepository
             .CountAsync(cancellationToken);
     }
 
+    public async Task<PagedResult<Invoice>> GetPagedByClinicAsync(Guid clinicId, PaginationRequest request, CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.AsNoTracking()
+            .Where(i => i.ClinicId == clinicId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(i => i.CreatedAt)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<Invoice>(items, totalCount, request.PageNumber, request.PageSize);
+    }
+
+    public async Task<IEnumerable<Invoice>> GetByClinicAsync(Guid clinicId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AsNoTracking()
+            .Where(i => i.ClinicId == clinicId)
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     protected override IQueryable<Invoice> ApplySearchAndFilters(IQueryable<Invoice> query, SearchablePaginationRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

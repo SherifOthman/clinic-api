@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
@@ -14,16 +15,16 @@ public record InviteStaffCommand(InviteStaffDto Dto) : IRequest<Result<StaffInvi
 
 public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Result<StaffInvitationDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailSender _emailSender;
 
     public InviteStaffCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IEmailSender emailSender)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _emailSender = emailSender;
     }
@@ -39,7 +40,7 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
             return Result<StaffInvitationDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
-        var user = await _context.Users.FindAsync(new object[] { userId.Value }, cancellationToken);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId.Value, cancellationToken);
         if (user == null)
         {
             return Result<StaffInvitationDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
@@ -64,8 +65,7 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
         }
 
         // Check if email already exists
-        var existingUser = await _context.Users
-            .AsNoTracking()
+        var existingUser = await _unitOfWork.Repository<User>()
             .FirstOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
         
         if (existingUser != null)
@@ -80,8 +80,7 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
         }
 
         // Check if there's already a pending invitation for this email
-        var existingInvitation = await _context.StaffInvitations
-            .AsNoTracking()
+        var existingInvitation = await _unitOfWork.Repository<StaffInvitation>()
             .FirstOrDefaultAsync(si => si.Email == dto.Email && si.ClinicId == user.ClinicId.Value && !si.IsAccepted && si.ExpiresAt > DateTime.UtcNow, cancellationToken);
         
         if (existingInvitation != null)
@@ -106,8 +105,8 @@ public class InviteStaffCommandHandler : IRequestHandler<InviteStaffCommand, Res
             IsAccepted = false
         };
 
-        _context.StaffInvitations.Add(invitation);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Repository<StaffInvitation>().AddAsync(invitation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Send invitation email
         var invitationLink = $"{GetBaseUrl()}/accept-invitation?token={token}";

@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Exceptions;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -34,12 +35,12 @@ public record CreateMedicineCommand : IRequest<Result<Guid>>
 /// </summary>
 public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineCommand, Result<Guid>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateMedicineCommandHandler> _logger;
 
-    public CreateMedicineCommandHandler(IApplicationDbContext context, ILogger<CreateMedicineCommandHandler> logger)
+    public CreateMedicineCommandHandler(IUnitOfWork unitOfWork, ILogger<CreateMedicineCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -51,7 +52,7 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
         try
         {
             // Check if clinic branch exists
-            var clinicBranchExists = await _context.ClinicBranches
+            var clinicBranchExists = await _unitOfWork.Repository<ClinicBranch>()
                 .AnyAsync(cb => cb.Id == request.ClinicBranchId, cancellationToken);
             
             if (!clinicBranchExists)
@@ -62,9 +63,8 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
             }
 
             // Check if medicine with same name already exists in this clinic branch
-            var existingMedicine = await _context.Medicines
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Name.ToLower() == request.Name.ToLower() && m.ClinicBranchId == request.ClinicBranchId, cancellationToken);
+            var existingMedicine = await _unitOfWork.Medicines
+                .GetByNameAndClinicBranchAsync(request.Name, request.ClinicBranchId, cancellationToken);
             
             if (existingMedicine != null)
             {
@@ -109,8 +109,8 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
                     medicine.Name, medicine.ExpiryDate);
             }
 
-            _context.Medicines.Add(medicine);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.Medicines.AddAsync(medicine, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Successfully created medicine '{MedicineName}' with ID {MedicineId}. Stock: {Stock} strips, Value: {Value:C}", 
                 medicine.Name, medicine.Id, medicine.TotalStripsInStock, medicine.InventoryValue);

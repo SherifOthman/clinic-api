@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -19,20 +20,20 @@ public class UpdateChronicDiseaseCommand : IRequest<Result<ChronicDiseaseDto>>
 
 public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicDiseaseCommand, Result<ChronicDiseaseDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateChronicDiseaseCommandHandler> _logger;
 
     public UpdateChronicDiseaseCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<UpdateChronicDiseaseCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<Result<ChronicDiseaseDto>> Handle(UpdateChronicDiseaseCommand request, CancellationToken cancellationToken)
     {
-        var chronicDisease = await _context.ChronicDiseases.FindAsync(new object[] { request.Id }, cancellationToken);
+        var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdAsync(request.Id, cancellationToken);
         
         if (chronicDisease == null)
         {
@@ -45,8 +46,8 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
         chronicDisease.DescriptionEn = request.DescriptionEn;
         chronicDisease.DescriptionAr = request.DescriptionAr;
 
-        _context.ChronicDiseases.Update(chronicDisease);
-        await _context.SaveChangesAsync(cancellationToken);
+        _unitOfWork.ChronicDiseases.Update(chronicDisease);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Chronic disease {DiseaseId} updated successfully", request.Id);
 

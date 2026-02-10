@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using Mapster;
 using MediatR;
@@ -16,39 +17,38 @@ public record GetMedicalSuppliesQuery(
 
 public class GetMedicalSuppliesQueryHandler : IRequestHandler<GetMedicalSuppliesQuery, Result<PagedResult<MedicalSupplyDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetMedicalSuppliesQueryHandler(IApplicationDbContext context)
+    public GetMedicalSuppliesQueryHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<PagedResult<MedicalSupplyDto>>> Handle(GetMedicalSuppliesQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.MedicalSupplies
-            .AsNoTracking()
-            .Where(s => s.ClinicBranchId == request.ClinicBranchId)
-            .OrderBy(s => s.Name);
-
         PagedResult<MedicalSupplyDto> result;
         
         if (request.PageNumber.HasValue && request.PageSize.HasValue)
         {
             // Paginated result
-            var totalCount = await query.CountAsync(cancellationToken);
+            var paginationRequest = new PaginationRequest 
+            { 
+                PageNumber = request.PageNumber.Value, 
+                PageSize = request.PageSize.Value 
+            };
             
-            var supplies = await query
-                .Skip((request.PageNumber.Value - 1) * request.PageSize.Value)
-                .Take(request.PageSize.Value)
-                .ToListAsync(cancellationToken);
+            var pagedResult = await _unitOfWork.MedicalSupplies.GetPagedByClinicBranchAsync(
+                request.ClinicBranchId, 
+                paginationRequest, 
+                cancellationToken);
             
-            var suppliesDto = supplies.Adapt<List<MedicalSupplyDto>>();
-            result = new PagedResult<MedicalSupplyDto>(suppliesDto, totalCount, request.PageNumber.Value, request.PageSize.Value);
+            var suppliesDto = pagedResult.Items.Adapt<List<MedicalSupplyDto>>();
+            result = new PagedResult<MedicalSupplyDto>(suppliesDto, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
         else
         {
             // Return all items as a single page
-            var allSupplies = await query.ToListAsync(cancellationToken);
+            var allSupplies = await _unitOfWork.MedicalSupplies.GetByClinicBranchAsync(request.ClinicBranchId, cancellationToken);
             var suppliesDto = allSupplies.Adapt<List<MedicalSupplyDto>>();
             result = new PagedResult<MedicalSupplyDto>(suppliesDto, suppliesDto.Count, 1, suppliesDto.Count);
         }

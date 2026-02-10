@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -18,18 +19,18 @@ public record CreateAppointmentCommand(
 
 public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointmentCommand, Result<AppointmentDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICodeGeneratorService _codeGeneratorService;
     private readonly ILogger<CreateAppointmentCommandHandler> _logger;
 
     public CreateAppointmentCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         ICodeGeneratorService codeGeneratorService,
         ILogger<CreateAppointmentCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _codeGeneratorService = codeGeneratorService;
         _logger = logger;
@@ -40,33 +41,31 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var clinicId = _currentUserService.GetRequiredClinicId();
         
         // Validate clinic branch exists and belongs to current clinic
-        var clinicBranch = await _context.ClinicBranches.FindAsync(new object[] { request.Appointment.ClinicBranchId }, cancellationToken);
+        var clinicBranch = await _unitOfWork.Repository<ClinicBranch>().GetByIdAsync(request.Appointment.ClinicBranchId, cancellationToken);
         if (clinicBranch == null)
         {
             return Result<AppointmentDto>.Fail(MessageCodes.Common.CLINIC_BRANCH_NOT_FOUND);
         }
 
         // Validate clinic patient exists and belongs to current clinic
-        var Patient = await _context.Patients.FindAsync(new object[] { request.Appointment.PatientId }, cancellationToken);
+        var Patient = await _unitOfWork.Patients.GetByIdAsync(request.Appointment.PatientId, cancellationToken);
         if (Patient == null)
         {
             return Result<AppointmentDto>.FailField("appointment.PatientId", MessageCodes.Appointment.PATIENT_REQUIRED);
         }
 
         // Get the next queue number for the doctor on the appointment date
-        var appointmentDate = request.Appointment.AppointmentDate.Date;
-        var maxQueueNumber = await _context.Appointments
-            .Where(a => a.DoctorId == request.Appointment.DoctorId && a.AppointmentDate.Date == appointmentDate)
-            .MaxAsync(a => (int?)a.QueueNumber, cancellationToken) ?? 0;
-        
-        var queueNumber = maxQueueNumber + 1;
+        var queueNumber = await _unitOfWork.Appointments.GetNextQueueNumberAsync(
+            request.Appointment.DoctorId, 
+            request.Appointment.AppointmentDate.Date, 
+            cancellationToken);
 
         // Check for conflicts
-        var hasConflict = await _context.Appointments
-            .AnyAsync(a => a.DoctorId == request.Appointment.DoctorId && 
-                          a.AppointmentDate == request.Appointment.AppointmentDate && 
-                          a.QueueNumber == queueNumber, 
-                     cancellationToken);
+        var hasConflict = await _unitOfWork.Appointments.HasQueueConflictAsync(
+            request.Appointment.DoctorId,
+            request.Appointment.AppointmentDate,
+            queueNumber,
+            cancellationToken);
 
         if (hasConflict)
         {
@@ -74,7 +73,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         }
 
         // Get the price for this appointment type at this clinic branch
-        var pricing = await _context.ClinicBranchAppointmentPrices
+        var pricing = await _unitOfWork.Repository<ClinicBranchAppointmentPrice>()
             .FirstOrDefaultAsync(p => p.ClinicBranchId == request.Appointment.ClinicBranchId && 
                                      p.AppointmentTypeId == request.Appointment.AppointmentTypeId, 
                                 cancellationToken);
@@ -106,10 +105,10 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
             PaidAmount = request.Appointment.PaidAmount
         };
 
-        _context.Appointments.Add(appointment);
+        await _unitOfWork.Appointments.AddAsync(appointment, cancellationToken);
         
         // Single SaveChanges - atomic transaction
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Appointment created successfully: {AppointmentNumber} for clinic {ClinicId}", 
             appointmentNumber, clinicId);

@@ -40,6 +40,42 @@ public class AppointmentRepository : BaseRepository<Appointment>, IAppointmentRe
         return new PagedResult<Appointment>(items, totalCount, pageNumber, pageSize);
     }
 
+    public async Task<IEnumerable<Appointment>> GetFilteredAsync(Guid clinicBranchId, DateTime? date, Guid? doctorId, CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.AsNoTracking()
+            .Where(a => a.ClinicBranchId == clinicBranchId);
+
+        if (date.HasValue)
+        {
+            query = query.Where(a => a.AppointmentDate.Date == date.Value.Date);
+        }
+
+        if (doctorId.HasValue)
+        {
+            query = query.Where(a => a.DoctorId == doctorId.Value);
+        }
+
+        return await query.OrderBy(a => a.QueueNumber).ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetNextQueueNumberAsync(Guid clinicBranchId, DateTime date, CancellationToken cancellationToken = default)
+    {
+        var maxQueueNumber = await _dbSet
+            .Where(a => a.ClinicBranchId == clinicBranchId && a.AppointmentDate.Date == date.Date)
+            .MaxAsync(a => (int?)a.QueueNumber, cancellationToken);
+
+        return (maxQueueNumber ?? 0) + 1;
+    }
+
+    public async Task<bool> HasQueueConflictAsync(Guid clinicBranchId, DateTime date, int queueNumber, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .AnyAsync(a => a.ClinicBranchId == clinicBranchId 
+                && a.AppointmentDate.Date == date.Date 
+                && a.QueueNumber == queueNumber, 
+                cancellationToken);
+    }
+
     protected override IQueryable<Appointment> ApplySearchAndFilters(IQueryable<Appointment> query, SearchablePaginationRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

@@ -1,6 +1,7 @@
 using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using ClinicManagement.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Infrastructure.Data.Repositories;
 
@@ -8,6 +9,13 @@ public class PaymentRepository : BaseRepository<Payment>, IPaymentRepository
 {
     public PaymentRepository(ApplicationDbContext context) : base(context)
     {
+    }
+
+    public async Task<decimal> GetTotalPaidByInvoiceAsync(Guid invoiceId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Where(p => p.InvoiceId == invoiceId)
+            .SumAsync(p => p.Amount, cancellationToken);
     }
 
     protected override IQueryable<Payment> ApplySearchAndFilters(IQueryable<Payment> query, SearchablePaginationRequest request)

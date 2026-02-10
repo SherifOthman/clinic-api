@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -17,14 +18,14 @@ public class CreateChronicDiseaseCommand : IRequest<Result<ChronicDiseaseDto>>
 
 public class CreateChronicDiseaseCommandHandler : IRequestHandler<CreateChronicDiseaseCommand, Result<ChronicDiseaseDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateChronicDiseaseCommandHandler> _logger;
 
     public CreateChronicDiseaseCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<CreateChronicDiseaseCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -38,8 +39,8 @@ public class CreateChronicDiseaseCommandHandler : IRequestHandler<CreateChronicD
             DescriptionAr = request.DescriptionAr
         };
 
-        _context.ChronicDiseases.Add(chronicDisease);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ChronicDiseases.AddAsync(chronicDisease, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Chronic disease {DiseaseName} created with ID {DiseaseId}", request.NameEn, chronicDisease.Id);
 

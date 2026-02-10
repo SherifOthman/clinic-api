@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using Mapster;
 using MediatR;
@@ -16,39 +17,38 @@ public record GetMedicinesQuery(
 
 public class GetMedicinesQueryHandler : IRequestHandler<GetMedicinesQuery, Result<PagedResult<MedicineDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetMedicinesQueryHandler(IApplicationDbContext context)
+    public GetMedicinesQueryHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<PagedResult<MedicineDto>>> Handle(GetMedicinesQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Medicines
-            .AsNoTracking()
-            .Where(m => m.ClinicBranchId == request.ClinicBranchId)
-            .OrderBy(m => m.Name);
-
         PagedResult<MedicineDto> result;
         
         if (request.PageNumber.HasValue && request.PageSize.HasValue)
         {
             // Paginated result
-            var totalCount = await query.CountAsync(cancellationToken);
+            var paginationRequest = new PaginationRequest 
+            { 
+                PageNumber = request.PageNumber.Value, 
+                PageSize = request.PageSize.Value 
+            };
             
-            var medicines = await query
-                .Skip((request.PageNumber.Value - 1) * request.PageSize.Value)
-                .Take(request.PageSize.Value)
-                .ToListAsync(cancellationToken);
+            var pagedResult = await _unitOfWork.Medicines.GetPagedByClinicBranchAsync(
+                request.ClinicBranchId, 
+                paginationRequest, 
+                cancellationToken);
             
-            var medicinesDto = medicines.Adapt<List<MedicineDto>>();
-            result = new PagedResult<MedicineDto>(medicinesDto, totalCount, request.PageNumber.Value, request.PageSize.Value);
+            var medicinesDto = pagedResult.Items.Adapt<List<MedicineDto>>();
+            result = new PagedResult<MedicineDto>(medicinesDto, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
         else
         {
             // Return all items as a single page
-            var allMedicines = await query.ToListAsync(cancellationToken);
+            var allMedicines = await _unitOfWork.Medicines.GetByClinicBranchAsync(request.ClinicBranchId, cancellationToken);
             var medicinesDto = allMedicines.Adapt<List<MedicineDto>>();
             result = new PagedResult<MedicineDto>(medicinesDto, medicinesDto.Count, 1, medicinesDto.Count);
         }

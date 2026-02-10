@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
 using ClinicManagement.Domain.Common.Exceptions;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -52,16 +53,16 @@ public class CreateInvoiceItemCommandValidator : AbstractValidator<CreateInvoice
 /// </summary>
 public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand, Result<Guid>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICodeGeneratorService _codeGeneratorService;
     private readonly ILogger<CreateInvoiceCommandHandler> _logger;
 
     public CreateInvoiceCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICodeGeneratorService codeGeneratorService,
         ILogger<CreateInvoiceCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _codeGeneratorService = codeGeneratorService;
         _logger = logger;
     }
@@ -74,7 +75,7 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
         try
         {
             // Validate clinic patient exists
-            var Patient = await _context.Patients.FindAsync(new object[] { request.PatientId }, cancellationToken);
+            var Patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientId, cancellationToken);
             if (Patient == null)
             {
                 _logger.LogWarning("Attempted to create invoice for non-existent patient {PatientId}", request.PatientId);
@@ -126,8 +127,8 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
                 invoice.SubtotalAmount, invoice.FinalAmount);
 
             // Save to database
-            _context.Invoices.Add(invoice);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.Invoices.AddAsync(invoice, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Successfully created invoice {InvoiceNumber} with ID {InvoiceId} for patient {PatientId}. Amount: {Amount}", 
                 invoice.InvoiceNumber, invoice.Id, request.PatientId, invoice.FinalAmount);

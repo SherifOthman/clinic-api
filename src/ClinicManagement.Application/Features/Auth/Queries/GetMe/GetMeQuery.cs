@@ -11,16 +11,13 @@ public record GetMeQuery : IRequest<Result<UserDto>>;
 
 public class GetMeQueryHandler : IRequestHandler<GetMeQuery, Result<UserDto>>
 {
-    private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserManagementService _userManagementService;
 
     public GetMeQueryHandler(
-        IApplicationDbContext context,
         ICurrentUserService currentUserService,
         IUserManagementService userManagementService)
     {
-        _context = context;
         _currentUserService = currentUserService;
         _userManagementService = userManagementService;
     }

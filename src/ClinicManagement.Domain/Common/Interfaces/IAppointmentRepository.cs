@@ -11,4 +11,7 @@ public interface IAppointmentRepository : IRepository<Appointment>
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<IEnumerable<Appointment>> GetFilteredAsync(Guid clinicBranchId, DateTime? date, Guid? doctorId, CancellationToken cancellationToken = default);
+    Task<int> GetNextQueueNumberAsync(Guid clinicBranchId, DateTime date, CancellationToken cancellationToken = default);
+    Task<bool> HasQueueConflictAsync(Guid clinicBranchId, DateTime date, int queueNumber, CancellationToken cancellationToken = default);
 }

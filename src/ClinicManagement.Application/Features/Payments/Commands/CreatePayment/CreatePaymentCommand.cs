@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -22,27 +23,24 @@ public record CreatePaymentCommand : IRequest<Result<Guid>>
 
 public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, Result<Guid>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CreatePaymentCommandHandler(IApplicationDbContext context)
+    public CreatePaymentCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
     {
         // Validate invoice exists
-        var invoice = await _context.Invoices.FindAsync(new object[] { request.InvoiceId }, cancellationToken);
+        var invoice = await _unitOfWork.Invoices.GetByIdAsync(request.InvoiceId, cancellationToken);
         if (invoice == null)
         {
             return Result<Guid>.Fail(MessageCodes.Invoice.NOT_FOUND);
         }
 
         // Check if payment amount doesn't exceed remaining amount
-        var totalPaid = await _context.Payments
-            .AsNoTracking()
-            .Where(p => p.InvoiceId == request.InvoiceId)
-            .SumAsync(p => p.Amount, cancellationToken);
+        var totalPaid = await _unitOfWork.Payments.GetTotalPaidByInvoiceAsync(request.InvoiceId, cancellationToken);
         
         var remainingAmount = invoice.FinalAmount - totalPaid;
         
@@ -62,8 +60,8 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             ReferenceNumber = request.ReferenceNumber
         };
 
-        _context.Payments.Add(payment);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Ok(payment.Id);
     }

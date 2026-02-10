@@ -20,6 +20,12 @@ public class MedicalServiceRepository : BaseRepository<MedicalService>, IMedical
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<MedicalService?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(ms => ms.Name == name && ms.ClinicBranchId == clinicBranchId, cancellationToken);
+    }
+
     protected override IQueryable<MedicalService> ApplySearchAndFilters(IQueryable<MedicalService> query, SearchablePaginationRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

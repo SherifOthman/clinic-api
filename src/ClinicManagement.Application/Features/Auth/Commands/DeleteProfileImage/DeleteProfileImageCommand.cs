@@ -2,6 +2,8 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -12,18 +14,18 @@ public record DeleteProfileImageCommand : IRequest<Result<UserDto>>;
 
 public class DeleteProfileImageCommandHandler : IRequestHandler<DeleteProfileImageCommand, Result<UserDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DeleteProfileImageCommandHandler> _logger;
 
     public DeleteProfileImageCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IFileStorageService fileStorageService,
         ILogger<DeleteProfileImageCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _fileStorageService = fileStorageService;
         _logger = logger;
@@ -36,7 +38,7 @@ public class DeleteProfileImageCommandHandler : IRequestHandler<DeleteProfileIma
             return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
-        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
             return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_FOUND);
@@ -50,8 +52,8 @@ public class DeleteProfileImageCommandHandler : IRequestHandler<DeleteProfileIma
                 await _fileStorageService.DeleteFileAsync(user.ProfileImageUrl, cancellationToken);
                 user.ProfileImageUrl = null;
                 
-                _context.Users.Update(user);
-                await _context.SaveChangesAsync(cancellationToken);
+                _unitOfWork.Repository<User>().Update(user);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation("Profile image deleted successfully for user {UserId}", userId);
             }

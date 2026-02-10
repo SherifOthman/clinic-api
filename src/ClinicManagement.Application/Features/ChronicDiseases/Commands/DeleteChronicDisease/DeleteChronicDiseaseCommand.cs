@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -14,20 +15,20 @@ public class DeleteChronicDiseaseCommand : IRequest<Result<Unit>>
 
 public class DeleteChronicDiseaseCommandHandler : IRequestHandler<DeleteChronicDiseaseCommand, Result<Unit>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<DeleteChronicDiseaseCommandHandler> _logger;
 
     public DeleteChronicDiseaseCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<DeleteChronicDiseaseCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<Result<Unit>> Handle(DeleteChronicDiseaseCommand request, CancellationToken cancellationToken)
     {
-        var chronicDisease = await _context.ChronicDiseases.FindAsync(new object[] { request.Id }, cancellationToken);
+        var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdAsync(request.Id, cancellationToken);
         
         if (chronicDisease == null)
         {
@@ -35,8 +36,8 @@ public class DeleteChronicDiseaseCommandHandler : IRequestHandler<DeleteChronicD
             return Result<Unit>.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
-        _context.ChronicDiseases.Remove(chronicDisease);
-        await _context.SaveChangesAsync(cancellationToken);
+        _unitOfWork.ChronicDiseases.Delete(chronicDisease);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Chronic disease {DiseaseId} deleted successfully", request.Id);
 

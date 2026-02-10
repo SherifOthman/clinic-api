@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common.Interfaces;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Medicines.Commands.UpdateMedicine;
@@ -16,16 +17,16 @@ public record UpdateMedicineCommand : IRequest<Result>
 
 public class UpdateMedicineCommandHandler : IRequestHandler<UpdateMedicineCommand, Result>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateMedicineCommandHandler(IApplicationDbContext context)
+    public UpdateMedicineCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(UpdateMedicineCommand request, CancellationToken cancellationToken)
     {
-        var medicine = await _context.Medicines.FindAsync(new object[] { request.Id }, cancellationToken);
+        var medicine = await _unitOfWork.Medicines.GetByIdAsync(request.Id, cancellationToken);
         
         if (medicine == null)
         {
@@ -38,8 +39,8 @@ public class UpdateMedicineCommandHandler : IRequestHandler<UpdateMedicineComman
         medicine.TotalStripsInStock = request.TotalStripsInStock;
         medicine.MinimumStockLevel = request.MinimumStockLevel;
 
-        _context.Medicines.Update(medicine);
-        await _context.SaveChangesAsync(cancellationToken);
+        _unitOfWork.Medicines.Update(medicine);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }

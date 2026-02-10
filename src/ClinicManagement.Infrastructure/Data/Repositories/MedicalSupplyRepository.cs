@@ -33,6 +33,36 @@ public class MedicalSupplyRepository : BaseRepository<MedicalSupply>, IMedicalSu
         return new PagedResult<MedicalSupply>(items, totalCount, pageNumber, pageSize);
     }
 
+    public async Task<PagedResult<MedicalSupply>> GetPagedByClinicBranchAsync(Guid clinicBranchId, PaginationRequest request, CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.AsNoTracking()
+            .Where(ms => ms.ClinicBranchId == clinicBranchId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(ms => ms.Name)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<MedicalSupply>(items, totalCount, request.PageNumber, request.PageSize);
+    }
+
+    public async Task<IEnumerable<MedicalSupply>> GetByClinicBranchAsync(Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AsNoTracking()
+            .Where(ms => ms.ClinicBranchId == clinicBranchId)
+            .OrderBy(ms => ms.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<MedicalSupply?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(ms => ms.Name == name && ms.ClinicBranchId == clinicBranchId, cancellationToken);
+    }
+
     protected override IQueryable<MedicalSupply> ApplySearchAndFilters(IQueryable<MedicalSupply> query, SearchablePaginationRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

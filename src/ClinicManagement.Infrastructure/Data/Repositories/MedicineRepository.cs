@@ -33,6 +33,36 @@ public class MedicineRepository : BaseRepository<Medicine>, IMedicineRepository
         return new PagedResult<Medicine>(items, totalCount, pageNumber, pageSize);
     }
 
+    public async Task<PagedResult<Medicine>> GetPagedByClinicBranchAsync(Guid clinicBranchId, PaginationRequest request, CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.AsNoTracking()
+            .Where(m => m.ClinicBranchId == clinicBranchId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(m => m.Name)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<Medicine>(items, totalCount, request.PageNumber, request.PageSize);
+    }
+
+    public async Task<IEnumerable<Medicine>> GetByClinicBranchAsync(Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AsNoTracking()
+            .Where(m => m.ClinicBranchId == clinicBranchId)
+            .OrderBy(m => m.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Medicine?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(m => m.Name == name && m.ClinicBranchId == clinicBranchId, cancellationToken);
+    }
+
     protected override IQueryable<Medicine> ApplySearchAndFilters(IQueryable<Medicine> query, SearchablePaginationRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

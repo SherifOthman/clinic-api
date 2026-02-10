@@ -2,6 +2,8 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using Mapster;
 using MediatR;
@@ -17,16 +19,16 @@ public record UpdateProfileImageCommand : IRequest<Result<UserDto>>
 
 public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileImageCommand, Result<UserDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateProfileImageCommandHandler> _logger;
 
     public UpdateProfileImageCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         ILogger<UpdateProfileImageCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -39,7 +41,7 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
             return Result<UserDto>.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
-        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("User not found for profile image update: {UserId}", userId);
@@ -50,8 +52,8 @@ public class UpdateProfileImageCommandHandler : IRequestHandler<UpdateProfileIma
         {
             user.ProfileImageUrl = string.IsNullOrWhiteSpace(request.ProfileImageUrl) ? null : request.ProfileImageUrl.Trim();
 
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync(cancellationToken);
+            _unitOfWork.Repository<User>().Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Profile image updated successfully for user {UserId}", userId);
 

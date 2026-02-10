@@ -1,6 +1,8 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,16 +15,16 @@ public record RemoveChronicDiseaseCommand(
 
 public class RemoveChronicDiseaseCommandHandler : IRequestHandler<RemoveChronicDiseaseCommand, Result>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public RemoveChronicDiseaseCommandHandler(IApplicationDbContext context)
+    public RemoveChronicDiseaseCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(RemoveChronicDiseaseCommand request, CancellationToken cancellationToken)
     {
-        var PatientChronicDisease = await _context.PatientChronicDiseases
+        var PatientChronicDisease = await _unitOfWork.Repository<PatientChronicDisease>()
             .FirstOrDefaultAsync(pcd => pcd.PatientId == request.PatientId && pcd.ChronicDiseaseId == request.ChronicDiseaseId, cancellationToken);
 
         if (PatientChronicDisease == null)
@@ -30,8 +32,8 @@ public class RemoveChronicDiseaseCommandHandler : IRequestHandler<RemoveChronicD
             return Result.Fail(MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
-        _context.PatientChronicDiseases.Remove(PatientChronicDisease);
-        await _context.SaveChangesAsync(cancellationToken);
+        _unitOfWork.Repository<PatientChronicDisease>().Delete(PatientChronicDisease);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }

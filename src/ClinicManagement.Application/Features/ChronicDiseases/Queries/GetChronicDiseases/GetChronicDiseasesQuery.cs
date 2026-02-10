@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,18 +14,16 @@ public record GetChronicDiseasesQuery(
 
 public class GetChronicDiseasesQueryHandler : IRequestHandler<GetChronicDiseasesQuery, Result<List<ChronicDiseaseDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetChronicDiseasesQueryHandler(IApplicationDbContext context)
+    public GetChronicDiseasesQueryHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<List<ChronicDiseaseDto>>> Handle(GetChronicDiseasesQuery request, CancellationToken cancellationToken)
     {
-        var chronicDiseases = await _context.ChronicDiseases
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var chronicDiseases = await _unitOfWork.ChronicDiseases.GetAllAsync(cancellationToken);
             
         var chronicDiseaseDtos = chronicDiseases.Select(cd => new ChronicDiseaseDto
         {

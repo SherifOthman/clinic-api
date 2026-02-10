@@ -3,6 +3,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -16,16 +17,16 @@ public record CompleteOnboardingCommand(CompleteOnboardingDto Dto) : IRequest<Re
 
 public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardingCommand, Result>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CompleteOnboardingCommandHandler> _logger;
 
     public CompleteOnboardingCommandHandler(
-        IApplicationDbContext context, 
+        IUnitOfWork unitOfWork, 
         ICurrentUserService currentUserService,
         ILogger<CompleteOnboardingCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -44,7 +45,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
             return Result.Fail(MessageCodes.Authentication.USER_NOT_AUTHENTICATED);
         }
 
-        var user = await _context.Users.FindAsync(new object[] { userId.Value }, cancellationToken);
+        var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId.Value, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("Onboarding failed: User not found - UserId: {UserId}", userId.Value);
@@ -76,7 +77,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
             return Result.FailField(nameof(dto.SubscriptionPlanId), MessageCodes.Validation.INVALID_FORMAT);
         }
 
-        var subscriptionPlan = await _context.SubscriptionPlans.FindAsync(new object[] { subscriptionPlanId }, cancellationToken);
+        var subscriptionPlan = await _unitOfWork.Repository<SubscriptionPlan>().GetByIdAsync(subscriptionPlanId, cancellationToken);
         if (subscriptionPlan == null || !subscriptionPlan.IsActive)
         {
             _logger.LogWarning("Onboarding failed: Subscription plan not found or inactive - PlanId: {PlanId}", 
@@ -94,7 +95,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
             OwnerUserId = user.Id,
             SubscriptionPlanId = subscriptionPlanId
         };
-        _context.Clinics.Add(clinic);
+        await _unitOfWork.Repository<Clinic>().AddAsync(clinic, cancellationToken);
 
         // Update user's ClinicId and onboarding status
         user.ClinicId = clinic.Id;
@@ -110,7 +111,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
             StateGeoNameId = dto.Location.StateGeonameId,
             CityGeoNameId = dto.Location.CityGeonameId
         };
-        _context.ClinicBranches.Add(branch);
+        await _unitOfWork.Repository<ClinicBranch>().AddAsync(branch, cancellationToken);
 
         // Add branch phone numbers
         foreach (var phoneDto in dto.BranchPhoneNumbers)
@@ -121,7 +122,7 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
                 PhoneNumber = phoneDto.PhoneNumber,
                 Label = phoneDto.Label
             };
-            _context.ClinicBranchPhoneNumbers.Add(phone);
+            await _unitOfWork.Repository<ClinicBranchPhoneNumber>().AddAsync(phone, cancellationToken);
         }
 
         // Create ClinicOwner record
@@ -129,10 +130,10 @@ public class CompleteOnboardingCommandHandler : IRequestHandler<CompleteOnboardi
         {
             UserId = user.Id
         };
-        _context.ClinicOwners.Add(clinicOwner);
+        await _unitOfWork.Repository<ClinicOwner>().AddAsync(clinicOwner, cancellationToken);
 
         // Single SaveChanges - atomic transaction for all operations
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Onboarding completed successfully - Clinic: {ClinicId}, Branch: {BranchId}, Phones: {PhoneCount}",

@@ -2,6 +2,7 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using Mapster;
@@ -18,24 +19,24 @@ public record AddChronicDiseaseCommand(
 
 public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDiseaseCommand, Result<PatientChronicDiseaseDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AddChronicDiseaseCommandHandler(IApplicationDbContext context)
+    public AddChronicDiseaseCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<PatientChronicDiseaseDto>> Handle(AddChronicDiseaseCommand request, CancellationToken cancellationToken)
     {
         // Check if chronic disease exists
-        var chronicDisease = await _context.ChronicDiseases.FindAsync(new object[] { request.ChronicDisease.ChronicDiseaseId }, cancellationToken);
+        var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdAsync(request.ChronicDisease.ChronicDiseaseId, cancellationToken);
         if (chronicDisease == null)
         {
             return Result<PatientChronicDiseaseDto>.FailField("chronicDisease.chronicDiseaseId", MessageCodes.Business.CHRONIC_DISEASE_NOT_FOUND);
         }
 
         // Check if the relationship already exists
-        var exists = await _context.PatientChronicDiseases
+        var exists = await _unitOfWork.Repository<PatientChronicDisease>()
             .AnyAsync(pcd => pcd.PatientId == request.PatientId && pcd.ChronicDiseaseId == request.ChronicDisease.ChronicDiseaseId, cancellationToken);
 
         if (exists)
@@ -50,11 +51,11 @@ public class AddChronicDiseaseCommandHandler : IRequestHandler<AddChronicDisease
             ChronicDiseaseId = request.ChronicDisease.ChronicDiseaseId
         };
 
-        _context.PatientChronicDiseases.Add(PatientChronicDisease);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Repository<PatientChronicDisease>().AddAsync(PatientChronicDisease, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Get the created entity with navigation properties
-        var createdEntity = await _context.PatientChronicDiseases
+        var createdEntity = await _unitOfWork.Repository<PatientChronicDisease>()
             .FirstOrDefaultAsync(pcd => pcd.PatientId == request.PatientId && pcd.ChronicDiseaseId == request.ChronicDisease.ChronicDiseaseId, cancellationToken);
 
         // Map to DTO with the available properties

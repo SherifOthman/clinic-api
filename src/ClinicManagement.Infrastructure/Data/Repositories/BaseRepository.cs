@@ -25,6 +25,11 @@ public class BaseRepository<T> : IRepository<T> where T : class
         return await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
     }
 
+    public virtual async Task<IEnumerable<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+    }
+
     public virtual async Task<PagedResult<T>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default)
     {
         var query = _dbSet.AsNoTracking();
@@ -80,6 +85,16 @@ public class BaseRepository<T> : IRepository<T> where T : class
     public virtual async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FindAsync(new object[] { id }, cancellationToken) != null;
+    }
+
+    public virtual async Task<bool> AnyAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AnyAsync(predicate, cancellationToken);
+    }
+
+    public virtual async Task<T?> FirstOrDefaultAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)

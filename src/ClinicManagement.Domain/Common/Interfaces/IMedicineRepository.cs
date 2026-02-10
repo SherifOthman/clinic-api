@@ -10,4 +10,7 @@ public interface IMedicineRepository : IRepository<Medicine>
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<PagedResult<Medicine>> GetPagedByClinicBranchAsync(Guid clinicBranchId, PaginationRequest request, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Medicine>> GetByClinicBranchAsync(Guid clinicBranchId, CancellationToken cancellationToken = default);
+    Task<Medicine?> GetByNameAndClinicBranchAsync(string name, Guid clinicBranchId, CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,8 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,16 +17,16 @@ public record UpdateChronicDiseaseCommand(
 
 public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicDiseaseCommand, Result<PatientChronicDiseaseDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateChronicDiseaseCommandHandler(IApplicationDbContext context)
+    public UpdateChronicDiseaseCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<PatientChronicDiseaseDto>> Handle(UpdateChronicDiseaseCommand request, CancellationToken cancellationToken)
     {
-        var PatientChronicDisease = await _context.PatientChronicDiseases
+        var PatientChronicDisease = await _unitOfWork.Repository<PatientChronicDisease>()
             .FirstOrDefaultAsync(pcd => pcd.PatientId == request.PatientId && pcd.ChronicDiseaseId == request.ChronicDiseaseId, cancellationToken);
 
         if (PatientChronicDisease == null)
@@ -36,11 +38,11 @@ public class UpdateChronicDiseaseCommandHandler : IRequestHandler<UpdateChronicD
         // Additional properties like DiagnosedDate, Status, Notes, IsActive are not stored in the entity
         // This is a simple junction table for many-to-many relationship
 
-        _context.PatientChronicDiseases.Update(PatientChronicDisease);
-        await _context.SaveChangesAsync(cancellationToken);
+        _unitOfWork.Repository<PatientChronicDisease>().Update(PatientChronicDisease);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Get the updated entity with navigation properties
-        var updatedEntity = await _context.PatientChronicDiseases
+        var updatedEntity = await _unitOfWork.Repository<PatientChronicDisease>()
             .FirstOrDefaultAsync(pcd => pcd.PatientId == request.PatientId && pcd.ChronicDiseaseId == request.ChronicDiseaseId, cancellationToken);
 
         // Map to DTO - since entity doesn't have these properties, we'll use the request data

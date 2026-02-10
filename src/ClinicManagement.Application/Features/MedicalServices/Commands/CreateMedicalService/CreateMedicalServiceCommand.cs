@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -19,17 +20,17 @@ public record CreateMedicalServiceCommand : IRequest<Result<Guid>>
 
 public class CreateMedicalServiceCommandHandler : IRequestHandler<CreateMedicalServiceCommand, Result<Guid>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CreateMedicalServiceCommandHandler(IApplicationDbContext context)
+    public CreateMedicalServiceCommandHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreateMedicalServiceCommand request, CancellationToken cancellationToken)
     {
         // Check if clinic branch exists
-        var clinicBranchExists = await _context.ClinicBranches
+        var clinicBranchExists = await _unitOfWork.Repository<ClinicBranch>()
             .AnyAsync(cb => cb.Id == request.ClinicBranchId, cancellationToken);
         
         if (!clinicBranchExists)
@@ -38,9 +39,8 @@ public class CreateMedicalServiceCommandHandler : IRequestHandler<CreateMedicalS
         }
 
         // Check if medical service with same name already exists in this clinic branch
-        var existingService = await _context.MedicalServices
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Name.ToLower() == request.Name.ToLower() && s.ClinicBranchId == request.ClinicBranchId, cancellationToken);
+        var existingService = await _unitOfWork.MedicalServices
+            .GetByNameAndClinicBranchAsync(request.Name, request.ClinicBranchId, cancellationToken);
         
         if (existingService != null)
         {
@@ -56,8 +56,8 @@ public class CreateMedicalServiceCommandHandler : IRequestHandler<CreateMedicalS
             IsOperation = request.IsOperation
         };
 
-        _context.MedicalServices.Add(service);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.MedicalServices.AddAsync(service, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Ok(service.Id);
     }

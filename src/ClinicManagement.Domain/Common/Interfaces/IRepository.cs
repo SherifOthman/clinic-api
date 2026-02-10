@@ -7,9 +7,12 @@ public interface IRepository<T> where T : class
     // Read operations
     Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
     Task<PagedResult<T>> GetPagedAsync(PaginationRequest request, CancellationToken cancellationToken = default);
     Task<PagedResult<T>> GetPagedAsync(SearchablePaginationRequest request, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> AnyAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
+    Task<T?> FirstOrDefaultAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
 
     // Write operations
     Task AddAsync(T entity, CancellationToken cancellationToken = default);

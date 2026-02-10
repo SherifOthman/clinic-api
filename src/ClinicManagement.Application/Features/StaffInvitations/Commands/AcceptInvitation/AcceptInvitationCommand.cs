@@ -3,6 +3,8 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Services;
 using ClinicManagement.Application.DTOs;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Common.Interfaces;
+using ClinicManagement.Domain.Entities;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,14 +15,14 @@ public record AcceptInvitationCommand(AcceptInvitationDto Dto) : IRequest<Result
 
 public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCommand, Result>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRegistrationService _userRegistrationService;
 
     public AcceptInvitationCommandHandler(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IUserRegistrationService userRegistrationService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _userRegistrationService = userRegistrationService;
     }
 
@@ -35,7 +37,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         }
 
         // Find invitation by token
-        var invitation = await _context.StaffInvitations
+        var invitation = await _unitOfWork.Repository<StaffInvitation>()
             .FirstOrDefaultAsync(si => si.Token == dto.Token, cancellationToken);
         
         if (invitation == null)
@@ -80,7 +82,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         invitation.AcceptedByUserId = registrationResult.Value;
 
         // Single SaveChanges - atomic transaction
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }

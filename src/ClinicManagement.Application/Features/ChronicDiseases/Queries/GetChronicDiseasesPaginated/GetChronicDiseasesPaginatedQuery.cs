@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.DTOs;
+using ClinicManagement.Domain.Common.Interfaces;
 using ClinicManagement.Domain.Common.Models;
 using Mapster;
 using MediatR;
@@ -15,31 +16,25 @@ public record GetChronicDiseasesPaginatedQuery(
 
 public class GetChronicDiseasesPaginatedQueryHandler : IRequestHandler<GetChronicDiseasesPaginatedQuery, Result<PagedResult<ChronicDiseaseDto>>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetChronicDiseasesPaginatedQueryHandler(IApplicationDbContext context)
+    public GetChronicDiseasesPaginatedQueryHandler(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<PagedResult<ChronicDiseaseDto>>> Handle(GetChronicDiseasesPaginatedQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.ChronicDiseases.AsNoTracking();
-        
-        var totalCount = await query.CountAsync(cancellationToken);
-        
-        var chronicDiseases = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync(cancellationToken);
-        
-        var dtos = chronicDiseases.Adapt<List<ChronicDiseaseDto>>();
-        var result = new PagedResult<ChronicDiseaseDto>(
-            dtos,
-            totalCount,
-            request.PageNumber,
-            request.PageSize);
+        var paginationRequest = new PaginationRequest 
+        { 
+            PageNumber = request.PageNumber, 
+            PageSize = request.PageSize 
+        };
+        var result = await _unitOfWork.ChronicDiseases.GetPagedAsync(paginationRequest, cancellationToken);
 
-        return Result<PagedResult<ChronicDiseaseDto>>.Ok(result);
+        var dtos = result.Items.Adapt<List<ChronicDiseaseDto>>();
+        var pagedResult = new PagedResult<ChronicDiseaseDto>(dtos, result.TotalCount, result.PageNumber, result.PageSize);
+
+        return Result<PagedResult<ChronicDiseaseDto>>.Ok(pagedResult);
     }
 }
