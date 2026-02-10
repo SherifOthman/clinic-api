@@ -152,7 +152,7 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating invoice for patient {PatientId}", request.PatientId);
-            throw;
+            return Result<Guid>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
         }
     }
 }

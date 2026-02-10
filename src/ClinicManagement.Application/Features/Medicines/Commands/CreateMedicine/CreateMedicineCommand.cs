@@ -126,7 +126,7 @@ public class CreateMedicineCommandHandler : IRequestHandler<CreateMedicineComman
         {
             _logger.LogError(ex, "Error creating medicine '{MedicineName}' for clinic branch {ClinicBranchId}", 
                 request.Name, request.ClinicBranchId);
-            throw;
+            return Result<Guid>.Fail(MessageCodes.Exception.INTERNAL_ERROR);
         }
     }
 }
