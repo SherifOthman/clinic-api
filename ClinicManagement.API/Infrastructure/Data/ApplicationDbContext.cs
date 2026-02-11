@@ -1,0 +1,206 @@
+using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+
+namespace ClinicManagement.API.Infrastructure.Data;
+
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
+{
+    private readonly CurrentUserService _currentUserService;
+    private readonly DateTimeProvider _dateTimeProvider;
+
+    public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Specialization> Specializations => Set<Specialization>();
+    public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<DoctorWorkingDay> DoctorWorkingDays => Set<DoctorWorkingDay>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<PatientPhone> PatientPhones => Set<PatientPhone>();
+    public DbSet<Clinic> Clinics => Set<Clinic>();
+    public DbSet<ClinicBranch> ClinicBranches => Set<ClinicBranch>();
+    public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<MedicalFile> MedicalFiles => Set<MedicalFile>();
+    public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
+    public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
+    
+    // User type entities
+    public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
+    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
+    
+    public DbSet<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers => Set<ClinicBranchPhoneNumber>();
+    
+    // Staff invitation
+    public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
+    
+    // Pharmacy and billing entities
+    public DbSet<Medicine> Medicines => Set<Medicine>();
+    public DbSet<MedicalSupply> MedicalSupplies => Set<MedicalSupply>();
+    public DbSet<MedicalService> MedicalServices => Set<MedicalService>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    
+    // Measurement entities
+    public DbSet<MeasurementAttribute> MeasurementAttributes => Set<MeasurementAttribute>();
+    public DbSet<MedicalVisitMeasurement> MedicalVisitMeasurements => Set<MedicalVisitMeasurement>();
+    public DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes => Set<DoctorMeasurementAttribute>();
+    public DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes => Set<SpecializationMeasurementAttribute>();
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        CurrentUserService currentUserService,
+        DateTimeProvider dateTimeProvider) : base(options)
+    {
+        _currentUserService = currentUserService;
+        _dateTimeProvider = dateTimeProvider;
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var currentUserId = _currentUserService.UserId;
+        var currentClinicId = _currentUserService.ClinicId;
+        var now = _dateTimeProvider.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.CreatedAt = now;
+                    entry.Entity.CreatedBy = currentUserId;
+                    break;
+                    
+                case EntityState.Modified:
+                    entry.Entity.UpdatedAt = now;
+                    entry.Entity.UpdatedBy = currentUserId;
+                    break;
+                    
+                case EntityState.Deleted:
+                    // Soft delete instead of hard delete
+                    entry.State = EntityState.Modified;
+                    entry.Entity.IsDeleted = true;
+                    entry.Entity.DeletedAt = now;
+                    entry.Entity.DeletedBy = currentUserId;
+                    break;
+            }
+        }
+        
+        // Automatically set ClinicId for new tenant-scoped entities
+        if (currentClinicId.HasValue)
+        {
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    var clinicIdProperty = entry.Metadata.FindProperty("ClinicId");
+                    if (clinicIdProperty != null)
+                    {
+                        var currentValue = entry.Property("ClinicId").CurrentValue;
+                        // Only set if not already set (allows explicit override)
+                        if (currentValue == null || (currentValue is Guid guid && guid == Guid.Empty))
+                        {
+                            entry.Property("ClinicId").CurrentValue = currentClinicId.Value;
+                        }
+                    }
+                }
+            }
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        // Apply all entity configurations from assembly
+        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Configure Identity tables with custom schema
+        builder.Entity<User>().ToTable("Users", "Identity");
+        builder.Entity<IdentityRole<Guid>>().ToTable("Roles", "Identity");
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles", "Identity");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims", "Identity");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins", "Identity");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens", "Identity");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims", "Identity");
+        
+        // ===== GLOBAL QUERY FILTERS =====
+        ConfigureGlobalQueryFilters(builder);
+    }
+    
+    /// <summary>
+    /// Configures global query filters for multi-tenancy and soft delete
+    /// </summary>
+    private void ConfigureGlobalQueryFilters(ModelBuilder builder)
+    {
+        // Get current user's clinic ID (null for SuperAdmin)
+        var clinicId = _currentUserService.ClinicId;
+        
+        // ===== SOFT DELETE FILTERS (AuditableEntity only) =====
+        
+        // Clinic-scoped entities with soft delete
+        builder.Entity<Patient>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicId == clinicId));
+        
+        builder.Entity<Invoice>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicId == clinicId));
+        
+        builder.Entity<StaffInvitation>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicId == clinicId));
+        
+        // Branch-scoped entities with soft delete
+        builder.Entity<Appointment>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicBranch.ClinicId == clinicId));
+        
+        builder.Entity<Medicine>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicBranch.ClinicId == clinicId));
+        
+        builder.Entity<MedicalService>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicBranch.ClinicId == clinicId));
+        
+        builder.Entity<MedicalSupply>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicBranch.ClinicId == clinicId));
+        
+        builder.Entity<ClinicBranch>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicId == clinicId));
+        
+        // Clinic entity itself (only soft delete filter)
+        builder.Entity<Clinic>().HasQueryFilter(e => !e.IsDeleted);
+        
+        // Reference data entities (no soft delete - they use IsActive flag instead)
+        // ChronicDisease, Specialization, SubscriptionPlan, AppointmentType, MeasurementAttribute
+        // These are global reference data, no filters needed
+        
+        // User-related entities with soft delete
+        builder.Entity<Doctor>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Receptionist>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ClinicOwner>().HasQueryFilter(e => !e.IsDeleted);
+        
+        // Medical entities with soft delete (child entities, filtered through parent)
+        builder.Entity<PatientChronicDisease>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Payment>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ClinicBranchAppointmentPrice>().HasQueryFilter(e => !e.IsDeleted);
+        
+        // ===== NO SOFT DELETE (BaseEntity) - Only tenant filter where applicable =====
+        
+        // Tenant-scoped BaseEntity entities
+        builder.Entity<LabTest>().HasQueryFilter(e => 
+            clinicId == null || e.ClinicId == clinicId);
+        
+        builder.Entity<RadiologyTest>().HasQueryFilter(e => 
+            clinicId == null || e.ClinicId == clinicId);
+        
+        builder.Entity<ClinicMedication>().HasQueryFilter(e => 
+            clinicId == null || e.ClinicId == clinicId);
+        
+        // Note: Other BaseEntity entities (PatientPhone, InvoiceItem, MedicalFile, etc.) 
+        // are child entities and filtered through their parent relationships
+    }
+}

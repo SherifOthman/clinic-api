@@ -1,0 +1,96 @@
+using ClinicManagement.API.Common;
+using ClinicManagement.API.Entities;
+using ClinicManagement.API.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace ClinicManagement.API.Features.PatientChronicDiseases;
+
+public class AddPatientChronicDiseaseEndpoint : IEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapPost("/patients/{patientId:guid}/chronic-diseases", HandleAsync)
+            .RequireAuthorization()
+            .WithName("AddPatientChronicDisease")
+            .WithSummary("Add a chronic disease to a patient")
+            .WithTags("PatientChronicDiseases")
+            .Produces<Response>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest)
+            ;
+    }
+
+    private static async Task<IResult> HandleAsync(
+        Guid patientId,
+        Request request,
+        ApplicationDbContext db,
+        CurrentUserService currentUser,
+        CancellationToken ct)
+    {
+        var clinicId = currentUser.ClinicId!.Value;
+
+        // Verify patient exists (global query filter ensures it belongs to clinic)
+        var patientExists = await db.Patients
+            .AnyAsync(p => p.Id == patientId, ct);
+
+        if (!patientExists)
+            return Results.BadRequest(new
+            {
+                error = "Patient not found or does not belong to your clinic",
+                code = "PATIENT_NOT_FOUND"
+            });
+
+        // Verify chronic disease exists
+        var diseaseExists = await db.ChronicDiseases
+            .AnyAsync(cd => cd.Id == request.ChronicDiseaseId, ct);
+
+        if (!diseaseExists)
+            return Results.BadRequest(new
+            {
+                error = "Chronic disease not found",
+                code = "DISEASE_NOT_FOUND"
+            });
+
+        // Check if patient already has this disease
+        var alreadyExists = await db.PatientChronicDiseases
+            .AnyAsync(pcd =>
+                pcd.PatientId == patientId &&
+                pcd.ChronicDiseaseId == request.ChronicDiseaseId, ct);
+
+        if (alreadyExists)
+            return Results.BadRequest(new
+            {
+                error = "Patient already has this chronic disease",
+                code = "DISEASE_ALREADY_EXISTS"
+            });
+
+        var patientDisease = new PatientChronicDisease
+        {
+            PatientId = patientId,
+            ChronicDiseaseId = request.ChronicDiseaseId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        db.PatientChronicDiseases.Add(patientDisease);
+        await db.SaveChangesAsync(ct);
+
+        // Load the disease name for response
+        var diseaseName = await db.ChronicDiseases
+            .Where(cd => cd.Id == request.ChronicDiseaseId)
+            .Select(cd => cd.NameEn)
+            .FirstAsync(ct);
+
+        var response = new Response(
+            request.ChronicDiseaseId,
+            diseaseName);
+
+        return Results.Created($"/api/patients/{patientId}/chronic-diseases/{request.ChronicDiseaseId}", response);
+    }
+
+    public record Request(
+        [Required]
+        Guid ChronicDiseaseId);
+
+    public record Response(
+        Guid ChronicDiseaseId,
+        string ChronicDiseaseName);
+}

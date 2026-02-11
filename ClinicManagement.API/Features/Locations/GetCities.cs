@@ -1,0 +1,36 @@
+using ClinicManagement.API.Common;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ClinicManagement.API.Features.Locations;
+
+public class GetCitiesEndpoint : IEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapGet("/locations/cities", HandleAsync)
+            .AllowAnonymous()
+            .WithName("GetCities")
+            .WithSummary("Get cities by state")
+            .WithTags("Locations")
+            .Produces<List<Response>>(StatusCodes.Status200OK);
+    }
+
+    private static async Task<IResult> HandleAsync(
+        [FromQuery] int stateGeonameId,
+        GeoNamesService geoNamesService,
+        CancellationToken ct)
+    {
+        var cities = await geoNamesService.GetCitiesAsync(stateGeonameId);
+
+        var response = cities
+            .Select(c => new Response(c.GeonameId, c.Name.En))
+            .OrderBy(c => c.Name)
+            .ToList();
+
+        return Results.Ok(response);
+    }
+
+    public record Response(
+        int GeonameId,
+        string Name);
+}

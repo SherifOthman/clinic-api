@@ -1,0 +1,109 @@
+using ClinicManagement.API.Common;
+using ClinicManagement.API.Entities;
+using Microsoft.AspNetCore.Identity;
+
+namespace ClinicManagement.API.Features.Auth;
+
+public class UploadProfileImageEndpoint : IEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapPost("/auth/profile/image/upload", HandleAsync)
+            .RequireAuthorization()
+            .DisableAntiforgery()
+            .WithName("UploadProfileImage")
+            .WithSummary("Upload profile image")
+            .WithTags("Authentication")
+            .Produces<Response>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            ;
+    }
+
+    private static async Task<IResult> HandleAsync(
+        IFormFile file,
+        CurrentUserService currentUserService,
+        UserManager<User> userManager,
+        LocalFileStorageService fileStorageService,
+        CancellationToken ct)
+    {
+        // Validate file
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+        const long maxFileSize = 5 * 1024 * 1024; // 5MB
+
+        if (file == null || file.Length == 0)
+            return Results.BadRequest(new { error = "File is required", code = "FILE_REQUIRED" });
+
+        if (file.Length > maxFileSize)
+            return Results.BadRequest(new { error = "File size must not exceed 5MB", code = "FILE_TOO_LARGE" });
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            return Results.BadRequest(new { error = $"File must be one of the following types: {string.Join(", ", allowedExtensions)}", code = "INVALID_FILE_TYPE" });
+
+        var userId = currentUserService.UserId;
+        if (userId == null)
+            return Results.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        if (user == null)
+            return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
+
+        try
+        {
+            // Delete old profile image if exists
+            if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
+            {
+                await fileStorageService.DeleteFileAsync(user.ProfileImageUrl, ct);
+            }
+
+            // Upload new profile image
+            var filePath = await fileStorageService.UploadFileAsync(file, "profiles", ct);
+
+            // Update user profile image URL
+            user.ProfileImageUrl = filePath;
+
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                // Rollback: delete uploaded file
+                await fileStorageService.DeleteFileAsync(filePath, ct);
+
+                var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+                return Results.BadRequest(new { error = $"Failed to update profile: {errors}", code = "UPDATE_FAILED" });
+            }
+
+            var response = new Response(
+                user.Id,
+                user.Email!,
+                user.UserName!,
+                user.FirstName,
+                user.LastName,
+                user.PhoneNumber,
+                user.ProfileImageUrl,
+                user.ClinicId,
+                user.EmailConfirmed,
+                user.OnboardingCompleted
+            );
+
+            return Results.Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { error = $"An error occurred while uploading profile image: {ex.Message}", code = "INTERNAL_ERROR" });
+        }
+    }
+
+    public record Request(IFormFile File);
+
+    public record Response(
+        Guid Id,
+        string Email,
+        string UserName,
+        string FirstName,
+        string LastName,
+        string? PhoneNumber,
+        string? ProfileImageUrl,
+        Guid? ClinicId,
+        bool EmailConfirmed,
+        bool OnboardingCompleted);
+}

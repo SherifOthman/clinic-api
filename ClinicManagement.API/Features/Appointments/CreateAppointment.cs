@@ -1,0 +1,172 @@
+using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Validation;
+using ClinicManagement.API.Common.Enums;
+using ClinicManagement.API.Common.Exceptions;
+using ClinicManagement.API.Entities;
+using ClinicManagement.API.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace ClinicManagement.API.Features.Appointments;
+
+public class CreateAppointmentEndpoint : IEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapPost("/appointments", HandleAsync)
+            .RequireAuthorization()
+            .WithName("CreateAppointment")
+            .WithSummary("Create a new appointment")
+            .WithTags("Appointments")
+            .Produces<Response>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest)
+            ;
+    }
+
+    private static async Task<IResult> HandleAsync(
+        Request request,
+        ApplicationDbContext db,
+        CurrentUserService currentUser,
+        DateTimeProvider dateTime,
+        CancellationToken ct)
+    {
+        var clinicId = currentUser.ClinicId!.Value;
+
+        // Business Rule 1: Verify patient exists (global query filter ensures it belongs to clinic)
+        var patientExists = await db.Patients
+            .AnyAsync(p => p.Id == request.PatientId, ct);
+
+        if (!patientExists)
+            return Results.BadRequest(new { error = "Patient not found or does not belong to your clinic", code = "PATIENT_NOT_FOUND" });
+
+        // Business Rule 2: Verify doctor exists (global query filter ensures it belongs to clinic)
+        var doctorExists = await db.Doctors
+            .AnyAsync(d => d.Id == request.DoctorId, ct);
+
+        if (!doctorExists)
+            return Results.BadRequest(new { error = "Doctor not found or does not belong to your clinic", code = "DOCTOR_NOT_FOUND" });
+
+        // Business Rule 3: Verify branch exists (global query filter ensures it belongs to clinic)
+        var branchExists = await db.ClinicBranches
+            .AnyAsync(b => b.Id == request.ClinicBranchId, ct);
+
+        if (!branchExists)
+            return Results.BadRequest(new { error = "Branch not found or does not belong to your clinic", code = "BRANCH_NOT_FOUND" });
+
+        // Business Rule 4: Check for appointment conflicts (same doctor, same date/time)
+        var appointmentDate = request.ScheduledAt.Date;
+        var hasConflict = await db.Appointments
+            .AnyAsync(a =>
+                a.DoctorId == request.DoctorId &&
+                a.AppointmentDate == appointmentDate &&
+                a.Status != AppointmentStatus.Cancelled, ct);
+
+        if (hasConflict)
+            return Results.BadRequest(new { error = "Doctor already has an appointment on this date", code = "APPOINTMENT_CONFLICT" });
+
+        // Generate appointment number
+        var appointmentNumber = await GenerateAppointmentNumberAsync(db, dateTime, request.ClinicBranchId, ct);
+
+        // Get next queue number for the day
+        var queueNumber = await GetNextQueueNumberAsync(db, request.ClinicBranchId, appointmentDate, ct);
+
+        try
+        {
+            // Use domain factory method
+            var appointment = Appointment.Create(
+                appointmentNumber,
+                request.ClinicBranchId,
+                request.PatientId,
+                request.DoctorId,
+                request.AppointmentTypeId,
+                appointmentDate,
+                queueNumber);
+
+            db.Appointments.Add(appointment);
+            await db.SaveChangesAsync(ct);
+
+            // Load response with related data
+            var response = await db.Appointments
+                .Where(a => a.Id == appointment.Id)
+                .Select(a => new Response(
+                    a.Id,
+                    a.PatientId,
+                    a.Patient.FullName,
+                    a.DoctorId,
+                    a.Doctor.User.FirstName + " " + a.Doctor.User.LastName,
+                    a.ClinicBranchId,
+                    a.ClinicBranch.Name,
+                    a.AppointmentTypeId,
+                    a.AppointmentType.NameEn,
+                    a.AppointmentDate,
+                    a.QueueNumber,
+                    a.Status,
+                    a.CreatedAt
+                ))
+                .FirstAsync(ct);
+
+            return Results.Created($"/api/appointments/{response.Id}", response);
+        }
+        catch (Exception ex)
+        {
+            return ex.HandleDomainException();
+        }
+    }
+
+    private static async Task<string> GenerateAppointmentNumberAsync(
+        ApplicationDbContext db,
+        DateTimeProvider dateTime,
+        Guid clinicBranchId,
+        CancellationToken ct)
+    {
+        var year = dateTime.UtcNow.Year;
+        var count = await db.Appointments
+            .CountAsync(a => a.ClinicBranchId == clinicBranchId && a.CreatedAt.Year == year, ct);
+        
+        return $"APT-{year}-{(count + 1):D6}";
+    }
+
+    private static async Task<short> GetNextQueueNumberAsync(
+        ApplicationDbContext db,
+        Guid clinicBranchId,
+        DateTime date,
+        CancellationToken ct)
+    {
+        var maxQueue = await db.Appointments
+            .Where(a => a.ClinicBranchId == clinicBranchId && a.AppointmentDate == date)
+            .MaxAsync(a => (short?)a.QueueNumber, ct);
+        
+        return (short)((maxQueue ?? 0) + 1);
+    }
+
+    public record Request(
+        [Required]
+        Guid PatientId,
+        
+        [Required]
+        Guid DoctorId,
+        
+        [Required]
+        Guid ClinicBranchId,
+        
+        [Required]
+        [CustomValidation(typeof(CustomValidators), nameof(CustomValidators.MustBeInFutureOrToday))]
+        DateTime ScheduledAt,
+        
+        [Required]
+        Guid AppointmentTypeId);
+
+    public record Response(
+        Guid Id,
+        Guid PatientId,
+        string PatientName,
+        Guid DoctorId,
+        string DoctorName,
+        Guid ClinicBranchId,
+        string BranchName,
+        Guid AppointmentTypeId,
+        string AppointmentTypeName,
+        DateTime AppointmentDate,
+        short QueueNumber,
+        AppointmentStatus Status,
+        DateTime CreatedAt);
+}
