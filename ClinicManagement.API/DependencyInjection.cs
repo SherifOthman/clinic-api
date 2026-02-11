@@ -123,12 +123,6 @@ public static class DependencyInjection
 
         // .NET 10 Native Validation
         services.AddValidation();
-        
-        // Health Checks
-        services.AddHealthChecks()
-            .AddDbContextCheck<ApplicationDbContext>(
-                name: "database",
-                tags: new[] { "db", "sql", "ready" });
 
         // Options
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
@@ -187,38 +181,34 @@ public static class DependencyInjection
                 .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
         });
         
-        // Map Health Check Endpoints
-        app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        // Simple Health Check Endpoints (no external dependencies)
+        app.MapGet("/health", () => Results.Ok(new
         {
-            Predicate = _ => true,
-            ResponseWriter = async (context, report) =>
-            {
-                context.Response.ContentType = "application/json";
-                var result = System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    status = report.Status.ToString(),
-                    checks = report.Entries.Select(e => new
-                    {
-                        name = e.Key,
-                        status = e.Value.Status.ToString(),
-                        description = e.Value.Description,
-                        duration = e.Value.Duration.TotalMilliseconds
-                    }),
-                    totalDuration = report.TotalDuration.TotalMilliseconds
-                });
-                await context.Response.WriteAsync(result);
-            }
-        });
+            status = "Healthy",
+            timestamp = DateTime.UtcNow,
+            service = "Clinic Management API"
+        }))
+        .WithName("HealthCheck")
+        .WithTags("Health")
+        .AllowAnonymous();
         
-        app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        app.MapGet("/health/ready", () => Results.Ok(new
         {
-            Predicate = check => check.Tags.Contains("ready")
-        });
+            status = "Ready",
+            timestamp = DateTime.UtcNow
+        }))
+        .WithName("ReadinessCheck")
+        .WithTags("Health")
+        .AllowAnonymous();
         
-        app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        app.MapGet("/health/live", () => Results.Ok(new
         {
-            Predicate = _ => false // Just checks if the app is running
-        });
+            status = "Live",
+            timestamp = DateTime.UtcNow
+        }))
+        .WithName("LivenessCheck")
+        .WithTags("Health")
+        .AllowAnonymous();
 
         return app;
     }
