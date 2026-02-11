@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Scalar.AspNetCore;
 
 namespace ClinicManagement.API;
 
@@ -151,11 +152,7 @@ public static class DependencyInjection
         });
 
         // OpenAPI with Scalar (modern alternative to Swagger)
-        // Note: AddOpenApi is not available in .NET 10 preview yet
-        // services.AddOpenApi(options =>
-        // {
-        //     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-        // });
+        services.AddOpenApi();
 
         return services;
     }
@@ -164,23 +161,6 @@ public static class DependencyInjection
     {
         // Global exception middleware handles all unhandled exceptions
         app.UseMiddleware<GlobalExceptionMiddleware>();
-
-        //if (app.Environment.IsDevelopment())
-        //{
-            // Map OpenAPI document endpoint
-            // Note: MapOpenApi is not available in .NET 10 preview yet
-            // app.MapOpenApi();
-            
-            // Map Scalar UI (modern, beautiful API documentation)
-            // Note: MapScalarApiReference is not available in .NET 10 preview yet
-            // app.MapScalarApiReference(options =>
-            // {
-            //     options
-            //         .WithTitle("Clinic Management API")
-            //         .WithTheme(ScalarTheme.Purple)
-            //         .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-            // });
-        //}
 
         // Enable static file serving for uploaded files
         app.UseStaticFiles();
@@ -196,6 +176,16 @@ public static class DependencyInjection
 
         // Map Minimal API Endpoints (new approach - Vertical Slice Architecture)
         app.MapEndpoints();
+        
+        // Map OpenAPI document and Scalar UI
+        app.MapOpenApi();
+        app.MapScalarApiReference(options =>
+        {
+            options
+                .WithTitle("Clinic Management API")
+                .WithTheme(ScalarTheme.Purple)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        });
         
         // Map Health Check Endpoints
         app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
