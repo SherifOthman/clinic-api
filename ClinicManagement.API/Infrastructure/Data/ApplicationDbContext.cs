@@ -92,6 +92,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         }
         
         // Automatically set ClinicId for new tenant-scoped entities
+        // This ensures multi-tenancy isolation at the data layer
         if (currentClinicId.HasValue)
         {
             foreach (var entry in ChangeTracker.Entries())
@@ -137,10 +138,12 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     
     /// <summary>
     /// Configures global query filters for multi-tenancy and soft delete
+    /// Multi-tenancy: Filters by ClinicId from JWT claims (null for SuperAdmin = see all)
+    /// Soft delete: Excludes IsDeleted=true records (use IncludeDeleted() to bypass)
     /// </summary>
     private void ConfigureGlobalQueryFilters(ModelBuilder builder)
     {
-        // Get current user's clinic ID (null for SuperAdmin)
+        // Get current user's clinic ID (null for SuperAdmin who can see all clinics)
         var clinicId = _currentUserService.ClinicId;
         
         // ===== SOFT DELETE FILTERS (AuditableEntity only) =====

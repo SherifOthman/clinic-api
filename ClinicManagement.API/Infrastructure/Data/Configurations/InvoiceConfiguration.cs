@@ -52,11 +52,15 @@ public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
         builder.HasIndex(i => new { i.ClinicId, i.InvoiceNumber })
             .IsUnique();
 
-        // Ignore calculated properties
+        // Ignore calculated properties (computed at runtime from Items and Payments collections)
         builder.Ignore(i => i.FinalAmount);
         builder.Ignore(i => i.TotalPaid);
         builder.Ignore(i => i.RemainingAmount);
         builder.Ignore(i => i.IsFullyPaid);
         builder.Ignore(i => i.IsOverdue);
+        builder.Ignore(i => i.SubtotalAmount);
+        builder.Ignore(i => i.IsPartiallyPaid);
+        builder.Ignore(i => i.DiscountPercentage);
+        builder.Ignore(i => i.DaysOverdue);
     }
 }

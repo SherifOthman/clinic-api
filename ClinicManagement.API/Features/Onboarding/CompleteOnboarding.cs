@@ -27,7 +27,8 @@ public class CompleteOnboardingEndpoint : IEndpoint
     {
         var userId = currentUser.UserId!.Value;
 
-        // Check if user already has a clinic
+        // Onboarding flow: User registers → Completes onboarding → Gets ClinicId
+        // After onboarding, user can access clinic-scoped features
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
 
@@ -83,8 +84,9 @@ public class CompleteOnboardingEndpoint : IEndpoint
 
         db.ClinicBranches.Add(branch);
 
-        // Update user with clinic
+        // Link user to clinic (enables multi-tenancy filtering)
         user.ClinicId = clinic.Id;
+        user.OnboardingCompleted = true;
 
         await db.SaveChangesAsync(ct);
 
