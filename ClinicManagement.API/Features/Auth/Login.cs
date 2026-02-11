@@ -14,10 +14,11 @@ public class LoginEndpoint : IEndpoint
             .AllowAnonymous()
             .WithName("Login")
             .WithSummary("Login with email and password")
+            .WithDescription("Authenticates user and returns access token with refresh token in cookie")
             .WithTags("Authentication")
+            .Accepts<Request>("application/json")
             .Produces<Response>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            ;
+            .Produces(StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> HandleAsync(

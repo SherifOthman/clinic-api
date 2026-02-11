@@ -10,10 +10,11 @@ public class RegisterEndpoint : IEndpoint
             .AllowAnonymous()
             .WithName("Register")
             .WithSummary("Register a new user")
+            .WithDescription("Creates a new clinic owner account and sends email confirmation")
             .WithTags("Authentication")
+            .Accepts<Request>("application/json")
             .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            ;
+            .Produces(StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> HandleAsync(

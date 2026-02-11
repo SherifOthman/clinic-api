@@ -146,7 +146,19 @@ public static class DependencyInjection
         });
 
         // OpenAPI with Scalar (modern alternative to Swagger)
-        services.AddOpenApi();
+        services.AddOpenApi(options =>
+        {
+            // Use declaring type + nested type name to avoid schema naming conflicts
+            // Example: "RegisterEndpoint.Request" instead of just "Request"
+            options.CreateSchemaReferenceId = type =>
+            {
+                if (type.Type.DeclaringType != null)
+                {
+                    return $"{type.Type.DeclaringType.Name}.{type.Type.Name}";
+                }
+                return type.Type.Name;
+            };
+        });
 
         return services;
     }
