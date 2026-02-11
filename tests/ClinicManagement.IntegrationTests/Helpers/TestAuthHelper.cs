@@ -18,7 +18,7 @@ public static class TestAuthHelper
         // Generate username from email (take part before @)
         var userName = email.Split('@')[0];
         
-        // Register
+        // Try to register (ignore if already exists)
         var registerRequest = new
         {
             email,
@@ -31,10 +31,15 @@ public static class TestAuthHelper
 
         var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
         
+        // If registration fails with duplicate email, that's okay - we'll just login
         if (!registerResponse.IsSuccessStatusCode)
         {
             var error = await registerResponse.Content.ReadAsStringAsync();
-            throw new Exception($"Registration failed: {error}");
+            // Only throw if it's not a duplicate email error
+            if (!error.Contains("Email is already registered", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception($"Registration failed: {error}");
+            }
         }
 
         // Login
