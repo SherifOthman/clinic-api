@@ -145,39 +145,8 @@ public static class DependencyInjection
             });
         });
 
-        // OpenAPI with Scalar (modern alternative to Swagger)
-        services.AddOpenApi(options =>
-        {
-            // Inline primitive types and use unique schema names for nested types
-            options.CreateSchemaReferenceId = (type) =>
-            {
-                // Return null for primitive types to inline them
-                if (type.Type == typeof(string) || 
-                    type.Type == typeof(int) || 
-                    type.Type == typeof(long) ||
-                    type.Type == typeof(bool) || 
-                    type.Type == typeof(decimal) || 
-                    type.Type == typeof(double) ||
-                    type.Type == typeof(float) ||
-                    type.Type == typeof(Guid) || 
-                    type.Type == typeof(DateTime) ||
-                    type.Type == typeof(DateTimeOffset) ||
-                    type.Type == typeof(DateOnly) ||
-                    type.Type == typeof(TimeOnly))
-                {
-                    return null; // Inline primitive types
-                }
-                
-                // For nested types (like Request, Response), use declaring type name to avoid conflicts
-                if (type.Type.DeclaringType != null)
-                {
-                    return $"{type.Type.DeclaringType.Name}.{type.Type.Name}";
-                }
-                
-                // Use default behavior for other types
-                return Microsoft.AspNetCore.OpenApi.OpenApiOptions.CreateDefaultSchemaReferenceId(type);
-            };
-        });
+        // OpenAPI and Scalar - Simple configuration
+        services.AddOpenApi();
 
         return services;
     }
@@ -202,7 +171,7 @@ public static class DependencyInjection
         // Map Minimal API Endpoints (new approach - Vertical Slice Architecture)
         app.MapEndpoints();
         
-        // Map OpenAPI document and Scalar UI
+        // Map OpenAPI and Scalar
         app.MapOpenApi();
         app.MapScalarApiReference();
         
