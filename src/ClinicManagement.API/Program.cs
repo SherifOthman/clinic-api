@@ -16,22 +16,26 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
-    builder.Services.AddApi(builder.Configuration);
+    builder.Services.AddApi(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
 
-    using (var scope = app.Services.CreateScope())
+    // Skip database initialization in Testing environment (handled by test factory)
+    if (app.Environment.EnvironmentName != "Testing")
     {
-        var services = scope.ServiceProvider;
-        try
+        using (var scope = app.Services.CreateScope())
         {
-            var dbInitializer = services.GetRequiredService<DatabaseInitializationService>();
-            dbInitializer.InitializeAsync().GetAwaiter().GetResult();
-            Log.Information("Database initialized and seeded successfully");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "An error occurred while initializing the database");
+            var services = scope.ServiceProvider;
+            try
+            {
+                var dbInitializer = services.GetRequiredService<DatabaseInitializationService>();
+                dbInitializer.InitializeAsync().GetAwaiter().GetResult();
+                Log.Information("Database initialized and seeded successfully");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred while initializing the database");
+            }
         }
     }
 

@@ -15,15 +15,18 @@ public static class TestAuthHelper
         string firstName = "Test",
         string lastName = "User")
     {
+        // Generate username from email (take part before @)
+        var userName = email.Split('@')[0];
+        
         // Register
         var registerRequest = new
         {
             email,
             password,
-            confirmPassword = password,
             firstName,
             lastName,
-            userType = 1 // ClinicOwner
+            userName,
+            phoneNumber = (string?)null
         };
 
         var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerRequest);

@@ -14,7 +14,7 @@ namespace ClinicManagement.API;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment = null)
     {
         services.AddControllers();
         services.AddHttpContextAccessor();
@@ -35,13 +35,16 @@ public static class DependencyInjection
                 builder.Expire(TimeSpan.FromHours(24)));
         });
 
-        // Database
-        services.AddDbContext<ApplicationDbContext>(options =>
+        // Database - skip registration in Testing environment (handled by test factory)
+        if (environment?.EnvironmentName != "Testing")
         {
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
-        });
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
+            });
+        }
 
         // Identity
         services.AddIdentity<User, IdentityRole<Guid>>(options =>

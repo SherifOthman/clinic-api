@@ -17,25 +17,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+        
         builder.ConfigureTestServices(services =>
         {
-            // Remove the real database context registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
-            {
-                services.Remove(descriptor);
-            }
-
-            // Also remove the ApplicationDbContext itself
-            var dbContextDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(ApplicationDbContext));
-            if (dbContextDescriptor != null)
-            {
-                services.Remove(dbContextDescriptor);
-            }
-            
-            // Add in-memory database
+            // Add in-memory database with a unique name per test run
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid());
@@ -44,14 +30,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Override DateTimeProvider for consistent testing
             services.RemoveAll(typeof(DateTimeProvider));
             services.AddSingleton<DateTimeProvider>();
-
-            // Build service provider and ensure database is created
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            db.Database.EnsureCreated();
         });
-
-        builder.UseEnvironment("Testing");
+    }
+    
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            using var scope = Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            db.Database.EnsureDeleted();
+        }
+        base.Dispose(disposing);
     }
 }
