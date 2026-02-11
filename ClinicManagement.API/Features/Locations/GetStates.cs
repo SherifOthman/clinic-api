@@ -9,6 +9,7 @@ public class GetStatesEndpoint : IEndpoint
     {
         app.MapGet("/locations/states", HandleAsync)
             .AllowAnonymous()
+            .CacheOutput("LocationData")
             .WithName("GetStates")
             .WithSummary("Get states by country")
             .WithTags("Locations")

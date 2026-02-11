@@ -10,6 +10,7 @@ public class GetSpecializationsEndpoint : IEndpoint
     {
         app.MapGet("/specializations", HandleAsync)
             .RequireAuthorization()
+            .CacheOutput("ReferenceData")
             .WithName("GetSpecializations")
             .WithSummary("Get all specializations")
             .WithTags("Specializations")

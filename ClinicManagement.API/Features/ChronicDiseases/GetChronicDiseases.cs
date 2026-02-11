@@ -11,6 +11,7 @@ public class GetChronicDiseasesEndpoint : IEndpoint
     {
         app.MapGet("/chronic-diseases", HandleAsync)
             .AllowAnonymous()
+            .CacheOutput("ReferenceData")
             .WithName("GetChronicDiseases")
             .WithSummary("Get all chronic diseases")
             .WithTags("Chronic Diseases")

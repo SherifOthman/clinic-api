@@ -12,6 +12,7 @@ public class GetChronicDiseasesPaginatedEndpoint : IEndpoint
     {
         app.MapGet("/chronic-diseases/paginated", HandleAsync)
             .AllowAnonymous()
+            .CacheOutput("ReferenceData")
             .WithName("GetChronicDiseasesPaginated")
             .WithSummary("Get chronic diseases with pagination")
             .WithTags("Chronic Diseases")

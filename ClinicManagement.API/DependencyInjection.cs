@@ -20,6 +20,19 @@ public static class DependencyInjection
 
         // Caching
         services.AddMemoryCache();
+        services.AddOutputCache(options =>
+        {
+            // Default policy: no caching
+            options.AddBasePolicy(builder => builder.NoCache());
+            
+            // Reference data policy: cache for 1 hour
+            options.AddPolicy("ReferenceData", builder => 
+                builder.Expire(TimeSpan.FromHours(1)));
+            
+            // Location data policy: cache for 24 hours (rarely changes)
+            options.AddPolicy("LocationData", builder => 
+                builder.Expire(TimeSpan.FromHours(24)));
+        });
 
         // Database
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -109,6 +122,12 @@ public static class DependencyInjection
 
         // .NET 10 Native Validation
         services.AddValidation();
+        
+        // Health Checks
+        services.AddHealthChecks()
+            .AddDbContextCheck<ApplicationDbContext>(
+                name: "database",
+                tags: new[] { "db", "sql", "ready" });
 
         // Options
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
@@ -167,6 +186,7 @@ public static class DependencyInjection
         app.UseStaticFiles();
 
         app.UseCors("AllowAll");
+        app.UseOutputCache(); // Add output caching middleware
         app.UseMiddleware<JwtCookieMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -176,6 +196,39 @@ public static class DependencyInjection
 
         // Map Minimal API Endpoints (new approach - Vertical Slice Architecture)
         app.MapEndpoints();
+        
+        // Map Health Check Endpoints
+        app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = _ => true,
+            ResponseWriter = async (context, report) =>
+            {
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    status = report.Status.ToString(),
+                    checks = report.Entries.Select(e => new
+                    {
+                        name = e.Key,
+                        status = e.Value.Status.ToString(),
+                        description = e.Value.Description,
+                        duration = e.Value.Duration.TotalMilliseconds
+                    }),
+                    totalDuration = report.TotalDuration.TotalMilliseconds
+                });
+                await context.Response.WriteAsync(result);
+            }
+        });
+        
+        app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = check => check.Tags.Contains("ready")
+        });
+        
+        app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = _ => false // Just checks if the app is running
+        });
 
         return app;
     }

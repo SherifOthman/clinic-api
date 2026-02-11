@@ -10,6 +10,7 @@ public class GetSubscriptionPlansEndpoint : IEndpoint
     {
         app.MapGet("/subscription-plans", HandleAsync)
             .AllowAnonymous()
+            .CacheOutput("ReferenceData")
             .WithName("GetSubscriptionPlans")
             .WithSummary("Get all subscription plans")
             .WithTags("Subscription Plans")

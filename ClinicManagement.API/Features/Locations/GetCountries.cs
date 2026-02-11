@@ -8,6 +8,7 @@ public class GetCountriesEndpoint : IEndpoint
     {
         app.MapGet("/locations/countries", HandleAsync)
             .AllowAnonymous()
+            .CacheOutput("LocationData")
             .WithName("GetCountries")
             .WithSummary("Get all countries")
             .WithTags("Locations")
