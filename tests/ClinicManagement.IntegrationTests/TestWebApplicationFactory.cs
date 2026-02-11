@@ -34,13 +34,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                        .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
             });
 
-            // Configure Identity to not require email confirmation in tests
-            // Use PostConfigure to override the settings from DependencyInjection
-            services.PostConfigure<IdentityOptions>(options =>
-            {
-                options.SignIn.RequireConfirmedEmail = false;
-            });
-
             // Override DateTimeProvider for consistent testing
             services.RemoveAll(typeof(DateTimeProvider));
             services.AddSingleton<DateTimeProvider>();
@@ -75,6 +68,22 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 };
                 await roleManager.CreateAsync(role);
             }
+        }
+    }
+    
+    /// <summary>
+    /// Confirms the email for a test user
+    /// </summary>
+    public async Task ConfirmEmailAsync(string email)
+    {
+        using var scope = Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        
+        var user = await userManager.FindByEmailAsync(email);
+        if (user != null && !user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            await userManager.UpdateAsync(user);
         }
     }
     

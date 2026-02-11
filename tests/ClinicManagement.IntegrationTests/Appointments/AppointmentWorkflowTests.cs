@@ -8,9 +8,11 @@ namespace ClinicManagement.IntegrationTests.Appointments;
 public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly TestWebApplicationFactory _factory;
 
     public AppointmentWorkflowTests(TestWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -18,7 +20,7 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
     public async Task CreateAppointment_WithValidData_ShouldReturnCreated()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -50,7 +52,7 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
     public async Task ConfirmAppointment_WhenPending_ShouldChangeStatusToConfirmed()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -69,7 +71,7 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
     public async Task CompleteAppointment_WhenConfirmed_ShouldChangeStatusToCompleted()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -89,7 +91,7 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
     public async Task CancelAppointment_WhenPending_ShouldChangeStatusToCancelled()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -108,7 +110,7 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetAppointments_ShouldReturnPaginatedList()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -128,7 +130,7 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetAppointmentById_WithValidId_ShouldReturnAppointment()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -210,3 +212,4 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
         DateTime AppointmentDate);
     private record PaginatedResponse(List<AppointmentResponse> Items, int TotalCount);
 }
+

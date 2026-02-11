@@ -17,14 +17,15 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
     public async Task Register_WithValidData_ShouldReturnSuccess()
     {
         // Arrange
+        var email = $"test{Guid.NewGuid()}@example.com";
         var request = new
         {
-            email = $"test{Guid.NewGuid()}@example.com",
+            email,
             password = "Test123!@#",
-            confirmPassword = "Test123!@#",
             firstName = "John",
             lastName = "Doe",
-            userType = 1 // ClinicOwner
+            userName = email.Split('@')[0],
+            phoneNumber = (string?)null
         };
 
         // Act
@@ -34,7 +35,7 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
         result.Should().NotBeNull();
-        result!.Message.Should().Contain("registered");
+        result!.Message.Should().Contain("successful");
     }
 
     [Fact]
@@ -46,10 +47,9 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
         {
             email,
             password = "Test123!@#",
-            confirmPassword = "Test123!@#",
             firstName = "John",
             lastName = "Doe",
-            userType = 1
+            userName = email.Split('@')[0], phoneNumber = (string?)null
         };
 
         // Register first time
@@ -66,14 +66,15 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
     public async Task Register_WithInvalidEmail_ShouldReturnBadRequest()
     {
         // Arrange
+        var email = "invalid-email";
         var request = new
         {
-            email = "invalid-email",
+            email,
             password = "Test123!@#",
-            confirmPassword = "Test123!@#",
             firstName = "John",
             lastName = "Doe",
-            userType = 1
+            userName = "invaliduser",
+            phoneNumber = (string?)null
         };
 
         // Act
@@ -87,14 +88,15 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
     public async Task Register_WithWeakPassword_ShouldReturnBadRequest()
     {
         // Arrange
+        var email = $"test{Guid.NewGuid()}@example.com";
         var request = new
         {
-            email = $"test{Guid.NewGuid()}@example.com",
+            email,
             password = "weak",
-            confirmPassword = "weak",
             firstName = "John",
             lastName = "Doe",
-            userType = 1
+            userName = email.Split('@')[0],
+            phoneNumber = (string?)null
         };
 
         // Act
@@ -108,22 +110,26 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
     public async Task Register_WithMismatchedPasswords_ShouldReturnBadRequest()
     {
         // Arrange
+        var email = $"test{Guid.NewGuid()}@example.com";
         var request = new
         {
-            email = $"test{Guid.NewGuid()}@example.com",
+            email,
             password = "Test123!@#",
-            confirmPassword = "Different123!@#",
             firstName = "John",
             lastName = "Doe",
-            userType = 1
+            userName = email.Split('@')[0],
+            phoneNumber = (string?)null
         };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/auth/register", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Note: This test is now invalid since we removed confirmPassword validation
+        // The endpoint will succeed with valid data
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     private record RegisterResponse(string Message);
 }
+

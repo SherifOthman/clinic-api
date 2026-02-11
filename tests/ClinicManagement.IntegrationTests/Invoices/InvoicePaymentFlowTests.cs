@@ -8,9 +8,11 @@ namespace ClinicManagement.IntegrationTests.Invoices;
 public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly TestWebApplicationFactory _factory;
 
     public InvoicePaymentFlowTests(TestWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -18,7 +20,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task CreateInvoice_WithValidData_ShouldReturnCreated()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -54,7 +56,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task RecordPayment_ForIssuedInvoice_ShouldUpdateStatus()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -85,7 +87,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task RecordFullPayment_ShouldMarkInvoiceAsFullyPaid()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -114,7 +116,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task RecordPayment_ExceedingInvoiceAmount_ShouldReturnBadRequest()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -137,7 +139,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task CancelInvoice_WhenNotFullyPaid_ShouldChangeStatusToCancelled()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -161,7 +163,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetInvoicePayments_ShouldReturnAllPayments()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -186,7 +188,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetPatientInvoices_ShouldReturnAllInvoicesForPatient()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -278,3 +280,4 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
         decimal RemainingAmount);
     private record PaymentResponse(Guid Id, decimal Amount, int PaymentMethod);
 }
+

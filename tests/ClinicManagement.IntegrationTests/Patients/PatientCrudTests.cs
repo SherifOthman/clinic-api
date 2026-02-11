@@ -20,7 +20,7 @@ public class PatientCrudTests : IClassFixture<TestWebApplicationFactory>
     public async Task CreatePatient_WithValidData_ShouldReturnCreated()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
 
         // Complete onboarding first
@@ -55,7 +55,7 @@ public class PatientCrudTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetPatients_ShouldReturnPaginatedList()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -76,7 +76,7 @@ public class PatientCrudTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetPatientById_WithValidId_ShouldReturnPatient()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -97,7 +97,7 @@ public class PatientCrudTests : IClassFixture<TestWebApplicationFactory>
     public async Task UpdatePatient_WithValidData_ShouldReturnSuccess()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -125,7 +125,7 @@ public class PatientCrudTests : IClassFixture<TestWebApplicationFactory>
     public async Task DeletePatient_WithValidId_ShouldReturnNoContent()
     {
         // Arrange
-        var token = await TestAuthHelper.GetAuthTokenAsync(_client);
+        var token = await TestAuthHelper.GetAuthTokenAsync(_client, _factory);
         TestAuthHelper.SetAuthToken(_client, token);
         await CompleteOnboardingAsync();
 
@@ -204,3 +204,4 @@ public class PatientCrudTests : IClassFixture<TestWebApplicationFactory>
 
     private record PaginatedResponse(List<PatientResponse> Items, int TotalCount, int PageNumber, int PageSize);
 }
+

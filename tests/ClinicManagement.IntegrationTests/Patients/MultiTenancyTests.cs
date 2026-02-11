@@ -21,15 +21,13 @@ public class MultiTenancyTests : IClassFixture<TestWebApplicationFactory>
         var client1 = _factory.CreateClient();
         var client2 = _factory.CreateClient();
 
-        var token1 = await TestAuthHelper.RegisterAndLoginAsync(
-            client1,
+        var token1 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client1,
             $"clinic1{Guid.NewGuid()}@example.com",
             "Test123!@#",
             "Clinic1",
             "Owner");
 
-        var token2 = await TestAuthHelper.RegisterAndLoginAsync(
-            client2,
+        var token2 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client2,
             $"clinic2{Guid.NewGuid()}@example.com",
             "Test123!@#",
             "Clinic2",
@@ -69,13 +67,11 @@ public class MultiTenancyTests : IClassFixture<TestWebApplicationFactory>
         var client1 = _factory.CreateClient();
         var client2 = _factory.CreateClient();
 
-        var token1 = await TestAuthHelper.RegisterAndLoginAsync(
-            client1,
+        var token1 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client1,
             $"clinic1{Guid.NewGuid()}@example.com",
             "Test123!@#");
 
-        var token2 = await TestAuthHelper.RegisterAndLoginAsync(
-            client2,
+        var token2 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client2,
             $"clinic2{Guid.NewGuid()}@example.com",
             "Test123!@#");
 
@@ -102,13 +98,11 @@ public class MultiTenancyTests : IClassFixture<TestWebApplicationFactory>
         var client1 = _factory.CreateClient();
         var client2 = _factory.CreateClient();
 
-        var token1 = await TestAuthHelper.RegisterAndLoginAsync(
-            client1,
+        var token1 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client1,
             $"clinic1{Guid.NewGuid()}@example.com",
             "Test123!@#");
 
-        var token2 = await TestAuthHelper.RegisterAndLoginAsync(
-            client2,
+        var token2 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client2,
             $"clinic2{Guid.NewGuid()}@example.com",
             "Test123!@#");
 
@@ -147,13 +141,11 @@ public class MultiTenancyTests : IClassFixture<TestWebApplicationFactory>
         var client1 = _factory.CreateClient();
         var client2 = _factory.CreateClient();
 
-        var token1 = await TestAuthHelper.RegisterAndLoginAsync(
-            client1,
+        var token1 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client1,
             $"clinic1{Guid.NewGuid()}@example.com",
             "Test123!@#");
 
-        var token2 = await TestAuthHelper.RegisterAndLoginAsync(
-            client2,
+        var token2 = await TestAuthHelper.RegisterAndLoginAsync(_factory, client2,
             $"clinic2{Guid.NewGuid()}@example.com",
             "Test123!@#");
 
@@ -211,3 +203,4 @@ public class MultiTenancyTests : IClassFixture<TestWebApplicationFactory>
     private record PatientResponse(Guid Id, string PatientCode, string FullName);
     private record PaginatedResponse(List<PatientResponse> Items, int TotalCount);
 }
+

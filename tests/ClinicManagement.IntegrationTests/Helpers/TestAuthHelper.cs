@@ -9,6 +9,7 @@ namespace ClinicManagement.IntegrationTests.Helpers;
 public static class TestAuthHelper
 {
     public static async Task<string> RegisterAndLoginAsync(
+        TestWebApplicationFactory factory,
         HttpClient client,
         string email,
         string password,
@@ -41,6 +42,9 @@ public static class TestAuthHelper
                 throw new Exception($"Registration failed: {error}");
             }
         }
+        
+        // Confirm email for test user
+        await factory.ConfirmEmailAsync(email);
 
         // Login
         var loginRequest = new
@@ -68,10 +72,11 @@ public static class TestAuthHelper
 
     public static async Task<string> GetAuthTokenAsync(
         HttpClient client,
+        TestWebApplicationFactory factory,
         string email = "test@example.com",
         string password = "Test123!@#")
     {
-        return await RegisterAndLoginAsync(client, email, password);
+        return await RegisterAndLoginAsync(factory, client, email, password);
     }
 
     private record LoginResponse(string AccessToken, string RefreshToken);

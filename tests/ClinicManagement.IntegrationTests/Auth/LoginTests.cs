@@ -8,9 +8,11 @@ namespace ClinicManagement.IntegrationTests.Auth;
 public class LoginTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly TestWebApplicationFactory _factory;
 
     public LoginTests(TestWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -107,17 +109,21 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
 
     private async Task RegisterUserAsync(string email, string password)
     {
+        var userName = email.Split('@')[0];
         var registerRequest = new
         {
             email,
             password,
-            confirmPassword = password,
             firstName = "Test",
             lastName = "User",
-            userType = 1
+            userName,
+            phoneNumber = (string?)null
         };
 
         await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
+        
+        // Confirm email for test user
+        await _factory.ConfirmEmailAsync(email);
     }
 
     private record LoginResponse(string AccessToken, string RefreshToken);
