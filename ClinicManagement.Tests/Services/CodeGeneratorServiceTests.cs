@@ -1,5 +1,6 @@
 using ClinicManagement.API.Infrastructure.Data;
 using ClinicManagement.API.Infrastructure.Services;
+using ClinicManagement.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,34 +52,5 @@ public class CodeGeneratorServiceTests
         // Assert
         patientNumber.Should().MatchRegex(@"^PAT-\d{4}-\d{6}$");
         patientNumber.Should().Contain(DateTime.UtcNow.Year.ToString());
-    }
-}
-
-// Test helper class to provide a fake HttpContextAccessor
-internal class TestHttpContextAccessor : Microsoft.AspNetCore.Http.IHttpContextAccessor
-{
-    private readonly Guid _clinicId;
-
-    public TestHttpContextAccessor(Guid clinicId)
-    {
-        _clinicId = clinicId;
-    }
-
-    public Microsoft.AspNetCore.Http.HttpContext? HttpContext
-    {
-        get
-        {
-            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
-            var claims = new[]
-            {
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-                new System.Security.Claims.Claim("ClinicId", _clinicId.ToString())
-            };
-            var identity = new System.Security.Claims.ClaimsIdentity(claims, "Test");
-            var principal = new System.Security.Claims.ClaimsPrincipal(identity);
-            context.User = principal;
-            return context;
-        }
-        set { }
     }
 }

@@ -2,6 +2,7 @@ using ClinicManagement.API.Common.Options;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
 using ClinicManagement.API.Infrastructure.Services;
+using ClinicManagement.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
