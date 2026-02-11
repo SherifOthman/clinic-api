@@ -2,6 +2,30 @@
 
 A comprehensive clinic management system built with .NET 10, featuring **Vertical Slice Architecture**, **Domain-Driven Design**, and **Multi-Tenancy**.
 
+## Project Structure
+
+```
+clinic-api/
+├── src/
+│   └── ClinicManagement.API/          # Main API project
+│       ├── Features/                   # 15 feature areas, 53 endpoints
+│       ├── Entities/                   # 44 domain entities
+│       ├── Infrastructure/             # Data access, services, middleware
+│       └── Common/                     # Shared utilities, exceptions, enums
+├── tests/
+│   ├── ClinicManagement.Tests/        # Unit tests (120 tests)
+│   │   ├── Domain/                     # Entity business logic tests
+│   │   ├── Services/                   # Service layer tests
+│   │   ├── Extensions/                 # Extension method tests
+│   │   └── Validation/                 # Validation tests
+│   └── ClinicManagement.IntegrationTests/  # Integration tests (38 tests)
+│       ├── Auth/                       # Authentication flow tests
+│       ├── Patients/                   # Patient CRUD & multi-tenancy tests
+│       ├── Appointments/               # Appointment workflow tests
+│       └── Invoices/                   # Invoice & payment tests
+└── ClinicManagement.sln
+```
+
 ## Architecture
 
 ### Core Patterns
@@ -11,23 +35,27 @@ A comprehensive clinic management system built with .NET 10, featuring **Vertica
 3. **Multi-Tenancy**: Automatic clinic-based data isolation
 4. **Soft Delete**: Audit trail with soft delete pattern
 
-### Project Structure
+### Feature Areas
 
 ```
-ClinicManagement.API/
-├── Features/                      # 15 feature areas, 53 endpoints
-│   ├── Appointments/              # 6 endpoints
-│   ├── Auth/                      # 15 endpoints
-│   ├── Patients/                  # 5 endpoints
-│   ├── Invoices/                  # 4 endpoints
-│   ├── Payments/                  # 2 endpoints
-│   ├── Medicines/                 # 5 endpoints
-│   ├── Locations/                 # 3 endpoints (bilingual)
-│   └── ...                        # Other features
-├── Entities/                      # 44 domain entities
-│   ├── Appointment/
-│   ├── Billing/
-│   ├── Clinic/
+src/ClinicManagement.API/Features/
+├── Appointments/                  # 6 endpoints
+├── Auth/                          # 15 endpoints
+├── Patients/                      # 5 endpoints
+├── Invoices/                      # 4 endpoints
+├── Payments/                      # 2 endpoints
+├── Medicines/                     # 5 endpoints
+├── Locations/                     # 3 endpoints (bilingual)
+└── ...                            # Other features
+```
+
+### Domain Entities
+
+```
+src/ClinicManagement.API/Entities/
+├── Appointment/
+├── Billing/
+├── Clinic/
 │   ├── Identity/
 │   ├── Inventory/
 │   ├── Medical/
