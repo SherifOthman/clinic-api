@@ -25,6 +25,7 @@ public class AddMedicineStockEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<AddMedicineStockEndpoint> logger,
         CancellationToken ct)
     {
         // Load medicine - ClinicId filter is automatic via global query filter
@@ -44,6 +45,10 @@ public class AddMedicineStockEndpoint : IEndpoint
 
             await db.SaveChangesAsync(ct);
 
+            logger.LogInformation(
+                "Medicine stock added: {MedicineId} {MedicineName} PreviousStock={PreviousStock} Added={AddedStrips} NewStock={NewStock} Reason={Reason} by {UserId}",
+                medicineId, medicine.Name, previousStock, request.Strips, medicine.TotalStripsInStock, request.Reason, currentUser.UserId);
+
             var response = new Response(
                 medicine.Id,
                 medicine.Name,
@@ -58,6 +63,9 @@ public class AddMedicineStockEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to add medicine stock {MedicineId} Strips={Strips} by {UserId}",
+                medicineId, request.Strips, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

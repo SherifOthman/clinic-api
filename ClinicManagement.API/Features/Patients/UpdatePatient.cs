@@ -27,6 +27,7 @@ public class UpdatePatientEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<UpdatePatientEndpoint> logger,
         CancellationToken ct)
     {
         // Find patient - ClinicId filter is automatic via global query filter
@@ -47,6 +48,10 @@ public class UpdatePatientEndpoint : IEndpoint
                 request.CityGeoNameId);
 
             await db.SaveChangesAsync(ct);
+
+            logger.LogInformation(
+                "Patient updated: {PatientId} {PatientCode} {PatientName} by {UserId}",
+                id, patient.PatientCode, patient.FullName, currentUser.UserId);
 
             // Load updated patient with related data
             var updatedPatient = await db.Patients
@@ -78,6 +83,9 @@ public class UpdatePatientEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to update patient {PatientId} by {UserId}",
+                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

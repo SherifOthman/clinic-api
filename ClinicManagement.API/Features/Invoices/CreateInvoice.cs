@@ -27,6 +27,7 @@ public class CreateInvoiceEndpoint : IEndpoint
         ApplicationDbContext db,
         CurrentUserService currentUser,
         CodeGeneratorService codeGenerator,
+        ILogger<CreateInvoiceEndpoint> logger,
         CancellationToken ct)
     {
         // Verify patient exists (global query filter ensures it belongs to clinic)
@@ -104,6 +105,10 @@ public class CreateInvoiceEndpoint : IEndpoint
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync(ct);
 
+            logger.LogInformation(
+                "Invoice created: {InvoiceId} {InvoiceNumber} Patient={PatientId} Amount={FinalAmount} Items={ItemCount} by {UserId}",
+                invoice.Id, invoiceNumber, request.PatientId, invoice.FinalAmount, request.Items.Count, currentUser.UserId);
+
             // Load response with related data
             var response = await db.Invoices
                 .Where(i => i.Id == invoice.Id)
@@ -128,6 +133,9 @@ public class CreateInvoiceEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to create invoice Patient={PatientId} by {UserId}",
+                request.PatientId, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

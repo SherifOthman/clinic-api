@@ -23,6 +23,7 @@ public class CompleteAppointmentEndpoint : IEndpoint
         Guid id,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<CompleteAppointmentEndpoint> logger,
         CancellationToken ct)
     {
         // Load appointment
@@ -37,15 +38,24 @@ public class CompleteAppointmentEndpoint : IEndpoint
 
         try
         {
+            var previousStatus = appointment.Status;
+            
             // Domain method handles state transition and business rules
             appointment.Complete();
             
             await db.SaveChangesAsync(ct);
             
+            logger.LogInformation(
+                "Appointment completed: {AppointmentId} Patient={PatientId} Status={PreviousStatus}->{NewStatus} by {UserId}",
+                id, appointment.PatientId, previousStatus, appointment.Status, currentUser.UserId);
+            
             return Results.Ok(new { message = "Appointment completed successfully" });
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to complete appointment {AppointmentId} by {UserId}",
+                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

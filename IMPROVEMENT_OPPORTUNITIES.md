@@ -64,7 +64,62 @@ Updated `CodeGeneratorService` to inject `CurrentUserService` and get `clinicId`
 
 ---
 
-### 3. ⏳ Add Indexes for Query Filters (RECOMMENDED)
+### 3. ✅ Add Structured Logging (COMPLETED)
+
+**Status**: COMPLETED
+
+Added structured logging with Serilog to key operations for better observability and audit trail.
+
+**Endpoints updated** (12 files):
+
+**Patient Operations:**
+
+- `CreatePatient.cs` - Log patient creation with ID, code, name
+- `UpdatePatient.cs` - Log patient updates
+- `DeletePatient.cs` - Log patient deletion (warning level)
+
+**Appointment Operations:**
+
+- `CreateAppointment.cs` - Log appointment creation with patient, doctor, date, queue number
+- `ConfirmAppointment.cs` - Log status transitions (Pending → Confirmed)
+- `CompleteAppointment.cs` - Log status transitions (Confirmed → Completed)
+- `CancelAppointment.cs` - Log cancellations with reason (warning level)
+
+**Invoice & Payment Operations:**
+
+- `CreateInvoice.cs` - Log invoice creation with patient, amount, item count
+- `CancelInvoice.cs` - Log invoice cancellations with reason (warning level)
+- `RecordPayment.cs` - Log payment recording with amount, method, reference
+
+**Medicine Stock Operations:**
+
+- `AddMedicineStock.cs` - Log stock additions with previous/new stock levels
+- `RemoveMedicineStock.cs` - Log stock removals with reason (warning level)
+
+**Logging Levels Used:**
+
+- `LogInformation` - Normal operations (create, update, confirm, complete)
+- `LogWarning` - Potentially concerning operations (cancel, delete, stock removal)
+- `LogError` - Failed operations (caught exceptions)
+
+**Structured Properties Logged:**
+
+- Entity IDs (PatientId, AppointmentId, InvoiceId, etc.)
+- Business identifiers (PatientCode, InvoiceNumber, etc.)
+- User context (UserId, ClinicId)
+- Operation details (Amount, Status transitions, Reasons)
+- Timestamps (automatic via Serilog)
+
+**Impact**:
+
+- Complete audit trail for critical operations
+- Better observability and debugging
+- Structured data for log aggregation tools (ELK, Seq, Application Insights)
+- ~50 lines of logging code added
+
+---
+
+### 4. ⏳ Add Indexes for Query Filters (RECOMMENDED)
 
 **Status**: NOT IMPLEMENTED (Recommended for future)
 
@@ -93,11 +148,7 @@ CREATE INDEX IX_Appointments_ClinicBranchId_Date ON Appointments(ClinicBranchId,
 
 ## 🟢 Low Priority Improvements
 
-### 4. ⏳ Add Structured Logging (RECOMMENDED)
-
-**Status**: NOT IMPLEMENTED (Recommended for future)
-
-**Current state**: Basic logging with Serilog configured in `Program.cs`.
+### 5. ⏳ Add Response Caching for Reference Data (OPTIONAL)
 
 **Recommendation**: Add structured logging to key operations for better observability.
 
@@ -218,18 +269,19 @@ app.MapHealthChecks("/health/ready");
 1. ✅ VSA structure validation - Confirmed fully compliant
 2. ✅ Removed 25 unused `clinicId` variables
 3. ✅ Simplified `CodeGeneratorService` (removed clinicId parameters)
+4. ✅ Added structured logging to 12 key endpoints
 
 ### Recommended for future:
 
 1. Add database indexes for query filters (performance)
-2. Add structured logging to key operations (observability)
-3. Add response caching for reference data (performance)
-4. Add health checks (monitoring)
+2. Add response caching for reference data (performance)
+3. Add health checks (monitoring)
 
 ### Current State: ⭐⭐⭐⭐⭐ (Excellent)
 
 The codebase is in excellent shape after the VSA migration and improvements. The structure is clean, compliant with VSA principles, and ready for production use.
 
+**Lines of code added in this session**: ~50 lines (structured logging)
 **Lines of code removed in this session**: ~27 lines (unused clinicId variables)
 
 **Total lines removed since start**: ~2,438 lines (13.7% reduction)

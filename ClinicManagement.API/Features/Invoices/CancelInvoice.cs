@@ -25,6 +25,7 @@ public class CancelInvoiceEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<CancelInvoiceEndpoint> logger,
         CancellationToken ct)
     {
         // Load invoice - ClinicId filter is automatic via global query filter
@@ -37,15 +38,25 @@ public class CancelInvoiceEndpoint : IEndpoint
 
         try
         {
+            var previousStatus = invoice.Status;
+            var invoiceNumber = invoice.InvoiceNumber;
+            
             // Use domain method
             invoice.Cancel(request.Reason);
 
             await db.SaveChangesAsync(ct);
 
+            logger.LogWarning(
+                "Invoice cancelled: {InvoiceId} {InvoiceNumber} Status={PreviousStatus}->{NewStatus} Reason={Reason} by {UserId}",
+                id, invoiceNumber, previousStatus, invoice.Status, request.Reason, currentUser.UserId);
+
             return Results.NoContent();
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to cancel invoice {InvoiceId} by {UserId}",
+                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

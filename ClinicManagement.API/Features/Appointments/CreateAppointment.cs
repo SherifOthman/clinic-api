@@ -27,6 +27,7 @@ public class CreateAppointmentEndpoint : IEndpoint
         ApplicationDbContext db,
         CurrentUserService currentUser,
         DateTimeProvider dateTime,
+        ILogger<CreateAppointmentEndpoint> logger,
         CancellationToken ct)
     {
         // Business Rule 1: Verify patient exists (global query filter ensures it belongs to clinic)
@@ -82,6 +83,10 @@ public class CreateAppointmentEndpoint : IEndpoint
             db.Appointments.Add(appointment);
             await db.SaveChangesAsync(ct);
 
+            logger.LogInformation(
+                "Appointment created: {AppointmentId} {AppointmentNumber} Patient={PatientId} Doctor={DoctorId} Date={AppointmentDate} Queue={QueueNumber} by {UserId}",
+                appointment.Id, appointmentNumber, request.PatientId, request.DoctorId, appointmentDate, queueNumber, currentUser.UserId);
+
             // Load response with related data
             var response = await db.Appointments
                 .Where(a => a.Id == appointment.Id)
@@ -106,6 +111,9 @@ public class CreateAppointmentEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to create appointment Patient={PatientId} Doctor={DoctorId} Date={AppointmentDate} by {UserId}",
+                request.PatientId, request.DoctorId, appointmentDate, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

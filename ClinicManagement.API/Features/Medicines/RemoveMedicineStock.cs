@@ -25,6 +25,7 @@ public class RemoveMedicineStockEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<RemoveMedicineStockEndpoint> logger,
         CancellationToken ct)
     {
         // Load medicine - ClinicId filter is automatic via global query filter
@@ -44,6 +45,10 @@ public class RemoveMedicineStockEndpoint : IEndpoint
 
             await db.SaveChangesAsync(ct);
 
+            logger.LogWarning(
+                "Medicine stock removed: {MedicineId} {MedicineName} PreviousStock={PreviousStock} Removed={RemovedStrips} NewStock={NewStock} Reason={Reason} by {UserId}",
+                medicineId, medicine.Name, previousStock, request.Strips, medicine.TotalStripsInStock, request.Reason, currentUser.UserId);
+
             var response = new Response(
                 medicine.Id,
                 medicine.Name,
@@ -58,6 +63,9 @@ public class RemoveMedicineStockEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to remove medicine stock {MedicineId} Strips={Strips} by {UserId}",
+                medicineId, request.Strips, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

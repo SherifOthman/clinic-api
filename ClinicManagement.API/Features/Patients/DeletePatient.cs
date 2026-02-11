@@ -21,6 +21,7 @@ public class DeletePatientEndpoint : IEndpoint
         Guid id,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<DeletePatientEndpoint> logger,
         CancellationToken ct)
     {
         // Find patient - ClinicId filter is automatic via global query filter
@@ -31,10 +32,17 @@ public class DeletePatientEndpoint : IEndpoint
         if (patient is null)
             return Results.NotFound(new { error = "Patient not found", code = "NOT_FOUND" });
 
+        var patientCode = patient.PatientCode;
+        var patientName = patient.FullName;
+
         // Hard delete (soft delete not implemented)
         db.Patients.Remove(patient);
 
         await db.SaveChangesAsync(ct);
+
+        logger.LogWarning(
+            "Patient deleted: {PatientId} {PatientCode} {PatientName} by {UserId}",
+            id, patientCode, patientName, currentUser.UserId);
 
         return Results.NoContent();
     }

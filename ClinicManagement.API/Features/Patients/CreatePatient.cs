@@ -26,6 +26,7 @@ public class CreatePatientEndpoint : IEndpoint
         ApplicationDbContext db,
         CurrentUserService currentUser,
         CodeGeneratorService codeGenerator,
+        ILogger<CreatePatientEndpoint> logger,
         CancellationToken ct)
     {
         // Generate unique patient code
@@ -74,6 +75,10 @@ public class CreatePatientEndpoint : IEndpoint
 
             await db.SaveChangesAsync(ct);
 
+            logger.LogInformation(
+                "Patient created: {PatientId} {PatientCode} {PatientName} by {UserId} in {ClinicId}",
+                patient.Id, patient.PatientCode, patient.FullName, currentUser.UserId, currentUser.ClinicId);
+
             // Load created patient with related data
             var createdPatient = await db.Patients
                 .Where(p => p.Id == patient.Id)
@@ -103,6 +108,9 @@ public class CreatePatientEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, 
+                "Failed to create patient {PatientName} by {UserId} in {ClinicId}",
+                request.FullName, currentUser.UserId, currentUser.ClinicId);
             return ex.HandleDomainException();
         }
     }

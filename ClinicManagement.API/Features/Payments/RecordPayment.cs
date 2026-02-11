@@ -26,6 +26,7 @@ public class RecordPaymentEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<RecordPaymentEndpoint> logger,
         CancellationToken ct)
     {
         // Load invoice - ClinicId filter is automatic via global query filter
@@ -50,6 +51,10 @@ public class RecordPaymentEndpoint : IEndpoint
 
             await db.SaveChangesAsync(ct);
 
+            logger.LogInformation(
+                "Payment recorded: {PaymentId} Invoice={InvoiceId} Amount={Amount} Method={PaymentMethod} Reference={ReferenceNumber} by {UserId}",
+                paymentId, invoiceId, request.Amount, request.PaymentMethod, request.ReferenceNumber, currentUser.UserId);
+
             // Load payment response
             var payment = await db.Payments
                 .Where(p => p.Id == paymentId)
@@ -71,6 +76,9 @@ public class RecordPaymentEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to record payment Invoice={InvoiceId} Amount={Amount} by {UserId}",
+                invoiceId, request.Amount, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

@@ -23,6 +23,7 @@ public class ConfirmAppointmentEndpoint : IEndpoint
         Guid id,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        ILogger<ConfirmAppointmentEndpoint> logger,
         CancellationToken ct)
     {
         // Load appointment
@@ -37,15 +38,24 @@ public class ConfirmAppointmentEndpoint : IEndpoint
 
         try
         {
+            var previousStatus = appointment.Status;
+            
             // Domain method handles state transition and business rules
             appointment.Confirm();
             
             await db.SaveChangesAsync(ct);
             
+            logger.LogInformation(
+                "Appointment confirmed: {AppointmentId} Patient={PatientId} Status={PreviousStatus}->{NewStatus} by {UserId}",
+                id, appointment.PatientId, previousStatus, appointment.Status, currentUser.UserId);
+            
             return Results.Ok(new { message = "Appointment confirmed successfully" });
         }
         catch (Exception ex)
         {
+            logger.LogError(ex,
+                "Failed to confirm appointment {AppointmentId} by {UserId}",
+                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
