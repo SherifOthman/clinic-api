@@ -148,8 +148,7 @@ public static class DependencyInjection
         // OpenAPI with Scalar (modern alternative to Swagger)
         services.AddOpenApi(options =>
         {
-            // Inline primitive types instead of creating schema references
-            // This fixes Scalar UI not displaying request body fields
+            // Inline primitive types and use unique schema names for nested types
             options.CreateSchemaReferenceId = (type) =>
             {
                 // Return null for primitive types to inline them
@@ -169,7 +168,13 @@ public static class DependencyInjection
                     return null; // Inline primitive types
                 }
                 
-                // Use default behavior for complex types
+                // For nested types (like Request, Response), use declaring type name to avoid conflicts
+                if (type.Type.DeclaringType != null)
+                {
+                    return $"{type.Type.DeclaringType.Name}.{type.Type.Name}";
+                }
+                
+                // Use default behavior for other types
                 return Microsoft.AspNetCore.OpenApi.OpenApiOptions.CreateDefaultSchemaReferenceId(type);
             };
         });
