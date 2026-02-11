@@ -201,7 +201,7 @@ public class InvoicePaymentFlowTests : IClassFixture<TestWebApplicationFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var invoices = await response.Content.ReadFromJsonAsync<List<InvoiceResponse>>();
         invoices.Should().NotBeNull();
-        invoices!.Should().HaveCountGreaterOrEqualTo(2);
+        invoices!.Should().HaveCountGreaterThanOrEqualTo(2);
     }
 
     private async Task CompleteOnboardingAsync()

@@ -41,7 +41,9 @@ public class TestDataBuilder
         {
             ClinicId = clinicId,
             Name = name,
-            Address = "123 Test St",
+            AddressLine = "123 Test St",
+            CountryGeoNameId = 1,
+            StateGeoNameId = 1,
             CityGeoNameId = 1
         };
 
@@ -73,7 +75,6 @@ public class TestDataBuilder
         var doctor = new Doctor
         {
             UserId = userId,
-            ClinicId = clinicId,
             SpecializationId = specializationId,
             LicenseNumber = $"LIC-{DateTime.UtcNow.Ticks}"
         };

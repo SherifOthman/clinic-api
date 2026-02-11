@@ -19,8 +19,21 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureTestServices(services =>
         {
-            // Remove the real database context
-            services.RemoveAll(typeof(DbContextOptions<ApplicationDbContext>));
+            // Remove the real database context registration
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+            if (descriptor != null)
+            {
+                services.Remove(descriptor);
+            }
+
+            // Also remove the ApplicationDbContext itself
+            var dbContextDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(ApplicationDbContext));
+            if (dbContextDescriptor != null)
+            {
+                services.Remove(dbContextDescriptor);
+            }
             
             // Add in-memory database
             services.AddDbContext<ApplicationDbContext>(options =>
