@@ -7,7 +7,7 @@ public class GetCitiesEndpoint : IEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapGet("/locations/cities", HandleAsync)
+        app.MapGet("/locations/states/{stateGeonameId}/cities", HandleAsync)
             .AllowAnonymous()
             .CacheOutput("LocationData")
             .WithName("GetCities")
@@ -17,7 +17,7 @@ public class GetCitiesEndpoint : IEndpoint
     }
 
     private static async Task<IResult> HandleAsync(
-        [FromQuery] int stateGeonameId,
+        int stateGeonameId,
         GeoNamesService geoNamesService,
         CancellationToken ct)
     {

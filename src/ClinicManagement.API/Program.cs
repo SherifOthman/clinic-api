@@ -1,12 +1,12 @@
 using ClinicManagement.API;
-using ClinicManagement.API.Infrastructure.Services;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile("appsettings.json")
-        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+        ?? "Production"}.json", optional: true)
         .Build())
     .CreateLogger();
 
