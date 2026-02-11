@@ -44,10 +44,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         var host = base.CreateHost(builder);
         
-        // Seed roles after host is created
+        // Seed test data after host is created
         using var scope = host.Services.CreateScope();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
         SeedRolesAsync(roleManager).GetAwaiter().GetResult();
+        SeedReferenceDataAsync(db).GetAwaiter().GetResult();
         
         return host;
     }
@@ -69,6 +72,99 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 await roleManager.CreateAsync(role);
             }
         }
+    }
+    
+    private static async Task SeedReferenceDataAsync(ApplicationDbContext db)
+    {
+        // Seed subscription plans if not exists
+        if (!await db.SubscriptionPlans.AnyAsync())
+        {
+            var basicPlan = new SubscriptionPlan
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Name = "Basic Plan",
+                Description = "Basic subscription for testing",
+                MonthlyFee = 99.99m,
+                YearlyFee = 999.99m,
+                SetupFee = 0m,
+                MaxBranches = 1,
+                MaxStaff = 8,
+                MaxPatientsPerMonth = 100,
+                MaxAppointmentsPerMonth = 500,
+                MaxInvoicesPerMonth = 500,
+                StorageLimitGB = 5,
+                HasInventoryManagement = true,
+                HasReporting = true,
+                HasAdvancedReporting = false,
+                HasApiAccess = false,
+                HasMultipleBranches = false,
+                HasCustomBranding = false,
+                HasPrioritySupport = false,
+                HasBackupAndRestore = true,
+                HasIntegrations = false,
+                IsActive = true,
+                IsPopular = false,
+                DisplayOrder = 1
+            };
+            
+            var proPlan = new SubscriptionPlan
+            {
+                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                Name = "Pro Plan",
+                Description = "Professional subscription for testing",
+                MonthlyFee = 199.99m,
+                YearlyFee = 1999.99m,
+                SetupFee = 0m,
+                MaxBranches = 5,
+                MaxStaff = 30,
+                MaxPatientsPerMonth = 1000,
+                MaxAppointmentsPerMonth = 5000,
+                MaxInvoicesPerMonth = 5000,
+                StorageLimitGB = 50,
+                HasInventoryManagement = true,
+                HasReporting = true,
+                HasAdvancedReporting = true,
+                HasApiAccess = true,
+                HasMultipleBranches = true,
+                HasCustomBranding = true,
+                HasPrioritySupport = true,
+                HasBackupAndRestore = true,
+                HasIntegrations = true,
+                IsActive = true,
+                IsPopular = true,
+                DisplayOrder = 2
+            };
+            
+            db.SubscriptionPlans.AddRange(basicPlan, proPlan);
+        }
+        
+        // Seed specializations if not exists
+        if (!await db.Specializations.AnyAsync())
+        {
+            var generalPractice = new Specialization
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                NameEn = "General Practice",
+                NameAr = "الممارسة العامة",
+                DescriptionEn = "General medical practice",
+                DescriptionAr = "الممارسة الطبية العامة",
+                IsActive = true
+            };
+            
+            var pediatrics = new Specialization
+            {
+                Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                NameEn = "Pediatrics",
+                NameAr = "طب الأطفال",
+                DescriptionEn = "Medical care for children",
+                DescriptionAr = "الرعاية الطبية للأطفال",
+                IsActive = true
+            };
+            
+            db.Specializations.AddRange(generalPractice, pediatrics);
+        }
+        
+        await db.SaveChangesAsync();
     }
     
     /// <summary>

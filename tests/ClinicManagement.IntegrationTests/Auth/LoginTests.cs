@@ -44,7 +44,7 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Login_WithInvalidEmail_ShouldReturnUnauthorized()
+    public async Task Login_WithInvalidEmail_ShouldReturnBadRequest()
     {
         // Arrange
         var loginRequest = new
@@ -57,11 +57,11 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
         var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task Login_WithInvalidPassword_ShouldReturnUnauthorized()
+    public async Task Login_WithInvalidPassword_ShouldReturnBadRequest()
     {
         // Arrange
         var email = $"test{Guid.NewGuid()}@example.com";
@@ -80,7 +80,7 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
         var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

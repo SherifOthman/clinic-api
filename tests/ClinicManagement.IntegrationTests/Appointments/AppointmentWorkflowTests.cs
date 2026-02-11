@@ -151,12 +151,12 @@ public class AppointmentWorkflowTests : IClassFixture<TestWebApplicationFactory>
         var onboardingRequest = new
         {
             clinicName = "Test Clinic",
+            subscriptionPlanId = TestConstants.BasicPlanId,
             branchName = "Main Branch",
-            address = "123 Test St",
-            cityGeoNameId = 1,
-            phoneNumbers = new[] { "+1234567890" },
-            specializationId = Guid.Empty,
-            subscriptionPlanId = Guid.Empty
+            addressLine = "123 Test St",
+            countryGeoNameId = 1,
+            stateGeoNameId = 1,
+            cityGeoNameId = 1
         };
 
         await _client.PostAsJsonAsync("/api/onboarding/complete", onboardingRequest);
