@@ -24,8 +24,11 @@ public class GetStatesEndpoint : IEndpoint
         var states = await geoNamesService.GetStatesAsync(countryGeonameId);
 
         var response = states
-            .Select(s => new Response(s.GeonameId, s.Name.En))
-            .OrderBy(s => s.Name)
+            .Select(s => new Response(
+                s.GeonameId, 
+                s.Name.En,
+                s.Name.Ar))
+            .OrderBy(s => s.NameEn)
             .ToList();
 
         return Results.Ok(response);
@@ -33,5 +36,6 @@ public class GetStatesEndpoint : IEndpoint
 
     public record Response(
         int GeonameId,
-        string Name);
+        string NameEn,
+        string NameAr);
 }

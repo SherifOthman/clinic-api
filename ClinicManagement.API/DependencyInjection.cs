@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Scalar.AspNetCore;
+using Microsoft.OpenApi.Models;
 
 namespace ClinicManagement.API;
 
@@ -145,37 +145,45 @@ public static class DependencyInjection
             });
         });
 
-        // OpenAPI and Scalar - Configure unique schema names and inline primitives
-        services.AddOpenApi(options =>
+        // Swagger
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen(options =>
         {
-            options.CreateSchemaReferenceId = (type) =>
+            options.SwaggerDoc("v1", new OpenApiInfo
             {
-                // Inline primitive types by returning null
-                if (type.Type == typeof(string) || 
-                    type.Type == typeof(int) || 
-                    type.Type == typeof(long) ||
-                    type.Type == typeof(bool) || 
-                    type.Type == typeof(decimal) || 
-                    type.Type == typeof(double) ||
-                    type.Type == typeof(float) ||
-                    type.Type == typeof(Guid) || 
-                    type.Type == typeof(DateTime) ||
-                    type.Type == typeof(DateTimeOffset) ||
-                    type.Type == typeof(DateOnly) ||
-                    type.Type == typeof(TimeOnly))
+                Title = "Clinic Management API",
+                Version = "v1",
+                Description = "API for managing clinic operations including appointments, patients, billing, and more."
+            });
+
+            // Add JWT Authentication
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
                 {
-                    return null;
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
                 }
-                
-                // For nested types (Request/Response in endpoint classes), use parent class name
-                if (type.Type.DeclaringType != null)
-                {
-                    return $"{type.Type.DeclaringType.Name}.{type.Type.Name}";
-                }
-                
-                // Use default for everything else
-                return type.Type.Name;
-            };
+            });
+
+            // Handle schema generation issues
+            options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+            options.UseAllOfToExtendReferenceSchemas();
         });
 
         return services;
@@ -201,38 +209,13 @@ public static class DependencyInjection
         // Map Minimal API Endpoints (new approach - Vertical Slice Architecture)
         app.MapEndpoints();
         
-        // Map OpenAPI and Scalar
-        app.MapOpenApi();
-        app.MapScalarApiReference();
-        
-        // Simple Health Check Endpoints (no external dependencies)
-        app.MapGet("/health", () => Results.Ok(new
+        // Swagger
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
         {
-            status = "Healthy",
-            timestamp = DateTime.UtcNow,
-            service = "Clinic Management API"
-        }))
-        .WithName("HealthCheck")
-        .WithTags("Health")
-        .AllowAnonymous();
-        
-        app.MapGet("/health/ready", () => Results.Ok(new
-        {
-            status = "Ready",
-            timestamp = DateTime.UtcNow
-        }))
-        .WithName("ReadinessCheck")
-        .WithTags("Health")
-        .AllowAnonymous();
-        
-        app.MapGet("/health/live", () => Results.Ok(new
-        {
-            status = "Live",
-            timestamp = DateTime.UtcNow
-        }))
-        .WithName("LivenessCheck")
-        .WithTags("Health")
-        .AllowAnonymous();
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Clinic Management API v1");
+            options.RoutePrefix = "swagger";
+        });
 
         return app;
     }

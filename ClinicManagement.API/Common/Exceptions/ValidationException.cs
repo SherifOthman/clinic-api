@@ -1,8 +1,5 @@
 namespace ClinicManagement.API.Common.Exceptions;
 
-/// <summary>
-/// Exception thrown when domain validation fails
-/// </summary>
 public class DomainValidationException : DomainException
 {
     public Dictionary<string, List<string>> ValidationErrors { get; }

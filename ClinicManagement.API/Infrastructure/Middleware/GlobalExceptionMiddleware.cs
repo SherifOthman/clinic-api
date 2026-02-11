@@ -4,6 +4,9 @@ using System.Text.Json;
 
 namespace ClinicManagement.API.Infrastructure.Middleware;
 
+/// <summary>
+/// Global exception handler - catches unhandled exceptions and returns RFC 7807 Problem Details
+/// </summary>
 public class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
@@ -33,20 +36,57 @@ public class GlobalExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        var (statusCode, code) = exception switch
+        var problemDetails = exception switch
         {
-            DomainValidationException => (400, "VALIDATION_ERROR"),
-            UnauthorizedAccessException => (403, "UNAUTHORIZED_ACCESS"),
-            KeyNotFoundException => (404, "NOT_FOUND"),
-            InvalidOperationException => (400, "OPERATION_NOT_ALLOWED"),
-            ArgumentException => (400, "INVALID_ARGUMENT"),
-            _ => (500, "INTERNAL_ERROR")
+            UnauthorizedAccessException => new ApiProblemDetails
+            {
+                Code = ErrorCodes.ACCESS_DENIED,
+                Title = "Access Denied",
+                Status = 403,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+            
+            KeyNotFoundException => new ApiProblemDetails
+            {
+                Code = ErrorCodes.RESOURCE_NOT_FOUND,
+                Title = "Resource Not Found",
+                Status = 404,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+            
+            InvalidOperationException => new ApiProblemDetails
+            {
+                Code = ErrorCodes.OPERATION_NOT_ALLOWED,
+                Title = "Operation Not Allowed",
+                Status = 400,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+            
+            ArgumentException => new ApiProblemDetails
+            {
+                Code = ErrorCodes.VALIDATION_ERROR,
+                Title = "Validation Error",
+                Status = 400,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+            
+            _ => new ApiProblemDetails
+            {
+                Code = ErrorCodes.INTERNAL_ERROR,
+                Title = "Internal Server Error",
+                Status = 500,
+                Detail = "An unexpected error occurred. Please try again later.",
+                TraceId = context.TraceIdentifier
+            }
         };
 
-        context.Response.StatusCode = statusCode;
+        context.Response.StatusCode = problemDetails.Status;
 
-        var response = new ApiError(code);
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        var jsonResponse = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });

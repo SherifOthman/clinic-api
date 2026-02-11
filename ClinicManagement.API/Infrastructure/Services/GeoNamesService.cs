@@ -7,16 +7,11 @@ using Microsoft.Extensions.Options;
 namespace ClinicManagement.API.Infrastructure.Services;
 
 /// <summary>
-/// Enhanced GeoNames proxy service with BILINGUAL support (Arabic + English)
-/// 
-/// CRITICAL ARCHITECTURE:
-/// - Frontend NEVER calls GeoNames directly
-/// - Backend acts as proxy with caching
-/// - Fetches data in BOTH languages (EN + AR)
-/// - Merges results by GeonameId
-/// - Returns unified bilingual DTOs
-/// - 24-hour memory cache
-/// - Resilient to GeoNames outages
+/// GeoNames API proxy with bilingual support (Arabic + English)
+/// - Fetches location data in both languages
+/// - Merges by GeonameId
+/// - Caches results (configurable duration)
+/// - Frontend never calls GeoNames directly
 /// </summary>
 public partial class GeoNamesService
 {
@@ -194,6 +189,10 @@ public partial class GeoNamesService
         return result?.Geonames ?? new List<GeoNamesChildInfo>();
     }
 
+    /// <summary>
+    /// Merges English and Arabic country data by GeonameId
+    /// Falls back to English name if Arabic translation not found
+    /// </summary>
     private List<GeoNamesCountryDto> MergeCountryData(
         List<GeoNamesCountryInfo> englishData,
         List<GeoNamesCountryInfo> arabicData)
@@ -205,7 +204,7 @@ public partial class GeoNamesService
             {
                 GeonameId = en.GeonameId,
                 CountryCode = en.CountryCode,
-                PhoneCode = en.CountryCode, // Will be enhanced with actual phone codes
+                PhoneCode = en.CountryCode,
                 Name = new BilingualName
                 {
                     En = en.CountryName,
@@ -216,6 +215,10 @@ public partial class GeoNamesService
             .ToList();
     }
 
+    /// <summary>
+    /// Merges English and Arabic location data (states/cities) by GeonameId
+    /// Falls back to English name if Arabic translation not found
+    /// </summary>
     private List<GeoNamesLocationDto> MergeLocationData(
         List<GeoNamesChildInfo> englishData,
         List<GeoNamesChildInfo> arabicData)
