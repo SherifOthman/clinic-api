@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ClinicManagement.API.Common.Options;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,38 +9,27 @@ namespace ClinicManagement.API.Infrastructure.Services;
 /// GeoNames API proxy with bilingual support (Arabic + English)
 /// - Fetches location data in both languages
 /// - Merges by GeonameId
-/// - Caches results (configurable duration)
+/// - Caching handled by Output Cache at endpoint level
 /// - Frontend never calls GeoNames directly
 /// </summary>
 public partial class GeoNamesService
 {
     private readonly HttpClient _httpClient;
-    private readonly IMemoryCache _cache;
     private readonly ILogger<GeoNamesService> _logger;
     private readonly GeoNamesOptions _options;
 
     public GeoNamesService(
         HttpClient httpClient,
-        IMemoryCache cache,
         ILogger<GeoNamesService> logger,
         IOptions<GeoNamesOptions> options)
     {
         _httpClient = httpClient;
-        _cache = cache;
         _logger = logger;
         _options = options.Value;
     }
 
     public async Task<List<GeoNamesCountryDto>> GetCountriesAsync(CancellationToken cancellationToken = default)
     {
-        const string cacheKey = "geonames:countries:bilingual";
-
-        if (_cache.TryGetValue(cacheKey, out List<GeoNamesCountryDto>? cachedCountries))
-        {
-            _logger.LogDebug("Countries retrieved from cache");
-            return cachedCountries!;
-        }
-
         _logger.LogInformation("Fetching countries from GeoNames API (bilingual)");
 
         try
@@ -55,11 +43,7 @@ public partial class GeoNamesService
             // Merge by GeonameId
             var countries = MergeCountryData(countriesEn, countriesAr);
 
-            // Cache with configured duration
-            _cache.Set(cacheKey, countries, _options.CountriesCacheDuration);
-
-            _logger.LogInformation("Fetched and cached {Count} countries (bilingual) for {Duration}", 
-                countries.Count, _options.CountriesCacheDuration);
+            _logger.LogInformation("Fetched {Count} countries (bilingual)", countries.Count);
 
             return countries;
         }
@@ -72,14 +56,6 @@ public partial class GeoNamesService
 
     public async Task<List<GeoNamesLocationDto>> GetStatesAsync(int countryGeonameId, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"geonames:states:{countryGeonameId}:bilingual";
-
-        if (_cache.TryGetValue(cacheKey, out List<GeoNamesLocationDto>? cachedStates))
-        {
-            _logger.LogDebug("States for country {CountryGeonameId} retrieved from cache", countryGeonameId);
-            return cachedStates!;
-        }
-
         _logger.LogInformation("Fetching states for country {CountryGeonameId} from GeoNames API (bilingual)", countryGeonameId);
 
         try
@@ -96,11 +72,8 @@ public partial class GeoNamesService
                 statesAr.Where(s => s.Fcode.StartsWith("ADM1")).ToList()
             );
 
-            // Cache with configured duration
-            _cache.Set(cacheKey, states, _options.StatesCacheDuration);
-
-            _logger.LogInformation("Fetched and cached {Count} states for country {CountryGeonameId} (bilingual) for {Duration}", 
-                states.Count, countryGeonameId, _options.StatesCacheDuration);
+            _logger.LogInformation("Fetched {Count} states for country {CountryGeonameId} (bilingual)", 
+                states.Count, countryGeonameId);
 
             return states;
         }
@@ -113,14 +86,6 @@ public partial class GeoNamesService
 
     public async Task<List<GeoNamesLocationDto>> GetCitiesAsync(int stateGeonameId, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"geonames:cities:{stateGeonameId}:bilingual";
-
-        if (_cache.TryGetValue(cacheKey, out List<GeoNamesLocationDto>? cachedCities))
-        {
-            _logger.LogDebug("Cities for state {StateGeonameId} retrieved from cache", stateGeonameId);
-            return cachedCities!;
-        }
-
         _logger.LogInformation("Fetching cities for state {StateGeonameId} from GeoNames API (bilingual)", stateGeonameId);
 
         try
@@ -131,17 +96,14 @@ public partial class GeoNamesService
             // Fetch Arabic data
             var citiesAr = await FetchChildrenInLanguageAsync(stateGeonameId, "ar", cancellationToken);
 
-            // Filter for PPL (populated places) and merge
+            // Filter for ADM2 (administrative division level 2) and merge
             var cities = MergeLocationData(
                 citiesEn.Where(c => c.Fcode.StartsWith("ADM2")).ToList(),
                 citiesAr.Where(c => c.Fcode.StartsWith("ADM2")).ToList()
             );
 
-            // Cache with configured duration
-            _cache.Set(cacheKey, cities, _options.CitiesCacheDuration);
-
-            _logger.LogInformation("Fetched and cached {Count} cities for state {StateGeonameId} (bilingual) for {Duration}", 
-                cities.Count, stateGeonameId, _options.CitiesCacheDuration);
+            _logger.LogInformation("Fetched {Count} cities for state {StateGeonameId} (bilingual)", 
+                cities.Count, stateGeonameId);
 
             return cities;
         }
