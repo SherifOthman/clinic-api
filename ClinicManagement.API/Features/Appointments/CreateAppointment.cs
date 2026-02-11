@@ -29,8 +29,6 @@ public class CreateAppointmentEndpoint : IEndpoint
         DateTimeProvider dateTime,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Business Rule 1: Verify patient exists (global query filter ensures it belongs to clinic)
         var patientExists = await db.Patients
             .AnyAsync(p => p.Id == request.PatientId, ct);

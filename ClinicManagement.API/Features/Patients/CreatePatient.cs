@@ -28,10 +28,8 @@ public class CreatePatientEndpoint : IEndpoint
         CodeGeneratorService codeGenerator,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Generate unique patient code
-        var patientCode = await codeGenerator.GeneratePatientNumberAsync(clinicId, ct);
+        var patientCode = await codeGenerator.GeneratePatientNumberAsync(ct);
 
         // Ensure at least one primary phone
         var phoneNumbers = request.PhoneNumbers.ToList();
@@ -45,7 +43,7 @@ public class CreatePatientEndpoint : IEndpoint
             // Use domain factory method
             var patient = Patient.Create(
                 patientCode,
-                clinicId,
+                currentUser.ClinicId!.Value,
                 request.FullName,
                 request.Gender,
                 request.DateOfBirth,

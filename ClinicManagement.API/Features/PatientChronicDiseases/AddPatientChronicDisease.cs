@@ -26,8 +26,6 @@ public class AddPatientChronicDiseaseEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Verify patient exists (global query filter ensures it belongs to clinic)
         var patientExists = await db.Patients
             .AnyAsync(p => p.Id == patientId, ct);

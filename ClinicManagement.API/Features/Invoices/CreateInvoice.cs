@@ -29,8 +29,6 @@ public class CreateInvoiceEndpoint : IEndpoint
         CodeGeneratorService codeGenerator,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Verify patient exists (global query filter ensures it belongs to clinic)
         var patientExists = await db.Patients
             .AnyAsync(p => p.Id == request.PatientId, ct);
@@ -57,14 +55,14 @@ public class CreateInvoiceEndpoint : IEndpoint
         }
 
         // Generate invoice number
-        var invoiceNumber = await codeGenerator.GenerateInvoiceNumberAsync(clinicId, ct);
+        var invoiceNumber = await codeGenerator.GenerateInvoiceNumberAsync(ct);
 
         try
         {
             // Use domain factory method
             var invoice = Invoice.Create(
                 invoiceNumber,
-                clinicId,
+                currentUser.ClinicId!.Value,
                 request.PatientId,
                 request.AppointmentId,
                 null, // MedicalVisitId

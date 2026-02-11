@@ -24,8 +24,6 @@ public class GetAppointmentByIdEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // ClinicId filter is automatic via global query filter
         var appointment = await db.Appointments
             .Where(a => a.Id == id)

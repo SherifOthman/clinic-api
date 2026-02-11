@@ -25,8 +25,6 @@ public class ConfirmAppointmentEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Load appointment
         // ClinicId filter is automatic via global query filter
         var appointment = await db.Appointments

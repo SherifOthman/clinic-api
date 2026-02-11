@@ -25,8 +25,6 @@ public class GetPatientInvoicesEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Build query with filters - ClinicId filter is automatic via global query filter
         var query = db.Invoices
             .Where(i => i.PatientId == patientId)

@@ -23,8 +23,6 @@ public class GetMedicalServicesEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Verify branch exists (global query filter ensures it belongs to clinic)
         var branchExists = await db.ClinicBranches
             .AnyAsync(cb => cb.Id == clinicBranchId, ct);

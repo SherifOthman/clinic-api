@@ -6,14 +6,17 @@ namespace ClinicManagement.API.Infrastructure.Services;
 public class CodeGeneratorService
 {
     private readonly ApplicationDbContext _db;
+    private readonly CurrentUserService _currentUser;
 
-    public CodeGeneratorService(ApplicationDbContext db)
+    public CodeGeneratorService(ApplicationDbContext db, CurrentUserService currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
-    public async Task<string> GenerateInvoiceNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
+    public async Task<string> GenerateInvoiceNumberAsync(CancellationToken cancellationToken = default)
     {
+        var clinicId = _currentUser.ClinicId!.Value;
         var year = DateTime.UtcNow.Year;
         var count = await _db.Invoices
             .CountAsync(i => i.ClinicId == clinicId && i.CreatedAt.Year == year, cancellationToken);
@@ -30,15 +33,17 @@ public class CodeGeneratorService
         return $"APT-{year}-{(count + 1):D6}";
     }
 
-    public async Task<string> GenerateMedicalFileNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
+    public async Task<string> GenerateMedicalFileNumberAsync(CancellationToken cancellationToken = default)
     {
+        var clinicId = _currentUser.ClinicId!.Value;
         var year = DateTime.UtcNow.Year;
         // MedicalFiles table doesn't exist yet, return placeholder
         return $"MF-{year}-{1:D6}";
     }
 
-    public async Task<string> GeneratePatientNumberAsync(Guid clinicId, CancellationToken cancellationToken = default)
+    public async Task<string> GeneratePatientNumberAsync(CancellationToken cancellationToken = default)
     {
+        var clinicId = _currentUser.ClinicId!.Value;
         var year = DateTime.UtcNow.Year;
         var count = await _db.Patients
             .CountAsync(p => p.ClinicId == clinicId && p.CreatedAt.Year == year, cancellationToken);

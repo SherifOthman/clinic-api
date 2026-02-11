@@ -24,8 +24,6 @@ public class GetInvoiceByIdEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // ClinicId filter is automatic via global query filter
         var invoice = await db.Invoices
             .Where(i => i.Id == id)

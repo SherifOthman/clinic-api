@@ -28,8 +28,6 @@ public class RecordPaymentEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Load invoice - ClinicId filter is automatic via global query filter
         var invoice = await db.Invoices
             .Where(i => i.Id == invoiceId)

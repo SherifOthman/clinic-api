@@ -27,8 +27,6 @@ public class AddMedicineStockEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Load medicine - ClinicId filter is automatic via global query filter
         var medicine = await db.Medicines
             .Where(m => m.Id == medicineId)

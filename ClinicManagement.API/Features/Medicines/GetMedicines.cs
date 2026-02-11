@@ -24,8 +24,6 @@ public class GetMedicinesEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Build query - ClinicId filter is automatic via global query filter
         var query = db.Medicines
             .WhereIf(request.ClinicBranchId.HasValue, m => m.ClinicBranchId == request.ClinicBranchId!.Value)

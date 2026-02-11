@@ -29,8 +29,6 @@ public class UpdatePatientEndpoint : IEndpoint
         CurrentUserService currentUser,
         CancellationToken ct)
     {
-        var clinicId = currentUser.ClinicId!.Value;
-
         // Find patient - ClinicId filter is automatic via global query filter
         var patient = await db.Patients
             .Where(p => p.Id == id)
