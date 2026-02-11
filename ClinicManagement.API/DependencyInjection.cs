@@ -146,19 +146,7 @@ public static class DependencyInjection
         });
 
         // OpenAPI with Scalar (modern alternative to Swagger)
-        services.AddOpenApi(options =>
-        {
-            // Use declaring type + nested type name to avoid schema naming conflicts
-            // Example: "RegisterEndpoint.Request" instead of just "Request"
-            options.CreateSchemaReferenceId = type =>
-            {
-                if (type.Type.DeclaringType != null)
-                {
-                    return $"{type.Type.DeclaringType.Name}.{type.Type.Name}";
-                }
-                return type.Type.Name;
-            };
-        });
+        services.AddOpenApi();
 
         return services;
     }
@@ -185,13 +173,7 @@ public static class DependencyInjection
         
         // Map OpenAPI document and Scalar UI
         app.MapOpenApi();
-        app.MapScalarApiReference(options =>
-        {
-            options
-                .WithTitle("Clinic Management API")
-                .WithTheme(ScalarTheme.Purple)
-                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-        });
+        app.MapScalarApiReference();
         
         // Simple Health Check Endpoints (no external dependencies)
         app.MapGet("/health", () => Results.Ok(new
