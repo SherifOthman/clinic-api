@@ -145,8 +145,38 @@ public static class DependencyInjection
             });
         });
 
-        // OpenAPI and Scalar - Simple configuration
-        services.AddOpenApi();
+        // OpenAPI and Scalar - Configure unique schema names and inline primitives
+        services.AddOpenApi(options =>
+        {
+            options.CreateSchemaReferenceId = (type) =>
+            {
+                // Inline primitive types by returning null
+                if (type.Type == typeof(string) || 
+                    type.Type == typeof(int) || 
+                    type.Type == typeof(long) ||
+                    type.Type == typeof(bool) || 
+                    type.Type == typeof(decimal) || 
+                    type.Type == typeof(double) ||
+                    type.Type == typeof(float) ||
+                    type.Type == typeof(Guid) || 
+                    type.Type == typeof(DateTime) ||
+                    type.Type == typeof(DateTimeOffset) ||
+                    type.Type == typeof(DateOnly) ||
+                    type.Type == typeof(TimeOnly))
+                {
+                    return null;
+                }
+                
+                // For nested types (Request/Response in endpoint classes), use parent class name
+                if (type.Type.DeclaringType != null)
+                {
+                    return $"{type.Type.DeclaringType.Name}.{type.Type.Name}";
+                }
+                
+                // Use default for everything else
+                return type.Type.Name;
+            };
+        });
 
         return services;
     }
