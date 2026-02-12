@@ -40,6 +40,16 @@ public class RemoveMedicineStockEndpoint : IEndpoint
 
         try
         {
+            // Business logic validation
+            if (request.Strips > medicine.TotalStripsInStock)
+            {
+                var ex = new DomainException("INSUFFICIENT_STOCK", 
+                    $"Insufficient stock. Requested: {request.Strips}, Available: {medicine.TotalStripsInStock}");
+                ex.Data["requested"] = request.Strips;
+                ex.Data["available"] = medicine.TotalStripsInStock;
+                throw ex;
+            }
+
             // Update stock
             medicine.TotalStripsInStock -= request.Strips;
 

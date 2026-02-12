@@ -40,6 +40,10 @@ public class AddMedicineStockEndpoint : IEndpoint
 
         try
         {
+            // Business logic validation
+            if (medicine.IsDiscontinued)
+                throw new DomainException("MEDICINE_DISCONTINUED", "Cannot add stock to discontinued medicine");
+
             // Update stock
             medicine.TotalStripsInStock += request.Strips;
 
