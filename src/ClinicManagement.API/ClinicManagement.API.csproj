@@ -16,7 +16,7 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
     
     <!-- API Documentation -->
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.0" />
     
     <!-- Database -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
