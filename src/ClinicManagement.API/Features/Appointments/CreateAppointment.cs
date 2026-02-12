@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Validation;
 using ClinicManagement.API.Common.Enums;
 using ClinicManagement.API.Common.Exceptions;
@@ -35,21 +37,39 @@ public class CreateAppointmentEndpoint : IEndpoint
             .AnyAsync(p => p.Id == request.PatientId, ct);
 
         if (!patientExists)
-            return Results.BadRequest(new { error = "Patient not found or does not belong to your clinic", code = "PATIENT_NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.PATIENT_NOT_FOUND,
+                Title = "Patient Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Patient not found or does not belong to your clinic"
+            });
 
         // Business Rule 2: Verify doctor exists (global query filter ensures it belongs to clinic)
         var doctorExists = await db.Doctors
             .AnyAsync(d => d.Id == request.DoctorId, ct);
 
         if (!doctorExists)
-            return Results.BadRequest(new { error = "Doctor not found or does not belong to your clinic", code = "DOCTOR_NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = "DOCTOR_NOT_FOUND",
+                Title = "Doctor Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Doctor not found or does not belong to your clinic"
+            });
 
         // Business Rule 3: Verify branch exists (global query filter ensures it belongs to clinic)
         var branchExists = await db.ClinicBranches
             .AnyAsync(b => b.Id == request.ClinicBranchId, ct);
 
         if (!branchExists)
-            return Results.BadRequest(new { error = "Branch not found or does not belong to your clinic", code = "BRANCH_NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = "BRANCH_NOT_FOUND",
+                Title = "Branch Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Branch not found or does not belong to your clinic"
+            });
 
         // Business Rule 4: Check for appointment conflicts (same doctor, same date/time)
         var appointmentDate = request.ScheduledAt.Date;
@@ -60,7 +80,13 @@ public class CreateAppointmentEndpoint : IEndpoint
                 a.Status != AppointmentStatus.Cancelled, ct);
 
         if (hasConflict)
-            return Results.BadRequest(new { error = "Doctor already has an appointment on this date", code = "APPOINTMENT_CONFLICT" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.APPOINTMENT_CONFLICT,
+                Title = "Appointment Conflict",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Doctor already has an appointment on this date"
+            });
 
         // Generate appointment number
         var appointmentNumber = await GenerateAppointmentNumberAsync(db, dateTime, request.ClinicBranchId, ct);

@@ -1,5 +1,7 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Extensions;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -26,7 +28,13 @@ public class ResetPasswordEndpoint : IEndpoint
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
-            return Results.BadRequest(new { error = "Invalid reset token", code = "INVALID_TOKEN" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.TOKEN_INVALID,
+                Title = "Invalid Token",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Invalid reset token"
+            });
 
         try
         {

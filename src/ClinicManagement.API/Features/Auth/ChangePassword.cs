@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -30,10 +32,22 @@ public class ChangePasswordEndpoint : IEndpoint
 
         var user = await userManager.FindByIdAsync(userId.Value.ToString());
         if (user == null)
-            return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.USER_NOT_FOUND,
+                Title = "User Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "User not found"
+            });
 
         if (!await userManager.CheckPasswordAsync(user, request.CurrentPassword))
-            return Results.BadRequest(new { error = "Current password is incorrect", code = "INVALID_PASSWORD" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.INVALID_CREDENTIALS,
+                Title = "Invalid Password",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Current password is incorrect"
+            });
 
         var result = await userManager.ChangePasswordAsync(
             user,
@@ -43,7 +57,13 @@ public class ChangePasswordEndpoint : IEndpoint
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            return Results.BadRequest(new { error = errors, code = "PASSWORD_CHANGE_FAILED" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.OPERATION_FAILED,
+                Title = "Password Change Failed",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = errors
+            });
         }
 
         return Results.Ok(new { message = "Password changed successfully" });

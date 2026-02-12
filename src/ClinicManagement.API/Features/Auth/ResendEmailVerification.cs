@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -26,10 +28,22 @@ public class ResendEmailVerificationEndpoint : IEndpoint
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
-            return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.USER_NOT_FOUND,
+                Title = "User Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "User not found"
+            });
 
         if (await emailConfirmationService.IsEmailConfirmedAsync(user, ct))
-            return Results.BadRequest(new { error = "Email is already confirmed", code = "EMAIL_ALREADY_CONFIRMED" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = "EMAIL_ALREADY_CONFIRMED",
+                Title = "Email Already Confirmed",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Email is already confirmed"
+            });
 
         try
         {

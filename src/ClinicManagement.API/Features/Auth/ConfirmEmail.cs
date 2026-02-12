@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -28,7 +30,13 @@ public class ConfirmEmailEndpoint : IEndpoint
         {
             var user = await userManager.FindByEmailAsync(request.Email);
             if (user == null)
-                return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
+                return Results.BadRequest(new ApiProblemDetails
+                {
+                    Code = ErrorCodes.USER_NOT_FOUND,
+                    Title = "User Not Found",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = "User not found"
+                });
 
             if (await emailConfirmationService.IsEmailConfirmedAsync(user, ct))
                 return Results.Ok(new { message = "Email already confirmed" });

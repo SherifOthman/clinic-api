@@ -1,4 +1,5 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
@@ -33,16 +34,34 @@ public class LoginEndpoint : IEndpoint
         // Find user by email
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
-            return Results.BadRequest(new { error = "Invalid email or password", code = "INVALID_CREDENTIALS" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.INVALID_CREDENTIALS,
+                Title = "Invalid Credentials",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Invalid email or password"
+            });
 
         // Check password
         var isPasswordValid = await userManager.CheckPasswordAsync(user, request.Password);
         if (!isPasswordValid)
-            return Results.BadRequest(new { error = "Invalid email or password", code = "INVALID_CREDENTIALS" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.INVALID_CREDENTIALS,
+                Title = "Invalid Credentials",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Invalid email or password"
+            });
 
         // Check if email is confirmed
         if (!user.EmailConfirmed)
-            return Results.BadRequest(new { error = "Please confirm your email before logging in", code = "EMAIL_NOT_CONFIRMED" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.EMAIL_NOT_CONFIRMED,
+                Title = "Email Not Confirmed",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Please confirm your email before logging in"
+            });
 
         // Get user roles
         var roles = await userManager.GetRolesAsync(user);

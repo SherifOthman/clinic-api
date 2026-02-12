@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -31,14 +33,32 @@ public class UploadProfileImageEndpoint : IEndpoint
         const long maxFileSize = 5 * 1024 * 1024; // 5MB
 
         if (file == null || file.Length == 0)
-            return Results.BadRequest(new { error = "File is required", code = "FILE_REQUIRED" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.REQUIRED_FIELD,
+                Title = "File Required",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "File is required"
+            });
 
         if (file.Length > maxFileSize)
-            return Results.BadRequest(new { error = "File size must not exceed 5MB", code = "FILE_TOO_LARGE" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.INVALID_FORMAT,
+                Title = "File Too Large",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "File size must not exceed 5MB"
+            });
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
-            return Results.BadRequest(new { error = $"File must be one of the following types: {string.Join(", ", allowedExtensions)}", code = "INVALID_FILE_TYPE" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.INVALID_FORMAT,
+                Title = "Invalid File Type",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = $"File must be one of the following types: {string.Join(", ", allowedExtensions)}"
+            });
 
         var userId = currentUserService.UserId;
         if (userId == null)
@@ -46,7 +66,13 @@ public class UploadProfileImageEndpoint : IEndpoint
 
         var user = await userManager.FindByIdAsync(userId.Value.ToString());
         if (user == null)
-            return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.USER_NOT_FOUND,
+                Title = "User Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "User not found"
+            });
 
         try
         {
@@ -69,7 +95,13 @@ public class UploadProfileImageEndpoint : IEndpoint
                 await fileStorageService.DeleteFileAsync(filePath, ct);
 
                 var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-                return Results.BadRequest(new { error = $"Failed to update profile: {errors}", code = "UPDATE_FAILED" });
+                return Results.BadRequest(new ApiProblemDetails
+                {
+                    Code = ErrorCodes.OPERATION_FAILED,
+                    Title = "Update Failed",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = $"Failed to update profile: {errors}"
+                });
             }
 
             var response = new Response(
@@ -89,7 +121,13 @@ public class UploadProfileImageEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            return Results.BadRequest(new { error = $"An error occurred while uploading profile image: {ex.Message}", code = "INTERNAL_ERROR" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.INTERNAL_ERROR,
+                Title = "Upload Failed",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = $"An error occurred while uploading profile image: {ex.Message}"
+            });
         }
     }
 

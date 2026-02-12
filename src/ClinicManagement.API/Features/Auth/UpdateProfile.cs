@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -30,7 +32,13 @@ public class UpdateProfileEndpoint : IEndpoint
 
         var user = await userManager.FindByIdAsync(userId.Value.ToString());
         if (user == null)
-            return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.USER_NOT_FOUND,
+                Title = "User Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "User not found"
+            });
 
         // Update user properties
         user.FirstName = request.FirstName.Trim();
@@ -43,7 +51,13 @@ public class UpdateProfileEndpoint : IEndpoint
         if (!updateResult.Succeeded)
         {
             var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-            return Results.BadRequest(new { error = $"Failed to update profile: {errors}", code = "UPDATE_FAILED" });
+            return Results.BadRequest(new ApiProblemDetails
+            {
+                Code = ErrorCodes.OPERATION_FAILED,
+                Title = "Update Failed",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = $"Failed to update profile: {errors}"
+            });
         }
 
         var response = new Response(
