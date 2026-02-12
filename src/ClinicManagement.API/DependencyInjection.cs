@@ -43,12 +43,6 @@ public static class DependencyInjection
 
         // API Documentation
         AddSwagger(services);
-        
-        // Configure API behavior for consistent validation responses
-        services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
-        {
-            options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-        });
 
         return services;
     }

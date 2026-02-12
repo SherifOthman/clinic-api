@@ -1,5 +1,4 @@
 using ClinicManagement.API.Common;
-using ClinicManagement.API.Infrastructure.Filters;
 using System.Reflection;
 
 namespace ClinicManagement.API;
@@ -12,8 +11,7 @@ public static class Endpoints
 {
     public static void MapEndpoints(this WebApplication app)
     {
-        var api = app.MapGroup("/api")
-            .AddEndpointFilter<ValidationFilter>(); // Apply validation filter to all endpoints
+        var api = app.MapGroup("/api");
 
         // Use reflection to find all IEndpoint implementations
         var endpointTypes = typeof(Program).Assembly
