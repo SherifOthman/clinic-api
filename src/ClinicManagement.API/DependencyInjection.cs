@@ -1,4 +1,6 @@
 using System.Text;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Options;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
@@ -41,6 +43,12 @@ public static class DependencyInjection
 
         // API Documentation
         AddSwagger(services);
+        
+        // Configure API behavior for consistent validation responses
+        services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+        {
+            options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        });
 
         return services;
     }
