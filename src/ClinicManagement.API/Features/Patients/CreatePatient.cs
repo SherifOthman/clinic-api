@@ -41,14 +41,15 @@ public class CreatePatientEndpoint : IEndpoint
 
         try
         {
-            // Use domain factory method
-            var patient = Patient.Create(
-                patientCode,
-                currentUser.ClinicId!.Value,
-                request.FullName,
-                request.Gender,
-                request.DateOfBirth,
-                request.CityGeoNameId);
+            var patient = new Patient
+            {
+                PatientCode = patientCode,
+                ClinicId = currentUser.ClinicId!.Value,
+                FullName = request.FullName,
+                Gender = request.Gender,
+                DateOfBirth = request.DateOfBirth,
+                CityGeoNameId = request.CityGeoNameId
+            };
 
             db.Patients.Add(patient);
 

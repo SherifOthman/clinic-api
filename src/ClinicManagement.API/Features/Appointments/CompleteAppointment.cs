@@ -40,8 +40,8 @@ public class CompleteAppointmentEndpoint : IEndpoint
         {
             var previousStatus = appointment.Status;
             
-            // Domain method handles state transition and business rules
-            appointment.Complete();
+            // Update status
+            appointment.Status = AppointmentStatus.Completed;
             
             await db.SaveChangesAsync(ct);
             

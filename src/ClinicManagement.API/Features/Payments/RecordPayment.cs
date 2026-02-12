@@ -39,25 +39,41 @@ public class RecordPaymentEndpoint : IEndpoint
 
         try
         {
-            // Generate payment ID
-            var paymentId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                InvoiceId = invoiceId,
+                Amount = request.Amount,
+                PaymentMethod = request.PaymentMethod,
+                ReferenceNumber = request.ReferenceNumber,
+                PaymentDate = DateTime.UtcNow,
+                Status = PaymentStatus.Paid
+            };
 
-            // Use domain method - this handles all business logic
-            invoice.AddPayment(
-                paymentId,
-                request.Amount,
-                request.PaymentMethod,
-                request.ReferenceNumber);
+            db.Payments.Add(payment);
+
+            // Update invoice status
+            var totalPaid = await db.Payments
+                .Where(p => p.InvoiceId == invoiceId && p.Status == PaymentStatus.Paid)
+                .SumAsync(p => p.Amount, ct) + request.Amount;
+
+            if (totalPaid >= invoice.FinalAmount)
+            {
+                invoice.Status = InvoiceStatus.FullyPaid;
+            }
+            else if (totalPaid > 0)
+            {
+                invoice.Status = InvoiceStatus.PartiallyPaid;
+            }
 
             await db.SaveChangesAsync(ct);
 
             logger.LogInformation(
                 "Payment recorded: {PaymentId} Invoice={InvoiceId} Amount={Amount} Method={PaymentMethod} Reference={ReferenceNumber} by {UserId}",
-                paymentId, invoiceId, request.Amount, request.PaymentMethod, request.ReferenceNumber, currentUser.UserId);
+                payment.Id, invoiceId, request.Amount, request.PaymentMethod, request.ReferenceNumber, currentUser.UserId);
 
             // Load payment response
-            var payment = await db.Payments
-                .Where(p => p.Id == paymentId)
+            var paymentResponse = await db.Payments
+                .Where(p => p.Id == payment.Id)
                 .Select(p => new Response(
                     p.Id,
                     p.InvoiceId,

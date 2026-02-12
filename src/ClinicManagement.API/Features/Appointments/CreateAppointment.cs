@@ -96,15 +96,17 @@ public class CreateAppointmentEndpoint : IEndpoint
 
         try
         {
-            // Use domain factory method
-            var appointment = Appointment.Create(
-                appointmentNumber,
-                request.ClinicBranchId,
-                request.PatientId,
-                request.DoctorId,
-                request.AppointmentTypeId,
-                appointmentDate,
-                queueNumber);
+            var appointment = new Appointment
+            {
+                AppointmentNumber = appointmentNumber,
+                ClinicBranchId = request.ClinicBranchId,
+                PatientId = request.PatientId,
+                DoctorId = request.DoctorId,
+                AppointmentTypeId = request.AppointmentTypeId,
+                AppointmentDate = appointmentDate,
+                QueueNumber = queueNumber,
+                Status = AppointmentStatus.Pending
+            };
 
             db.Appointments.Add(appointment);
             await db.SaveChangesAsync(ct);

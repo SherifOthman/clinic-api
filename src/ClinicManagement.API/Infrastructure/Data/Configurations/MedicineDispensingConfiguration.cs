@@ -28,35 +28,11 @@ public class MedicineDispensingConfiguration : IEntityTypeConfiguration<Medicine
             .HasForeignKey(md => md.MedicineId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(md => md.Visit)
-            .WithMany()
-            .HasForeignKey(md => md.VisitId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-
-        builder.HasOne(md => md.Prescription)
-            .WithMany()
-            .HasForeignKey(md => md.PrescriptionId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-
-        builder.HasOne(md => md.DispensedBy)
-            .WithMany()
-            .HasForeignKey(md => md.DispensedByUserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         // Value objects
         builder.Property(md => md.UnitPrice)
             .HasColumnType("decimal(18,2)");
 
-        builder.Property(md => md.TotalPrice)
-            .HasColumnType("decimal(18,2)");
-
         builder.Property(md => md.Status)
-            .HasConversion<string>()
-            .HasMaxLength(50);
-
-        builder.Property(md => md.Unit)
             .HasConversion<string>()
             .HasMaxLength(50);
 

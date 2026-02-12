@@ -40,8 +40,8 @@ public class AddMedicineStockEndpoint : IEndpoint
 
         try
         {
-            // Use domain method
-            medicine.AddStock(request.Strips, request.Reason);
+            // Update stock
+            medicine.TotalStripsInStock += request.Strips;
 
             await db.SaveChangesAsync(ct);
 

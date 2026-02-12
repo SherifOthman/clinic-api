@@ -45,10 +45,10 @@ public class LabTestOrderConfiguration : IEntityTypeConfiguration<LabTestOrder>
             .HasConversion<string>()
             .HasMaxLength(50);
 
-        builder.Property(lto => lto.ResultsFilePath)
+        builder.Property(lto => lto.ResultFilePath)
             .HasMaxLength(500);
 
-        builder.Property(lto => lto.ResultsText)
+        builder.Property(lto => lto.ResultNotes)
             .HasMaxLength(4000);
 
         builder.Property(lto => lto.DoctorNotes)

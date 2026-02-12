@@ -41,19 +41,22 @@ public class CreateMedicineEndpoint : IEndpoint
 
         try
         {
-            // Use domain factory method
-            var medicine = Medicine.Create(
-                request.ClinicBranchId,
-                request.Name,
-                request.BoxPrice,
-                request.StripsPerBox,
-                request.InitialStock,
-                request.Description,
-                request.Manufacturer,
-                request.BatchNumber,
-                request.ExpiryDate,
-                request.MinimumStockLevel,
-                request.ReorderLevel);
+            var medicine = new Medicine
+            {
+                ClinicBranchId = request.ClinicBranchId,
+                Name = request.Name,
+                BoxPrice = request.BoxPrice,
+                StripsPerBox = request.StripsPerBox,
+                TotalStripsInStock = request.InitialStock,
+                Description = request.Description,
+                Manufacturer = request.Manufacturer,
+                BatchNumber = request.BatchNumber,
+                ExpiryDate = request.ExpiryDate,
+                MinimumStockLevel = request.MinimumStockLevel,
+                ReorderLevel = request.ReorderLevel,
+                IsActive = true,
+                IsDiscontinued = false
+            };
 
             db.Medicines.Add(medicine);
             await db.SaveChangesAsync(ct);

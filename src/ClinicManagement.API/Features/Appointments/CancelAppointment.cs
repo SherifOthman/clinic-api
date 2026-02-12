@@ -42,8 +42,8 @@ public class CancelAppointmentEndpoint : IEndpoint
         {
             var previousStatus = appointment.Status;
             
-            // Domain method handles state transition and business rules
-            appointment.Cancel(request.Reason ?? string.Empty);
+            // Update status
+            appointment.Status = AppointmentStatus.Cancelled;
             
             await db.SaveChangesAsync(ct);
             

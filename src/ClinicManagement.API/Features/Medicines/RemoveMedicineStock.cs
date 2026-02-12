@@ -40,8 +40,8 @@ public class RemoveMedicineStockEndpoint : IEndpoint
 
         try
         {
-            // Use domain method
-            medicine.RemoveStock(request.Strips, request.Reason);
+            // Update stock
+            medicine.TotalStripsInStock -= request.Strips;
 
             await db.SaveChangesAsync(ct);
 

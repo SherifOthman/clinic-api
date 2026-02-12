@@ -41,8 +41,14 @@ public class CancelInvoiceEndpoint : IEndpoint
             var previousStatus = invoice.Status;
             var invoiceNumber = invoice.InvoiceNumber;
             
-            // Use domain method
-            invoice.Cancel(request.Reason);
+            // Update status
+            invoice.Status = InvoiceStatus.Cancelled;
+            if (!string.IsNullOrEmpty(request.Reason))
+            {
+                invoice.Notes = string.IsNullOrEmpty(invoice.Notes) 
+                    ? $"Cancelled: {request.Reason}" 
+                    : $"{invoice.Notes}\nCancelled: {request.Reason}";
+            }
 
             await db.SaveChangesAsync(ct);
 

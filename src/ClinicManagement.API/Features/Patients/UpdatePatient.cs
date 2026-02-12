@@ -40,12 +40,11 @@ public class UpdatePatientEndpoint : IEndpoint
 
         try
         {
-            // Use domain update method
-            patient.UpdateInfo(
-                request.FullName,
-                request.Gender,
-                request.DateOfBirth,
-                request.CityGeoNameId);
+            // Update patient info
+            patient.FullName = request.FullName;
+            patient.Gender = request.Gender;
+            patient.DateOfBirth = request.DateOfBirth;
+            patient.CityGeoNameId = request.CityGeoNameId;
 
             await db.SaveChangesAsync(ct);
 

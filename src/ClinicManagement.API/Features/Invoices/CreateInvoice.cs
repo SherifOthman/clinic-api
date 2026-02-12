@@ -60,49 +60,56 @@ public class CreateInvoiceEndpoint : IEndpoint
 
         try
         {
-            // Use domain factory method
-            var invoice = Invoice.Create(
-                invoiceNumber,
-                currentUser.ClinicId!.Value,
-                request.PatientId,
-                request.AppointmentId,
-                null, // MedicalVisitId
-                request.DueDate);
+            var invoice = new Invoice
+            {
+                InvoiceNumber = invoiceNumber,
+                ClinicId = currentUser.ClinicId!.Value,
+                PatientId = request.PatientId,
+                AppointmentId = request.AppointmentId,
+                DueDate = request.DueDate,
+                Status = InvoiceStatus.Draft
+            };
 
-            // Add items using domain method
+            db.Invoices.Add(invoice);
+
+            // Add items
             foreach (var item in request.Items)
             {
-                invoice.AddItem(
-                    item.MedicalServiceId,
-                    item.MedicineId,
-                    item.MedicalSupplyId,
-                    item.Quantity,
-                    item.UnitPrice,
-                    item.SaleUnit);
+                db.InvoiceItems.Add(new InvoiceItem
+                {
+                    InvoiceId = invoice.Id,
+                    MedicalServiceId = item.MedicalServiceId,
+                    MedicineId = item.MedicineId,
+                    MedicalSupplyId = item.MedicalSupplyId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    SaleUnit = item.SaleUnit
+                });
             }
 
             // Apply discount if provided
             if (request.Discount.HasValue && request.Discount.Value > 0)
             {
-                invoice.ApplyDiscount(request.Discount.Value);
+                invoice.Discount = request.Discount.Value;
             }
 
             // Set tax if provided
             if (request.TaxAmount.HasValue && request.TaxAmount.Value > 0)
             {
-                invoice.SetTax(request.TaxAmount.Value);
+                invoice.TaxAmount = request.TaxAmount.Value;
             }
 
             // Update notes if provided
             if (!string.IsNullOrEmpty(request.Notes))
             {
-                invoice.UpdateNotes(request.Notes);
+                invoice.Notes = request.Notes;
             }
 
             // Issue the invoice
-            invoice.Issue();
+            invoice.Status = InvoiceStatus.Issued;
+            invoice.IssuedDate = DateTime.UtcNow;
+            invoice.DueDate ??= DateTime.UtcNow.AddDays(30);
 
-            db.Invoices.Add(invoice);
             await db.SaveChangesAsync(ct);
 
             logger.LogInformation(

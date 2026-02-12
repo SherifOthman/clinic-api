@@ -40,8 +40,8 @@ public class ConfirmAppointmentEndpoint : IEndpoint
         {
             var previousStatus = appointment.Status;
             
-            // Domain method handles state transition and business rules
-            appointment.Confirm();
+            // Update status
+            appointment.Status = AppointmentStatus.Confirmed;
             
             await db.SaveChangesAsync(ct);
             
