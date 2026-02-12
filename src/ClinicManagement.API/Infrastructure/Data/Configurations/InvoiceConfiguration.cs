@@ -23,6 +23,7 @@ public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
         builder.Property(i => i.TaxAmount)
             .HasPrecision(18, 2);
 
+        // Explicit foreign key configurations
         builder.HasOne(i => i.Clinic)
             .WithMany(c => c.Invoices)
             .HasForeignKey(i => i.ClinicId)
@@ -33,11 +34,22 @@ public class InvoiceConfiguration : BaseEntityConfiguration<Invoice>
             .HasForeignKey(i => i.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Explicit Appointment relationship (optional)
+        // Note: Appointment has Invoice navigation, not Invoices collection
+        builder.HasOne(i => i.Appointment)
+            .WithOne(a => a.Invoice)
+            .HasForeignKey<Invoice>(i => i.AppointmentId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
+
+        // Explicit MedicalVisit relationship (optional)
         builder.HasOne(i => i.MedicalVisit)
             .WithMany(mv => mv.Invoices)
             .HasForeignKey(i => i.MedicalVisitId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
 
+        // Child collections
         builder.HasMany(i => i.Items)
             .WithOne(ii => ii.Invoice)
             .HasForeignKey(ii => ii.InvoiceId)

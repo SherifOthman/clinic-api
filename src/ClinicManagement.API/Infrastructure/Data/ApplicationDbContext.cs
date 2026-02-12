@@ -140,13 +140,14 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     /// Configures global query filters for multi-tenancy and soft delete
     /// Multi-tenancy: Filters by ClinicId from JWT claims (null for SuperAdmin = see all)
     /// Soft delete: Excludes IsDeleted=true records (use IncludeDeleted() to bypass)
+    /// Child entities inherit filters from their parents to prevent orphaned records
     /// </summary>
     private void ConfigureGlobalQueryFilters(ModelBuilder builder)
     {
         // Get current user's clinic ID (null for SuperAdmin who can see all clinics)
         var clinicId = _currentUserService.ClinicId;
         
-        // ===== SOFT DELETE FILTERS (AuditableEntity only) =====
+        // ===== PARENT ENTITIES WITH SOFT DELETE =====
         
         // Clinic-scoped entities with soft delete
         builder.Entity<Patient>().HasQueryFilter(e => 
@@ -177,19 +178,63 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         // Clinic entity itself (only soft delete filter)
         builder.Entity<Clinic>().HasQueryFilter(e => !e.IsDeleted);
         
-        // Reference data entities (no soft delete - they use IsActive flag instead)
-        // ChronicDisease, Specialization, SubscriptionPlan, AppointmentType, MeasurementAttribute
-        // These are global reference data, no filters needed
-        
         // User-related entities with soft delete
         builder.Entity<Doctor>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Receptionist>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<ClinicOwner>().HasQueryFilter(e => !e.IsDeleted);
         
-        // Medical entities with soft delete (child entities, filtered through parent)
+        // Medical entities with soft delete
         builder.Entity<PatientChronicDisease>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Payment>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<ClinicBranchAppointmentPrice>().HasQueryFilter(e => !e.IsDeleted);
+        
+        // ===== CHILD ENTITIES - INHERIT PARENT FILTERS =====
+        // These entities are filtered through their parent relationships to prevent orphaned records
+        
+        // Children of ClinicBranch
+        builder.Entity<ClinicBranchPhoneNumber>().HasQueryFilter(e => 
+            !e.ClinicBranch.IsDeleted);
+        
+        builder.Entity<DoctorWorkingDay>().HasQueryFilter(e => 
+            !e.ClinicBranch.IsDeleted);
+        
+        builder.Entity<LabTestOrder>().HasQueryFilter(e => 
+            !e.ClinicBranch.IsDeleted);
+        
+        builder.Entity<RadiologyOrder>().HasQueryFilter(e => 
+            !e.ClinicBranch.IsDeleted);
+        
+        builder.Entity<MedicineDispensing>().HasQueryFilter(e => 
+            !e.ClinicBranch.IsDeleted);
+        
+        // Children of Patient
+        builder.Entity<PatientPhone>().HasQueryFilter(e => 
+            !e.Patient.IsDeleted);
+        
+        builder.Entity<PatientAllergy>().HasQueryFilter(e => 
+            !e.Patient.IsDeleted);
+        
+        builder.Entity<MedicalFile>().HasQueryFilter(e => 
+            !e.Patient.IsDeleted);
+        
+        // Children of Invoice
+        builder.Entity<InvoiceItem>().HasQueryFilter(e => 
+            !e.Invoice.IsDeleted);
+        
+        // Children of Appointment
+        builder.Entity<MedicalVisit>().HasQueryFilter(e => 
+            !e.Appointment.IsDeleted);
+        
+        // Children of Doctor
+        builder.Entity<DoctorMeasurementAttribute>().HasQueryFilter(e => 
+            !e.Doctor.IsDeleted);
+        
+        // Children of MedicalVisit (join tables)
+        builder.Entity<MedicalVisitLabTest>().HasQueryFilter(e => 
+            !e.MedicalVisit.Appointment.IsDeleted);
+        
+        builder.Entity<MedicalVisitRadiology>().HasQueryFilter(e => 
+            !e.MedicalVisit.Appointment.IsDeleted);
         
         // ===== NO SOFT DELETE (BaseEntity) - Only tenant filter where applicable =====
         
@@ -202,8 +247,5 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         
         builder.Entity<ClinicMedication>().HasQueryFilter(e => 
             clinicId == null || e.ClinicId == clinicId);
-        
-        // Note: Other BaseEntity entities (PatientPhone, InvoiceItem, MedicalFile, etc.) 
-        // are child entities and filtered through their parent relationships
     }
 }

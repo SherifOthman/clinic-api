@@ -12,7 +12,7 @@ public class GetStatesEndpoint : IEndpoint
             .CacheOutput("LocationData")
             .WithName("GetStates")
             .WithSummary("Get states by country")
-            .WithTags("Locations")
+            //.WithTags("Locations")
             .Produces<List<Response>>(StatusCodes.Status200OK);
     }
 
