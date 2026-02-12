@@ -75,7 +75,7 @@ public class UserRegistrationService
         if (existingUser != null)
         {
             _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
-            throw new DomainValidationException("email", "Email is already registered");
+            throw new DomainException("EMAIL_ALREADY_EXISTS", "Email is already registered");
         }
 
         if (!string.IsNullOrEmpty(request.UserName))
@@ -84,7 +84,7 @@ public class UserRegistrationService
             if (existingUser != null)
             {
                 _logger.LogWarning("Registration attempt with existing username: {UserName}", request.UserName);
-                throw new DomainValidationException("userName", "Username is already taken");
+                throw new DomainException("USERNAME_ALREADY_EXISTS", "Username is already taken");
             }
         }
     }

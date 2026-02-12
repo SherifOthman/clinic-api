@@ -1,6 +1,5 @@
 using ClinicManagement.API.Common.Exceptions;
 using ClinicManagement.API.Common.Models;
-using ClinicManagement.API.Common.Constants;
 using System.Globalization;
 
 namespace ClinicManagement.API.Common.Extensions;
@@ -17,21 +16,7 @@ public static class ResultExtensions
 
         return ex switch
         {
-            // Special case: Validation errors with field-level errors for form mapping
-            DomainValidationException validationEx => Results.BadRequest(new ApiProblemDetails
-            {
-                Code = validationEx.ErrorCode,
-                Title = GetTitleFromErrorCode(validationEx.ErrorCode),
-                Status = 400,
-                Detail = validationEx.Message,
-                Errors = validationEx.ValidationErrors.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.ToArray()
-                ),
-                TraceId = traceId
-            }),
-
-            // Generic handler: All domain exceptions use their ErrorCode property
+            // All domain exceptions use their ErrorCode property
             DomainException domainEx => Results.BadRequest(new ApiProblemDetails
             {
                 Code = domainEx.ErrorCode,

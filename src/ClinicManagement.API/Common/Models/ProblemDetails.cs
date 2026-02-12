@@ -18,9 +18,6 @@ public class ApiProblemDetails
     /// <summary>Additional data for message interpolation (e.g., { "available": 5, "requested": 10 })</summary>
     public Dictionary<string, object>? Data { get; set; }
     
-    /// <summary>Field-specific validation errors: { "email": ["INVALID_EMAIL"] }</summary>
-    public Dictionary<string, string[]>? Errors { get; set; }
-    
     /// <summary>Request trace ID for debugging</summary>
     public string? TraceId { get; set; }
 }
