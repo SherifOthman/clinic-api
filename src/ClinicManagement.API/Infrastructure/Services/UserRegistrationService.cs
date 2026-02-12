@@ -1,8 +1,10 @@
 using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Enums;
+using ClinicManagement.API.Common.Extensions;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.API.Infrastructure.Services;
@@ -10,18 +12,18 @@ namespace ClinicManagement.API.Infrastructure.Services;
 public class UserRegistrationService
 {
     private readonly ApplicationDbContext _db;
-    private readonly UserManagementService _userManagementService;
+    private readonly UserManager<User> _userManager;
     private readonly EmailConfirmationService _emailConfirmationService;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
         ApplicationDbContext db,
-        UserManagementService userManagementService,
+        UserManager<User> userManager,
         EmailConfirmationService emailConfirmationService,
         ILogger<UserRegistrationService> logger)
     {
         _db = db;
-        _userManagementService = userManagementService;
+        _userManager = userManager;
         _emailConfirmationService = emailConfirmationService;
         _logger = logger;
     }
@@ -69,7 +71,7 @@ public class UserRegistrationService
         UserRegistrationRequest request, 
         CancellationToken cancellationToken)
     {
-        var existingUser = await _userManagementService.GetUserByEmailAsync(request.Email, cancellationToken);
+        var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser != null)
         {
             _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
@@ -78,7 +80,7 @@ public class UserRegistrationService
 
         if (!string.IsNullOrEmpty(request.UserName))
         {
-            existingUser = await _userManagementService.GetByUsernameAsync(request.UserName, cancellationToken);
+            existingUser = await _userManager.FindByNameAsync(request.UserName);
             if (existingUser != null)
             {
                 _logger.LogWarning("Registration attempt with existing username: {UserName}", request.UserName);
@@ -108,7 +110,8 @@ public class UserRegistrationService
 
         _logger.LogInformation("Creating user: {Email} with UserType: {UserType}", request.Email, request.UserType);
 
-        await _userManagementService.CreateUserAsync(user, request.Password, cancellationToken);
+        var result = await _userManager.CreateAsync(user, request.Password);
+        result.ThrowIfFailed();
 
         _logger.LogInformation("User created successfully: {UserId}, assigning role...", userId);
 
@@ -116,7 +119,8 @@ public class UserRegistrationService
         var roleName = GetRoleNameForUserType(request.UserType);
         _logger.LogInformation("Assigning role {RoleName} to user {UserId}", roleName, userId);
         
-        await _userManagementService.AddToRoleAsync(user, roleName, cancellationToken);
+        result = await _userManager.AddToRoleAsync(user, roleName);
+        result.ThrowIfFailed();
 
         _logger.LogInformation("Role {RoleName} assigned successfully to user {UserId}", roleName, userId);
 
@@ -130,7 +134,7 @@ public class UserRegistrationService
     {
         if (request.SendConfirmationEmail && !request.EmailConfirmed)
         {
-            var user = await _userManagementService.GetUserByIdAsync(userId, cancellationToken);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user != null)
             {
                 await _emailConfirmationService.SendConfirmationEmailAsync(user, cancellationToken);

@@ -1,5 +1,7 @@
 using ClinicManagement.API.Common;
 using ClinicManagement.API.Common.Options;
+using ClinicManagement.API.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Features.Auth;
@@ -20,19 +22,19 @@ public class ForgotPasswordEndpoint : IEndpoint
 
     private static async Task<IResult> HandleAsync(
         Request request,
-        UserManagementService userManagementService,
+        UserManager<User> userManager,
         SmtpEmailSender emailSender,
         IOptions<SmtpOptions> smtpOptions,
         CancellationToken ct)
     {
-        var user = await userManagementService.GetUserByEmailAsync(request.Email, ct);
+        var user = await userManager.FindByEmailAsync(request.Email);
 
         // Always return success to prevent email enumeration
         if (user == null)
             return Results.Ok(new { message = "Password reset email sent" });
 
         // Generate password reset token
-        var token = await userManagementService.GeneratePasswordResetTokenAsync(user, ct);
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
         // Create reset link
         var resetLink = $"{smtpOptions.Value.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";

@@ -21,7 +21,7 @@ public class GetCitiesEndpoint : IEndpoint
         GeoNamesService geoNamesService,
         CancellationToken ct)
     {
-        var cities = await geoNamesService.GetCitiesAsync(stateGeonameId);
+        var cities = await geoNamesService.GetCitiesAsync(stateGeonameId, ct);
 
         var response = cities
             .Select(c => new Response(

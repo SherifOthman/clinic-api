@@ -1,5 +1,7 @@
 using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.API.Infrastructure.Services;
@@ -7,20 +9,20 @@ namespace ClinicManagement.API.Infrastructure.Services;
 public class AuthenticationService
 {
     private readonly TokenService _tokenService;
-    private readonly UserManagementService _userManagementService;
+    private readonly UserManager<User> _userManager;
     private readonly EmailConfirmationService _emailConfirmationService;
     private readonly RefreshTokenService _refreshTokenService;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         TokenService tokenService,
-        UserManagementService userManagementService,
+        UserManager<User> userManager,
         EmailConfirmationService emailConfirmationService,
         RefreshTokenService refreshTokenService,
         ILogger<AuthenticationService> logger)
     {
         _tokenService = tokenService;
-        _userManagementService = userManagementService;
+        _userManager = userManager;
         _emailConfirmationService = emailConfirmationService;
         _refreshTokenService = refreshTokenService;
         _logger = logger;
@@ -42,7 +44,7 @@ public class AuthenticationService
         }
 
         // Get user roles and clinic information
-        var userRoles = await _userManagementService.GetUserRolesAsync(tokenEntity.User, cancellationToken);
+        var userRoles = await _userManager.GetRolesAsync(tokenEntity.User);
         
         // Clinic ID is stored directly on the User entity
         var clinicId = tokenEntity.User.ClinicId;
@@ -66,10 +68,10 @@ public class AuthenticationService
         {
             bool isEmail = email.Contains('@');
             var user = isEmail
-                ? await _userManagementService.GetUserByEmailAsync(email, cancellationToken)
-                : await _userManagementService.GetByUsernameAsync(email, cancellationToken);
+                ? await _userManager.FindByEmailAsync(email)
+                : await _userManager.FindByNameAsync(email);
 
-            if (user == null || !await _userManagementService.CheckPasswordAsync(user, password, cancellationToken))
+            if (user == null || !await _userManager.CheckPasswordAsync(user, password))
             {
                 _logger.LogWarning("Failed login attempt for: {Email} - Invalid credentials", email);
                 return null;
@@ -82,7 +84,7 @@ public class AuthenticationService
             }
 
             // Get user roles and clinic information
-            var userRoles = await _userManagementService.GetUserRolesAsync(user, cancellationToken);
+            var userRoles = await _userManager.GetRolesAsync(user);
             
             // Clinic ID is stored directly on the User entity
             var clinicId = user.ClinicId;

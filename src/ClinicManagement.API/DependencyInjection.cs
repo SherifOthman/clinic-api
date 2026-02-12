@@ -144,7 +144,6 @@ public static class DependencyInjection
         services.AddScoped<PhoneValidationService>();
 
         // User Management Services
-        services.AddScoped<UserManagementService>();
         services.AddScoped<UserRegistrationService>();
         services.AddScoped<CurrentUserService>();
 

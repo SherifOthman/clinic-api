@@ -21,7 +21,6 @@ public class ChangePasswordEndpoint : IEndpoint
     private static async Task<IResult> HandleAsync(
         Request request,
         CurrentUserService currentUserService,
-        UserManagementService userManagementService,
         UserManager<User> userManager,
         CancellationToken ct)
     {
@@ -29,11 +28,11 @@ public class ChangePasswordEndpoint : IEndpoint
         if (userId == null)
             return Results.Unauthorized();
 
-        var user = await userManagementService.GetUserByIdAsync(userId.Value, ct);
+        var user = await userManager.FindByIdAsync(userId.Value.ToString());
         if (user == null)
             return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
 
-        if (!await userManagementService.CheckPasswordAsync(user, request.CurrentPassword, ct))
+        if (!await userManager.CheckPasswordAsync(user, request.CurrentPassword))
             return Results.BadRequest(new { error = "Current password is incorrect", code = "INVALID_PASSWORD" });
 
         var result = await userManager.ChangePasswordAsync(

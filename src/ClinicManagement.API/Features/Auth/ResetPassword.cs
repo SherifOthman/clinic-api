@@ -1,4 +1,8 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Extensions;
+using ClinicManagement.API.Entities;
+using Microsoft.AspNetCore.Identity;
+
 namespace ClinicManagement.API.Features.Auth;
 
 public class ResetPasswordEndpoint : IEndpoint
@@ -17,20 +21,17 @@ public class ResetPasswordEndpoint : IEndpoint
 
     private static async Task<IResult> HandleAsync(
         Request request,
-        UserManagementService userManagementService,
+        UserManager<User> userManager,
         CancellationToken ct)
     {
-        var user = await userManagementService.GetUserByEmailAsync(request.Email, ct);
+        var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
             return Results.BadRequest(new { error = "Invalid reset token", code = "INVALID_TOKEN" });
 
         try
         {
-            await userManagementService.ResetPasswordAsync(
-                user,
-                request.Token,
-                request.NewPassword,
-                ct);
+            var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+            result.ThrowIfFailed();
 
             return Results.Ok(new { message = "Password reset successfully" });
         }

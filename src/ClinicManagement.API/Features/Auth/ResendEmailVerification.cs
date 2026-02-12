@@ -1,4 +1,7 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Entities;
+using Microsoft.AspNetCore.Identity;
+
 namespace ClinicManagement.API.Features.Auth;
 
 public class ResendEmailVerificationEndpoint : IEndpoint
@@ -17,11 +20,11 @@ public class ResendEmailVerificationEndpoint : IEndpoint
 
     private static async Task<IResult> HandleAsync(
         Request request,
-        UserManagementService userManagementService,
+        UserManager<User> userManager,
         EmailConfirmationService emailConfirmationService,
         CancellationToken ct)
     {
-        var user = await userManagementService.GetUserByEmailAsync(request.Email, ct);
+        var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
             return Results.BadRequest(new { error = "User not found", code = "NOT_FOUND" });
 
