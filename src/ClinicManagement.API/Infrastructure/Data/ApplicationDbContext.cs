@@ -240,7 +240,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
             !e.MedicalVisit.Appointment.IsDeleted);
         
         builder.Entity<Prescription>().HasQueryFilter(e => 
-            !e.MedicalVisit.Appointment.IsDeleted);
+            !e.Visit.Appointment.IsDeleted);
         
         // ===== NO SOFT DELETE (BaseEntity) - Only tenant filter where applicable =====
         
