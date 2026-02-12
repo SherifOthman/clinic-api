@@ -51,32 +51,27 @@ public class RegisterEndpoint : IEndpoint
     public record Request(
         [Required]
         [MaxLength(100)]
-        [DefaultValue("John")]
         string FirstName,
         
         [Required]
         [MaxLength(100)]
-        [DefaultValue("Doe")]
         string LastName,
         
         [Required]
         [MinLength(3)]
         [MaxLength(50)]
-        [DefaultValue("johndoe")]
         string UserName,
         
         [Required]
         [EmailAddress]
         [MaxLength(256)]
-        [DefaultValue("john.doe@example.com")]
         string Email,
         
         [Required]
         [MinLength(6)]
-        [DefaultValue("SecurePass123")]
         string Password,
-        
+
+        [Required]
         [MaxLength(20)]
-        [DefaultValue("+1234567890")]
-        string? PhoneNumber);
+        string PhoneNumber);
 }

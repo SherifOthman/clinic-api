@@ -1,4 +1,5 @@
 using ClinicManagement.API;
+using Scalar.AspNetCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -17,6 +18,7 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
     builder.Services.AddApi(builder.Configuration, builder.Environment);
+    
 
     var app = builder.Build();
 
@@ -41,6 +43,8 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseAppConfigurations();
+
+    // Scalar API Documentation (uses Swagger/OpenAPI document)
 
     Log.Information("Clinic Management API started successfully");
     app.Run();

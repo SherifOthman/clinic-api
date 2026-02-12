@@ -1,4 +1,3 @@
-using System.Text;
 using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Options;
@@ -8,9 +7,11 @@ using ClinicManagement.API.Infrastructure.Middleware;
 using ClinicManagement.API.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
+using System.Text;
 
 namespace ClinicManagement.API;
 
@@ -20,6 +21,10 @@ public static class DependencyInjection
     {
         // HTTP Context
         services.AddHttpContextAccessor();
+
+        // Enable Minimal API validation (.NET 10+)
+        // Data annotations are validated automatically - these should already be validated on frontend
+        services.AddValidation();
 
         // Caching
         AddCaching(services);
@@ -76,10 +81,10 @@ public static class DependencyInjection
     {
         services.AddIdentity<User, IdentityRole<Guid>>(options =>
         {
-            // Password settings
+            // Password settings - match frontend validation for consistency
             options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = false;
-            options.Password.RequireUppercase = false;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequiredLength = 6;
 
@@ -202,39 +207,8 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "Clinic Management API",
-                Version = "v1",
-                Description = "API for managing clinic operations including appointments, patients, billing, and more."
-            });
-
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
-                Name = "Authorization",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
-            });
-
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
-            });
-
+            // Use full type name to avoid schema ID conflicts
             options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
-            options.UseAllOfToExtendReferenceSchemas();
         });
     }
 
@@ -260,13 +234,14 @@ public static class DependencyInjection
         // Endpoints
         app.MapEndpoints();
 
-        // API Documentation
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
+        // API Documentation - Swagger
+        app.UseSwagger(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Clinic Management API v1");
-            options.RoutePrefix = "swagger";
+            options.RouteTemplate = "openapi/{documentName}.json";
         });
+
+        app.MapScalarApiReference();
+
 
         return app;
     }

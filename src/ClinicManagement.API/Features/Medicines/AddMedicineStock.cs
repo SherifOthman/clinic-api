@@ -1,6 +1,8 @@
 using ClinicManagement.API.Common;
-using ClinicManagement.API.Common.Exceptions;
+using ClinicManagement.API.Common.Extensions;
 using ClinicManagement.API.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.API.Features.Medicines;
@@ -26,6 +28,7 @@ public class AddMedicineStockEndpoint : IEndpoint
         ApplicationDbContext db,
         CurrentUserService currentUser,
         ILogger<AddMedicineStockEndpoint> logger,
+        HttpContext httpContext,
         CancellationToken ct)
     {
         // Load medicine - ClinicId filter is automatic via global query filter
@@ -38,40 +41,39 @@ public class AddMedicineStockEndpoint : IEndpoint
 
         var previousStock = medicine.TotalStripsInStock;
 
-        try
+        // Business logic validation
+        if (medicine.IsDiscontinued)
         {
-            // Business logic validation
-            if (medicine.IsDiscontinued)
-                throw new DomainException("MEDICINE_DISCONTINUED", "Cannot add stock to discontinued medicine");
-
-            // Update stock
-            medicine.TotalStripsInStock += request.Strips;
-
-            await db.SaveChangesAsync(ct);
-
-            logger.LogInformation(
-                "Medicine stock added: {MedicineId} {MedicineName} PreviousStock={PreviousStock} Added={AddedStrips} NewStock={NewStock} Reason={Reason} by {UserId}",
-                medicineId, medicine.Name, previousStock, request.Strips, medicine.TotalStripsInStock, request.Reason, currentUser.UserId);
-
-            var response = new Response(
-                medicine.Id,
-                medicine.Name,
-                previousStock,
-                request.Strips,
-                medicine.TotalStripsInStock,
-                medicine.FullBoxesInStock,
-                medicine.RemainingStrips,
-                $"Successfully added {request.Strips} strips to {medicine.Name}");
-
-            return Results.Ok(response);
+            var modelState = new ModelStateDictionary();
+            modelState.AddGeneralError("MEDICINE_DISCONTINUED");
+            
+            logger.LogWarning(
+                "Attempted to add stock to discontinued medicine {MedicineId}",
+                medicineId);
+            
+            return modelState.ToValidationProblem("MEDICINE_DISCONTINUED", httpContext);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Failed to add medicine stock {MedicineId} Strips={Strips} by {UserId}",
-                medicineId, request.Strips, currentUser.UserId);
-            return ex.HandleDomainException();
-        }
+
+        // Update stock
+        medicine.TotalStripsInStock += request.Strips;
+
+        await db.SaveChangesAsync(ct);
+
+        logger.LogInformation(
+            "Medicine stock added: {MedicineId} {MedicineName} PreviousStock={PreviousStock} Added={AddedStrips} NewStock={NewStock} Reason={Reason} by {UserId}",
+            medicineId, medicine.Name, previousStock, request.Strips, medicine.TotalStripsInStock, request.Reason, currentUser.UserId);
+
+        var response = new Response(
+            medicine.Id,
+            medicine.Name,
+            previousStock,
+            request.Strips,
+            medicine.TotalStripsInStock,
+            medicine.FullBoxesInStock,
+            medicine.RemainingStrips,
+            $"Successfully added {request.Strips} strips to {medicine.Name}");
+
+        return Results.Ok(response);
     }
 
     public record Request(

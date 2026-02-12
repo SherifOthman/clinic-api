@@ -1,6 +1,10 @@
 # Clinic Management API
 
-A comprehensive clinic management system built with .NET 10, featuring **Vertical Slice Architecture**, **Domain-Driven Design**, and **Multi-Tenancy**.
+A comprehensive clinic management system built with .NET 10, featuring **Vertical Slice Architecture** and **Multi-Tenancy**.
+
+## 🌐 Live Demo
+
+- **API Documentation**: http://clinic-api.runasp.net/scalar/v1
 
 ## Project Structure
 
@@ -13,16 +17,14 @@ clinic-api/
 │       ├── Infrastructure/             # Data access, services, middleware
 │       └── Common/                     # Shared utilities, exceptions, enums
 ├── tests/
-│   ├── ClinicManagement.Tests/        # Unit tests (120 tests)
+│   ├── ClinicManagement.Tests/        # Unit tests
 │   │   ├── Domain/                     # Entity business logic tests
 │   │   ├── Services/                   # Service layer tests
 │   │   ├── Extensions/                 # Extension method tests
 │   │   └── Validation/                 # Validation tests
-│   └── ClinicManagement.IntegrationTests/  # Integration tests (38 tests)
+│   └── ClinicManagement.IntegrationTests/  # Integration tests
 │       ├── Auth/                       # Authentication flow tests
-│       ├── Patients/                   # Patient CRUD & multi-tenancy tests
-│       ├── Appointments/               # Appointment workflow tests
-│       └── Invoices/                   # Invoice & payment tests
+│       └── Helpers/                    # Test utilities
 └── ClinicManagement.sln
 ```
 
@@ -31,9 +33,8 @@ clinic-api/
 ### Core Patterns
 
 1. **Vertical Slice Architecture**: Features organized as independent slices
-2. **Domain-Driven Design**: Rich domain models with business logic
-3. **Multi-Tenancy**: Automatic clinic-based data isolation
-4. **Soft Delete**: Audit trail with soft delete pattern
+2. **Multi-Tenancy**: Automatic clinic-based data isolation
+3. **Soft Delete**: Audit trail with soft delete pattern
 
 ### Feature Areas
 
@@ -45,32 +46,49 @@ src/ClinicManagement.API/Features/
 ├── Invoices/                      # 4 endpoints
 ├── Payments/                      # 2 endpoints
 ├── Medicines/                     # 5 endpoints
+├── MedicalServices/               # 2 endpoints
+├── MedicalSupplies/               # 2 endpoints
 ├── Locations/                     # 3 endpoints (bilingual)
-└── ...                            # Other features
+├── ChronicDiseases/               # 2 endpoints
+├── PatientChronicDiseases/        # 2 endpoints
+├── Measurements/                  # 1 endpoint
+├── Specializations/               # 2 endpoints
+├── SubscriptionPlans/             # 1 endpoint
+└── Onboarding/                    # 1 endpoint
 ```
 
 ### Domain Entities
 
 ```
 src/ClinicManagement.API/Entities/
-├── Appointment/
-├── Billing/
-├── Clinic/
-│   ├── Identity/
-│   ├── Inventory/
-│   ├── Medical/
-│   ├── Patient/
-│   └── Reference/
-├── Common/                        # Shared code
-│   ├── Constants/                 # ErrorCodes, Roles
-│   ├── Enums/                     # 15 domain enums
-│   ├── Exceptions/                # 12 domain exceptions
-│   └── Extensions/
-├── Infrastructure/
-│   ├── Data/                      # EF Core, 35 configurations
-│   ├── Services/                  # 18 services
-│   └── Middleware/                # 2 middleware
-└── Program.cs
+├── Appointment/                   # Appointment, AppointmentType
+├── Billing/                       # Invoice, InvoiceItem, Payment
+├── Clinic/                        # Clinic, ClinicBranch, DoctorWorkingDay
+├── Identity/                      # User, Doctor, Receptionist, RefreshToken
+├── Inventory/                     # Medicine, MedicalService, MedicalSupply
+├── Medical/                       # MedicalVisit, Prescription, LabTest, etc.
+├── Patient/                       # Patient, PatientAllergy, PatientChronicDisease
+└── Reference/                     # ChronicDisease, Specialization, SubscriptionPlan
+```
+
+### Infrastructure
+
+```
+src/ClinicManagement.API/Infrastructure/
+├── Data/                          # EF Core, 36 configurations
+│   ├── ApplicationDbContext.cs
+│   ├── Configurations/
+│   └── Migrations/
+├── Services/                      # 18 services
+│   ├── AuthenticationService.cs
+│   ├── TokenService.cs
+│   ├── RefreshTokenService.cs
+│   ├── EmailConfirmationService.cs
+│   ├── GeoNamesService.cs
+│   └── ...
+└── Middleware/                    # 2 middleware
+    ├── GlobalExceptionMiddleware.cs
+    └── JwtCookieMiddleware.cs
 ```
 
 ### Multi-Tenancy
@@ -96,7 +114,7 @@ var allPatients = await db.Patients.IgnoreQueryFilters().ToListAsync();
 - ✅ **Payments**: Multiple methods, partial payments
 - ✅ **Locations**: Bilingual (Arabic/English), cached
 - ✅ **Error Handling**: RFC 7807 with i18n error codes
-- ✅ **API Docs**: Swagger with JWT support
+- ✅ **API Docs**: Scalar API documentation
 
 ## Technology Stack
 
@@ -104,9 +122,9 @@ var allPatients = await db.Patients.IgnoreQueryFilters().ToListAsync();
 - **EF Core 10.0** - ORM with SQL Server
 - **ASP.NET Core Identity** - User management
 - **JWT + Refresh Tokens** - Authentication
-- **Swagger** - API documentation
+- **Scalar.AspNetCore** - API documentation
+- **Swashbuckle.AspNetCore** - OpenAPI generation
 - **Serilog** - Structured logging
-- **Hangfire** - Background jobs
 - **libphonenumber** - Phone validation
 - **MailKit** - Email (SMTP)
 - **GeoNames API** - Location data
@@ -130,7 +148,18 @@ Update `appsettings.json`:
   "Jwt": {
     "Key": "your-secret-key-min-32-characters-long",
     "Issuer": "ClinicManagementAPI",
-    "Audience": "ClinicManagementClient"
+    "Audience": "ClinicManagementClient",
+    "AccessTokenExpirationMinutes": 15,
+    "RefreshTokenExpirationDays": 7
+  },
+  "Smtp": {
+    "Host": "smtp.gmail.com",
+    "Port": 587,
+    "Username": "your-email@gmail.com",
+    "Password": "your-app-password"
+  },
+  "GeoNames": {
+    "Username": "your-geonames-username"
   }
 }
 ```
@@ -140,17 +169,17 @@ Update `appsettings.json`:
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project ClinicManagement.API
+dotnet run --project src/ClinicManagement.API
 ```
 
 - API: `http://localhost:5000`
-- Swagger: `http://localhost:5000/swagger`
+- Scalar API Docs: `http://localhost:5000/scalar/v1`
 
 Database migrations run automatically on startup.
 
 ## API Documentation
 
-Swagger UI available at `/swagger`
+Scalar API documentation available at `/scalar/v1`
 
 ### Error Handling (RFC 7807)
 
@@ -169,13 +198,67 @@ Error codes support i18n (Arabic/English).
 
 ### Key Endpoints
 
-- `POST /api/auth/register` - Register
-- `POST /api/auth/login` - Login
-- `GET /api/patients` - List patients
+#### Authentication
+
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login and get tokens
+- `POST /api/auth/logout` - Logout and revoke tokens
+- `GET /api/auth/me` - Get current user info
+- `GET /api/auth/check-email` - Check email availability
+- `GET /api/auth/check-username` - Check username availability
+- `POST /api/auth/change-password` - Change password
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with token
+
+#### Patients
+
+- `GET /api/patients` - List patients (paginated, searchable)
+- `POST /api/patients` - Create patient
+- `GET /api/patients/{id}` - Get patient details
+- `PUT /api/patients/{id}` - Update patient
+- `DELETE /api/patients/{id}` - Soft delete patient
+
+#### Appointments
+
+- `GET /api/appointments` - List appointments
 - `POST /api/appointments` - Create appointment
+- `GET /api/appointments/{id}` - Get appointment details
+- `POST /api/appointments/{id}/confirm` - Confirm appointment
+- `POST /api/appointments/{id}/complete` - Complete appointment
+- `POST /api/appointments/{id}/cancel` - Cancel appointment
+
+#### Invoices & Payments
+
+- `GET /api/invoices/patient/{patientId}` - List patient invoices
 - `POST /api/invoices` - Create invoice
+- `GET /api/invoices/{id}` - Get invoice details
+- `POST /api/invoices/{id}/cancel` - Cancel invoice
 - `POST /api/invoices/{id}/payments` - Record payment
-- `GET /api/locations/countries` - Get countries (bilingual)
+- `GET /api/invoices/{id}/payments` - Get invoice payments
+
+#### Medicines
+
+- `GET /api/medicines` - List medicines
+- `POST /api/medicines` - Create medicine
+- `GET /api/medicines/{id}` - Get medicine details
+- `POST /api/medicines/{id}/stock/add` - Add stock
+- `POST /api/medicines/{id}/stock/remove` - Remove stock
+
+#### Locations
+
+- `GET /api/locations/countries` - Get countries (cached 24h)
+- `GET /api/locations/states?countryId={id}` - Get states
+- `GET /api/locations/cities?stateId={id}` - Get cities
+
+## Project Statistics
+
+- **15 Feature Areas** - Organized by business capability
+- **53 Endpoints** - RESTful API endpoints
+- **44 Domain Entities** - Rich domain models
+- **36 Entity Configurations** - EF Core mappings
+- **18 Infrastructure Services** - Cross-cutting concerns
+- **15 Domain Enums** - Type-safe enumerations
+- **2 Middleware** - Global exception handling, JWT cookie handling
 
 ## License
 

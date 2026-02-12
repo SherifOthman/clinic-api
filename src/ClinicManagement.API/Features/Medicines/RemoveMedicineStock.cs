@@ -1,6 +1,8 @@
 using ClinicManagement.API.Common;
-using ClinicManagement.API.Common.Exceptions;
+using ClinicManagement.API.Common.Extensions;
 using ClinicManagement.API.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.API.Features.Medicines;
@@ -26,6 +28,7 @@ public class RemoveMedicineStockEndpoint : IEndpoint
         ApplicationDbContext db,
         CurrentUserService currentUser,
         ILogger<RemoveMedicineStockEndpoint> logger,
+        HttpContext httpContext,
         CancellationToken ct)
     {
         // Load medicine - ClinicId filter is automatic via global query filter
@@ -38,46 +41,39 @@ public class RemoveMedicineStockEndpoint : IEndpoint
 
         var previousStock = medicine.TotalStripsInStock;
 
-        try
+        // Business logic validation
+        if (request.Strips > medicine.TotalStripsInStock)
         {
-            // Business logic validation
-            if (request.Strips > medicine.TotalStripsInStock)
-            {
-                var ex = new DomainException("INSUFFICIENT_STOCK", 
-                    $"Insufficient stock. Requested: {request.Strips}, Available: {medicine.TotalStripsInStock}");
-                ex.Data["requested"] = request.Strips;
-                ex.Data["available"] = medicine.TotalStripsInStock;
-                throw ex;
-            }
-
-            // Update stock
-            medicine.TotalStripsInStock -= request.Strips;
-
-            await db.SaveChangesAsync(ct);
-
+            var modelState = new ModelStateDictionary();
+            modelState.AddGeneralError("INSUFFICIENT_STOCK");
+            
             logger.LogWarning(
-                "Medicine stock removed: {MedicineId} {MedicineName} PreviousStock={PreviousStock} Removed={RemovedStrips} NewStock={NewStock} Reason={Reason} by {UserId}",
-                medicineId, medicine.Name, previousStock, request.Strips, medicine.TotalStripsInStock, request.Reason, currentUser.UserId);
-
-            var response = new Response(
-                medicine.Id,
-                medicine.Name,
-                previousStock,
-                -request.Strips, // Negative to indicate removal
-                medicine.TotalStripsInStock,
-                medicine.FullBoxesInStock,
-                medicine.RemainingStrips,
-                $"Successfully removed {request.Strips} strips from {medicine.Name}");
-
-            return Results.Ok(response);
+                "Insufficient stock for medicine {MedicineId}: Requested={Requested}, Available={Available}",
+                medicineId, request.Strips, medicine.TotalStripsInStock);
+            
+            return modelState.ToValidationProblem("INSUFFICIENT_STOCK", httpContext);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Failed to remove medicine stock {MedicineId} Strips={Strips} by {UserId}",
-                medicineId, request.Strips, currentUser.UserId);
-            return ex.HandleDomainException();
-        }
+
+        // Update stock
+        medicine.TotalStripsInStock -= request.Strips;
+
+        await db.SaveChangesAsync(ct);
+
+        logger.LogWarning(
+            "Medicine stock removed: {MedicineId} {MedicineName} PreviousStock={PreviousStock} Removed={RemovedStrips} NewStock={NewStock} Reason={Reason} by {UserId}",
+            medicineId, medicine.Name, previousStock, request.Strips, medicine.TotalStripsInStock, request.Reason, currentUser.UserId);
+
+        var response = new Response(
+            medicine.Id,
+            medicine.Name,
+            previousStock,
+            -request.Strips, // Negative to indicate removal
+            medicine.TotalStripsInStock,
+            medicine.FullBoxesInStock,
+            medicine.RemainingStrips,
+            $"Successfully removed {request.Strips} strips from {medicine.Name}");
+
+        return Results.Ok(response);
     }
 
     public record Request(
