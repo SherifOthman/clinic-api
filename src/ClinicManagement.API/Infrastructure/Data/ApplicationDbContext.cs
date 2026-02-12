@@ -236,6 +236,12 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         builder.Entity<MedicalVisitRadiology>().HasQueryFilter(e => 
             !e.MedicalVisit.Appointment.IsDeleted);
         
+        builder.Entity<MedicalVisitMeasurement>().HasQueryFilter(e => 
+            !e.MedicalVisit.Appointment.IsDeleted);
+        
+        builder.Entity<Prescription>().HasQueryFilter(e => 
+            !e.MedicalVisit.Appointment.IsDeleted);
+        
         // ===== NO SOFT DELETE (BaseEntity) - Only tenant filter where applicable =====
         
         // Tenant-scoped BaseEntity entities
