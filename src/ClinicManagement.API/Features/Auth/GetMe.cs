@@ -40,14 +40,10 @@ public class GetMeEndpoint : IEndpoint
             user.Email!,
             user.PhoneNumber,
             user.ProfileImageUrl,
-            user.ProfileImageUpdatedAt,
             roles.ToList(),
             user.EmailConfirmed,
-            user.IsActive,
             user.OnboardingCompleted,
-            user.ClinicName,
-            user.CreatedAt,
-            user.UpdatedAt
+            user.ClinicId
         );
 
         return Results.Ok(response);
@@ -61,12 +57,8 @@ public class GetMeEndpoint : IEndpoint
         string Email,
         string? PhoneNumber,
         string? ProfileImageUrl,
-        DateTime? ProfileImageUpdatedAt,
         List<string> Roles,
         bool EmailConfirmed,
-        bool IsActive,
-        bool? OnboardingCompleted,
-        string? ClinicName,
-        DateTime CreatedAt,
-        DateTime UpdatedAt);
+        bool OnboardingCompleted,
+        Guid? ClinicId);
 }
