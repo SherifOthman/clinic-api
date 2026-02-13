@@ -40,7 +40,7 @@ public class CheckEmailAvailabilityEndpoint : IEndpoint
         ));
     }
 
-    public record Response(
-        bool IsAvailable,
-        string? Message);
+        public record Response(
+            bool IsAvailable,
+            string? Message);
 }
