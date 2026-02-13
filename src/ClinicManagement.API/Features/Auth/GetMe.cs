@@ -42,8 +42,7 @@ public class GetMeEndpoint : IEndpoint
             user.ProfileImageUrl,
             roles.ToList(),
             user.EmailConfirmed,
-            user.OnboardingCompleted,
-            user.ClinicId
+            user.OnboardingCompleted
         );
 
         return Results.Ok(response);
@@ -59,6 +58,5 @@ public class GetMeEndpoint : IEndpoint
         string? ProfileImageUrl,
         List<string> Roles,
         bool EmailConfirmed,
-        bool OnboardingCompleted,
-        Guid? ClinicId);
+        bool OnboardingCompleted);
 }

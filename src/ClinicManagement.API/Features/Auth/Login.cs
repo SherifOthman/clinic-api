@@ -18,7 +18,7 @@ public class LoginEndpoint : IEndpoint
             .WithDescription("Authenticates user and returns access token with refresh token in cookie")
             .WithTags("Authentication")
             .Accepts<Request>("application/json")
-            .Produces<Response>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest);
     }
 
@@ -31,20 +31,12 @@ public class LoginEndpoint : IEndpoint
         CookieService cookieService,
         CancellationToken ct)
     {
+   
         // Find user by email
         var user = await userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-            return Results.BadRequest(new ApiProblemDetails
-            {
-                Code = ErrorCodes.INVALID_CREDENTIALS,
-                Title = "Invalid Credentials",
-                Status = StatusCodes.Status400BadRequest,
-                Detail = "Invalid email or password"
-            });
 
         // Check password
-        var isPasswordValid = await userManager.CheckPasswordAsync(user, request.Password);
-        if (!isPasswordValid)
+        if (user == null || !(await userManager.CheckPasswordAsync(user, request.Password)))
             return Results.BadRequest(new ApiProblemDetails
             {
                 Code = ErrorCodes.INVALID_CREDENTIALS,
@@ -75,22 +67,8 @@ public class LoginEndpoint : IEndpoint
         cookieService.SetAccessTokenCookie(accessToken);
         cookieService.SetRefreshTokenCookie(refreshToken.Token);
 
-        var response = new Response(
-            accessToken,
-            refreshToken.Token,
-            refreshToken.ExpiryTime,
-            new UserInfo(
-                user.Id,
-                user.Email!,
-                user.FirstName,
-                user.LastName,
-                user.ProfileImageUrl,
-                user.ClinicId,
-                role
-            )
-        );
 
-        return Results.Ok(response);
+        return Results.NoContent();
     }
 
     public record Request(
@@ -99,22 +77,7 @@ public class LoginEndpoint : IEndpoint
         string Email,
         
         [Required]
-        string Password,
-        
-        bool RememberMe);
+        string Password);
 
-    public record Response(
-        string AccessToken,
-        string RefreshToken,
-        DateTime ExpiresAt,
-        UserInfo User);
 
-    public record UserInfo(
-        Guid Id,
-        string Email,
-        string FirstName,
-        string LastName,
-        string? ProfileImageUrl,
-        Guid? ClinicId,
-        string Role);
 }
