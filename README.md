@@ -20,7 +20,6 @@ A comprehensive multi-tenant clinic management system built with .NET 10, demons
 
 - **Vertical Slice Architecture** - Features organized as independent, self-contained slices for better maintainability and team scalability
 - **Multi-Tenancy** - Automatic data isolation using EF Core global query filters, ensuring complete separation between clinics
-- **Rich Domain Models** - Entities with business logic and calculated properties
 - **Soft Delete Pattern** - Complete audit trail with CreatedBy, UpdatedAt, DeletedBy for compliance and data recovery
 
 ### Security & Authentication
