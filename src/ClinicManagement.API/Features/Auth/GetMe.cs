@@ -31,16 +31,23 @@ public class GetMeEndpoint : IEndpoint
             return Results.Unauthorized();
 
         var roles = await userManager.GetRolesAsync(user);
-        var role = roles.FirstOrDefault() ?? "User";
 
         var response = new Response(
             user.Id,
-            user.Email!,
+            user.UserName!,
             user.FirstName,
             user.LastName,
+            user.Email!,
+            user.PhoneNumber,
             user.ProfileImageUrl,
-            user.ClinicId,
-            role
+            user.ProfileImageUpdatedAt,
+            roles.ToList(),
+            user.EmailConfirmed,
+            user.IsActive,
+            user.OnboardingCompleted,
+            user.ClinicName,
+            user.CreatedAt,
+            user.UpdatedAt
         );
 
         return Results.Ok(response);
@@ -48,10 +55,18 @@ public class GetMeEndpoint : IEndpoint
 
     public record Response(
         Guid Id,
-        string Email,
+        string UserName,
         string FirstName,
         string LastName,
+        string Email,
+        string? PhoneNumber,
         string? ProfileImageUrl,
-        Guid? ClinicId,
-        string Role);
+        DateTime? ProfileImageUpdatedAt,
+        List<string> Roles,
+        bool EmailConfirmed,
+        bool IsActive,
+        bool? OnboardingCompleted,
+        string? ClinicName,
+        DateTime CreatedAt,
+        DateTime UpdatedAt);
 }
