@@ -5,7 +5,14 @@ A comprehensive multi-tenant clinic management system built with .NET 10, demons
 ## 🌐 Live Demo
 
 - **API Documentation**: http://clinic-api.runasp.net/scalar/v1
-- **Frontend Dashboard**: https://clinic-dashboard-ecru.vercel.app
+- **Dashboard**: https://clinic-dashboard-ecru.vercel.app
+- **Website**: https://clinic-website-lime.vercel.app
+
+## 📦 Repositories
+
+- **Backend API**: https://github.com/SherifOthman/clinic-api
+- **Dashboard**: https://github.com/SherifOthman/clinic-dashboard
+- **Website**: https://github.com/SherifOthman/clinic-website
 
 ## Key Technical Achievements
 
