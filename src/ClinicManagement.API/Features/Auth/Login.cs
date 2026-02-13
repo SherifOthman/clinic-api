@@ -71,7 +71,8 @@ public class LoginEndpoint : IEndpoint
         var accessToken = tokenService.GenerateAccessToken(user, roles);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
 
-        // Set refresh token in cookie
+        // Set tokens in cookies
+        cookieService.SetAccessTokenCookie(accessToken);
         cookieService.SetRefreshTokenCookie(refreshToken.Token);
 
         var response = new Response(
