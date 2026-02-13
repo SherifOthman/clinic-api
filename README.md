@@ -1,110 +1,66 @@
 # Clinic Management API
 
-A comprehensive clinic management system built with .NET 10, featuring **Vertical Slice Architecture** and **Multi-Tenancy**.
+A comprehensive multi-tenant clinic management system built with .NET 10, demonstrating enterprise-grade architecture and modern development practices.
 
 ## 🌐 Live Demo
 
 - **API Documentation**: http://clinic-api.runasp.net/scalar/v1
 - **Frontend Dashboard**: https://clinic-dashboard-ecru.vercel.app
 
-## Architecture & Design Patterns
+## Key Technical Achievements
 
-### Vertical Slice Architecture
+### Architecture & Design
 
-Features are organized as independent, self-contained slices rather than traditional layered architecture. Each feature owns its complete vertical stack from endpoint to database, promoting high cohesion and low coupling.
+- **Vertical Slice Architecture** - Features organized as independent, self-contained slices for better maintainability and team scalability
+- **Multi-Tenancy** - Automatic data isolation using EF Core global query filters, ensuring complete separation between clinics
+- **Domain-Driven Design** - Rich domain models with business logic, aggregate roots, and value objects
+- **Soft Delete Pattern** - Complete audit trail with CreatedBy, UpdatedAt, DeletedBy for compliance and data recovery
 
-### Multi-Tenancy
+### Security & Authentication
 
-Automatic clinic-based data isolation using EF Core global query filters. All queries are automatically filtered by ClinicId from JWT claims, ensuring complete data isolation between clinics.
+- JWT-based authentication with refresh tokens in HTTP-only cookies
+- Role-based authorization with multiple user types
+- Email verification workflow
+- Password reset with secure token validation
+- Multi-tenant data isolation at the database level
 
-### Domain-Driven Design
+### API Design & Documentation
 
-- Rich domain models with business logic encapsulated in entities
-- Soft delete pattern with full audit trail (CreatedBy, UpdatedAt, DeletedBy)
-- Aggregate roots managing entity relationships
-- Value objects for complex types
-
-### API Design
-
-- RESTful endpoints following HTTP semantics
+- RESTful API following HTTP semantics and best practices
 - RFC 7807 Problem Details for standardized error responses
-- Scalar API documentation with OpenAPI/Swagger
-- Versioned API with backward compatibility considerations
+- Interactive API documentation with Scalar/OpenAPI
+- Internationalization support with 40+ error codes for Arabic/English
 
-## Core Features
+### Business Features
 
-### Authentication & Authorization
-
-- JWT access tokens (60min) + refresh tokens (30 days) in HTTP-only cookies
-- Email confirmation required before login
-- Password reset via email with token validation
-- Role-based authorization (SuperAdmin, ClinicOwner, Doctor, Receptionist)
-- Multi-tenancy with automatic clinic-based data isolation
-
-### Patient Management
-
-- Complete patient profiles with demographics and medical history
-- Multiple phone numbers per patient with primary designation
-- Chronic disease associations and allergy tracking
-- Pagination, search, and filtering capabilities
-- Soft delete with audit trail
-
-### Appointment System
-
-- Appointment scheduling with queue management
-- State machine: Pending → Confirmed → Completed/Cancelled
-- Doctor working day scheduling
-- Appointment type configuration with pricing per branch
-
-### Billing & Payments
-
-- Flexible invoices with medicines, services, and supplies
-- Discount and tax support with automatic calculations
-- Multiple payment methods with partial payment tracking
-- Invoice status workflow: Draft → Issued → Paid/Cancelled
-- Overdue tracking and payment history
-
-### Inventory Management
-
-- Medicine stock tracking with box/strip system
-- Expiry date monitoring and discontinued flag
-- Medical services and supplies catalog
-- Stock movement tracking (add/remove with reasons)
-- Low stock alerts
-
-### Location Services
-
-- Bilingual location data (Arabic/English) via GeoNames API
-- Countries, states, and cities with 24-hour caching
-- GeoName ID-based location references
-
-### Error Handling & Internationalization
-
-- RFC 7807 Problem Details with i18n error codes
-- 40+ predefined error codes for frontend translation
-- Structured error responses with trace IDs for debugging
-- Support for Arabic and English error messages
+- **Patient Management** - Complete profiles, medical history, chronic diseases, multiple contacts
+- **Appointment System** - Scheduling with state machine (Pending → Confirmed → Completed/Cancelled)
+- **Billing & Payments** - Flexible invoicing with discounts, taxes, partial payments, and overdue tracking
+- **Inventory Management** - Medicine stock tracking with expiry monitoring and low stock alerts
+- **Location Services** - Bilingual location data (Arabic/English) with caching strategy
 
 ## Technology Stack
 
-- **.NET 10.0** - Latest framework with minimal APIs
-- **EF Core 10.0** - ORM with SQL Server, 36 entity configurations
-- **ASP.NET Core Identity** - User management and authentication
-- **JWT + Refresh Tokens** - Secure authentication with HTTP-only cookies
-- **Scalar.AspNetCore** - Modern API documentation
-- **Serilog** - Structured logging with file and console sinks
-- **libphonenumber** - International phone number validation
-- **MailKit** - Email service for notifications
+- **.NET 10** - Latest framework with minimal APIs
+- **Entity Framework Core 10** - ORM with SQL Server
+- **ASP.NET Core Identity** - User management
+- **JWT + Refresh Tokens** - Secure authentication
+- **Serilog** - Structured logging
+- **Scalar/Swagger** - API documentation
+- **MailKit** - Email notifications
 - **GeoNames API** - Location data integration
 
-## Project Statistics
+## What This Demonstrates
 
-- **15 Feature Areas** - Organized by business capability
-- **53 RESTful Endpoints** - Complete CRUD operations
-- **44 Domain Entities** - Rich domain models with business logic
-- **18 Infrastructure Services** - Cross-cutting concerns
-- **15 Domain Enums** - Type-safe enumerations
-- **2 Custom Middleware** - Global exception handling, JWT cookie processing
+- Modern .NET development with latest framework features
+- Clean architecture principles and separation of concerns
+- Database design with proper relationships and constraints
+- Security best practices and authentication patterns
+- API design and documentation standards
+- Multi-tenancy implementation
+- Error handling and logging strategies
+- Integration with external services
+- Production deployment and database migrations
 
 ## License
 
