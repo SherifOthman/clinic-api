@@ -100,6 +100,8 @@ public class UploadProfileImageEndpoint : IEndpoint
                 });
             }
 
+            var roles = await userManager.GetRolesAsync(user);
+
             var response = new Response(
                 user.Id,
                 user.Email!,
@@ -108,6 +110,7 @@ public class UploadProfileImageEndpoint : IEndpoint
                 user.LastName,
                 user.PhoneNumber,
                 user.ProfileImageUrl,
+                roles.ToList(),
                 user.ClinicId,
                 user.EmailConfirmed,
                 user.OnboardingCompleted
@@ -137,6 +140,7 @@ public class UploadProfileImageEndpoint : IEndpoint
         string LastName,
         string? PhoneNumber,
         string? ProfileImageUrl,
+        List<string> Roles,
         Guid? ClinicId,
         bool EmailConfirmed,
         bool OnboardingCompleted);

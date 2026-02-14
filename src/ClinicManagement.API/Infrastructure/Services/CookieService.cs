@@ -1,7 +1,6 @@
 using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Options;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,11 +10,16 @@ public class CookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CookieSettings _cookieSettings;
+    private readonly ILogger<CookieService> _logger;
 
-    public CookieService(IHttpContextAccessor httpContextAccessor, IOptions<CookieSettings> cookieSettings)
+    public CookieService(
+        IHttpContextAccessor httpContextAccessor, 
+        IOptions<CookieSettings> cookieSettings,
+        ILogger<CookieService> logger)
     {
         _httpContextAccessor = httpContextAccessor;
         _cookieSettings = cookieSettings.Value;
+        _logger = logger;
     }
 
     public void SetAccessTokenCookie(string accessToken)
@@ -28,9 +32,7 @@ public class CookieService
         var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromMinutes(_cookieSettings.ExpiryInMinutes));
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.AccessToken, accessToken, cookieOptions);
         
-        var context = _httpContextAccessor.HttpContext;
-        var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
-        logger?.LogInformation("Access token cookie set: Secure={Secure}, SameSite={SameSite}, HttpOnly={HttpOnly}, Expiry={Expiry}", 
+        _logger.LogInformation("Access token cookie set: Secure={Secure}, SameSite={SameSite}, HttpOnly={HttpOnly}, Expiry={Expiry}", 
             cookieOptions.Secure, cookieOptions.SameSite, cookieOptions.HttpOnly, cookieOptions.Expires);
     }
 
@@ -50,8 +52,7 @@ public class CookieService
         var context = _httpContextAccessor.HttpContext;
         var token = context?.Request.Cookies[CookieConstants.AccessToken];
         
-        var logger = context?.RequestServices.GetService<ILogger<CookieService>>();
-        logger?.LogInformation("Access token cookie retrieval: Found={Found}, Origin={Origin}", 
+        _logger.LogInformation("Access token cookie retrieval: Found={Found}, Origin={Origin}", 
             !string.IsNullOrEmpty(token), context?.Request.Headers.Origin.FirstOrDefault() ?? "none");
             
         return token;
@@ -72,8 +73,7 @@ public class CookieService
         context.Response.Cookies.Append(CookieConstants.AccessToken, "", expiredOptions);
         context.Response.Cookies.Append(CookieConstants.RefreshToken, "", expiredOptions);
         
-        var logger = context.RequestServices.GetService<ILogger<CookieService>>();
-        logger?.LogInformation("Authentication cookies cleared");
+        _logger.LogInformation("Authentication cookies cleared");
     }
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)

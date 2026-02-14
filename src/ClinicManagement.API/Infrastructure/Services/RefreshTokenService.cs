@@ -38,11 +38,17 @@ public class RefreshTokenService
         var token = Convert.ToBase64String(randomBytes);
 
         var now = _dateTimeProvider.UtcNow;
+        
+        // Use minutes if specified (for testing), otherwise use days (for production)
+        var expiryTime = _jwtOptions.RefreshTokenExpirationMinutes.HasValue
+            ? now.AddMinutes(_jwtOptions.RefreshTokenExpirationMinutes.Value)
+            : now.AddDays(_jwtOptions.RefreshTokenExpirationDays);
+        
         var refreshToken = new RefreshToken
         {
             Token = token,
             UserId = userId,
-            ExpiryTime = now.AddDays(_jwtOptions.RefreshTokenExpirationDays),
+            ExpiryTime = expiryTime,
             CreatedAt = now,
             CreatedByIp = ipAddress ?? _currentUserService.IpAddress
         };
@@ -50,8 +56,8 @@ public class RefreshTokenService
         _db.RefreshTokens.Add(refreshToken);
         await _db.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Generated refresh token for user {UserId} from IP {IpAddress}", 
-            userId, refreshToken.CreatedByIp);
+        _logger.LogInformation("Generated refresh token for user {UserId} from IP {IpAddress}, expires in {ExpiryMinutes} minutes", 
+            userId, refreshToken.CreatedByIp, (expiryTime - now).TotalMinutes);
         return refreshToken;
     }
 
@@ -59,6 +65,7 @@ public class RefreshTokenService
     {
         var now = _dateTimeProvider.UtcNow;
         return await _db.RefreshTokens
+            .Include(rt => rt.User) // Include User navigation property for token refresh
             .FirstOrDefaultAsync(rt => 
                 rt.Token == token && 
                 !rt.IsRevoked && 

@@ -56,6 +56,8 @@ public class UpdateProfileEndpoint : IEndpoint
             });
         }
 
+        var roles = await userManager.GetRolesAsync(user);
+
         var response = new Response(
             user.Id,
             user.Email!,
@@ -64,6 +66,7 @@ public class UpdateProfileEndpoint : IEndpoint
             user.LastName,
             user.PhoneNumber,
             user.ProfileImageUrl,
+            roles.ToList(),
             user.ClinicId,
             user.EmailConfirmed,
             user.OnboardingCompleted
@@ -92,6 +95,7 @@ public class UpdateProfileEndpoint : IEndpoint
         string LastName,
         string? PhoneNumber,
         string? ProfileImageUrl,
+        List<string> Roles,
         Guid? ClinicId,
         bool EmailConfirmed,
         bool OnboardingCompleted);

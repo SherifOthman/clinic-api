@@ -129,10 +129,20 @@ public static class DependencyInjection
             {
                 OnMessageReceived = context =>
                 {
-                    var token = context.Request.Cookies["accessToken"];
-                    if (!string.IsNullOrEmpty(token))
+                    // Check Authorization header first (set by JwtCookieMiddleware after refresh)
+                    var authHeader = context.Request.Headers["Authorization"].ToString();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
                     {
-                        context.Token = token;
+                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                    // Fallback to cookie if no Authorization header
+                    else
+                    {
+                        var token = context.Request.Cookies["accessToken"];
+                        if (!string.IsNullOrEmpty(token))
+                        {
+                            context.Token = token;
+                        }
                     }
                     return Task.CompletedTask;
                 }
