@@ -1,389 +1,139 @@
 # Clinic Management API
 
-Multi-tenant SaaS platform for healthcare clinic operations built with .NET 10, implementing Vertical Slice Architecture with automatic tenant isolation.
+## 🚀 Overview
 
-## 🌐 Live Demo
+Multi-tenant SaaS backend for clinic operations built with .NET 10 and Vertical Slice Architecture.
 
-- **API Documentation**: http://clinic-api.runasp.net/scalar/v1
-- **Dashboard**: https://clinic-dashboard-ecru.vercel.app
-- **Website**: https://clinic-website-lime.vercel.app
+The system handles patient management, appointment scheduling, billing, inventory tracking, and medical records. Each clinic operates as an isolated tenant with automatic data scoping at the database level. Authentication uses JWT tokens with refresh token rotation, and authorization is role-based (ClinicOwner, Doctor, Receptionist).
 
-## 📦 Repositories
+The architecture organizes code by feature rather than technical layer - each feature contains its endpoint, validation, business logic, and data access in a single file. This reduces coupling between features and makes the codebase easier to navigate.
 
-- **Backend API**: https://github.com/SherifOthman/clinic-api
-- **Dashboard**: https://github.com/SherifOthman/clinic-dashboard
-- **Website**: https://github.com/SherifOthman/clinic-website
+Core modules include authentication, patient records, appointments, invoicing with payment tracking, medicine inventory with expiration monitoring, and medical visit documentation with prescriptions and lab orders.
 
----
+**Live Demo**: http://clinic-api.runasp.net/scalar/v1  
+**Dashboard**: https://clinic-dashboard-ecru.vercel.app  
+**Website**: https://clinic-website-lime.vercel.app
 
-## Architecture
-
-### Vertical Slice Architecture
-
-**Why VSA over Layered Architecture:**
-
-- Features are independent units containing endpoint → validation → business logic → data access
-- Reduces coupling between features - changes to Patient management don't affect Billing
-- Eliminates generic repositories and service abstractions that add no value
-- Each feature owns its complete vertical stack, making it easier to reason about and test
-- Better aligns with how features are developed and deployed in real-world scenarios
-
-**Structure:**
-
-```
-Features/
-├── Auth/
-│   ├── Login.cs              # Endpoint + Request/Response + Handler
-│   ├── Register.cs
-│   └── GetMe.cs
-├── Patients/
-│   ├── CreatePatient.cs
-│   ├── GetPatients.cs        # Includes pagination, filtering, sorting
-│   └── UpdatePatient.cs
-└── Invoices/
-    ├── CreateInvoice.cs
-    └── GetInvoicesByPatient.cs
-```
-
-Each feature file contains:
-
-- Endpoint mapping (route, HTTP method, authorization)
-- Request/Response DTOs with validation attributes
-- Business logic handler
-- Database queries specific to that feature
-
-**Trade-offs:**
-
-- More files (53 endpoint files vs ~10 controller files)
-- Some code duplication (acceptable for independence)
-- Easier to navigate and modify individual features
+**Repositories**: [API](https://github.com/SherifOthman/clinic-api) • [Dashboard](https://github.com/SherifOthman/clinic-dashboard) • [Website](https://github.com/SherifOthman/clinic-website)
 
 ---
 
-## Multi-Tenancy Implementation
+## 🏗 Architecture
 
-### Data Isolation Strategy
+**Vertical Slice Architecture** organizes code by feature instead of technical layer. Each feature is a self-contained vertical slice from HTTP endpoint down to database query.
 
-**Global Query Filters (EF Core):**
+**Why this approach:**
 
-```csharp
-// Automatic filtering applied to all queries
-modelBuilder.Entity<Patient>()
-    .HasQueryFilter(p => p.ClinicId == _currentUserService.ClinicId);
-```
+- Changes to one feature don't ripple through unrelated code
+- No generic repositories or service abstractions that add indirection without value
+- Each feature file contains everything needed: endpoint definition, DTOs, validation, business logic, and data access
+- Easier to understand what a feature does by reading one file
+
+**How it differs from layered architecture:**
+
+- Traditional: Controllers → Services → Repositories → Entities (horizontal layers)
+- Vertical Slice: Each feature owns its complete stack (vertical slice)
+- Trade-off: More files (53 feature files vs ~10 controllers), but better isolation
+
+**Example structure:**
+
+- `Features/Auth/Login.cs` - Complete login flow in one file
+- `Features/Patients/CreatePatient.cs` - Patient creation endpoint with validation and persistence
+- `Features/Invoices/GetInvoicesByPatient.cs` - Invoice retrieval with filtering and pagination
+
+---
+
+## 🏢 Multi-Tenancy Strategy
+
+**Data isolation** happens at the database level using EF Core global query filters. Every tenant-scoped entity (Patient, Invoice, Appointment, etc.) has a `ClinicId` foreign key.
 
 **How it works:**
 
-1. User authenticates → JWT contains `ClinicId` claim
-2. `CurrentUserService` extracts `ClinicId` from JWT on each request
+1. User logs in → JWT contains their `ClinicId` claim
+2. `CurrentUserService` extracts `ClinicId` from the JWT on each request
 3. EF Core automatically appends `WHERE ClinicId = @clinicId` to all queries
 4. Developers cannot accidentally query cross-tenant data
 
-**Entities with tenant isolation:**
+**Implementation:**
 
-- Patients, Appointments, Invoices, Payments
-- Medicines, Medical Services, Medical Supplies
-- Staff (Doctors, Receptionists)
+- Entities inherit from `TenantEntity` base class which implements `ITenantEntity` interface
+- Interface provides compile-time safety and explicit contract
+- `SaveChangesAsync` override automatically sets `ClinicId` on new entities
+- SuperAdmin role can bypass filters using `.IgnoreQueryFilters()` for system-wide operations
 
-**Bypass mechanism:**
-
-- SuperAdmin role can use `.IgnoreQueryFilters()` for system-wide operations
-- Used only in admin endpoints for reporting and management
-
-**Automatic ClinicId assignment:**
-
-```csharp
-// In SaveChangesAsync override
-if (currentClinicId.HasValue)
-{
-    foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
-    {
-        if (entry.State == EntityState.Added)
-        {
-            // Only set if not already set (allows explicit override)
-            if (entry.Entity.ClinicId == Guid.Empty)
-            {
-                entry.Entity.ClinicId = currentClinicId.Value;
-            }
-        }
-    }
-}
-```
-
-**ITenantEntity interface:**
-
-```csharp
-public interface ITenantEntity
-{
-    Guid ClinicId { get; set; }
-}
-
-// Base class for tenant-scoped entities
-public abstract class TenantEntity : AuditableEntity, ITenantEntity
-{
-    public Guid ClinicId { get; set; }
-}
-
-// Entities inherit from TenantEntity
-public class Patient : TenantEntity
-{
-    // ClinicId inherited from TenantEntity
-    public string PatientCode { get; set; } = null!;
-    // ...
-}
-```
-
-**Benefits:**
-
-- Compile-time safety - can't misspell property name
-- Explicit contract - clear which entities are tenant-scoped
-- Easy to find all tenant entities via interface
-- Better IDE support and navigation
-
-**Security guarantee:**
-
-- No way to access another clinic's data without explicit `.IgnoreQueryFilters()`
-- All queries are tenant-scoped by default
-- Database-level isolation (not application-level filtering)
+**Security guarantee:** No way to access another clinic's data without explicit filter bypass. All queries are tenant-scoped by default at the database level.
 
 ---
 
-## Authentication & Authorization
+## 🔐 Authentication & Authorization
 
-### JWT Token Flow
+**JWT access tokens** (60-minute expiry) stored in HTTP-only cookies contain UserId, Email, Roles, and ClinicId claims. **Refresh tokens** (30-day expiry) enable token renewal without re-login and are stored both in cookies and database for revocation support.
 
-**Access Token (60 minutes):**
+**Login flow:**
 
-- Stored in HTTP-only cookie (`accessToken`)
-- Contains: UserId, Email, Roles, ClinicId, UserType
-- Used for API authentication via `JwtBearerAuthentication`
+1. Validate credentials using ASP.NET Identity
+2. Generate access + refresh tokens
+3. Store both in HTTP-only cookies (`Secure`, `SameSite`)
+4. Return 204 No Content
+5. Frontend calls `/auth/me` to fetch user data
 
-**Refresh Token (30 days):**
+**Token refresh:** Old refresh token is revoked on use (rotation pattern). Background service cleans expired tokens daily.
 
-- Stored in HTTP-only cookie (`refreshToken`)
-- Stored in database with expiry and revocation support
-- Used to obtain new access token without re-login
+**Role-based authorization:**
 
-**Login Flow:**
-
-```
-1. POST /auth/login { email, password }
-2. Validate credentials (ASP.NET Identity)
-3. Check email confirmation status
-4. Generate access token + refresh token
-5. Set both tokens in HTTP-only cookies
-6. Return 204 No Content
-7. Frontend calls GET /auth/me to fetch user data
-```
-
-**Cookie Configuration:**
-
-- `HttpOnly: true` - Prevents XSS attacks
-- `Secure: true` (production) - HTTPS only
-- `SameSite: None` (production) / `Lax` (development)
-- Automatic expiry handling
-
-**Role-Based Authorization:**
-
-- Roles: SuperAdmin, ClinicOwner, Doctor, Receptionist
-- Applied via `[Authorize(Roles = "...")]` or `.RequireAuthorization()`
 - ClinicOwner: Full clinic management
 - Doctor: Patient records, prescriptions, appointments
-- Receptionist: Patient registration, appointment scheduling
+- Receptionist: Patient registration, scheduling
+- SuperAdmin: System-wide operations
 
-**Token Refresh:**
-
-- Automatic via refresh token endpoint
-- Old refresh token is revoked on use (rotation)
-- Background service cleans expired tokens daily
+**Cookie security:** `HttpOnly` prevents XSS, `Secure` enforces HTTPS in production, `SameSite=None` for cross-origin requests.
 
 ---
 
-## Database Design
+## 🗄 Database Design
 
-### Entity Overview
+**44 entities** organized across 8 domain modules: Identity (6), Clinic (5), Patient (4), Appointment (2), Billing (3), Inventory (6), Medical Records (15), Reference Data (3).
 
-**44 Domain Entities across 8 modules:**
+**Key relationships:**
 
-**Identity (6 entities):**
+- One-to-Many: Clinic → Patients, Patient → Appointments, Invoice → InvoiceItems, Invoice → Payments
+- Many-to-Many: Patient ↔ ChronicDiseases, Doctor ↔ MeasurementAttributes
 
-- User (base identity with ASP.NET Identity)
-- Doctor, Receptionist, ClinicOwner (role-specific data)
-- RefreshToken (token management)
-- StaffInvitation (onboarding workflow)
+**Soft delete:** All entities inherit from `AuditableEntity` with `IsDeleted`, `DeletedAt`, `DeletedBy` fields. Global query filters automatically exclude soft-deleted records. This maintains referential integrity and enables data recovery.
 
-**Clinic (5 entities):**
+**Audit tracking:** `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` automatically populated via `SaveChangesAsync` override.
 
-- Clinic, ClinicBranch
-- ClinicBranchAppointmentPrice, ClinicBranchPhoneNumber
-- DoctorWorkingDay
+**Query optimization:**
 
-**Patient (4 entities):**
-
-- Patient, PatientPhone, PatientAllergy, PatientChronicDisease
-
-**Appointment (2 entities):**
-
-- Appointment, AppointmentType
-
-**Billing (3 entities):**
-
-- Invoice, InvoiceItem, Payment
-
-**Inventory (6 entities):**
-
-- Medicine, MedicalService, MedicalSupply
-- ClinicMedication, MedicineDispensing, Medication
-
-**Medical Records (15 entities):**
-
-- MedicalVisit, Prescription, PrescriptionItem
-- LabTest, LabTestOrder, MedicalVisitLabTest
-- RadiologyTest, RadiologyOrder, MedicalVisitRadiology
-- MeasurementAttribute, DoctorMeasurementAttribute
-- SpecializationMeasurementAttribute, MedicalVisitMeasurement
-- MedicalFile, PatientMedicalFile
-
-**Reference Data (3 entities):**
-
-- ChronicDisease, Specialization, SubscriptionPlan
-
-### Relationship Patterns
-
-**One-to-Many:**
-
-- Clinic → Patients (1:N)
-- Patient → Appointments (1:N)
-- Invoice → InvoiceItems (1:N)
-- Invoice → Payments (1:N)
-
-**Many-to-Many:**
-
-- Patient ↔ ChronicDiseases (via PatientChronicDisease)
-- Doctor ↔ MeasurementAttributes (via DoctorMeasurementAttribute)
-
-**Soft Delete Implementation:**
-
-```csharp
-public abstract class AuditableEntity : BaseEntity
-{
-    public DateTime CreatedAt { get; set; }
-    public Guid? CreatedBy { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public Guid? UpdatedBy { get; set; }
-
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
-    public Guid? DeletedBy { get; set; }
-}
-```
-
-**Global query filter excludes soft-deleted:**
-
-```csharp
-modelBuilder.Entity<Patient>()
-    .HasQueryFilter(p => !p.IsDeleted && p.ClinicId == _currentUserService.ClinicId);
-```
-
-**Benefits:**
-
-- Data recovery capability
-- Audit trail for compliance
-- Referential integrity maintained
-- Historical reporting possible
-
-### Query Optimization
-
-**Indexes (36 EF Core configurations):**
-
-- Foreign keys automatically indexed
-- Composite indexes on frequently queried columns
-- Example: `(ClinicId, PatientCode)` for patient lookup
-- Example: `(ClinicId, AppointmentDate)` for appointment queries
-
-**Pagination:**
-
-- All list endpoints support `pageNumber` and `pageSize`
-- Default page size: 10, max: 100
-- Uses `Skip()` and `Take()` with proper ordering
-
-**Eager Loading:**
-
-- `.Include()` used strategically to avoid N+1 queries
-- Example: Loading patient with phone numbers and chronic diseases in single query
+- Foreign keys indexed automatically by EF Core
+- Composite indexes on frequently queried columns (e.g., `ClinicId + PatientCode`)
+- Pagination on all list endpoints (default 10, max 100)
+- Strategic use of `.Include()` to avoid N+1 queries
 
 ---
 
-## Business Logic Complexity
+## ⚙ Business Logic Highlights
 
-### Appointment State Machine
+**Appointment state machine:** Pending → Confirmed → Completed/Cancelled. Validation prevents invalid transitions (e.g., can't complete a non-confirmed appointment, cancelled appointments are terminal).
 
-**States:** Pending → Confirmed → Completed/Cancelled
+**Billing calculations:** Invoice tracks `SubtotalAmount` (sum of line items), `FinalAmount` (after discount and tax), `TotalPaid` (sum of payments), and `RemainingAmount`. Calculated properties include `IsFullyPaid`, `IsOverdue`, `IsPartiallyPaid`. Multiple partial payments supported with status tracking (Pending, Paid, Failed, Refunded).
 
-**Transitions:**
+**Inventory management:** Medicine stock uses box/strip system (e.g., 1 box = 10 strips). Tracks `TotalStripsInStock`, `FullBoxesInStock`, `RemainingStrips`. Expiry date monitoring and low stock alerts via calculated `IsLowStock` property. Stock operations validate against negative quantities.
 
-- Pending → Confirmed: Receptionist/Doctor confirms
-- Confirmed → Completed: Doctor marks as done
-- Any → Cancelled: Can be cancelled with reason
+**Domain rules enforced:**
 
-**Validation:**
-
-- Cannot confirm already confirmed appointment
-- Cannot complete non-confirmed appointment
-- Cancelled appointments cannot transition to other states
-
-### Billing Calculations
-
-**Invoice calculation logic:**
-
-```
-SubtotalAmount = Sum(InvoiceItems.LineTotal)
-FinalAmount = SubtotalAmount - Discount + TaxAmount
-TotalPaid = Sum(Payments where Status = Paid)
-RemainingAmount = FinalAmount - TotalPaid
-IsFullyPaid = RemainingAmount <= 0
-IsOverdue = DueDate < Now && !IsFullyPaid && Status != Cancelled
-```
-
-**Calculated properties on Invoice entity:**
-
-- `SubtotalAmount`, `FinalAmount`, `TotalPaid`, `RemainingAmount`
-- `IsFullyPaid`, `IsOverdue`, `IsPartiallyPaid`
-- `DiscountPercentage`, `DaysOverdue`
-
-**Payment tracking:**
-
-- Multiple partial payments supported
-- Payment status: Pending, Paid, Failed, Refunded
-- Payment methods: Cash, Card, Insurance, BankTransfer
-
-### Inventory Management
-
-**Medicine stock tracking:**
-
-- Box/strip system (e.g., 1 box = 10 strips)
-- `TotalStripsInStock`, `FullBoxesInStock`, `RemainingStrips`
-- Expiry date monitoring
-- Discontinued flag for obsolete medicines
-
-**Stock operations:**
-
-- Add stock: Increases `TotalStripsInStock`
-- Remove stock: Decreases with validation (cannot go negative)
-- Stock movement tracking with reason and timestamp
-
-**Low stock alerts:**
-
-- Calculated property: `IsLowStock` based on threshold
-- Used for inventory management dashboard
+- Cannot confirm already confirmed appointments
+- Cannot dispense more stock than available
+- Invoice due date must be after issue date
+- Patient age calculated from date of birth
 
 ---
 
-## Error Handling
+## 🛡 Error Handling & Logging
 
-### RFC 7807 Problem Details
+**Global exception middleware** catches unhandled exceptions and returns RFC 7807 Problem Details responses. Exception types map to appropriate HTTP status codes (401, 403, 404, 400, 500).
 
-**Standardized error response:**
+**Standardized error format:**
 
 ```json
 {
@@ -391,293 +141,52 @@ IsOverdue = DueDate < Now && !IsFullyPaid && Status != Cancelled
   "title": "Insufficient Stock",
   "status": 400,
   "detail": "Available: 5, Requested: 10",
-  "data": { "available": 5, "requested": 10 },
   "traceId": "0HMVFE..."
 }
 ```
 
-**Error code categories:**
+**40+ predefined error codes** organized by category (Validation, Authentication, Authorization, Business Logic, System). Frontend uses these codes for i18n translation.
 
-- Validation: `VALIDATION_ERROR`, `REQUIRED_FIELD`, `INVALID_FORMAT`
-- Authentication: `INVALID_CREDENTIALS`, `EMAIL_NOT_CONFIRMED`, `TOKEN_EXPIRED`
-- Authorization: `ACCESS_DENIED`, `INSUFFICIENT_PERMISSIONS`
-- Business Logic: `INSUFFICIENT_STOCK`, `APPOINTMENT_CONFLICT`, `INVOICE_ALREADY_PAID`
-- System: `INTERNAL_ERROR`, `DATABASE_ERROR`, `EXTERNAL_SERVICE_ERROR`
-
-**40+ predefined error codes** for frontend i18n translation.
-
-### Global Exception Middleware
-
-**Catches unhandled exceptions:**
-
-```csharp
-try { await _next(context); }
-catch (Exception ex)
-{
-    _logger.LogError(ex, "Unhandled exception");
-    return ProblemDetails with appropriate status code;
-}
-```
-
-**Exception mapping:**
-
-- `UnauthorizedAccessException` → 403
-- `KeyNotFoundException` → 404
-- `InvalidOperationException` → 400
-- `ArgumentException` → 400
-- All others → 500
-
-**Benefits:**
-
-- Consistent error format across all endpoints
-- Frontend can translate error codes to user's language
-- Trace IDs for debugging
-- No sensitive information leaked in production
-
----
-
-## Logging & Observability
-
-### Serilog Configuration
-
-**Structured logging:**
-
-```csharp
-_logger.LogInformation(
-    "Patient created: {PatientId} {PatientCode} by {UserId} in {ClinicId}",
-    patient.Id, patient.PatientCode, currentUser.UserId, currentUser.ClinicId
-);
-```
-
-**Log levels by environment:**
+**Structured logging with Serilog:**
 
 - Development: Debug level, console + file
 - Production: Warning level, file only (3-day retention)
-
-**Logged events:**
-
-- Authentication attempts (success/failure)
-- Entity creation/modification/deletion
-- Business rule violations
-- External service calls (GeoNames, SMTP)
-- Performance issues (slow queries)
-
-**Log sinks:**
-
-- Console (development)
-- Rolling file (daily rotation, 7-day retention in dev, 3-day in production)
-- Structured format for log aggregation tools
-
-**Trace IDs:**
-
-- Included in all error responses
-- Correlates frontend errors with backend logs
-- Essential for debugging production issues
+- Logs authentication attempts, entity changes, business rule violations, external service calls
+- Trace IDs correlate frontend errors with backend logs
 
 ---
 
-## API Design
+## 📦 API Design
 
-### REST Semantics
+**REST semantics:** GET (retrieve), POST (create), PUT (update), DELETE (soft delete). Status codes follow HTTP standards (200, 201, 204, 400, 401, 403, 404, 500).
 
-**HTTP Methods:**
+**Endpoint naming:** Plural nouns (`/patients`, `/appointments`), resource IDs in path (`/patients/{id}`), actions as verbs (`/appointments/{id}/confirm`), query parameters for filtering.
 
-- GET: Retrieve resources (idempotent)
-- POST: Create resources
-- PUT: Update entire resource
-- DELETE: Soft delete resource
+**DTO separation:** Request DTOs have validation attributes and flat structure. Response DTOs include calculated fields and related data via projections. This decouples API contract from database schema and prevents over-posting.
 
-**Status Codes:**
-
-- 200 OK: Successful GET/PUT
-- 201 Created: Successful POST (with Location header)
-- 204 No Content: Successful operation with no response body
-- 400 Bad Request: Validation errors
-- 401 Unauthorized: Missing/invalid authentication
-- 403 Forbidden: Insufficient permissions
-- 404 Not Found: Resource doesn't exist
-- 500 Internal Server Error: Unhandled exceptions
-
-**Endpoint naming:**
-
-- Plural nouns: `/patients`, `/appointments`, `/invoices`
-- Resource IDs in path: `/patients/{id}`
-- Actions as verbs: `/appointments/{id}/confirm`
-- Query parameters for filtering: `/patients?searchTerm=john&gender=Male`
-
-### DTO Separation
-
-**Request DTOs:**
-
-- Validation attributes (`[Required]`, `[EmailAddress]`, `[Range]`)
-- No navigation properties
-- Flat structure for simple binding
-
-**Response DTOs:**
-
-- Calculated fields included
-- Related data via projections (not full entities)
-- Consistent naming with frontend types
-
-**Benefits:**
-
-- API contract independent of database schema
-- Can change database without breaking API
-- Prevents over-posting attacks
-- Clear separation of concerns
-
-### Validation Strategy
-
-**Data Annotations:**
-
-```csharp
-public record Request(
-    [Required]
-    [MaxLength(200)]
-    string FullName,
-
-    [Required]
-    [EnumDataType(typeof(Gender))]
-    Gender Gender,
-
-    [Required]
-    [CustomValidation(typeof(CustomValidators), nameof(CustomValidators.MustBeInPast))]
-    DateTime DateOfBirth
-);
-```
-
-**ASP.NET Core automatic validation:**
-
-- Validates before endpoint handler executes
-- Returns 400 with validation errors automatically
-- No manual validation code in endpoints
-
-**Custom validators:**
-
-- `MustBeInPast` for date of birth
-- `MustBeInFuture` for appointment dates
-- Phone number validation via libphonenumber
+**Validation:** Data annotations (`[Required]`, `[EmailAddress]`, `[Range]`) with ASP.NET Core automatic validation. Returns 400 with validation errors before endpoint handler executes. Custom validators for business rules (date ranges, phone numbers).
 
 ---
 
-## Security
+## 📊 Project Scope
 
-### Authentication Security
+**53 API endpoints** across 15 feature areas: Authentication, Patients, Appointments, Invoices, Payments, Medicines, Medical Services, Medical Supplies, Locations, Measurements, Chronic Diseases, Specializations, Subscription Plans, Onboarding.
 
-- JWT tokens in HTTP-only cookies (not localStorage)
-- Refresh token rotation (old token revoked on use)
-- Email confirmation required before login
-- Password hashing via ASP.NET Identity (PBKDF2)
-- Token expiry: 60 minutes (access), 30 days (refresh)
+**Technology stack:** .NET 10, Entity Framework Core 10, ASP.NET Core Identity, JWT Bearer Authentication, Serilog, Scalar (API docs), MailKit (SMTP), GeoNames API.
 
-### Authorization Security
-
-- Role-based access control on all endpoints
-- Multi-tenant data isolation at database level
-- No way to access another clinic's data without explicit bypass
-- SuperAdmin role for system-wide operations only
-
-### Input Validation
-
-- All inputs validated via data annotations
-- SQL injection prevented by parameterized queries (EF Core)
-- XSS prevented by not returning HTML
-- CORS configured for specific origins only
-
-### Configuration Security
-
-- Secrets in environment variables (not in code)
-- Different configurations per environment
-- JWT signing key minimum 32 characters
-- Database connection strings secured
+**Infrastructure:** 44 domain entities, 36 EF Core configurations, 18 cross-cutting services, 2 custom middleware, 4 database migrations, background service for token cleanup.
 
 ---
 
-## Production Readiness
+## 🧠 What I Learned
 
-### Database Migrations
+**Architectural thinking:** Understanding when to choose Vertical Slice over traditional layered architecture. Recognizing that reducing coupling between features is more valuable than eliminating code duplication.
 
-**3 migrations applied:**
+**Multi-tenant complexity:** Implementing database-level tenant isolation using EF Core global query filters. Balancing security (automatic filtering) with flexibility (explicit bypass for admin operations). Understanding the trade-offs between different multi-tenancy approaches.
 
-1. `InitialCreate` - All 44 entities with relationships
-2. `FixInvoiceAppointmentRelationship` - Corrected FK constraints
-3. `RemoveClinicIdFromUser` - Schema evolution
+**Backend system structure:** Organizing a real-world system with multiple interconnected domains (patients, appointments, billing, inventory). Handling cross-cutting concerns (authentication, logging, error handling) without creating tight coupling. Making pragmatic decisions about where to apply patterns and where to keep things simple.
 
-**Migration strategy:**
-
-- Automatic on startup in development
-- Manual in production (via deployment pipeline)
-- Rollback capability via `dotnet ef database update <migration>`
-
-### Configuration Management
-
-**Environment-specific settings:**
-
-- `appsettings.json` - Base configuration
-- `appsettings.Development.json` - Dev overrides
-- `appsettings.Production.json` - Production overrides
-
-**Configuration sections:**
-
-- ConnectionStrings (SQL Server)
-- JWT (signing key, expiry)
-- CORS (allowed origins)
-- SMTP (email service)
-- Cookie (security settings)
-- GeoNames (API credentials)
-- FileStorage (upload paths)
-- Serilog (logging levels)
-
-### Deployment
-
-**Hosting:**
-
-- Deployed on ASP.NET hosting service
-- SQL Server database (Azure SQL compatible)
-- Automatic HTTPS redirection
-- Health check endpoint
-
-**Environment separation:**
-
-- Development: localhost, relaxed CORS, debug logging
-- Production: HTTPS only, strict CORS, warning logging
-
-### Background Services
-
-**RefreshTokenCleanupService:**
-
-- Runs daily
-- Removes expired refresh tokens
-- Prevents database bloat
-- Implemented as `IHostedService`
-
----
-
-## Technology Stack
-
-- **.NET 10** - Latest framework with minimal APIs
-- **Entity Framework Core 10** - ORM with 36 entity configurations
-- **ASP.NET Core Identity** - User management and password hashing
-- **JWT Bearer Authentication** - Token-based auth
-- **Scalar.AspNetCore** - Interactive API documentation
-- **Serilog** - Structured logging
-- **libphonenumber** - International phone validation
-- **MailKit** - SMTP email service
-- **GeoNames API** - Location data (countries, states, cities)
-
----
-
-## Project Metrics
-
-- **15 Feature Areas** - Auth, Patients, Appointments, Invoices, Payments, Medicines, etc.
-- **53 API Endpoints** - Complete CRUD operations
-- **44 Domain Entities** - Comprehensive data model
-- **36 EF Core Configurations** - Explicit relationship mapping
-- **18 Infrastructure Services** - Cross-cutting concerns
-- **15 Domain Enums** - Type-safe enumerations
-- **40+ Error Codes** - Standardized error handling
-- **2 Custom Middleware** - Global exception handling, JWT cookie processing
-- **3 Database Migrations** - Schema evolution tracking
+**Domain modeling:** Translating healthcare workflows into code (appointment state machines, billing calculations, inventory tracking). Understanding that business logic complexity comes from domain rules, not technical patterns.
 
 ---
 
