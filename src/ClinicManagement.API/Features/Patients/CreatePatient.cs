@@ -109,20 +109,17 @@ public class CreatePatientEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, 
-                "Failed to create patient {PatientName} by {UserId} in {ClinicId}",
-                request.FullName, currentUser.UserId, currentUser.ClinicId);
             return ex.HandleDomainException();
         }
     }
 
     public record Request(
         [Required]
-        [MaxLength(200, ErrorMessage = "Full name must not exceed 200 characters")]
+        [MaxLength(200)]
         string FullName,
         
         [Required]
-        [EnumDataType(typeof(Gender), ErrorMessage = "Invalid gender value")]
+        [EnumDataType(typeof(Gender))]
         Gender Gender,
         
         [Required]
@@ -132,7 +129,7 @@ public class CreatePatientEndpoint : IEndpoint
         int? CityGeoNameId,
         
         [Required]
-        [MinLength(1, ErrorMessage = "At least one phone number is required")]
+        [MinLength(1)]
         List<PhoneNumberInput> PhoneNumbers,
         
         [Required]
@@ -140,7 +137,7 @@ public class CreatePatientEndpoint : IEndpoint
 
     public record PhoneNumberInput(
         [Required]
-        [MaxLength(20, ErrorMessage = "Phone number must not exceed 20 characters")]
+        [MaxLength(20)]
         string PhoneNumber,
         
         bool IsPrimary);

@@ -52,7 +52,7 @@ public class CreateAppointmentEndpoint : IEndpoint
         if (!doctorExists)
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = "DOCTOR_NOT_FOUND",
+                Code = ErrorCodes.DOCTOR_NOT_FOUND,
                 Title = "Doctor Not Found",
                 Status = StatusCodes.Status400BadRequest,
                 Detail = "Doctor not found or does not belong to your clinic"
@@ -65,7 +65,7 @@ public class CreateAppointmentEndpoint : IEndpoint
         if (!branchExists)
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = "BRANCH_NOT_FOUND",
+                Code = ErrorCodes.BRANCH_NOT_FOUND,
                 Title = "Branch Not Found",
                 Status = StatusCodes.Status400BadRequest,
                 Detail = "Branch not found or does not belong to your clinic"
@@ -139,9 +139,6 @@ public class CreateAppointmentEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to create appointment Patient={PatientId} Doctor={DoctorId} Date={AppointmentDate} by {UserId}",
-                request.PatientId, request.DoctorId, appointmentDate, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

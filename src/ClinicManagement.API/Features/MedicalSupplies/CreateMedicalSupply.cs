@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -31,10 +33,12 @@ public class CreateMedicalSupplyEndpoint : IEndpoint
             .AnyAsync(cb => cb.Id == clinicBranchId, ct);
 
         if (!branchExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Branch not found or does not belong to your clinic",
-                code = "BRANCH_NOT_FOUND"
+                Code = ErrorCodes.BRANCH_NOT_FOUND,
+                Title = "Branch Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Branch not found or does not belong to your clinic"
             });
 
         // Check for duplicate name
@@ -44,10 +48,12 @@ public class CreateMedicalSupplyEndpoint : IEndpoint
                 ms.Name == request.Name, ct);
 
         if (duplicateExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "A medical supply with this name already exists in this branch",
-                code = "DUPLICATE_SUPPLY"
+                Code = ErrorCodes.DUPLICATE_SUPPLY,
+                Title = "Duplicate Supply",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "A medical supply with this name already exists in this branch"
             });
 
         var supply = new MedicalSupply
@@ -57,8 +63,7 @@ public class CreateMedicalSupplyEndpoint : IEndpoint
             Name = request.Name,
             QuantityInStock = request.QuantityInStock,
             UnitPrice = request.UnitPrice,
-            MinimumStockLevel = request.MinimumStockLevel,
-            CreatedAt = DateTime.UtcNow
+            MinimumStockLevel = request.MinimumStockLevel
         };
 
         db.MedicalSupplies.Add(supply);
@@ -69,19 +74,19 @@ public class CreateMedicalSupplyEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [MaxLength(200, ErrorMessage = "Supply name must not exceed 200 characters")]
+        [MaxLength(200)]
         string Name,
         
         [Required]
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity in stock cannot be negative")]
+        [Range(0, int.MaxValue)]
         int QuantityInStock,
         
         [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "Unit price cannot be negative")]
+        [Range(0, double.MaxValue)]
         decimal UnitPrice,
         
         [Required]
-        [Range(0, int.MaxValue, ErrorMessage = "Minimum stock level cannot be negative")]
+        [Range(0, int.MaxValue)]
         int MinimumStockLevel);
 
     public record Response(Guid Id);

@@ -51,18 +51,15 @@ public class CancelAppointmentEndpoint : IEndpoint
                 "Appointment cancelled: {AppointmentId} Patient={PatientId} Status={PreviousStatus}->{NewStatus} Reason={Reason} by {UserId}",
                 id, appointment.PatientId, previousStatus, appointment.Status, request.Reason, currentUser.UserId);
             
-            return Results.Ok(new { message = "Appointment cancelled successfully" });
+            return Results.Ok(new MessageResponse("Appointment cancelled successfully"));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to cancel appointment {AppointmentId} by {UserId}",
-                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
 
     public record Request(
-        [MaxLength(500, ErrorMessage = "Reason must not exceed 500 characters")]
+        [MaxLength(500)]
         string? Reason);
 }

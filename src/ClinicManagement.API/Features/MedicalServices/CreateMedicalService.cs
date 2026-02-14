@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -31,10 +33,12 @@ public class CreateMedicalServiceEndpoint : IEndpoint
             .AnyAsync(cb => cb.Id == clinicBranchId, ct);
 
         if (!branchExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Branch not found or does not belong to your clinic",
-                code = "BRANCH_NOT_FOUND"
+                Code = ErrorCodes.BRANCH_NOT_FOUND,
+                Title = "Branch Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Branch not found or does not belong to your clinic"
             });
 
         // Check for duplicate name
@@ -44,10 +48,12 @@ public class CreateMedicalServiceEndpoint : IEndpoint
                 ms.Name == request.Name, ct);
 
         if (duplicateExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "A medical service with this name already exists in this branch",
-                code = "DUPLICATE_SERVICE"
+                Code = ErrorCodes.DUPLICATE_SERVICE,
+                Title = "Duplicate Service",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "A medical service with this name already exists in this branch"
             });
 
         var service = new MedicalService
@@ -56,8 +62,7 @@ public class CreateMedicalServiceEndpoint : IEndpoint
             ClinicBranchId = clinicBranchId,
             Name = request.Name,
             DefaultPrice = request.DefaultPrice,
-            IsOperation = request.IsOperation,
-            CreatedAt = DateTime.UtcNow
+            IsOperation = request.IsOperation
         };
 
         db.MedicalServices.Add(service);
@@ -68,11 +73,11 @@ public class CreateMedicalServiceEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [MaxLength(200, ErrorMessage = "Service name must not exceed 200 characters")]
+        [MaxLength(200)]
         string Name,
         
         [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "Default price cannot be negative")]
+        [Range(0, double.MaxValue)]
         decimal DefaultPrice,
         
         bool IsOperation);

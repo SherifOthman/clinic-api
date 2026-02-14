@@ -60,14 +60,11 @@ public class CancelInvoiceEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to cancel invoice {InvoiceId} by {UserId}",
-                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
 
     public record Request(
-        [MaxLength(500, ErrorMessage = "Reason must not exceed 500 characters")]
+        [MaxLength(500)]
         string? Reason);
 }

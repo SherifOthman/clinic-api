@@ -40,7 +40,7 @@ public class RegisterEndpoint : IEndpoint
         try
         {
             await userRegistrationService.RegisterUserAsync(registrationRequest, ct);
-            return Results.Ok(new { message = "Registration successful. Please check your email to confirm your account." });
+            return Results.Ok(new MessageResponse("Registration successful. Please check your email to confirm your account."));
         }
         catch (Exception ex)
         {

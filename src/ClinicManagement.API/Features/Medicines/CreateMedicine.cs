@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Validation;
 using ClinicManagement.API.Common.Enums;
 using ClinicManagement.API.Common.Exceptions;
@@ -33,10 +35,12 @@ public class CreateMedicineEndpoint : IEndpoint
             .AnyAsync(b => b.Id == request.ClinicBranchId, ct);
 
         if (!branchExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Branch not found or does not belong to your clinic",
-                code = "BRANCH_NOT_FOUND"
+                Code = ErrorCodes.BRANCH_NOT_FOUND,
+                Title = "Branch Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Branch not found or does not belong to your clinic"
             });
 
         try
@@ -93,18 +97,18 @@ public class CreateMedicineEndpoint : IEndpoint
         Guid ClinicBranchId,
         
         [Required]
-        [MaxLength(200, ErrorMessage = "Name must not exceed 200 characters")]
+        [MaxLength(200)]
         string Name,
         
         [Required]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Box price must be greater than 0")]
+        [Range(0.01, double.MaxValue)]
         decimal BoxPrice,
         
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Strips per box must be greater than 0")]
+        [Range(1, int.MaxValue)]
         int StripsPerBox,
         
-        [Range(0, int.MaxValue, ErrorMessage = "Initial stock cannot be negative")]
+        [Range(0, int.MaxValue)]
         int InitialStock = 0,
         
         string? Description = null,
@@ -114,10 +118,10 @@ public class CreateMedicineEndpoint : IEndpoint
         [CustomValidation(typeof(CustomValidators), nameof(CustomValidators.MustBeInFutureOrNull))]
         DateTime? ExpiryDate = null,
         
-        [Range(0, int.MaxValue, ErrorMessage = "Minimum stock level cannot be negative")]
+        [Range(0, int.MaxValue)]
         int MinimumStockLevel = 10,
         
-        [Range(0, int.MaxValue, ErrorMessage = "Reorder level cannot be negative")]
+        [Range(0, int.MaxValue)]
         int ReorderLevel = 20);
 
     public record Response(

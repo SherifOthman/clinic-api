@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -30,10 +32,12 @@ public class CreateMeasurementAttributeEndpoint : IEndpoint
                 ma.NameEn == request.NameEn || ma.NameAr == request.NameAr, ct);
 
         if (duplicateExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "A measurement attribute with this name already exists",
-                code = "DUPLICATE_ATTRIBUTE"
+                Code = ErrorCodes.DUPLICATE_ATTRIBUTE,
+                Title = "Duplicate Attribute",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "A measurement attribute with this name already exists"
             });
 
         var attribute = new MeasurementAttribute
@@ -54,17 +58,17 @@ public class CreateMeasurementAttributeEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [MaxLength(200, ErrorMessage = "English name must not exceed 200 characters")]
+        [MaxLength(200)]
         string NameEn,
         
         [Required]
-        [MaxLength(200, ErrorMessage = "Arabic name must not exceed 200 characters")]
+        [MaxLength(200)]
         string NameAr,
         
-        [MaxLength(500, ErrorMessage = "English description must not exceed 500 characters")]
+        [MaxLength(500)]
         string? DescriptionEn,
         
-        [MaxLength(500, ErrorMessage = "Arabic description must not exceed 500 characters")]
+        [MaxLength(500)]
         string? DescriptionAr);
 
     public record Response(Guid Id);

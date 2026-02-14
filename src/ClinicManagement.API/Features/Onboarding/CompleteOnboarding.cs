@@ -1,7 +1,6 @@
 using ClinicManagement.API.Common;
-using ClinicManagement.API.Entities;
-using ClinicManagement.API.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 
 namespace ClinicManagement.API.Features.Onboarding;
 
@@ -15,8 +14,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
             .WithSummary("Complete clinic onboarding")
             .WithTags("Onboarding")
             .Produces<Response>(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            ;
+            .Produces(StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> HandleAsync(
@@ -33,17 +31,21 @@ public class CompleteOnboardingEndpoint : IEndpoint
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
 
         if (user == null)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "User not found",
-                code = "USER_NOT_FOUND"
+                Code = ErrorCodes.USER_NOT_FOUND,
+                Title = "User Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "User not found"
             });
 
         if (user.ClinicId != null)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "User has already completed onboarding",
-                code = "ALREADY_ONBOARDED"
+                Code = ErrorCodes.ALREADY_ONBOARDED,
+                Title = "Already Onboarded",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "User has already completed onboarding"
             });
 
         // Verify subscription plan exists
@@ -51,10 +53,12 @@ public class CompleteOnboardingEndpoint : IEndpoint
             .AnyAsync(sp => sp.Id == request.SubscriptionPlanId && sp.IsActive, ct);
 
         if (!planExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Subscription plan not found or inactive",
-                code = "PLAN_NOT_FOUND"
+                Code = ErrorCodes.PLAN_NOT_FOUND,
+                Title = "Plan Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Subscription plan not found or inactive"
             });
 
         // Create clinic
@@ -63,8 +67,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
             Id = Guid.NewGuid(),
             Name = request.ClinicName,
             OwnerUserId = userId,
-            SubscriptionPlanId = request.SubscriptionPlanId,
-            CreatedAt = DateTime.UtcNow
+            SubscriptionPlanId = request.SubscriptionPlanId
         };
 
         db.Clinics.Add(clinic);
@@ -78,8 +81,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
             AddressLine = request.AddressLine,
             CountryGeoNameId = request.CountryGeoNameId,
             StateGeoNameId = request.StateGeoNameId,
-            CityGeoNameId = request.CityGeoNameId,
-            CreatedAt = DateTime.UtcNow
+            CityGeoNameId = request.CityGeoNameId
         };
 
         db.ClinicBranches.Add(branch);
@@ -101,30 +103,30 @@ public class CompleteOnboardingEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [MaxLength(200, ErrorMessage = "Clinic name must not exceed 200 characters")]
+        [MaxLength(200)]
         string ClinicName,
         
         [Required]
         Guid SubscriptionPlanId,
         
         [Required]
-        [MaxLength(200, ErrorMessage = "Branch name must not exceed 200 characters")]
+        [MaxLength(200)]
         string BranchName,
         
         [Required]
-        [MaxLength(500, ErrorMessage = "Address must not exceed 500 characters")]
+        [MaxLength(500)]
         string AddressLine,
         
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Country is required")]
+        [Range(1, int.MaxValue)]
         int CountryGeoNameId,
         
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "State is required")]
+        [Range(1, int.MaxValue)]
         int StateGeoNameId,
         
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "City is required")]
+        [Range(1, int.MaxValue)]
         int CityGeoNameId);
 
     public record Response(

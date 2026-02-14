@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
 using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -31,10 +33,12 @@ public class AddPatientChronicDiseaseEndpoint : IEndpoint
             .AnyAsync(p => p.Id == patientId, ct);
 
         if (!patientExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Patient not found or does not belong to your clinic",
-                code = "PATIENT_NOT_FOUND"
+                Code = ErrorCodes.PATIENT_NOT_FOUND,
+                Title = "Patient Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Patient not found or does not belong to your clinic"
             });
 
         // Verify chronic disease exists
@@ -42,10 +46,12 @@ public class AddPatientChronicDiseaseEndpoint : IEndpoint
             .AnyAsync(cd => cd.Id == request.ChronicDiseaseId, ct);
 
         if (!diseaseExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Chronic disease not found",
-                code = "DISEASE_NOT_FOUND"
+                Code = ErrorCodes.DISEASE_NOT_FOUND,
+                Title = "Disease Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Chronic disease not found"
             });
 
         // Check if patient already has this disease
@@ -55,17 +61,18 @@ public class AddPatientChronicDiseaseEndpoint : IEndpoint
                 pcd.ChronicDiseaseId == request.ChronicDiseaseId, ct);
 
         if (alreadyExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Patient already has this chronic disease",
-                code = "DISEASE_ALREADY_EXISTS"
+                Code = ErrorCodes.DISEASE_ALREADY_EXISTS,
+                Title = "Disease Already Exists",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Patient already has this chronic disease"
             });
 
         var patientDisease = new PatientChronicDisease
         {
             PatientId = patientId,
-            ChronicDiseaseId = request.ChronicDiseaseId,
-            CreatedAt = DateTime.UtcNow
+            ChronicDiseaseId = request.ChronicDiseaseId
         };
 
         db.PatientChronicDiseases.Add(patientDisease);

@@ -49,13 +49,10 @@ public class CompleteAppointmentEndpoint : IEndpoint
                 "Appointment completed: {AppointmentId} Patient={PatientId} Status={PreviousStatus}->{NewStatus} by {UserId}",
                 id, appointment.PatientId, previousStatus, appointment.Status, currentUser.UserId);
             
-            return Results.Ok(new { message = "Appointment completed successfully" });
+            return Results.Ok(new MessageResponse("Appointment completed successfully"));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to complete appointment {AppointmentId} by {UserId}",
-                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }

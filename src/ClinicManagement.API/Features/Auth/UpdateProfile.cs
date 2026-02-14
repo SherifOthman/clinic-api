@@ -26,11 +26,7 @@ public class UpdateProfileEndpoint : IEndpoint
         UserManager<User> userManager,
         CancellationToken ct)
     {
-        var userId = currentUserService.UserId;
-        if (userId == null)
-            return Results.Unauthorized();
-
-        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
         if (user == null)
             return Results.BadRequest(new ApiProblemDetails
             {
@@ -78,14 +74,14 @@ public class UpdateProfileEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [MaxLength(100, ErrorMessage = "First name must not exceed 100 characters")]
+        [MaxLength(100)]
         string FirstName,
         
         [Required]
-        [MaxLength(100, ErrorMessage = "Last name must not exceed 100 characters")]
+        [MaxLength(100)]
         string LastName,
         
-        [MaxLength(20, ErrorMessage = "Phone number must not exceed 20 characters")]
+        [MaxLength(20)]
         string? PhoneNumber);
 
     public record Response(

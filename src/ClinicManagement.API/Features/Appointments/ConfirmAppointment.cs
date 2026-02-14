@@ -49,13 +49,10 @@ public class ConfirmAppointmentEndpoint : IEndpoint
                 "Appointment confirmed: {AppointmentId} Patient={PatientId} Status={PreviousStatus}->{NewStatus} by {UserId}",
                 id, appointment.PatientId, previousStatus, appointment.Status, currentUser.UserId);
             
-            return Results.Ok(new { message = "Appointment confirmed successfully" });
+            return Results.Ok(new MessageResponse("Appointment confirmed successfully"));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to confirm appointment {AppointmentId} by {UserId}",
-                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
