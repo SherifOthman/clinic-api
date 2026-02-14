@@ -129,21 +129,13 @@ public static class DependencyInjection
             {
                 OnMessageReceived = context =>
                 {
-                    // Check Authorization header first (set by JwtCookieMiddleware after refresh)
+                    // Read token from Authorization header (standard approach)
                     var authHeader = context.Request.Headers["Authorization"].ToString();
                     if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
                     {
                         context.Token = authHeader.Substring("Bearer ".Length).Trim();
                     }
-                    // Fallback to cookie if no Authorization header
-                    else
-                    {
-                        var token = context.Request.Cookies["accessToken"];
-                        if (!string.IsNullOrEmpty(token))
-                        {
-                            context.Token = token;
-                        }
-                    }
+                    
                     return Task.CompletedTask;
                 }
             };
@@ -237,7 +229,8 @@ public static class DependencyInjection
         app.UseOutputCache();
 
         // Authentication & Authorization
-        app.UseMiddleware<JwtCookieMiddleware>();
+        // Middleware disabled - using frontend-controlled token refresh
+        // app.UseMiddleware<JwtCookieMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
 
