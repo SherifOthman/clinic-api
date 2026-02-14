@@ -2,7 +2,6 @@ using ClinicManagement.API.Common;
 using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
-using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.API.Features.Auth;
@@ -25,7 +24,6 @@ public class LoginEndpoint : IEndpoint
     private static async Task<IResult> HandleAsync(
         Request request,
         HttpContext httpContext,
-        ApplicationDbContext db,
         UserManager<User> userManager,
         TokenService tokenService,
         RefreshTokenService refreshTokenService,
@@ -33,17 +31,14 @@ public class LoginEndpoint : IEndpoint
         ILogger<LoginEndpoint> logger,
         CancellationToken ct)
     {
-        // Determine client type
         var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
         
-        logger.LogInformation("Login attempt for {Email} from {ClientType} client", request.Email, isMobile ? "mobile" : "web");
-   
-        // Find user by email
+        // Find and validate user
         var user = await userManager.FindByEmailAsync(request.Email);
-
-        // Check password
-        if (user == null || !(await userManager.CheckPasswordAsync(user, request.Password)))
+        if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            logger.LogWarning("Failed login attempt for {Email}", request.Email);
             return Results.BadRequest(new ApiProblemDetails
             {
                 Code = ErrorCodes.INVALID_CREDENTIALS,
@@ -51,9 +46,11 @@ public class LoginEndpoint : IEndpoint
                 Status = StatusCodes.Status400BadRequest,
                 Detail = "Invalid email or password"
             });
+        }
 
-        // Check if email is confirmed
         if (!user.EmailConfirmed)
+        {
+            logger.LogWarning("Login attempt with unconfirmed email: {Email}", request.Email);
             return Results.BadRequest(new ApiProblemDetails
             {
                 Code = ErrorCodes.EMAIL_NOT_CONFIRMED,
@@ -61,24 +58,22 @@ public class LoginEndpoint : IEndpoint
                 Status = StatusCodes.Status400BadRequest,
                 Detail = "Please confirm your email before logging in"
             });
-
-        // Get user roles
-        var roles = await userManager.GetRolesAsync(user);
+        }
 
         // Generate tokens
+        var roles = await userManager.GetRolesAsync(user);
         var accessToken = tokenService.GenerateAccessToken(user, roles);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
 
-        logger.LogInformation("User {UserId} logged in successfully", user.Id);
+        logger.LogInformation("User {UserId} logged in ({ClientType})", user.Id, isMobile ? "mobile" : "web");
 
+        // Return tokens based on client type
         if (isMobile)
         {
-            // Mobile: Return both tokens in response body
             return Results.Ok(new Response(accessToken, refreshToken.Token));
         }
         else
         {
-            // Web: Return access token in body, set refresh token in HTTP-only cookie
             cookieService.SetRefreshTokenCookie(refreshToken.Token);
             return Results.Ok(new Response(accessToken, null));
         }

@@ -23,34 +23,23 @@ public class LogoutEndpoint : IEndpoint
         ILogger<LogoutEndpoint> logger,
         CancellationToken ct)
     {
-        // Determine client type
         var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
         
-        string? refreshToken;
-        
-        if (isMobile)
-        {
-            // Mobile: Get refresh token from request body
-            refreshToken = request?.RefreshToken;
-            logger.LogInformation("Mobile client logout");
-        }
-        else
-        {
-            // Web: Get refresh token from HTTP-only cookie
-            refreshToken = cookieService.GetRefreshTokenFromCookie();
-            logger.LogInformation("Web client logout");
-        }
+        string? refreshToken = isMobile 
+            ? request?.RefreshToken 
+            : cookieService.GetRefreshTokenFromCookie();
 
-        // Revoke refresh token
+        // Revoke refresh token in database
         await authenticationService.LogoutAsync(refreshToken, ct);
 
-        // Clear authentication cookies for web clients
+        // Clear refresh token cookie for web clients
         if (!isMobile)
         {
-            cookieService.ClearAuthCookies();
+            cookieService.ClearRefreshTokenCookie();
         }
 
+        logger.LogInformation("{ClientType} client logged out", isMobile ? "Mobile" : "Web");
         return Results.Ok(new MessageResponse("Logged out successfully"));
     }
 

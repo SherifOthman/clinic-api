@@ -6,6 +6,10 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Infrastructure.Services;
 
+/// <summary>
+/// Service for managing HTTP-only refresh token cookies
+/// Access tokens are now sent via Authorization header
+/// </summary>
 public class CookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -22,71 +26,61 @@ public class CookieService
         _logger = logger;
     }
 
-    public void SetAccessTokenCookie(string accessToken)
-    {
-        if (string.IsNullOrEmpty(accessToken))
-        {
-            return;
-        }
-
-        var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromMinutes(_cookieSettings.ExpiryInMinutes));
-        _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.AccessToken, accessToken, cookieOptions);
-        
-        _logger.LogInformation("Access token cookie set: Secure={Secure}, SameSite={SameSite}, HttpOnly={HttpOnly}, Expiry={Expiry}", 
-            cookieOptions.Secure, cookieOptions.SameSite, cookieOptions.HttpOnly, cookieOptions.Expires);
-    }
-
+    /// <summary>
+    /// Sets refresh token in HTTP-only cookie (web clients only)
+    /// </summary>
     public void SetRefreshTokenCookie(string refreshToken)
     {
         if (string.IsNullOrEmpty(refreshToken))
         {
+            _logger.LogWarning("Attempted to set empty refresh token cookie");
             return;
         }
 
         var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays));
-        _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.RefreshToken, refreshToken, cookieOptions);
-    }
-
-    public string? GetAccessTokenFromCookie()
-    {
-        var context = _httpContextAccessor.HttpContext;
-        var token = context?.Request.Cookies[CookieConstants.AccessToken];
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(
+            CookieConstants.RefreshToken, 
+            refreshToken, 
+            cookieOptions);
         
-        _logger.LogInformation("Access token cookie retrieval: Found={Found}, Origin={Origin}", 
-            !string.IsNullOrEmpty(token), context?.Request.Headers.Origin.FirstOrDefault() ?? "none");
-            
-        return token;
+        _logger.LogInformation("Refresh token cookie set");
     }
 
+    /// <summary>
+    /// Gets refresh token from HTTP-only cookie (web clients only)
+    /// </summary>
     public string? GetRefreshTokenFromCookie()
     {
         return _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.RefreshToken];
     }
 
-    public void ClearAuthCookies()
+    /// <summary>
+    /// Clears refresh token cookie (web clients only)
+    /// </summary>
+    public void ClearRefreshTokenCookie()
     {
         var context = _httpContextAccessor.HttpContext;
-        if (context == null) return;
+        if (context == null)
+        {
+            _logger.LogWarning("Cannot clear cookie: HttpContext is null");
+            return;
+        }
 
         var expiredOptions = CreateSecureCookieOptions(TimeSpan.FromDays(-1));
-        
-        context.Response.Cookies.Append(CookieConstants.AccessToken, "", expiredOptions);
         context.Response.Cookies.Append(CookieConstants.RefreshToken, "", expiredOptions);
         
-        _logger.LogInformation("Authentication cookies cleared");
+        _logger.LogInformation("Refresh token cookie cleared");
     }
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
     {
-        // Development: Use relaxed settings for HTTP
-        // Production: Use strict settings for HTTPS
         var isProduction = _cookieSettings.IsProduction;
         
         return new CookieOptions
         {
-            HttpOnly = true,
-            Secure = isProduction, // Only require HTTPS in production
-            SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax, // Lax for local dev
+            HttpOnly = true, // Prevents JavaScript access (XSS protection)
+            Secure = isProduction, // HTTPS only in production
+            SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",
             IsEssential = true,

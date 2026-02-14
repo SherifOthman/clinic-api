@@ -229,8 +229,6 @@ public static class DependencyInjection
         app.UseOutputCache();
 
         // Authentication & Authorization
-        // Middleware disabled - using frontend-controlled token refresh
-        // app.UseMiddleware<JwtCookieMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
 
