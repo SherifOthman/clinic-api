@@ -61,8 +61,7 @@ public class UpdatePatientEndpoint : IEndpoint
                     p.FullName,
                     p.Gender,
                     p.DateOfBirth,
-                    DateTime.UtcNow.Year - p.DateOfBirth.Year -
-                        (DateTime.UtcNow.DayOfYear < p.DateOfBirth.DayOfYear ? 1 : 0),
+                    p.DateOfBirth.CalculateAge(),
                     p.CityGeoNameId,
                     p.PhoneNumbers
                         .Where(pn => pn.IsPrimary)
@@ -82,20 +81,17 @@ public class UpdatePatientEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to update patient {PatientId} by {UserId}",
-                id, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
 
     public record Request(
         [Required]
-        [MaxLength(200, ErrorMessage = "Full name must not exceed 200 characters")]
+        [MaxLength(200)]
         string FullName,
         
         [Required]
-        [EnumDataType(typeof(Gender), ErrorMessage = "Invalid gender value")]
+        [EnumDataType(typeof(Gender))]
         Gender Gender,
         
         [Required]

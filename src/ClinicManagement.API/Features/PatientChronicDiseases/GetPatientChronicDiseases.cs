@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,10 +30,12 @@ public class GetPatientChronicDiseasesEndpoint : IEndpoint
             .AnyAsync(p => p.Id == patientId, ct);
 
         if (!patientExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Patient not found or does not belong to your clinic",
-                code = "PATIENT_NOT_FOUND"
+                Code = ErrorCodes.PATIENT_NOT_FOUND,
+                Title = "Patient Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Patient not found or does not belong to your clinic"
             });
 
         var diseases = await db.PatientChronicDiseases

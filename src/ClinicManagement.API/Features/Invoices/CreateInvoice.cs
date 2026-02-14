@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Common.Validation;
 using ClinicManagement.API.Common.Enums;
 using ClinicManagement.API.Common.Exceptions;
@@ -10,6 +12,8 @@ namespace ClinicManagement.API.Features.Invoices;
 
 public class CreateInvoiceEndpoint : IEndpoint
 {
+    private const int DefaultDueDateDays = 30;
+
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapPost("/invoices", HandleAsync)
@@ -35,10 +39,12 @@ public class CreateInvoiceEndpoint : IEndpoint
             .AnyAsync(p => p.Id == request.PatientId, ct);
 
         if (!patientExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Patient not found or does not belong to your clinic",
-                code = "PATIENT_NOT_FOUND"
+                Code = ErrorCodes.PATIENT_NOT_FOUND,
+                Title = "Patient Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Patient not found or does not belong to your clinic"
             });
 
         // Verify appointment if provided (global query filter ensures it belongs to clinic)
@@ -48,10 +54,12 @@ public class CreateInvoiceEndpoint : IEndpoint
                 .AnyAsync(a => a.Id == request.AppointmentId.Value, ct);
 
             if (!appointmentExists)
-                return Results.BadRequest(new
+                return Results.BadRequest(new ApiProblemDetails
                 {
-                    error = "Appointment not found or does not belong to your clinic",
-                    code = "APPOINTMENT_NOT_FOUND"
+                    Code = ErrorCodes.APPOINTMENT_NOT_FOUND,
+                    Title = "Appointment Not Found",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = "Appointment not found or does not belong to your clinic"
                 });
         }
 
@@ -108,7 +116,7 @@ public class CreateInvoiceEndpoint : IEndpoint
             // Issue the invoice
             invoice.Status = InvoiceStatus.Issued;
             invoice.IssuedDate = DateTime.UtcNow;
-            invoice.DueDate ??= DateTime.UtcNow.AddDays(30);
+            invoice.DueDate ??= DateTime.UtcNow.AddDays(DefaultDueDateDays);
 
             await db.SaveChangesAsync(ct);
 
@@ -140,9 +148,6 @@ public class CreateInvoiceEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to create invoice Patient={PatientId} by {UserId}",
-                request.PatientId, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
@@ -154,13 +159,13 @@ public class CreateInvoiceEndpoint : IEndpoint
         Guid? AppointmentId,
         
         [Required]
-        [MinLength(1, ErrorMessage = "At least one invoice item is required")]
+        [MinLength(1)]
         List<InvoiceItemInput> Items,
         
-        [Range(0, double.MaxValue, ErrorMessage = "Discount cannot be negative")]
+        [Range(0, double.MaxValue)]
         decimal? Discount,
         
-        [Range(0, double.MaxValue, ErrorMessage = "Tax amount cannot be negative")]
+        [Range(0, double.MaxValue)]
         decimal? TaxAmount,
         
         [CustomValidation(typeof(CustomValidators), nameof(CustomValidators.MustBeInFutureOrNull))]
@@ -174,11 +179,11 @@ public class CreateInvoiceEndpoint : IEndpoint
         Guid? MedicalSupplyId,
         
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
+        [Range(1, int.MaxValue)]
         int Quantity,
         
         [Required]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Unit price must be greater than 0")]
+        [Range(0.01, double.MaxValue)]
         decimal UnitPrice,
         
         SaleUnit? SaleUnit);

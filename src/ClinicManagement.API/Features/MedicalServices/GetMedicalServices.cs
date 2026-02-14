@@ -1,4 +1,6 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,10 +30,12 @@ public class GetMedicalServicesEndpoint : IEndpoint
             .AnyAsync(cb => cb.Id == clinicBranchId, ct);
 
         if (!branchExists)
-            return Results.BadRequest(new
+            return Results.BadRequest(new ApiProblemDetails
             {
-                error = "Branch not found or does not belong to your clinic",
-                code = "BRANCH_NOT_FOUND"
+                Code = ErrorCodes.BRANCH_NOT_FOUND,
+                Title = "Branch Not Found",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "Branch not found or does not belong to your clinic"
             });
 
         var services = await db.MedicalServices

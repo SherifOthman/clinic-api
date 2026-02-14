@@ -92,23 +92,20 @@ public class RecordPaymentEndpoint : IEndpoint
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to record payment Invoice={InvoiceId} Amount={Amount} by {UserId}",
-                invoiceId, request.Amount, currentUser.UserId);
             return ex.HandleDomainException();
         }
     }
 
     public record Request(
         [Required]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Payment amount must be greater than 0")]
+        [Range(0.01, double.MaxValue)]
         decimal Amount,
         
         [Required]
-        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method")]
+        [EnumDataType(typeof(PaymentMethod))]
         PaymentMethod PaymentMethod,
         
-        [MaxLength(100, ErrorMessage = "Reference number must not exceed 100 characters")]
+        [MaxLength(100)]
         string? ReferenceNumber);
 
     public record Response(

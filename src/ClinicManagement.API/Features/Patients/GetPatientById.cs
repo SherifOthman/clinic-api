@@ -33,8 +33,7 @@ public class GetPatientByIdEndpoint : IEndpoint
                 p.FullName,
                 p.Gender,
                 p.DateOfBirth,
-                DateTime.UtcNow.Year - p.DateOfBirth.Year -
-                    (DateTime.UtcNow.DayOfYear < p.DateOfBirth.DayOfYear ? 1 : 0),
+                p.DateOfBirth.CalculateAge(),
                 p.CityGeoNameId,
                 p.PhoneNumbers
                     .Where(pn => pn.IsPrimary)

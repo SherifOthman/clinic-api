@@ -78,10 +78,10 @@ public class RemoveMedicineStockEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Strips must be greater than 0")]
+        [Range(1, int.MaxValue)]
         int Strips,
         
-        [MaxLength(500, ErrorMessage = "Reason must not exceed 500 characters")]
+        [MaxLength(500)]
         string? Reason = null);
 
     public record Response(

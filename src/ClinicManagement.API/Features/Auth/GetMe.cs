@@ -22,11 +22,7 @@ public class GetMeEndpoint : IEndpoint
         UserManager<User> userManager,
         CancellationToken ct)
     {
-        var userId = currentUser.UserId;
-        if (userId == null)
-            return Results.Unauthorized();
-
-        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        var user = await userManager.FindByIdAsync(currentUser.UserId!.Value.ToString());
         if (user == null)
             return Results.Unauthorized();
 
