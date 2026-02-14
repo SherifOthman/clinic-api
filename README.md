@@ -20,26 +20,30 @@ Core modules include authentication, patient records, appointments, invoicing wi
 
 ## 🏗 Architecture
 
-**Vertical Slice Architecture** organizes code by feature instead of technical layer. Each feature is a self-contained vertical slice from HTTP endpoint down to database query.
+**Refactored from Clean Architecture to Vertical Slice Architecture.** The original implementation used Controllers + MediatR + Repository Pattern + Unit of Work. This was removed because most operations are simple CRUD that don't benefit from these abstractions.
 
-**Why this approach:**
+**What was removed:**
 
-- Changes to one feature don't ripple through unrelated code
-- No generic repositories or service abstractions that add indirection without value
-- Each feature file contains everything needed: endpoint definition, DTOs, validation, business logic, and data access
-- Easier to understand what a feature does by reading one file
+- Controllers that forwarded requests to MediatR handlers
+- Command/Query handlers that just called repository methods
+- Repository pattern wrapping EF Core (which is already a repository)
+- Unit of Work pattern (DbContext already handles transactions)
+- Rich domain models with business logic in entities
 
-**How it differs from layered architecture:**
+**Result:** Eliminated ~1,900 lines of code while maintaining functionality.
 
-- Traditional: Controllers → Services → Repositories → Entities (horizontal layers)
-- Vertical Slice: Each feature owns its complete stack (vertical slice)
-- Trade-off: More files (53 feature files vs ~10 controllers), but better isolation
+**Current structure:** Each feature is one file containing endpoint, validation, business logic, and data access.
 
-**Example structure:**
+```
+Features/Patients/
+├── CreatePatient.cs      # POST /patients - complete operation
+├── GetPatients.cs        # GET /patients - with filtering/pagination
+└── UpdatePatient.cs      # PUT /patients/{id} - complete operation
+```
 
-- `Features/Auth/Login.cs` - Complete login flow in one file
-- `Features/Patients/CreatePatient.cs` - Patient creation endpoint with validation and persistence
-- `Features/Invoices/GetInvoicesByPatient.cs` - Invoice retrieval with filtering and pagination
+**Why this works:** Most operations are straightforward CRUD. Complex logic (invoice calculations, medicine stock management) stays in feature handlers where it's actually used, not abstracted into domain models.
+
+**Trade-off:** More files (53 vs ~15 controllers), some duplication. Acceptable for feature independence.
 
 ---
 
