@@ -124,21 +124,9 @@ public static class DependencyInjection
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             };
-
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    // Read token from Authorization header (standard approach)
-                    var authHeader = context.Request.Headers["Authorization"].ToString();
-                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
-                    {
-                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
-                    }
-                    
-                    return Task.CompletedTask;
-                }
-            };
+            
+            // JWT Bearer automatically reads from Authorization header
+            // No custom event handler needed
         });
     }
 
