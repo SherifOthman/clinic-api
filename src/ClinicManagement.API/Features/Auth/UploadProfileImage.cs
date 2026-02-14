@@ -60,11 +60,7 @@ public class UploadProfileImageEndpoint : IEndpoint
                 Detail = $"File must be one of the following types: {string.Join(", ", allowedExtensions)}"
             });
 
-        var userId = currentUserService.UserId;
-        if (userId == null)
-            return Results.Unauthorized();
-
-        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
         if (user == null)
             return Results.BadRequest(new ApiProblemDetails
             {

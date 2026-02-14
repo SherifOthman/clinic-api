@@ -29,6 +29,6 @@ public class LogoutEndpoint : IEndpoint
         // Clear authentication cookies
         cookieService.ClearAuthCookies();
 
-        return Results.Ok(new { message = "Logged out successfully" });
+        return Results.Ok(new MessageResponse("Logged out successfully"));
     }
 }

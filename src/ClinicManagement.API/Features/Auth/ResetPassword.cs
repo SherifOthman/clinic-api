@@ -41,7 +41,7 @@ public class ResetPasswordEndpoint : IEndpoint
             var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
             result.ThrowIfFailed();
 
-            return Results.Ok(new { message = "Password reset successfully" });
+            return Results.Ok(new MessageResponse("Password reset successfully"));
         }
         catch (Exception ex)
         {
@@ -58,6 +58,6 @@ public class ResetPasswordEndpoint : IEndpoint
         string Token,
         
         [Required]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
+        [MinLength(6)]
         string NewPassword);
 }

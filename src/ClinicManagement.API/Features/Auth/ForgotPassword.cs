@@ -31,7 +31,7 @@ public class ForgotPasswordEndpoint : IEndpoint
 
         // Always return success to prevent email enumeration
         if (user == null)
-            return Results.Ok(new { message = "Password reset email sent" });
+            return Results.Ok(new MessageResponse("Password reset email sent"));
 
         // Generate password reset token
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
@@ -55,7 +55,7 @@ public class ForgotPasswordEndpoint : IEndpoint
             // Still return success to prevent email enumeration
         }
 
-        return Results.Ok(new { message = "Password reset email sent" });
+        return Results.Ok(new MessageResponse("Password reset email sent"));
     }
 
     public record Request(

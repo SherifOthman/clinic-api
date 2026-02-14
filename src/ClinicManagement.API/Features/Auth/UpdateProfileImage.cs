@@ -26,11 +26,7 @@ public class UpdateProfileImageEndpoint : IEndpoint
         UserManager<User> userManager,
         CancellationToken ct)
     {
-        var userId = currentUserService.UserId;
-        if (userId == null)
-            return Results.Unauthorized();
-
-        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
         if (user == null)
             return Results.BadRequest(new ApiProblemDetails
             {
@@ -74,7 +70,7 @@ public class UpdateProfileImageEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [MaxLength(500, ErrorMessage = "Profile image URL must not exceed 500 characters")]
+        [MaxLength(500)]
         [Url]
         string ProfileImageUrl);
 

@@ -39,7 +39,7 @@ public class ResendEmailVerificationEndpoint : IEndpoint
         if (await emailConfirmationService.IsEmailConfirmedAsync(user, ct))
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = "EMAIL_ALREADY_CONFIRMED",
+                Code = ErrorCodes.EMAIL_ALREADY_CONFIRMED,
                 Title = "Email Already Confirmed",
                 Status = StatusCodes.Status400BadRequest,
                 Detail = "Email is already confirmed"
@@ -48,7 +48,7 @@ public class ResendEmailVerificationEndpoint : IEndpoint
         try
         {
             await emailConfirmationService.SendConfirmationEmailAsync(user, ct);
-            return Results.Ok(new { message = "Verification email sent" });
+            return Results.Ok(new MessageResponse("Verification email sent"));
         }
         catch (Exception ex)
         {

@@ -26,11 +26,7 @@ public class ChangePasswordEndpoint : IEndpoint
         UserManager<User> userManager,
         CancellationToken ct)
     {
-        var userId = currentUserService.UserId;
-        if (userId == null)
-            return Results.Unauthorized();
-
-        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
         if (user == null)
             return Results.BadRequest(new ApiProblemDetails
             {
@@ -66,7 +62,7 @@ public class ChangePasswordEndpoint : IEndpoint
             });
         }
 
-        return Results.Ok(new { message = "Password changed successfully" });
+        return Results.Ok(new MessageResponse("Password changed successfully"));
     }
 
     public record Request(
@@ -74,6 +70,6 @@ public class ChangePasswordEndpoint : IEndpoint
         string CurrentPassword,
         
         [Required]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
+        [MinLength(6)]
         string NewPassword);
 }

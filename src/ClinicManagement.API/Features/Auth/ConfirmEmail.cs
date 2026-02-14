@@ -39,10 +39,10 @@ public class ConfirmEmailEndpoint : IEndpoint
                 });
 
             if (await emailConfirmationService.IsEmailConfirmedAsync(user, ct))
-                return Results.Ok(new { message = "Email already confirmed" });
+                return Results.Ok(new MessageResponse("Email already confirmed"));
 
             await emailConfirmationService.ConfirmEmailAsync(user, request.Token, ct);
-            return Results.Ok(new { message = "Email confirmed successfully" });
+            return Results.Ok(new MessageResponse("Email confirmed successfully"));
         }
         catch (Exception ex)
         {
