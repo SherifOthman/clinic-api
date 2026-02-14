@@ -94,9 +94,24 @@ modelBuilder.Entity<Patient>()
 
 ```csharp
 // In SaveChangesAsync override
-if (entry.State == EntityState.Added && entry.Entity is ITenantEntity tenantEntity)
+if (currentClinicId.HasValue)
 {
-    tenantEntity.ClinicId = _currentUserService.ClinicId;
+    foreach (var entry in ChangeTracker.Entries())
+    {
+        if (entry.State == EntityState.Added)
+        {
+            var clinicIdProperty = entry.Metadata.FindProperty("ClinicId");
+            if (clinicIdProperty != null)
+            {
+                var currentValue = entry.Property("ClinicId").CurrentValue;
+                // Only set if not already set (allows explicit override)
+                if (currentValue == null || (currentValue is Guid guid && guid == Guid.Empty))
+                {
+                    entry.Property("ClinicId").CurrentValue = currentClinicId.Value;
+                }
+            }
+        }
+    }
 }
 ```
 
