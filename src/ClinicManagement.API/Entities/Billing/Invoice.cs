@@ -3,13 +3,12 @@ using ClinicManagement.API.Common.Enums;
 
 namespace ClinicManagement.API.Entities;
 
-public class Invoice : AuditableEntity
+public class Invoice : TenantEntity
 {
     private readonly List<InvoiceItem> _items = [];
     private readonly List<Payment> _payments = [];
 
     public string InvoiceNumber { get; set; } = null!;
-    public Guid ClinicId { get; set; }
     public Guid PatientId { get; set; }
     public Guid? AppointmentId { get; set; }
     public Guid? MedicalVisitId { get; set; }

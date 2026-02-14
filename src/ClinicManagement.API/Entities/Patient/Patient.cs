@@ -3,14 +3,13 @@ using ClinicManagement.API.Common.Enums;
 
 namespace ClinicManagement.API.Entities;
 
-public class Patient : AuditableEntity
+public class Patient : TenantEntity
 {
     private readonly List<PatientPhone> _phoneNumbers = [];
     private readonly List<PatientChronicDisease> _chronicDiseases = [];
     private readonly List<PatientAllergy> _allergies = [];
 
     public string PatientCode { get; set; } = null!;
-    public Guid ClinicId { get; set; }
     public string FullName { get; set; } = null!;
     public Gender Gender { get; set; }
     public int? CityGeoNameId { get; set; }

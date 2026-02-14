@@ -96,24 +96,49 @@ modelBuilder.Entity<Patient>()
 // In SaveChangesAsync override
 if (currentClinicId.HasValue)
 {
-    foreach (var entry in ChangeTracker.Entries())
+    foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
     {
         if (entry.State == EntityState.Added)
         {
-            var clinicIdProperty = entry.Metadata.FindProperty("ClinicId");
-            if (clinicIdProperty != null)
+            // Only set if not already set (allows explicit override)
+            if (entry.Entity.ClinicId == Guid.Empty)
             {
-                var currentValue = entry.Property("ClinicId").CurrentValue;
-                // Only set if not already set (allows explicit override)
-                if (currentValue == null || (currentValue is Guid guid && guid == Guid.Empty))
-                {
-                    entry.Property("ClinicId").CurrentValue = currentClinicId.Value;
-                }
+                entry.Entity.ClinicId = currentClinicId.Value;
             }
         }
     }
 }
 ```
+
+**ITenantEntity interface:**
+
+```csharp
+public interface ITenantEntity
+{
+    Guid ClinicId { get; set; }
+}
+
+// Base class for tenant-scoped entities
+public abstract class TenantEntity : AuditableEntity, ITenantEntity
+{
+    public Guid ClinicId { get; set; }
+}
+
+// Entities inherit from TenantEntity
+public class Patient : TenantEntity
+{
+    // ClinicId inherited from TenantEntity
+    public string PatientCode { get; set; } = null!;
+    // ...
+}
+```
+
+**Benefits:**
+
+- Compile-time safety - can't misspell property name
+- Explicit contract - clear which entities are tenant-scoped
+- Easy to find all tenant entities via interface
+- Better IDE support and navigation
 
 **Security guarantee:**
 

@@ -95,19 +95,14 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         // This ensures multi-tenancy isolation at the data layer
         if (currentClinicId.HasValue)
         {
-            foreach (var entry in ChangeTracker.Entries())
+            foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
             {
                 if (entry.State == EntityState.Added)
                 {
-                    var clinicIdProperty = entry.Metadata.FindProperty("ClinicId");
-                    if (clinicIdProperty != null)
+                    // Only set if not already set (allows explicit override)
+                    if (entry.Entity.ClinicId == Guid.Empty)
                     {
-                        var currentValue = entry.Property("ClinicId").CurrentValue;
-                        // Only set if not already set (allows explicit override)
-                        if (currentValue == null || (currentValue is Guid guid && guid == Guid.Empty))
-                        {
-                            entry.Property("ClinicId").CurrentValue = currentClinicId.Value;
-                        }
+                        entry.Entity.ClinicId = currentClinicId.Value;
                     }
                 }
             }

@@ -5,9 +5,8 @@ namespace ClinicManagement.API.Entities;
 /// <summary>
 /// Laboratory tests available at a clinic
 /// </summary>
-public class LabTest : BaseEntity
+public class LabTest : TenantEntity
 {
-    public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
     
     public string Name { get; set; } = null!; // CBC, ESR...

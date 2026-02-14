@@ -5,9 +5,8 @@ namespace ClinicManagement.API.Entities;
 /// <summary>
 /// Radiology tests available at a clinic
 /// </summary>
-public class RadiologyTest : BaseEntity
+public class RadiologyTest : TenantEntity
 {
-    public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
     
     public string Name { get; set; } = null!; // X-Ray Chest

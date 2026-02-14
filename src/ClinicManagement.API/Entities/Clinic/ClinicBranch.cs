@@ -4,9 +4,8 @@ using ClinicManagement.API.Common;
 
 namespace ClinicManagement.API.Entities;
 
-public class ClinicBranch : AuditableEntity
+public class ClinicBranch : TenantEntity
 {
-    public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
     
     public string Name { get; set; } = null!;

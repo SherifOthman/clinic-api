@@ -3,12 +3,11 @@ using ClinicManagement.API.Common.Enums;
 
 namespace ClinicManagement.API.Entities;
 
-public class StaffInvitation : AuditableEntity
+public class StaffInvitation : TenantEntity
 {
     public string Email { get; set; } = null!;
     public UserType UserType { get; set; } // Doctor or Receptionist
     
-    public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
     
     public Guid InvitedByUserId { get; set; }

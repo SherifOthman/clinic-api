@@ -3,9 +3,8 @@ using ClinicManagement.API.Common;
 
 namespace ClinicManagement.API.Entities;
 
-public class ClinicMedication : BaseEntity
+public class ClinicMedication : TenantEntity
 {
-    public Guid ClinicId { get; set; }
     public Clinic Clinic { get; set; } = null!;
     
     public Guid? MedicationId { get; set; }
