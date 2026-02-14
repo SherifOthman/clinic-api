@@ -11,6 +11,7 @@ namespace ClinicManagement.API.Infrastructure.Services;
 /// - Merges by GeonameId
 /// - Caching handled by Output Cache at endpoint level
 /// - Frontend never calls GeoNames directly
+/// - Cities filtered by population (>= 5000) to exclude tiny villages
 /// </summary>
 public partial class GeoNamesService
 {
@@ -90,17 +91,31 @@ public partial class GeoNamesService
 
         try
         {
-            // Fetch English data
-            var citiesEn = await FetchChildrenInLanguageAsync(stateGeonameId, "en", cancellationToken);
+            // First, get the state info to extract adminCode1
+            var stateInfoEn = await GetLocationInfoAsync(stateGeonameId, "en", cancellationToken);
             
-            // Fetch Arabic data
-            var citiesAr = await FetchChildrenInLanguageAsync(stateGeonameId, "ar", cancellationToken);
+            if (stateInfoEn == null)
+            {
+                _logger.LogWarning("State {StateGeonameId} not found", stateGeonameId);
+                return new List<GeoNamesLocationDto>();
+            }
 
-            // Filter for ADM2 (administrative division level 2) and merge
-            var cities = MergeLocationData(
-                citiesEn.Where(c => c.Fcode.StartsWith("ADM2")).ToList(),
-                citiesAr.Where(c => c.Fcode.StartsWith("ADM2")).ToList()
-            );
+            // Use search API to get ALL populated places within the state
+            // This includes cities, towns, villages that children API might miss
+            var citiesEn = await SearchCitiesInStateAsync(
+                stateInfoEn.CountryCode, 
+                stateInfoEn.AdminCode1, 
+                "en", 
+                cancellationToken);
+            
+            var citiesAr = await SearchCitiesInStateAsync(
+                stateInfoEn.CountryCode, 
+                stateInfoEn.AdminCode1, 
+                "ar", 
+                cancellationToken);
+
+            // Merge bilingual data
+            var cities = MergeLocationData(citiesEn, citiesAr);
 
             _logger.LogInformation("Fetched {Count} cities for state {StateGeonameId} (bilingual)", 
                 cities.Count, stateGeonameId);
@@ -138,7 +153,9 @@ public partial class GeoNamesService
         string language,
         CancellationToken cancellationToken)
     {
-        var url = $"{_options.BaseUrl}/childrenJSON?geonameId={parentGeonameId}&username={_options.Username}&lang={language}";
+        // Use maxRows=1000 to get all children (GeoNames API allows up to 1000)
+        // Default is only 200 which may not include all cities/districts
+        var url = $"{_options.BaseUrl}/childrenJSON?geonameId={parentGeonameId}&username={_options.Username}&lang={language}&maxRows=1000";
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
 
@@ -149,6 +166,64 @@ public partial class GeoNamesService
         });
 
         return result?.Geonames ?? new List<GeoNamesChildInfo>();
+    }
+
+    private async Task<GeoNamesLocationInfo?> GetLocationInfoAsync(
+        int geonameId,
+        string language,
+        CancellationToken cancellationToken)
+    {
+        var url = $"{_options.BaseUrl}/getJSON?geonameId={geonameId}&username={_options.Username}&lang={language}";
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<GeoNamesLocationInfo>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        return result;
+    }
+
+    private async Task<List<GeoNamesChildInfo>> SearchCitiesInStateAsync(
+        string countryCode,
+        string adminCode1,
+        string language,
+        CancellationToken cancellationToken)
+    {
+        // Use search API to get populated places and administrative divisions
+        // Ordered by population to prioritize important cities
+        var url = $"{_options.BaseUrl}/searchJSON?country={countryCode}&adminCode1={adminCode1}" +
+                  $"&featureClass=P&featureClass=A" + // P=populated places, A=administrative
+                  $"&username={_options.Username}&lang={language}&maxRows=1000&orderby=population";
+        
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<GeoNamesSearchResponse>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        // Filter strategy:
+        // - Always include ADM2 (administrative divisions)
+        // - Always include PPLA2, PPLA3, PPLA4 (administrative capitals)
+        // - Include PPL only if population >= 5000 (filters out tiny villages)
+        return result?.Geonames?
+            .Where(g => g.Fcode.StartsWith("ADM2") || 
+                       g.Fcode == "PPLA2" || 
+                       g.Fcode == "PPLA3" || 
+                       g.Fcode == "PPLA4" ||
+                       (g.Fcode == "PPL" && g.Population >= 5000))
+            .Select(g => new GeoNamesChildInfo
+            {
+                GeonameId = g.GeonameId,
+                Name = g.Name,
+                Fcode = g.Fcode
+            })
+            .ToList() ?? new List<GeoNamesChildInfo>();
     }
 
     /// <summary>
@@ -228,6 +303,28 @@ public partial class GeoNamesService
     private class GeoNamesResponse<T>
     {
         public List<T> Geonames { get; set; } = new();
+    }
+
+    private class GeoNamesLocationInfo
+    {
+        public int GeonameId { get; set; }
+        public string Name { get; set; } = null!;
+        public string CountryCode { get; set; } = null!;
+        public string AdminCode1 { get; set; } = null!;
+        public string Fcode { get; set; } = null!;
+    }
+
+    private class GeoNamesSearchResponse
+    {
+        public List<GeoNamesSearchResult> Geonames { get; set; } = new();
+    }
+
+    private class GeoNamesSearchResult
+    {
+        public int GeonameId { get; set; }
+        public string Name { get; set; } = null!;
+        public string Fcode { get; set; } = null!;
+        public int Population { get; set; }
     }
 
     #endregion
