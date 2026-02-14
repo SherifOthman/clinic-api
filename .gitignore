@@ -370,5 +370,8 @@ FodyWeavers.xsd
 # Entity Framework
 Migrations/
 
+# Application Logs
+**/Logs/*.log
+
 # Production settings with sensitive data
 appsettings.Production.json
