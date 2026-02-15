@@ -39,6 +39,8 @@ public class CurrentUserService
             var context = _httpContextAccessor.HttpContext;
             if (context == null) return "unknown";
 
+            // Check X-Forwarded-For header first (for proxied requests)
+            // Takes first IP in chain as that's the original client IP
             var xForwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (!string.IsNullOrEmpty(xForwardedFor))
                 return xForwardedFor.Split(',')[0].Trim();

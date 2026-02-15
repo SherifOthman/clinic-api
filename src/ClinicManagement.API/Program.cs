@@ -44,8 +44,6 @@ try
     app.UseSerilogRequestLogging();
     app.UseAppConfigurations();
 
-    // Scalar API Documentation (uses Swagger/OpenAPI document)
-
     Log.Information("Clinic Management API started successfully");
     app.Run();
 }
@@ -59,5 +57,5 @@ finally
     Log.CloseAndFlush();
 }
 
-// Make Program class accessible to integration tests
+// Expose Program class to integration tests for WebApplicationFactory
 public partial class Program { }

@@ -28,7 +28,7 @@ public class RadiologyOrder : BaseEntity
     public Patient Patient { get; set; } = null!;
     public RadiologyTest RadiologyTest { get; set; } = null!;
     public MedicalVisit? MedicalVisit { get; set; }
-    public Doctor? OrderedByDoctor { get; set; }
+    public DoctorProfile? OrderedByDoctor { get; set; }
 }
 
 public enum RadiologyStatus

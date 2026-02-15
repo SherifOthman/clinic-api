@@ -18,14 +18,9 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Specialization> Specializations => Set<Specialization>();
     
-    // New Staff architecture
+    // Staff architecture
     public DbSet<Staff> Staff => Set<Staff>();
     public DbSet<DoctorProfile> DoctorProfiles => Set<DoctorProfile>();
-    
-    // Old entities (keep temporarily for migration)
-    public DbSet<Doctor> Doctors => Set<Doctor>();
-    public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
-    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
     
     public DbSet<DoctorWorkingDay> DoctorWorkingDays => Set<DoctorWorkingDay>();
     public DbSet<Patient> Patients => Set<Patient>();
@@ -187,11 +182,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         
         // Clinic entity itself (only soft delete filter)
         builder.Entity<Clinic>().HasQueryFilter(e => !e.IsDeleted);
-        
-        // Old user-related entities (keep for migration)
-        builder.Entity<Doctor>().HasQueryFilter(e => !e.IsDeleted);
-        builder.Entity<Receptionist>().HasQueryFilter(e => !e.IsDeleted);
-        builder.Entity<ClinicOwner>().HasQueryFilter(e => !e.IsDeleted);
         
         // Medical entities with soft delete
         builder.Entity<PatientChronicDisease>().HasQueryFilter(e => !e.IsDeleted);

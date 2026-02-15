@@ -72,18 +72,31 @@ public class TestDataBuilder
         return patient;
     }
 
-    public async Task<Doctor> CreateDoctorAsync(Guid userId, Guid clinicId, Guid specializationId)
+    public async Task<DoctorProfile> CreateDoctorAsync(Guid userId, Guid clinicId, Guid specializationId)
     {
-        var doctor = new Doctor
+        // Create Staff record first
+        var staff = new Staff
         {
             UserId = userId,
+            ClinicId = clinicId,
+            IsActive = true,
+            HireDate = DateTime.UtcNow
+        };
+
+        _db.Staff.Add(staff);
+        await _db.SaveChangesAsync();
+
+        // Create DoctorProfile
+        var doctorProfile = new DoctorProfile
+        {
+            StaffId = staff.Id,
             SpecializationId = specializationId,
             LicenseNumber = $"LIC-{DateTime.UtcNow.Ticks}"
         };
 
-        _db.Doctors.Add(doctor);
+        _db.DoctorProfiles.Add(doctorProfile);
         await _db.SaveChangesAsync();
-        return doctor;
+        return doctorProfile;
     }
 
     public async Task<AppointmentType> CreateAppointmentTypeAsync(string nameEn = "Consultation")

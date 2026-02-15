@@ -27,7 +27,7 @@ public class LabTestOrder : BaseEntity
     public Patient Patient { get; set; } = null!;
     public LabTest LabTest { get; set; } = null!;
     public MedicalVisit? MedicalVisit { get; set; }
-    public Doctor? OrderedByDoctor { get; set; }
+    public DoctorProfile? OrderedByDoctor { get; set; }
 }
 
 public enum LabTestStatus
