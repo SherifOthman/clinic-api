@@ -145,11 +145,11 @@ public class CreateAppointmentEndpoint : IEndpoint
 
     private static async Task<string> GenerateAppointmentNumberAsync(
         ApplicationDbContext db,
-        DateTimeProvider dateTime,
+        DateTimeProvider dateTimeProvider,
         Guid clinicBranchId,
         CancellationToken ct)
     {
-        var year = dateTime.UtcNow.Year;
+        var year = dateTimeProvider.UtcNow.Year;
         var count = await db.Appointments
             .CountAsync(a => a.ClinicBranchId == clinicBranchId && a.CreatedAt.Year == year, ct);
         

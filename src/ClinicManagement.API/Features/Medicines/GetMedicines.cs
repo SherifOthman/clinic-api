@@ -22,6 +22,7 @@ public class GetMedicinesEndpoint : IEndpoint
         [AsParameters] Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        DateTimeProvider dateTimeProvider,
         CancellationToken ct)
     {
         // Build query - ClinicId filter is automatic via global query filter
@@ -29,7 +30,7 @@ public class GetMedicinesEndpoint : IEndpoint
             .WhereIf(request.ClinicBranchId.HasValue, m => m.ClinicBranchId == request.ClinicBranchId!.Value)
             .WhereIf(request.IsActive.HasValue, m => m.IsActive == request.IsActive!.Value)
             .WhereIf(request.IsLowStock == true, m => m.TotalStripsInStock <= m.MinimumStockLevel)
-            .WhereIf(request.IsExpired == true, m => m.ExpiryDate.HasValue && m.ExpiryDate.Value.Date < DateTime.UtcNow.Date);
+            .WhereIf(request.IsExpired == true, m => m.ExpiryDate.HasValue && m.ExpiryDate.Value.Date < dateTimeProvider.UtcNow.Date);
 
         // Get total count
         var totalCount = await query.CountAsync(ct);

@@ -14,17 +14,20 @@ public class UserRegistrationService
     private readonly ApplicationDbContext _db;
     private readonly UserManager<User> _userManager;
     private readonly EmailConfirmationService _emailConfirmationService;
+    private readonly DateTimeProvider _dateTimeProvider;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
         ApplicationDbContext db,
         UserManager<User> userManager,
         EmailConfirmationService emailConfirmationService,
+        DateTimeProvider dateTimeProvider,
         ILogger<UserRegistrationService> logger)
     {
         _db = db;
         _userManager = userManager;
         _emailConfirmationService = emailConfirmationService;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
@@ -155,7 +158,7 @@ public class UserRegistrationService
                 UserId = userId,
                 ClinicId = clinicId.Value,
                 IsActive = true,
-                HireDate = DateTime.UtcNow
+                HireDate = _dateTimeProvider.UtcNow
             };
 
             _db.Staff.Add(staff);

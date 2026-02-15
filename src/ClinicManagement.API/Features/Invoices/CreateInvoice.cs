@@ -31,6 +31,7 @@ public class CreateInvoiceEndpoint : IEndpoint
         ApplicationDbContext db,
         CurrentUserService currentUser,
         CodeGeneratorService codeGenerator,
+        DateTimeProvider dateTimeProvider,
         ILogger<CreateInvoiceEndpoint> logger,
         CancellationToken ct)
     {
@@ -115,8 +116,8 @@ public class CreateInvoiceEndpoint : IEndpoint
 
             // Issue the invoice
             invoice.Status = InvoiceStatus.Issued;
-            invoice.IssuedDate = DateTime.UtcNow;
-            invoice.DueDate ??= DateTime.UtcNow.AddDays(DefaultDueDateDays);
+            invoice.IssuedDate = dateTimeProvider.UtcNow;
+            invoice.DueDate ??= dateTimeProvider.UtcNow.AddDays(DefaultDueDateDays);
 
             await db.SaveChangesAsync(ct);
 

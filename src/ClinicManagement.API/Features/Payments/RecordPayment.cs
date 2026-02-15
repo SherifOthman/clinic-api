@@ -26,6 +26,7 @@ public class RecordPaymentEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        DateTimeProvider dateTimeProvider,
         ILogger<RecordPaymentEndpoint> logger,
         CancellationToken ct)
     {
@@ -45,7 +46,7 @@ public class RecordPaymentEndpoint : IEndpoint
                 Amount = request.Amount,
                 PaymentMethod = request.PaymentMethod,
                 ReferenceNumber = request.ReferenceNumber,
-                PaymentDate = DateTime.UtcNow,
+                PaymentDate = dateTimeProvider.UtcNow,
                 Status = PaymentStatus.Paid
             };
 

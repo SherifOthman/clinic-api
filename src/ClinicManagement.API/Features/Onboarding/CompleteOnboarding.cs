@@ -21,6 +21,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
         Request request,
         ApplicationDbContext db,
         CurrentUserService currentUser,
+        DateTimeProvider dateTimeProvider,
         CancellationToken ct)
     {
         var userId = currentUser.UserId!.Value;
@@ -72,7 +73,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
             OwnerUserId = userId,
             SubscriptionPlanId = request.SubscriptionPlanId,
             OnboardingCompleted = true,
-            OnboardingCompletedDate = DateTime.UtcNow
+            OnboardingCompletedDate = dateTimeProvider.UtcNow
         };
 
         db.Clinics.Add(clinic);
@@ -98,7 +99,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
             UserId = userId,
             ClinicId = clinic.Id,
             IsActive = true,
-            HireDate = DateTime.UtcNow
+            HireDate = dateTimeProvider.UtcNow
         };
 
         db.Staff.Add(staff);

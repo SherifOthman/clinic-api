@@ -83,7 +83,7 @@ public class LoginEndpoint : IEndpoint
             user.Id, isMobile ? "mobile" : "web", string.Join(", ", roles));
 
         if (isMobile)
-        {
+        {   
             return Results.Ok(new Response(accessToken, refreshToken.Token));
         }
         

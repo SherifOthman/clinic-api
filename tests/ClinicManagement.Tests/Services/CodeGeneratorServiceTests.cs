@@ -21,7 +21,7 @@ public class CodeGeneratorServiceTests
         var dateTimeProvider = new DateTimeProvider();
 
         using var context = new ApplicationDbContext(options, currentUserService, dateTimeProvider);
-        var service = new CodeGeneratorService(context, currentUserService);
+        var service = new CodeGeneratorService(context, currentUserService, dateTimeProvider);
 
         // Act
         var invoiceNumber = await service.GenerateInvoiceNumberAsync();
@@ -44,7 +44,7 @@ public class CodeGeneratorServiceTests
         var dateTimeProvider = new DateTimeProvider();
 
         using var context = new ApplicationDbContext(options, currentUserService, dateTimeProvider);
-        var service = new CodeGeneratorService(context, currentUserService);
+        var service = new CodeGeneratorService(context, currentUserService, dateTimeProvider);
 
         // Act
         var patientNumber = await service.GeneratePatientNumberAsync();
