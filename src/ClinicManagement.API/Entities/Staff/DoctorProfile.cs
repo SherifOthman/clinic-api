@@ -23,16 +23,6 @@ public class DoctorProfile : TenantEntity
     /// </summary>
     public string? LicenseNumber { get; set; }
     
-    /// <summary>
-    /// Doctor's biography and qualifications
-    /// </summary>
-    public string? Bio { get; set; }
-    
-    /// <summary>
-    /// Consultation fee (if applicable)
-    /// </summary>
-    public decimal? ConsultationFee { get; set; }
-    
     // Navigation properties
     public virtual Staff Staff { get; set; } = null!;
     public virtual Specialization? Specialization { get; set; }

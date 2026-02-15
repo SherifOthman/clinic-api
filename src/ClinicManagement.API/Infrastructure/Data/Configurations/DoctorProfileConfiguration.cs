@@ -15,12 +15,6 @@ public class DoctorProfileConfiguration : IEntityTypeConfiguration<DoctorProfile
         builder.Property(d => d.LicenseNumber)
             .HasMaxLength(100);
         
-        builder.Property(d => d.Bio)
-            .HasMaxLength(2000);
-        
-        builder.Property(d => d.ConsultationFee)
-            .HasPrecision(18, 2);
-        
         // Relationships
         builder.HasOne(d => d.Staff)
             .WithOne(s => s.DoctorProfile)
