@@ -13,7 +13,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
             .WithName("CompleteOnboarding")
             .WithSummary("Complete clinic onboarding")
             .WithTags("Onboarding")
-            .Produces<Response>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest);
     }
 
@@ -106,13 +106,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
 
         await db.SaveChangesAsync(ct);
 
-        var response = new Response(
-            clinic.Id,
-            branch.Id,
-            "Onboarding completed successfully"
-        );
-
-        return Results.Created($"/api/clinics/{clinic.Id}", response);
+        return Results.NoContent();
     }
 
     public record Request(
@@ -142,9 +136,4 @@ public class CompleteOnboardingEndpoint : IEndpoint
         [Required]
         [Range(1, int.MaxValue)]
         int CityGeoNameId);
-
-    public record Response(
-        Guid ClinicId,
-        Guid BranchId,
-        string Message);
 }
