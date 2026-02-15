@@ -25,8 +25,7 @@ public class CompleteOnboardingEndpoint : IEndpoint
     {
         var userId = currentUser.UserId!.Value;
 
-        // Onboarding flow: User registers → Completes onboarding → Gets ClinicId
-        // After onboarding, user can access clinic-scoped features
+        // Onboarding flow: User registers → Completes onboarding → Creates Clinic + Gets Staff record
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
 
@@ -39,7 +38,11 @@ public class CompleteOnboardingEndpoint : IEndpoint
                 Detail = "User not found"
             });
 
-        if (user.ClinicId != null)
+        // Check if user already has a clinic (already onboarded)
+        var existingClinic = await db.Clinics
+            .FirstOrDefaultAsync(c => c.OwnerUserId == userId, ct);
+            
+        if (existingClinic != null)
             return Results.BadRequest(new ApiProblemDetails
             {
                 Code = ErrorCodes.ALREADY_ONBOARDED,
@@ -67,7 +70,9 @@ public class CompleteOnboardingEndpoint : IEndpoint
             Id = Guid.NewGuid(),
             Name = request.ClinicName,
             OwnerUserId = userId,
-            SubscriptionPlanId = request.SubscriptionPlanId
+            SubscriptionPlanId = request.SubscriptionPlanId,
+            OnboardingCompleted = true,
+            OnboardingCompletedDate = DateTime.UtcNow
         };
 
         db.Clinics.Add(clinic);
@@ -86,9 +91,17 @@ public class CompleteOnboardingEndpoint : IEndpoint
 
         db.ClinicBranches.Add(branch);
 
-        // Link user to clinic (enables multi-tenancy filtering)
-        user.ClinicId = clinic.Id;
-        user.OnboardingCompleted = true;
+        // Create Staff record for owner (links user to clinic)
+        var staff = new Staff
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            ClinicId = clinic.Id,
+            IsActive = true,
+            HireDate = DateTime.UtcNow
+        };
+
+        db.Staff.Add(staff);
 
         await db.SaveChangesAsync(ct);
 

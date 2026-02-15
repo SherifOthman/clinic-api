@@ -32,15 +32,19 @@ public class TokenService
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim()),
-            new("UserType", user.UserType.ToString())
+            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim())
         };
 
+        // Add all roles to claims (required for [Authorize(Roles = "...")] attribute)
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         // CRITICAL: ClinicId claim required for multi-tenancy isolation
-        var effectiveClinicId = clinicId ?? user.ClinicId;
-        claims.Add(new Claim("ClinicId", effectiveClinicId?.ToString() ?? string.Empty));
+        // ClinicId comes from Staff table (passed as parameter)
+        // SuperAdmin has no ClinicId (null) - don't add claim if null
+        if (clinicId.HasValue)
+        {
+            claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -55,8 +59,8 @@ public class TokenService
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
         
-        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId} and type {UserType}", 
-            user.Id, effectiveClinicId, user.UserType);
+        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId} and roles [{Roles}]", 
+            user.Id, clinicId, string.Join(", ", roles));
             
         return tokenString;
     }

@@ -10,10 +10,10 @@ public class DoctorMeasurementAttributeConfiguration : IEntityTypeConfiguration<
     {
         builder.HasKey(dma => dma.Id);
 
-        builder.HasOne(dma => dma.Doctor)
+        builder.HasOne(dma => dma.DoctorProfile)
             .WithMany(d => d.MeasurementAttributes)
             .HasForeignKey(dma => dma.DoctorId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(dma => dma.MeasurementAttribute)
             .WithMany(ma => ma.DoctorMeasurements)

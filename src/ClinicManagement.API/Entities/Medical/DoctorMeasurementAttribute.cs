@@ -16,6 +16,6 @@ public class DoctorMeasurementAttribute : BaseEntity
     public bool IsRequired { get; set; } = false;
 
     // Navigation properties
-    public Doctor Doctor { get; set; } = null!;
+    public DoctorProfile DoctorProfile { get; set; } = null!;
     public MeasurementAttribute MeasurementAttribute { get; set; } = null!;
 }

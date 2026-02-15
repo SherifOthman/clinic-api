@@ -1,4 +1,5 @@
 using ClinicManagement.API.Common;
+using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Enums;
 using System.ComponentModel;
 
@@ -24,16 +25,19 @@ public class RegisterEndpoint : IEndpoint
         UserRegistrationService userRegistrationService,
         CancellationToken ct)
     {
+        // SECURITY: Public registration can only create ClinicOwner accounts
+        // SuperAdmin accounts must be created through seeding
+        // Staff accounts (Doctor, Receptionist) are created by ClinicOwner through admin panel
         var registrationRequest = new UserRegistrationRequest(
             Email: request.Email,
             Password: request.Password,
             FirstName: request.FirstName,
             LastName: request.LastName,
             PhoneNumber: request.PhoneNumber,
-            UserType: UserType.ClinicOwner,
+            Role: Roles.ClinicOwner, // Public registration = ClinicOwner only
+            ClinicId: null, // No clinic yet - will be created during onboarding
             UserName: request.UserName,
             EmailConfirmed: false,
-            OnboardingCompleted: false,
             SendConfirmationEmail: true
         );
 

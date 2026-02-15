@@ -20,8 +20,9 @@ public class StaffInvitationConfiguration : IEntityTypeConfiguration<StaffInvita
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.Property(si => si.UserType)
-            .IsRequired();
+        builder.Property(si => si.Role)
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder.HasOne(si => si.Clinic)
             .WithMany()

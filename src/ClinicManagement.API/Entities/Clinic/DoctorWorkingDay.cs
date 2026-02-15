@@ -9,7 +9,7 @@ namespace ClinicManagement.API.Entities;
 public class DoctorWorkingDay : BaseEntity
 {
     public Guid DoctorId { get; set; }
-    public Doctor Doctor { get; set; } = null!;
+    public DoctorProfile DoctorProfile { get; set; } = null!;
     
     public Guid ClinicBranchId { get; set; }
     public ClinicBranch ClinicBranch { get; set; } = null!;

@@ -13,8 +13,8 @@ public class LoginEndpoint : IEndpoint
         app.MapPost("/auth/login", HandleAsync)
             .AllowAnonymous()
             .WithName("Login")
-            .WithSummary("Login with email and password")
-            .WithDescription("Authenticates user and returns access token. Supports both web (cookie) and mobile (body) clients.")
+            .WithSummary("Login with email/username and password")
+            .WithDescription("Authenticates user with email or username and returns access token. Supports both web (cookie) and mobile (body) clients.")
             .WithTags("Authentication")
             .Accepts<Request>("application/json")
             .Produces<Response>(StatusCodes.Status200OK)
@@ -28,28 +28,35 @@ public class LoginEndpoint : IEndpoint
         TokenService tokenService,
         RefreshTokenService refreshTokenService,
         CookieService cookieService,
+        ApplicationDbContext db,
         ILogger<LoginEndpoint> logger,
         CancellationToken ct)
     {
         var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
         
-        var user = await userManager.FindByEmailAsync(request.Email);
+        // Try to find user by email first, then by username
+        var user = await userManager.FindByEmailAsync(request.EmailOrUsername);
+        if (user == null)
+        {
+            user = await userManager.FindByNameAsync(request.EmailOrUsername);
+        }
+        
         if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
         {
-            logger.LogWarning("Failed login attempt for {Email}", request.Email);
+            logger.LogWarning("Failed login attempt for {EmailOrUsername}", request.EmailOrUsername);
             return Results.BadRequest(new ApiProblemDetails
             {
                 Code = ErrorCodes.INVALID_CREDENTIALS,
                 Title = "Invalid Credentials",
                 Status = StatusCodes.Status400BadRequest,
-                Detail = "Invalid email or password"
+                Detail = "Invalid email/username or password"
             });
         }
 
         if (!user.EmailConfirmed)
         {
-            logger.LogWarning("Login attempt with unconfirmed email: {Email}", request.Email);
+            logger.LogWarning("Login attempt with unconfirmed email: {EmailOrUsername}", request.EmailOrUsername);
             return Results.BadRequest(new ApiProblemDetails
             {
                 Code = ErrorCodes.EMAIL_NOT_CONFIRMED,
@@ -60,10 +67,20 @@ public class LoginEndpoint : IEndpoint
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var accessToken = tokenService.GenerateAccessToken(user, roles);
+        
+        // Get ClinicId from Staff table (if user is clinic staff)
+        // SuperAdmin has no Staff record, so ClinicId will be null
+        var staff = await db.Staff
+            .Where(s => s.UserId == user.Id && s.IsActive)
+            .FirstOrDefaultAsync(ct);
+        
+        var clinicId = staff?.ClinicId;
+        
+        var accessToken = tokenService.GenerateAccessToken(user, roles, clinicId);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
 
-        logger.LogInformation("User {UserId} logged in ({ClientType})", user.Id, isMobile ? "mobile" : "web");
+        logger.LogInformation("User {UserId} logged in ({ClientType}) with roles [{Roles}]", 
+            user.Id, isMobile ? "mobile" : "web", string.Join(", ", roles));
 
         if (isMobile)
         {
@@ -76,8 +93,7 @@ public class LoginEndpoint : IEndpoint
 
     public record Request(
         [Required]
-        [EmailAddress]
-        string Email,
+        string EmailOrUsername,
         
         [Required]
         string Password);

@@ -24,6 +24,7 @@ public class UpdateProfileEndpoint : IEndpoint
         Request request,
         CurrentUserService currentUserService,
         UserManager<User> userManager,
+        ApplicationDbContext db,
         CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
@@ -58,6 +59,10 @@ public class UpdateProfileEndpoint : IEndpoint
 
         var roles = await userManager.GetRolesAsync(user);
 
+        // Check if user has completed onboarding by checking if they own a clinic
+        var hasClinic = await db.Clinics
+            .AnyAsync(c => c.OwnerUserId == user.Id && c.OnboardingCompleted, ct);
+
         var response = new Response(
             user.Id,
             user.Email!,
@@ -67,9 +72,8 @@ public class UpdateProfileEndpoint : IEndpoint
             user.PhoneNumber,
             user.ProfileImageUrl,
             roles.ToList(),
-            user.ClinicId,
             user.EmailConfirmed,
-            user.OnboardingCompleted
+            hasClinic
         );
 
         return Results.Ok(response);
@@ -96,7 +100,6 @@ public class UpdateProfileEndpoint : IEndpoint
         string? PhoneNumber,
         string? ProfileImageUrl,
         List<string> Roles,
-        Guid? ClinicId,
         bool EmailConfirmed,
         bool OnboardingCompleted);
 }

@@ -20,6 +20,7 @@ public class GetMeEndpoint : IEndpoint
     private static async Task<IResult> HandleAsync(
         CurrentUserService currentUser,
         UserManager<User> userManager,
+        ApplicationDbContext db,
         CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(currentUser.UserId!.Value.ToString());
@@ -27,6 +28,10 @@ public class GetMeEndpoint : IEndpoint
             return Results.Unauthorized();
 
         var roles = await userManager.GetRolesAsync(user);
+
+        // Check if user has completed onboarding by checking if they own a clinic
+        var hasClinic = await db.Clinics
+            .AnyAsync(c => c.OwnerUserId == user.Id && c.OnboardingCompleted, ct);
 
         var response = new Response(
             user.Id,
@@ -38,7 +43,7 @@ public class GetMeEndpoint : IEndpoint
             user.ProfileImageUrl,
             roles.ToList(),
             user.EmailConfirmed,
-            user.OnboardingCompleted
+            hasClinic // OnboardingCompleted is now derived from Clinic ownership
         );
 
         return Results.Ok(response);

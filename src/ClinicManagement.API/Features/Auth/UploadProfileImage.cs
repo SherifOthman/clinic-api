@@ -26,6 +26,7 @@ public class UploadProfileImageEndpoint : IEndpoint
         CurrentUserService currentUserService,
         UserManager<User> userManager,
         LocalFileStorageService fileStorageService,
+        ApplicationDbContext db,
         CancellationToken ct)
     {
         // Validate file
@@ -102,6 +103,10 @@ public class UploadProfileImageEndpoint : IEndpoint
 
             var roles = await userManager.GetRolesAsync(user);
 
+            // Check if user has completed onboarding
+            var hasClinic = await db.Clinics
+                .AnyAsync(c => c.OwnerUserId == user.Id && c.OnboardingCompleted, ct);
+
             var response = new Response(
                 user.Id,
                 user.Email!,
@@ -111,9 +116,8 @@ public class UploadProfileImageEndpoint : IEndpoint
                 user.PhoneNumber,
                 user.ProfileImageUrl,
                 roles.ToList(),
-                user.ClinicId,
                 user.EmailConfirmed,
-                user.OnboardingCompleted
+                hasClinic
             );
 
             return Results.Ok(response);
@@ -141,7 +145,6 @@ public class UploadProfileImageEndpoint : IEndpoint
         string? PhoneNumber,
         string? ProfileImageUrl,
         List<string> Roles,
-        Guid? ClinicId,
         bool EmailConfirmed,
         bool OnboardingCompleted);
 }

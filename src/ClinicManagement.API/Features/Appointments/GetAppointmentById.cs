@@ -33,7 +33,7 @@ public class GetAppointmentByIdEndpoint : IEndpoint
                 a.Patient.FullName,
                 a.Patient.PatientCode,
                 a.DoctorId,
-                a.Doctor.User.FirstName + " " + a.Doctor.User.LastName,
+                a.DoctorProfile.Staff.User.FirstName + " " + a.DoctorProfile.Staff.User.LastName,
                 a.ClinicBranchId,
                 a.ClinicBranch.Name,
                 a.AppointmentTypeId,

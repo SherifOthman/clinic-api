@@ -30,10 +30,10 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
         builder.Property(d => d.Biography)
             .HasMaxLength(2000);
 
-        // One-to-one relationship with User
+        // Relationship with User
         builder.HasOne(d => d.User)
-            .WithOne(u => u.Doctor)
-            .HasForeignKey<Doctor>(d => d.UserId)
+            .WithMany()
+            .HasForeignKey(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Foreign key relationship with Specialization

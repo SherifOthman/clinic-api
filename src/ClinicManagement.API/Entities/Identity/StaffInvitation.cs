@@ -1,12 +1,11 @@
 using ClinicManagement.API.Common;
-using ClinicManagement.API.Common.Enums;
 
 namespace ClinicManagement.API.Entities;
 
 public class StaffInvitation : TenantEntity
 {
     public string Email { get; set; } = null!;
-    public UserType UserType { get; set; } // Doctor or Receptionist
+    public string Role { get; set; } = null!; // Doctor or Receptionist (ASP.NET Identity role name)
     
     public Clinic Clinic { get; set; } = null!;
     

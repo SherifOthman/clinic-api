@@ -21,10 +21,10 @@ public class ReceptionistConfiguration : IEntityTypeConfiguration<Receptionist>
         builder.Property(r => r.Languages)
             .HasMaxLength(200);
 
-        // One-to-one relationship with User
+        // Relationship with User
         builder.HasOne(r => r.User)
-            .WithOne(u => u.Receptionist)
-            .HasForeignKey<Receptionist>(r => r.UserId)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes

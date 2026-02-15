@@ -18,7 +18,7 @@ public class Appointment : AuditableEntity
     // Navigation properties
     public ClinicBranch ClinicBranch { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
-    public Doctor Doctor { get; set; } = null!;
+    public DoctorProfile DoctorProfile { get; set; } = null!;
     public AppointmentType AppointmentType { get; set; } = null!;
     public Invoice? Invoice { get; set; }
     

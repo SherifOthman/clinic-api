@@ -98,6 +98,18 @@ public class RefreshTokenServiceTests
     public async Task GetActiveRefreshTokenAsync_WithValidToken_ShouldReturnToken()
     {
         // Arrange
+        // Create a test user first
+        var testUser = new User
+        {
+            Id = _testUserId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            UserName = "testuser"
+        };
+        _context.Users.Add(testUser);
+        await _context.SaveChangesAsync();
+        
         var token = await _service.GenerateRefreshTokenAsync(_testUserId);
 
         // Act
@@ -137,6 +149,17 @@ public class RefreshTokenServiceTests
     public async Task RevokeRefreshTokenAsync_ShouldMarkTokenAsRevoked()
     {
         // Arrange
+        var testUser = new User
+        {
+            Id = _testUserId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            UserName = "testuser"
+        };
+        _context.Users.Add(testUser);
+        await _context.SaveChangesAsync();
+        
         var token = await _service.GenerateRefreshTokenAsync(_testUserId);
 
         // Act
@@ -154,6 +177,17 @@ public class RefreshTokenServiceTests
     public async Task RevokeRefreshTokenAsync_WithReplacementToken_ShouldSetReplacedByToken()
     {
         // Arrange
+        var testUser = new User
+        {
+            Id = _testUserId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            UserName = "testuser"
+        };
+        _context.Users.Add(testUser);
+        await _context.SaveChangesAsync();
+        
         var token = await _service.GenerateRefreshTokenAsync(_testUserId);
         var replacementToken = "new-token-123";
 
@@ -188,7 +222,26 @@ public class RefreshTokenServiceTests
     public async Task RevokeAllUserRefreshTokensAsync_ShouldNotAffectOtherUsers()
     {
         // Arrange
+        var testUser = new User
+        {
+            Id = _testUserId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            UserName = "testuser"
+        };
         var otherUserId = Guid.NewGuid();
+        var otherUser = new User
+        {
+            Id = otherUserId,
+            Email = "other@example.com",
+            FirstName = "Other",
+            LastName = "User",
+            UserName = "otheruser"
+        };
+        _context.Users.AddRange(testUser, otherUser);
+        await _context.SaveChangesAsync();
+        
         var userToken = await _service.GenerateRefreshTokenAsync(_testUserId);
         var otherUserToken = await _service.GenerateRefreshTokenAsync(otherUserId);
 
@@ -228,6 +281,17 @@ public class RefreshTokenServiceTests
     public async Task CleanupExpiredTokensAsync_ShouldRemoveRevokedTokens()
     {
         // Arrange
+        var testUser = new User
+        {
+            Id = _testUserId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            UserName = "testuser"
+        };
+        _context.Users.Add(testUser);
+        await _context.SaveChangesAsync();
+        
         var token = await _service.GenerateRefreshTokenAsync(_testUserId);
         await _service.RevokeRefreshTokenAsync(token.Token);
 

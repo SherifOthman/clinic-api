@@ -26,10 +26,10 @@ public class DoctorWorkingDayConfiguration : IEntityTypeConfiguration<DoctorWork
             .HasDefaultValue(true);
 
         // Relationships
-        builder.HasOne(d => d.Doctor)
+        builder.HasOne(d => d.DoctorProfile)
             .WithMany(doc => doc.WorkingDays)
             .HasForeignKey(d => d.DoctorId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(d => d.ClinicBranch)
             .WithMany(cb => cb.DoctorWorkingDays)

@@ -46,7 +46,7 @@ public class CreateAppointmentEndpoint : IEndpoint
             });
 
         // Business Rule 2: Verify doctor exists (global query filter ensures it belongs to clinic)
-        var doctorExists = await db.Doctors
+        var doctorExists = await db.DoctorProfiles
             .AnyAsync(d => d.Id == request.DoctorId, ct);
 
         if (!doctorExists)
@@ -123,7 +123,7 @@ public class CreateAppointmentEndpoint : IEndpoint
                     a.PatientId,
                     a.Patient.FullName,
                     a.DoctorId,
-                    a.Doctor.User.FirstName + " " + a.Doctor.User.LastName,
+                    a.DoctorProfile.Staff.User.FirstName + " " + a.DoctorProfile.Staff.User.LastName,
                     a.ClinicBranchId,
                     a.ClinicBranch.Name,
                     a.AppointmentTypeId,

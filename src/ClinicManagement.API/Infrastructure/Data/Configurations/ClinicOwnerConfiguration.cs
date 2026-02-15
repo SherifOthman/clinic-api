@@ -24,10 +24,10 @@ public class ClinicOwnerConfiguration : IEntityTypeConfiguration<ClinicOwner>
         builder.Property(co => co.OwnershipPercentage)
             .HasColumnType("decimal(5,2)");
 
-        // One-to-one relationship with User
+        // Relationship with User
         builder.HasOne(co => co.User)
-            .WithOne(u => u.ClinicOwner)
-            .HasForeignKey<ClinicOwner>(co => co.UserId)
+            .WithMany()
+            .HasForeignKey(co => co.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes

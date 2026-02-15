@@ -28,7 +28,7 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
 
         var loginRequest = new
         {
-            email,
+            emailOrUsername = email,
             password
         };
 
@@ -49,7 +49,7 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
         // Arrange
         var loginRequest = new
         {
-            email = "nonexistent@example.com",
+            emailOrUsername = "nonexistent@example.com",
             password = "Test123!@#"
         };
 
@@ -72,7 +72,7 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
 
         var loginRequest = new
         {
-            email,
+            emailOrUsername = email,
             password = "WrongPassword123!@#"
         };
 
@@ -94,7 +94,7 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
 
         var loginRequest = new
         {
-            email,
+            emailOrUsername = email,
             password
         };
 

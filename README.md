@@ -71,24 +71,39 @@ Features/Patients/
 
 ## 🔐 Authentication & Authorization
 
-**JWT access tokens** (60-minute expiry) stored in HTTP-only cookies contain UserId, Email, Roles, and ClinicId claims. **Refresh tokens** (30-day expiry) enable token renewal without re-login and are stored both in cookies and database for revocation support.
+**Hybrid token architecture** supports both web (SPA) and mobile clients with different storage strategies:
+
+**Web clients (SPA):**
+
+- Access token (60-minute expiry) stored in memory (React Context)
+- Refresh token (30-day expiry) stored in HTTP-only cookie
+- Automatic token refresh via Axios interceptor on 401 responses
+
+**Mobile clients:**
+
+- Both tokens returned in response body
+- Client stores tokens in secure storage
+- Identified by `X-Client-Type: mobile` header
 
 **Login flow:**
 
-1. Validate credentials using ASP.NET Identity
-2. Generate access + refresh tokens
-3. Store both in HTTP-only cookies (`Secure`, `SameSite`)
-4. Return 204 No Content
+1. Validate credentials (email or username) using ASP.NET Identity
+2. Generate access + refresh tokens with UserId, Email, Roles, and ClinicId claims
+3. Web: Return access token in body, refresh token in HTTP-only cookie
+4. Mobile: Return both tokens in response body
 5. Frontend calls `/auth/me` to fetch user data
 
-**Token refresh:** Old refresh token is revoked on use (rotation pattern). Background service cleans expired tokens daily.
+**Token refresh:** Per-user semaphore prevents race conditions during concurrent refresh requests. Old refresh token is revoked on use (rotation pattern). Background service cleans expired tokens daily.
 
 **Role-based authorization:**
 
+- ASP.NET Identity roles
 - ClinicOwner: Full clinic management
 - Doctor: Patient records, prescriptions, appointments
 - Receptionist: Patient registration, scheduling
-- SuperAdmin: System-wide operations
+- SuperAdmin: System-wide operations (seeded only, never via registration)
+
+**Staff architecture:** Staff table manages clinic membership for all roles. DoctorProfile table stores doctor-specific data (specialization, license, consultation fee). User table is pure identity with no clinic-specific data.
 
 **Cookie security:** `HttpOnly` prevents XSS, `Secure` enforces HTTPS in production, `SameSite=None` for cross-origin requests.
 
@@ -96,12 +111,14 @@ Features/Patients/
 
 ## 🗄 Database Design
 
-**44 entities** organized across 8 domain modules: Identity (6), Clinic (5), Patient (4), Appointment (2), Billing (3), Inventory (6), Medical Records (15), Reference Data (3).
+**46 entities** organized across 8 domain modules: Identity (6), Clinic (5), Staff (2), Patient (4), Appointment (2), Billing (3), Inventory (6), Medical Records (15), Reference Data (3).
 
 **Key relationships:**
 
-- One-to-Many: Clinic → Patients, Patient → Appointments, Invoice → InvoiceItems, Invoice → Payments
-- Many-to-Many: Patient ↔ ChronicDiseases, Doctor ↔ MeasurementAttributes
+- One-to-Many: Clinic → Staff, Staff → DoctorProfile, Clinic → Patients, Patient → Appointments, Invoice → InvoiceItems, Invoice → Payments
+- Many-to-Many: Patient ↔ ChronicDiseases, DoctorProfile ↔ MeasurementAttributes
+
+**Staff architecture:** Staff table links Users to Clinics with role-based membership. DoctorProfile extends Staff with doctor-specific data (only created for users with Doctor role). This separates identity (User) from clinic membership (Staff) from role-specific data (DoctorProfile).
 
 **Soft delete:** All entities inherit from `AuditableEntity` with `IsDeleted`, `DeletedAt`, `DeletedBy` fields. Global query filters automatically exclude soft-deleted records. This maintains referential integrity and enables data recovery.
 

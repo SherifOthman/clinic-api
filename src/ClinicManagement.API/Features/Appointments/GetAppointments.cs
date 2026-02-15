@@ -52,7 +52,7 @@ public class GetAppointmentsEndpoint : IEndpoint
                 a.Id,
                 a.Patient.FullName,
                 a.Patient.PatientCode,
-                a.Doctor.User.FirstName + " " + a.Doctor.User.LastName,
+                a.DoctorProfile.Staff.User.FirstName + " " + a.DoctorProfile.Staff.User.LastName,
                 a.ClinicBranch.Name,
                 a.AppointmentType.NameEn,
                 a.AppointmentDate,

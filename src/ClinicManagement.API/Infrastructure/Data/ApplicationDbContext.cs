@@ -17,7 +17,16 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Specialization> Specializations => Set<Specialization>();
+    
+    // New Staff architecture
+    public DbSet<Staff> Staff => Set<Staff>();
+    public DbSet<DoctorProfile> DoctorProfiles => Set<DoctorProfile>();
+    
+    // Old entities (keep temporarily for migration)
     public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
+    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
+    
     public DbSet<DoctorWorkingDay> DoctorWorkingDays => Set<DoctorWorkingDay>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<PatientPhone> PatientPhones => Set<PatientPhone>();
@@ -28,10 +37,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<MedicalFile> MedicalFiles => Set<MedicalFile>();
     public DbSet<ClinicBranchAppointmentPrice> ClinicBranchAppointmentPrices => Set<ClinicBranchAppointmentPrice>();
     public DbSet<AppointmentType> AppointmentTypes => Set<AppointmentType>();
-    
-    // User type entities
-    public DbSet<ClinicOwner> ClinicOwners => Set<ClinicOwner>();
-    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
     
     public DbSet<ClinicBranchPhoneNumber> ClinicBranchPhoneNumbers => Set<ClinicBranchPhoneNumber>();
     
@@ -142,6 +147,16 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         // Get current user's clinic ID (null for SuperAdmin who can see all clinics)
         var clinicId = _currentUserService.ClinicId;
         
+        // ===== NEW STAFF ARCHITECTURE =====
+        
+        // Staff - clinic membership
+        builder.Entity<Staff>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.ClinicId == clinicId));
+        
+        // DoctorProfile - filtered through Staff
+        builder.Entity<DoctorProfile>().HasQueryFilter(e => 
+            !e.IsDeleted && (clinicId == null || e.Staff.ClinicId == clinicId));
+        
         // ===== PARENT ENTITIES WITH SOFT DELETE =====
         
         // Clinic-scoped entities with soft delete
@@ -173,7 +188,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         // Clinic entity itself (only soft delete filter)
         builder.Entity<Clinic>().HasQueryFilter(e => !e.IsDeleted);
         
-        // User-related entities with soft delete
+        // Old user-related entities (keep for migration)
         builder.Entity<Doctor>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Receptionist>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<ClinicOwner>().HasQueryFilter(e => !e.IsDeleted);
@@ -220,9 +235,9 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
         builder.Entity<MedicalVisit>().HasQueryFilter(e => 
             !e.Appointment.IsDeleted);
         
-        // Children of Doctor
+        // Children of DoctorProfile
         builder.Entity<DoctorMeasurementAttribute>().HasQueryFilter(e => 
-            !e.Doctor.IsDeleted);
+            !e.DoctorProfile.IsDeleted);
         
         // Children of MedicalVisit (join tables)
         builder.Entity<MedicalVisitLabTest>().HasQueryFilter(e => 

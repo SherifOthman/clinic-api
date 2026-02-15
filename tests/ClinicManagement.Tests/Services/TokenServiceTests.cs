@@ -72,7 +72,6 @@ public class TokenServiceTests
         jwtToken.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == user.Id.ToString());
         jwtToken.Claims.Should().Contain(c => c.Type == ClaimTypes.Email && c.Value == user.Email);
         jwtToken.Claims.Should().Contain(c => c.Type == ClaimTypes.Name && c.Value == $"{user.FirstName} {user.LastName}");
-        jwtToken.Claims.Should().Contain(c => c.Type == "UserType" && c.Value == user.UserType.ToString());
         jwtToken.Claims.Should().Contain(c => c.Type == "ClinicId" && c.Value == clinicId.ToString());
     }
 
@@ -201,29 +200,27 @@ public class TokenServiceTests
     }
 
     [Fact]
-    public void GenerateAccessToken_WithUserClinicId_ShouldUseUserClinicId()
+    public void GenerateAccessToken_WithNullClinicId_ShouldNotIncludeClinicIdClaim()
     {
         // Arrange
         var user = CreateTestUser();
-        user.ClinicId = Guid.NewGuid();
-        var roles = new[] { "Doctor" };
+        var roles = new[] { "SuperAdmin" };
 
         // Act
-        var token = _tokenService.GenerateAccessToken(user, roles);
+        var token = _tokenService.GenerateAccessToken(user, roles, null);
 
         // Assert
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
         
-        jwtToken.Claims.Should().Contain(c => c.Type == "ClinicId" && c.Value == user.ClinicId.ToString());
+        jwtToken.Claims.Should().NotContain(c => c.Type == "ClinicId");
     }
 
     [Fact]
-    public void GenerateAccessToken_WithProvidedClinicId_ShouldOverrideUserClinicId()
+    public void GenerateAccessToken_WithProvidedClinicId_ShouldIncludeClinicIdClaim()
     {
         // Arrange
         var user = CreateTestUser();
-        user.ClinicId = Guid.NewGuid();
         var roles = new[] { "Doctor" };
         var providedClinicId = Guid.NewGuid();
 
@@ -235,7 +232,6 @@ public class TokenServiceTests
         var jwtToken = handler.ReadJwtToken(token);
         
         jwtToken.Claims.Should().Contain(c => c.Type == "ClinicId" && c.Value == providedClinicId.ToString());
-        jwtToken.Claims.Should().NotContain(c => c.Type == "ClinicId" && c.Value == user.ClinicId.ToString());
     }
 
     private static User CreateTestUser()
@@ -245,9 +241,7 @@ public class TokenServiceTests
             Id = Guid.NewGuid(),
             Email = "test@example.com",
             FirstName = "John",
-            LastName = "Doe",
-            UserType = UserType.Doctor,
-            ClinicId = Guid.NewGuid()
+            LastName = "Doe"
         };
     }
 }

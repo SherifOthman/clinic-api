@@ -17,14 +17,19 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
             .HasMaxLength(200);
 
         // Relationships
-        builder.HasOne(c => c.OwnerUser)
-            .WithMany()
+        builder.HasOne(c => c.Owner)
+            .WithMany(u => u.OwnedClinics)
             .HasForeignKey(c => c.OwnerUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(c => c.SubscriptionPlan)
             .WithMany()
             .HasForeignKey(c => c.SubscriptionPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(c => c.Staff)
+            .WithOne(s => s.Clinic)
+            .HasForeignKey(s => s.ClinicId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes

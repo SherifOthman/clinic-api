@@ -113,17 +113,14 @@ public class ComprehensiveSeedService
             _logger.LogWarning(ex, "Error checking for existing superadmin, will attempt to create");
         }
 
-        // Create SuperAdmin user (no clinic association)
+        // Create SuperAdmin user (no clinic association, no Staff record)
         var superAdmin = new User
         {
             UserName = "superadmin@clinic.com",
             Email = "superadmin@clinic.com",
             FirstName = "System",
             LastName = "Administrator",
-            EmailConfirmed = true,
-            ClinicId = null, // SuperAdmin doesn't belong to any clinic
-            UserType = UserType.SuperAdmin,
-            OnboardingCompleted = true
+            EmailConfirmed = true
         };
 
         var result = await _userManager.CreateAsync(superAdmin, "SuperAdmin123!");

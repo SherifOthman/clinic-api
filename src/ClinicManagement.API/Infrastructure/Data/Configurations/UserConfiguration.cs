@@ -26,22 +26,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.Property(u => u.ClinicId)
-            .IsRequired(false); // Nullable for SuperAdmin
-
-        builder.Property(u => u.UserType)
-            .IsRequired()
-            .HasConversion<int>();
-
         builder.Property(u => u.ProfileImageUrl)
             .HasMaxLength(500);
-
-        // Relationship with Clinic (optional for SuperAdmin)
-        builder.HasOne(u => u.Clinic)
-            .WithMany()
-            .HasForeignKey(u => u.ClinicId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
 
         // Relationships with RefreshTokens
         builder.HasMany(u => u.RefreshTokens)
@@ -49,11 +35,20 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Relationships with Staff (clinic memberships)
+        builder.HasMany(u => u.StaffMemberships)
+            .WithOne(s => s.User)
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Relationships with owned Clinics
+        builder.HasMany(u => u.OwnedClinics)
+            .WithOne(c => c.Owner)
+            .HasForeignKey(c => c.OwnerUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Indexes
         builder.HasIndex(u => u.Email);
         builder.HasIndex(u => u.UserName);
-        builder.HasIndex(u => u.ClinicId);
-        builder.HasIndex(u => u.UserType);
     }
 }
-

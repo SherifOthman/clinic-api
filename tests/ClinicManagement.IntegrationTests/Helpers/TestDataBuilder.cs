@@ -58,12 +58,14 @@ public class TestDataBuilder
         Gender gender = Gender.Male,
         DateTime? dateOfBirth = null)
     {
-        var patient = Patient.Create(
-            $"PAT-{DateTime.UtcNow.Ticks}",
-            clinicId,
-            fullName,
-            gender,
-            dateOfBirth ?? new DateTime(1990, 1, 1));
+        var patient = new Patient
+        {
+            PatientCode = $"PAT-{DateTime.UtcNow.Ticks}",
+            ClinicId = clinicId,
+            FullName = fullName,
+            Gender = gender,
+            DateOfBirth = dateOfBirth ?? new DateTime(1990, 1, 1)
+        };
 
         _db.Patients.Add(patient);
         await _db.SaveChangesAsync();
@@ -106,12 +108,15 @@ public class TestDataBuilder
         int stripsPerBox = 10,
         int initialStock = 100)
     {
-        var medicine = Medicine.Create(
-            clinicBranchId,
-            name,
-            boxPrice,
-            stripsPerBox,
-            initialStock);
+        var medicine = new Medicine
+        {
+            ClinicBranchId = clinicBranchId,
+            Name = name,
+            BoxPrice = boxPrice,
+            StripsPerBox = stripsPerBox,
+            TotalStripsInStock = initialStock,
+            IsActive = true
+        };
 
         _db.Medicines.Add(medicine);
         await _db.SaveChangesAsync();
