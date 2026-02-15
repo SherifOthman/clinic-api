@@ -34,7 +34,6 @@ public class LoginEndpoint : IEndpoint
         var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
         
-        // Find and validate user
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
         {
@@ -60,23 +59,19 @@ public class LoginEndpoint : IEndpoint
             });
         }
 
-        // Generate tokens
         var roles = await userManager.GetRolesAsync(user);
         var accessToken = tokenService.GenerateAccessToken(user, roles);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
 
         logger.LogInformation("User {UserId} logged in ({ClientType})", user.Id, isMobile ? "mobile" : "web");
 
-        // Return tokens based on client type
         if (isMobile)
         {
             return Results.Ok(new Response(accessToken, refreshToken.Token));
         }
-        else
-        {
-            cookieService.SetRefreshTokenCookie(refreshToken.Token);
-            return Results.Ok(new Response(accessToken, null));
-        }
+        
+        cookieService.SetRefreshTokenCookie(refreshToken.Token);
+        return Results.Ok(new Response(accessToken, null));
     }
 
     public record Request(
@@ -89,5 +84,5 @@ public class LoginEndpoint : IEndpoint
 
     public record Response(
         string AccessToken,
-        string? RefreshToken); // Null for web clients (sent in cookie)
+        string? RefreshToken);
 }

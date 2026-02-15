@@ -124,9 +124,6 @@ public static class DependencyInjection
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             };
-            
-            // JWT Bearer automatically reads from Authorization header
-            // No custom event handler needed
         });
     }
 

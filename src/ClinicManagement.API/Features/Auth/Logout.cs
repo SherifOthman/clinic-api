@@ -30,10 +30,8 @@ public class LogoutEndpoint : IEndpoint
             ? request?.RefreshToken 
             : cookieService.GetRefreshTokenFromCookie();
 
-        // Revoke refresh token in database
         await authenticationService.LogoutAsync(refreshToken, ct);
 
-        // Clear refresh token cookie for web clients
         if (!isMobile)
         {
             cookieService.ClearRefreshTokenCookie();

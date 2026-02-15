@@ -37,7 +37,6 @@ public class RefreshTokenEndpoint : IEndpoint
         var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
         
-        // Get refresh token based on client type
         var refreshToken = isMobile 
             ? request?.RefreshToken 
             : cookieService.GetRefreshTokenFromCookie();
@@ -48,7 +47,6 @@ public class RefreshTokenEndpoint : IEndpoint
             return Results.Unauthorized();
         }
 
-        // Get user ID to create per-user lock
         var tokenEntity = await refreshTokenService.GetActiveRefreshTokenAsync(refreshToken, ct);
         if (tokenEntity == null)
         {
@@ -75,22 +73,18 @@ public class RefreshTokenEndpoint : IEndpoint
             logger.LogInformation("Token refreshed for user {UserId} ({ClientType})", 
                 userId, isMobile ? "mobile" : "web");
 
-            // Return tokens based on client type
             if (isMobile)
             {
                 return Results.Ok(new Response(result.AccessToken, result.RefreshToken));
             }
-            else
-            {
-                cookieService.SetRefreshTokenCookie(result.RefreshToken);
-                return Results.Ok(new Response(result.AccessToken, null));
-            }
+            
+            cookieService.SetRefreshTokenCookie(result.RefreshToken);
+            return Results.Ok(new Response(result.AccessToken, null));
         }
         finally
         {
             semaphore.Release();
             
-            // Cleanup semaphore if no one is waiting
             if (semaphore.CurrentCount == 1)
             {
                 _userLocks.TryRemove(userId, out _);
@@ -102,5 +96,5 @@ public class RefreshTokenEndpoint : IEndpoint
 
     public record Response(
         string AccessToken,
-        string? RefreshToken); // Null for web clients (sent in cookie)
+        string? RefreshToken);
 }
