@@ -1,7 +1,5 @@
 using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Options;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Infrastructure.Services;

@@ -34,61 +34,74 @@ public class RefreshTokenEndpoint : IEndpoint
         ILogger<RefreshTokenEndpoint> logger,
         CancellationToken ct)
     {
-        var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
-        var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
-        
-        var refreshToken = isMobile 
-            ? request?.RefreshToken 
-            : cookieService.GetRefreshTokenFromCookie();
-
-        if (string.IsNullOrEmpty(refreshToken))
-        {
-            logger.LogWarning("{ClientType} client refresh request with missing token", isMobile ? "Mobile" : "Web");
-            return Results.Unauthorized();
-        }
-
-        var tokenEntity = await refreshTokenService.GetActiveRefreshTokenAsync(refreshToken, ct);
-        if (tokenEntity == null)
-        {
-            logger.LogWarning("Invalid or expired refresh token");
-            if (!isMobile) cookieService.ClearRefreshTokenCookie();
-            return Results.Unauthorized();
-        }
-
-        var userId = tokenEntity.UserId;
-        var semaphore = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
-        
-        await semaphore.WaitAsync(ct);
         try
         {
-            var result = await authService.RefreshTokenAsync(refreshToken, ct);
+            var clientType = httpContext.Request.Headers["X-Client-Type"].ToString();
+            var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
             
-            if (result == null)
+            var refreshToken = isMobile 
+                ? request?.RefreshToken 
+                : cookieService.GetRefreshTokenFromCookie();
+
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                logger.LogWarning("Token refresh failed for user {UserId}", userId);
+                logger.LogWarning("{ClientType} client refresh request with missing token", isMobile ? "Mobile" : "Web");
+                return Results.Unauthorized();
+            }
+
+            var tokenEntity = await refreshTokenService.GetActiveRefreshTokenAsync(refreshToken, ct);
+            if (tokenEntity == null)
+            {
+                logger.LogWarning("Invalid or expired refresh token");
                 if (!isMobile) cookieService.ClearRefreshTokenCookie();
                 return Results.Unauthorized();
             }
 
-            logger.LogInformation("Token refreshed for user {UserId} ({ClientType})", 
-                userId, isMobile ? "mobile" : "web");
+            var userId = tokenEntity.UserId;
+            var semaphore = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+            
+            await semaphore.WaitAsync(ct);
+            try
+            {
+                var result = await authService.RefreshTokenAsync(refreshToken, ct);
+                
+                if (result == null)
+                {
+                    logger.LogWarning("Token refresh failed for user {UserId}", userId);
+                    if (!isMobile) cookieService.ClearRefreshTokenCookie();
+                    return Results.Unauthorized();
+                }
 
-            if (isMobile)
-            {
-                return Results.Ok(new Response(result.AccessToken, result.RefreshToken));
+                logger.LogInformation("Token refreshed for user {UserId} ({ClientType})", 
+                    userId, isMobile ? "mobile" : "web");
+
+                if (isMobile)
+                {
+                    return Results.Ok(new Response(result.AccessToken, result.RefreshToken));
+                }
+                
+                cookieService.SetRefreshTokenCookie(result.RefreshToken);
+                return Results.Ok(new Response(result.AccessToken, null));
             }
-            
-            cookieService.SetRefreshTokenCookie(result.RefreshToken);
-            return Results.Ok(new Response(result.AccessToken, null));
+            finally
+            {
+                semaphore.Release();
+                
+                if (semaphore.CurrentCount == 1)
+                {
+                    _userLocks.TryRemove(userId, out _);
+                }
+            }
         }
-        finally
+        catch (OperationCanceledException)
         {
-            semaphore.Release();
-            
-            if (semaphore.CurrentCount == 1)
-            {
-                _userLocks.TryRemove(userId, out _);
-            }
+            logger.LogWarning("Refresh token request was cancelled");
+            return Results.StatusCode(499); // Client Closed Request
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during token refresh");
+            return Results.Problem("An error occurred while refreshing the token");
         }
     }
 
