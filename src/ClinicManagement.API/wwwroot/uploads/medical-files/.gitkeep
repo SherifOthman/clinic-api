@@ -1,0 +1,2 @@
+# This file ensures the medical-files folder is tracked by Git
+# Uploaded medical files will be ignored but the folder structure is preserved
