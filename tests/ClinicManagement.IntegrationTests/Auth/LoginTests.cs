@@ -32,8 +32,13 @@ public class LoginTests : IClassFixture<TestWebApplicationFactory>
             password
         };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        // Act - Send as mobile client to get refresh token in response body
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+        {
+            Content = JsonContent.Create(loginRequest)
+        };
+        request.Headers.Add("X-Client-Type", "mobile");
+        var response = await _client.SendAsync(request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

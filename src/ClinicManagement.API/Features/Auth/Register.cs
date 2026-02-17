@@ -75,7 +75,6 @@ public class RegisterEndpoint : IEndpoint
         [MinLength(6)]
         string Password,
 
-        [Required]
         [MaxLength(15)]
-        string PhoneNumber);
+        string? PhoneNumber);
 }
