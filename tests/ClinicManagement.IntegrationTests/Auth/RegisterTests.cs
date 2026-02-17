@@ -106,30 +106,6 @@ public class RegisterTests : IClassFixture<TestWebApplicationFactory>
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    [Fact]
-    public async Task Register_WithMismatchedPasswords_ShouldReturnBadRequest()
-    {
-        // Arrange
-        var email = $"test{Guid.NewGuid()}@example.com";
-        var request = new
-        {
-            email,
-            password = "Test123!@#",
-            firstName = "John",
-            lastName = "Doe",
-            userName = email.Split('@')[0],
-            phoneNumber = (string?)null
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", request);
-
-        // Assert
-        // Note: This test is now invalid since we removed confirmPassword validation
-        // The endpoint will succeed with valid data
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
-
     private record RegisterResponse(string Message);
 }
 
