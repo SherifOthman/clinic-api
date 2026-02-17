@@ -21,4 +21,27 @@ public class FileStorageOptions
     /// Maximum file size in bytes (default: 5MB)
     /// </summary>
     public long MaxFileSizeBytes { get; set; } = 5242880;
+
+    /// <summary>
+    /// Profile image specific settings
+    /// </summary>
+    public ProfileImageSettings ProfileImage { get; set; } = new();
+}
+
+public class ProfileImageSettings
+{
+    /// <summary>
+    /// Allowed file extensions for profile images
+    /// </summary>
+    public string[] AllowedExtensions { get; set; } = { ".jpg", ".jpeg", ".png", ".gif" };
+
+    /// <summary>
+    /// Maximum file size in bytes for profile images (default: 5MB)
+    /// </summary>
+    public long MaxFileSizeBytes { get; set; } = 5242880;
+
+    /// <summary>
+    /// Folder name for storing profile images
+    /// </summary>
+    public string Folder { get; set; } = "profiles";
 }

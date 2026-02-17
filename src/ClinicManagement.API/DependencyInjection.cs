@@ -172,6 +172,7 @@ public static class DependencyInjection
         services.AddScoped<TokenService>();
         services.AddScoped<RefreshTokenService>();
         services.AddScoped<CookieService>();
+        services.AddScoped<ProfileService>();
 
         // Email Services
         services.AddScoped<EmailConfirmationService>();

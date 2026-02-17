@@ -1,7 +1,5 @@
 using ClinicManagement.API.Common;
 using ClinicManagement.API.Common.Constants;
-using ClinicManagement.API.Common.Models;
-using ClinicManagement.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.API.Features.Auth;
@@ -25,42 +23,9 @@ public class UploadProfileImageEndpoint : IEndpoint
         IFormFile file,
         CurrentUserService currentUserService,
         UserManager<User> userManager,
-        LocalFileStorageService fileStorageService,
-        ApplicationDbContext db,
+        ProfileService profileService,
         CancellationToken ct)
     {
-        // Validate file
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-        const long maxFileSize = 5 * 1024 * 1024; // 5MB
-
-        if (file == null || file.Length == 0)
-            return Results.BadRequest(new ApiProblemDetails
-            {
-                Code = ErrorCodes.REQUIRED_FIELD,
-                Title = "File Required",
-                Status = StatusCodes.Status400BadRequest,
-                Detail = "File is required"
-            });
-
-        if (file.Length > maxFileSize)
-            return Results.BadRequest(new ApiProblemDetails
-            {
-                Code = ErrorCodes.INVALID_FORMAT,
-                Title = "File Too Large",
-                Status = StatusCodes.Status400BadRequest,
-                Detail = "File size must not exceed 5MB"
-            });
-
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!allowedExtensions.Contains(extension))
-            return Results.BadRequest(new ApiProblemDetails
-            {
-                Code = ErrorCodes.INVALID_FORMAT,
-                Title = "Invalid File Type",
-                Status = StatusCodes.Status400BadRequest,
-                Detail = $"File must be one of the following types: {string.Join(", ", allowedExtensions)}"
-            });
-
         var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
         if (user == null)
             return Results.BadRequest(new ApiProblemDetails
@@ -71,48 +36,19 @@ public class UploadProfileImageEndpoint : IEndpoint
                 Detail = "User not found"
             });
 
-        try
-        {
-            // Delete old profile image if exists
-            if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
-            {
-                await fileStorageService.DeleteFileAsync(user.ProfileImageUrl, ct);
-            }
-
-            // Upload new profile image
-            var filePath = await fileStorageService.UploadFileAsync(file, "profiles", ct);
-
-            // Update user profile image URL
-            user.ProfileImageUrl = filePath;
-
-            var updateResult = await userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-            {
-                // Rollback: delete uploaded file
-                await fileStorageService.DeleteFileAsync(filePath, ct);
-
-                var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-                return Results.BadRequest(new ApiProblemDetails
-                {
-                    Code = ErrorCodes.OPERATION_FAILED,
-                    Title = "Update Failed",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = $"Failed to update profile: {errors}"
-                });
-            }
-
-            return Results.NoContent();
-        }
-        catch (Exception ex)
+        var result = await profileService.UploadProfileImageAsync(user, file, ct);
+        if (!result.IsSuccess)
         {
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = ErrorCodes.INTERNAL_ERROR,
+                Code = result.ErrorCode!,
                 Title = "Upload Failed",
                 Status = StatusCodes.Status400BadRequest,
-                Detail = $"An error occurred while uploading profile image: {ex.Message}"
+                Detail = result.ErrorMessage!
             });
         }
+
+        return Results.NoContent();
     }
 
     public record Request(IFormFile File);

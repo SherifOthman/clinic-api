@@ -22,8 +22,7 @@ public class DeleteProfileImageEndpoint : IEndpoint
     private static async Task<IResult> HandleAsync(
         CurrentUserService currentUserService,
         UserManager<User> userManager,
-        LocalFileStorageService fileStorageService,
-        ApplicationDbContext db,
+        ProfileService profileService,
         CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
@@ -36,25 +35,15 @@ public class DeleteProfileImageEndpoint : IEndpoint
                 Detail = "User not found"
             });
 
-        // Delete profile image file if exists
-        if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
+        var result = await profileService.DeleteProfileImageAsync(user, ct);
+        if (!result.IsSuccess)
         {
-            await fileStorageService.DeleteFileAsync(user.ProfileImageUrl, ct);
-        }
-
-        // Clear profile image URL
-        user.ProfileImageUrl = null;
-
-        var updateResult = await userManager.UpdateAsync(user);
-        if (!updateResult.Succeeded)
-        {
-            var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = ErrorCodes.OPERATION_FAILED,
+                Code = result.ErrorCode!,
                 Title = "Delete Failed",
                 Status = StatusCodes.Status400BadRequest,
-                Detail = $"Failed to delete profile image: {errors}"
+                Detail = result.ErrorMessage!
             });
         }
 
