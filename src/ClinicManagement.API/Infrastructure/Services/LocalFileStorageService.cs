@@ -31,15 +31,8 @@ public class LocalFileStorageService
                 throw new ArgumentException("File is empty or null");
             }
 
-            // Validate file size
-            if (file.Length > _options.MaxFileSizeBytes)
-            {
-                throw new ArgumentException($"File size exceeds maximum allowed size of {_options.MaxFileSizeBytes} bytes");
-            }
-
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var uploadsPath = _options.UploadPath.Replace("wwwroot/", "").Replace("wwwroot\\", "");
-            var folderPath = Path.Combine(_environment.WebRootPath, uploadsPath, folder);
+            var folderPath = Path.Combine(_environment.WebRootPath, _options.UploadPath, folder);
             
             if (!Directory.Exists(folderPath))
             {
@@ -64,32 +57,57 @@ public class LocalFileStorageService
         }
     }
 
-    public async Task<bool> DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
+    public async Task<string> UploadFileWithValidationAsync(
+        IFormFile file,
+        string fileType,
+        CancellationToken cancellationToken = default)
     {
-        try
+        // Get file type settings
+        if (!_options.FileTypes.TryGetValue(fileType, out var fileTypeSettings))
         {
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                return false;
-            }
-
-            var cleanPath = filePath.TrimStart('/');
-            var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
-
-            if (File.Exists(fullPath))
-            {
-                await Task.Run(() => File.Delete(fullPath), cancellationToken);
-                _logger.LogInformation("File deleted successfully: {FilePath}", filePath);
-                return true;
-            }
-
-            _logger.LogWarning("File not found for deletion: {FilePath}", filePath);
-            return false;
+            throw new ArgumentException($"File type '{fileType}' is not configured");
         }
-        catch (Exception ex)
+
+        // Validate file
+        if (file == null || file.Length == 0)
         {
-            _logger.LogError(ex, "Error deleting file: {FilePath}", filePath);
-            return false;
+            throw new ArgumentException("File is required");
+        }
+
+        if (file.Length > fileTypeSettings.MaxFileSizeBytes)
+        {
+            var maxSizeMB = fileTypeSettings.MaxFileSizeBytes / (1024 * 1024);
+            throw new ArgumentException($"File size must not exceed {maxSizeMB}MB");
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!fileTypeSettings.AllowedExtensions.Contains(extension))
+        {
+            var allowedTypes = string.Join(", ", fileTypeSettings.AllowedExtensions);
+            throw new ArgumentException($"File must be one of the following types: {allowedTypes}");
+        }
+
+        return await UploadFileAsync(file, fileTypeSettings.Folder, cancellationToken);
+    }
+
+    public async Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return;
+        }
+
+        var cleanPath = filePath.TrimStart('/');
+        var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
+
+        if (File.Exists(fullPath))
+        {
+            await Task.Run(() => File.Delete(fullPath), cancellationToken);
+            _logger.LogInformation("File deleted successfully: {FilePath}", filePath);
+        }
+        else
+        {
+            _logger.LogWarning("File not found for deletion: {FilePath}", filePath);
         }
     }
 
@@ -104,26 +122,24 @@ public class LocalFileStorageService
         return Path.Combine(_environment.WebRootPath, cleanPath);
     }
 
-    public bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)
+    public void ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)
     {
         if (file == null || file.Length == 0)
         {
-            return false;
+            throw new ArgumentException("File is required");
         }
 
         if (file.Length > maxSizeInBytes)
         {
-            _logger.LogWarning("File size exceeds limit: {Size} bytes", file.Length);
-            return false;
+            var maxSizeMB = maxSizeInBytes / (1024 * 1024);
+            throw new ArgumentException($"File size must not exceed {maxSizeMB}MB");
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
         {
-            _logger.LogWarning("File extension not allowed: {Extension}", extension);
-            return false;
+            var allowedTypes = string.Join(", ", allowedExtensions);
+            throw new ArgumentException($"File must be one of the following types: {allowedTypes}");
         }
-
-        return true;
     }
 }

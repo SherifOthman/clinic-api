@@ -8,9 +8,9 @@ public class FileStorageOptions
     public const string SectionName = "FileStorage";
 
     /// <summary>
-    /// Upload path relative to web root
+    /// Upload path relative to web root (e.g., "uploads")
     /// </summary>
-    public string UploadPath { get; set; } = "wwwroot/uploads";
+    public string UploadPath { get; set; } = "uploads";
 
     /// <summary>
     /// Base URL for accessing uploaded files
@@ -18,30 +18,37 @@ public class FileStorageOptions
     public string BaseUrl { get; set; } = "/uploads";
 
     /// <summary>
-    /// Maximum file size in bytes (default: 5MB)
+    /// File type specific settings
     /// </summary>
-    public long MaxFileSizeBytes { get; set; } = 5242880;
-
-    /// <summary>
-    /// Profile image specific settings
-    /// </summary>
-    public ProfileImageSettings ProfileImage { get; set; } = new();
+    public Dictionary<string, FileTypeSettings> FileTypes { get; set; } = new();
 }
 
-public class ProfileImageSettings
+/// <summary>
+/// File type specific settings
+/// </summary>
+public class FileTypeSettings
 {
     /// <summary>
-    /// Allowed file extensions for profile images
+    /// Allowed file extensions
     /// </summary>
-    public string[] AllowedExtensions { get; set; } = { ".jpg", ".jpeg", ".png", ".gif" };
+    public string[] AllowedExtensions { get; set; } = Array.Empty<string>();
 
     /// <summary>
-    /// Maximum file size in bytes for profile images (default: 5MB)
+    /// Maximum file size in bytes
     /// </summary>
-    public long MaxFileSizeBytes { get; set; } = 5242880;
+    public long MaxFileSizeBytes { get; set; }
 
     /// <summary>
-    /// Folder name for storing profile images
+    /// Folder name for storing files
     /// </summary>
-    public string Folder { get; set; } = "profiles";
+    public string Folder { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// File type constants to avoid typos
+/// </summary>
+public static class FileTypes
+{
+    public const string ProfileImage = "ProfileImage";
+    public const string MedicalFile = "MedicalFile";
 }

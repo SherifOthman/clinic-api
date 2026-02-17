@@ -24,7 +24,6 @@ public class UpdateProfileEndpoint : IEndpoint
         Request request,
         CurrentUserService currentUserService,
         UserManager<User> userManager,
-        ProfileService profileService,
         CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
@@ -37,21 +36,20 @@ public class UpdateProfileEndpoint : IEndpoint
                 Detail = "User not found"
             });
 
-        var result = await profileService.UpdateProfileAsync(
-            user,
-            request.FirstName,
-            request.LastName,
-            request.PhoneNumber,
-            ct);
+        user.FirstName = request.FirstName.Trim();
+        user.LastName = request.LastName.Trim();
+        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
 
-        if (!result.IsSuccess)
+        var updateResult = await userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
         {
+            var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = result.ErrorCode!,
+                Code = ErrorCodes.OPERATION_FAILED,
                 Title = "Update Failed",
                 Status = StatusCodes.Status400BadRequest,
-                Detail = result.ErrorMessage!
+                Detail = $"Failed to update profile: {errors}"
             });
         }
 

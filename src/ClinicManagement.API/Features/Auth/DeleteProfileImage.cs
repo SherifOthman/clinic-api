@@ -2,6 +2,7 @@ using ClinicManagement.API.Common;
 using ClinicManagement.API.Common.Constants;
 using ClinicManagement.API.Common.Models;
 using ClinicManagement.API.Entities;
+using ClinicManagement.API.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.API.Features.Auth;
@@ -22,7 +23,7 @@ public class DeleteProfileImageEndpoint : IEndpoint
     private static async Task<IResult> HandleAsync(
         CurrentUserService currentUserService,
         UserManager<User> userManager,
-        ProfileService profileService,
+        LocalFileStorageService fileStorageService,
         CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
@@ -35,15 +36,25 @@ public class DeleteProfileImageEndpoint : IEndpoint
                 Detail = "User not found"
             });
 
-        var result = await profileService.DeleteProfileImageAsync(user, ct);
-        if (!result.IsSuccess)
+        // Delete profile image file if exists
+        if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
         {
+            await fileStorageService.DeleteFileAsync(user.ProfileImageUrl, ct);
+        }
+
+        // Clear profile image URL
+        user.ProfileImageUrl = null;
+
+        var updateResult = await userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = result.ErrorCode!,
+                Code = ErrorCodes.OPERATION_FAILED,
                 Title = "Delete Failed",
                 Status = StatusCodes.Status400BadRequest,
-                Detail = result.ErrorMessage!
+                Detail = $"Failed to delete profile image: {errors}"
             });
         }
 

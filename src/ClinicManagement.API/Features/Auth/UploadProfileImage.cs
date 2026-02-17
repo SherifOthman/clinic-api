@@ -1,5 +1,8 @@
 using ClinicManagement.API.Common;
 using ClinicManagement.API.Common.Constants;
+using ClinicManagement.API.Common.Models;
+using ClinicManagement.API.Common.Options;
+
 using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.API.Features.Auth;
@@ -23,7 +26,7 @@ public class UploadProfileImageEndpoint : IEndpoint
         IFormFile file,
         CurrentUserService currentUserService,
         UserManager<User> userManager,
-        ProfileService profileService,
+        LocalFileStorageService fileStorageService,
         CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(currentUserService.UserId!.Value.ToString());
@@ -36,19 +39,48 @@ public class UploadProfileImageEndpoint : IEndpoint
                 Detail = "User not found"
             });
 
-        var result = await profileService.UploadProfileImageAsync(user, file, ct);
-        if (!result.IsSuccess)
+        try
+        {
+            // Delete old profile image if exists
+            if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
+            {
+                await fileStorageService.DeleteFileAsync(user.ProfileImageUrl, ct);
+            }
+
+            // Upload and validate using file storage service
+            var filePath = await fileStorageService.UploadFileWithValidationAsync(file, FileTypes.ProfileImage, ct);
+
+            // Update user profile image URL
+            user.ProfileImageUrl = filePath;
+
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                // Rollback: delete uploaded file
+                await fileStorageService.DeleteFileAsync(filePath, ct);
+
+                var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+                return Results.BadRequest(new ApiProblemDetails
+                {
+                    Code = ErrorCodes.OPERATION_FAILED,
+                    Title = "Upload Failed",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = $"Failed to update profile: {errors}"
+                });
+            }
+
+            return Results.NoContent();
+        }
+        catch (ArgumentException ex)
         {
             return Results.BadRequest(new ApiProblemDetails
             {
-                Code = result.ErrorCode!,
-                Title = "Upload Failed",
+                Code = ErrorCodes.INVALID_FORMAT,
+                Title = "Validation Failed",
                 Status = StatusCodes.Status400BadRequest,
-                Detail = result.ErrorMessage!
+                Detail = ex.Message
             });
         }
-
-        return Results.NoContent();
     }
 
     public record Request(IFormFile File);
