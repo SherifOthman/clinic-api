@@ -1,6 +1,6 @@
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Common.Extensions;
+using ClinicManagement.Application.Common.Extensions;
 using ClinicManagement.Application.Common.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;

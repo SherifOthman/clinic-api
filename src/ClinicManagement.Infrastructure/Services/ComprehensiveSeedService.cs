@@ -1,4 +1,4 @@
-using ClinicManagement.Domain.Common.Enums;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
