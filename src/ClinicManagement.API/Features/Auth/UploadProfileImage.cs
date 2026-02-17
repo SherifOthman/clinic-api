@@ -16,7 +16,7 @@ public class UploadProfileImageEndpoint : IEndpoint
             .WithName("UploadProfileImage")
             .WithSummary("Upload profile image")
             .WithTags("Authentication")
-            .Produces<Response>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             ;
     }
@@ -101,26 +101,7 @@ public class UploadProfileImageEndpoint : IEndpoint
                 });
             }
 
-            var roles = await userManager.GetRolesAsync(user);
-
-            // Check if user has completed onboarding
-            var hasClinic = await db.Clinics
-                .AnyAsync(c => c.OwnerUserId == user.Id && c.OnboardingCompleted, ct);
-
-            var response = new Response(
-                user.Id,
-                user.Email!,
-                user.UserName!,
-                user.FirstName,
-                user.LastName,
-                user.PhoneNumber,
-                user.ProfileImageUrl,
-                roles.ToList(),
-                user.EmailConfirmed,
-                hasClinic
-            );
-
-            return Results.Ok(response);
+            return Results.NoContent();
         }
         catch (Exception ex)
         {
@@ -135,16 +116,4 @@ public class UploadProfileImageEndpoint : IEndpoint
     }
 
     public record Request(IFormFile File);
-
-    public record Response(
-        Guid Id,
-        string Email,
-        string UserName,
-        string FirstName,
-        string LastName,
-        string? PhoneNumber,
-        string? ProfileImageUrl,
-        List<string> Roles,
-        bool EmailConfirmed,
-        bool OnboardingCompleted);
 }
