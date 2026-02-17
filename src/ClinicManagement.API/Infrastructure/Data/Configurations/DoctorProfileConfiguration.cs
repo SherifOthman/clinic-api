@@ -22,7 +22,7 @@ public class DoctorProfileConfiguration : IEntityTypeConfiguration<DoctorProfile
             .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasOne(d => d.Specialization)
-            .WithMany()
+            .WithMany(s => s.DoctorProfiles)
             .HasForeignKey(d => d.SpecializationId)
             .OnDelete(DeleteBehavior.SetNull);
         
