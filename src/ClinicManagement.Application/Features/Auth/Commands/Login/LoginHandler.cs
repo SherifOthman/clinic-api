@@ -3,7 +3,6 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Login;
@@ -11,20 +10,20 @@ namespace ClinicManagement.Application.Features.Auth.Commands.Login;
 public class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 {
     private readonly UserManager<User> _userManager;
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
         UserManager<User> userManager,
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
         ILogger<LoginHandler> logger)
     {
         _userManager = userManager;
-        _context = context;
+        _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _refreshTokenService = refreshTokenService;
         _logger = logger;
@@ -63,10 +62,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 
         // Get ClinicId from Staff table (if user is clinic staff)
         // SuperAdmin has no Staff record, so ClinicId will be null
-        var staff = await _context.Set<Staff>()
-            .Where(s => s.UserId == user.Id && s.IsActive)
-            .FirstOrDefaultAsync(cancellationToken);
-
+        var staff = await _unitOfWork.Users.GetStaffByUserIdAsync(user.Id, cancellationToken);
         var clinicId = staff?.ClinicId;
 
         // Generate tokens

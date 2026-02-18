@@ -2,21 +2,20 @@ using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Features.Auth.Queries.GetMe;
 
 public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 {
     private readonly UserManager<User> _userManager;
-    private readonly IApplicationDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
     public GetMeHandler(
         UserManager<User> userManager,
-        IApplicationDbContext context)
+        IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<GetMeDto?> Handle(GetMeQuery request, CancellationToken cancellationToken)
@@ -28,8 +27,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
         var roles = await _userManager.GetRolesAsync(user);
 
         // Check if user has completed onboarding by checking if they own a clinic
-        var hasClinic = await _context.Set<Clinic>()
-            .AnyAsync(c => c.OwnerUserId == user.Id && c.OnboardingCompleted, cancellationToken);
+        var hasClinic = await _unitOfWork.Users.HasCompletedClinicOnboardingAsync(user.Id, cancellationToken);
 
         return new GetMeDto(
             user.Id,

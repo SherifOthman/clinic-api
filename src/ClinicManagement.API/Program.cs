@@ -1,8 +1,8 @@
 using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
+using ClinicManagement.Infrastructure.Data;
 using Serilog;
-using DatabaseInitializationService = ClinicManagement.Infrastructure.Services.DatabaseInitializationService;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -38,13 +38,13 @@ try
             var services = scope.ServiceProvider;
             try
             {
-                var dbInitializer = services.GetRequiredService<DatabaseInitializationService>();
-                dbInitializer.InitializeAsync().GetAwaiter().GetResult();
-                Log.Information("Database initialized and seeded successfully");
+                var dbMigration = services.GetRequiredService<DbUpMigrationService>();
+                dbMigration.MigrateDatabase();
+                Log.Information("Database migrated successfully with DbUp");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occurred while initializing the database");
+                Log.Error(ex, "An error occurred while migrating the database");
             }
         }
     }

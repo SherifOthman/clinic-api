@@ -1,8 +1,7 @@
-using ClinicManagement.Infrastructure.Data;
+using ClinicManagement.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -11,11 +10,11 @@ namespace ClinicManagement.API.Controllers;
 [Produces("application/json")]
 public class SubscriptionPlansController : ControllerBase
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public SubscriptionPlansController(ApplicationDbContext db)
+    public SubscriptionPlansController(IUnitOfWork unitOfWork)
     {
-        _db = db;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -27,24 +26,22 @@ public class SubscriptionPlansController : ControllerBase
     [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
     {
-        var plans = await _db.SubscriptionPlans
-            .Where(sp => sp.IsActive)
-            .OrderBy(sp => sp.MonthlyFee)
-            .Select(sp => new SubscriptionPlanDto(
-                sp.Id,
-                sp.Name,
-                sp.Description,
-                sp.MonthlyFee,
-                sp.YearlyFee,
-                sp.MaxBranches,
-                sp.MaxStaff,
-                sp.HasInventoryManagement,
-                sp.HasReporting,
-                sp.IsActive
-            ))
-            .ToListAsync(ct);
+        var plans = await _unitOfWork.SubscriptionPlans.GetActiveAsync(ct);
 
-        return Ok(plans);
+        var dtos = plans.Select(sp => new SubscriptionPlanDto(
+            sp.Id,
+            sp.Name,
+            sp.Description,
+            sp.MonthlyFee,
+            sp.YearlyFee,
+            sp.MaxBranches,
+            sp.MaxStaff,
+            sp.HasInventoryManagement,
+            sp.HasReporting,
+            sp.IsActive
+        )).ToList();
+
+        return Ok(dtos);
     }
 }
 
