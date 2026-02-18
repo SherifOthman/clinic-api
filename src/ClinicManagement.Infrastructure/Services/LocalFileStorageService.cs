@@ -67,13 +67,11 @@ public class LocalFileStorageService : IFileStorageService
         string fileType,
         CancellationToken cancellationToken = default)
     {
-        // Get file type settings
         if (!_options.FileTypes.TryGetValue(fileType, out var fileTypeSettings))
         {
             throw new ArgumentException($"File type '{fileType}' is not configured");
         }
 
-        // Validate file
         if (file == null || file.Length == 0)
         {
             throw new ArgumentException("File is required");

@@ -20,7 +20,7 @@ public class Invoice : TenantEntity
     public DateTime? DueDate { get; set; }
     public string? Notes { get; set; }
 
-    // Navigation properties
+
     public Clinic Clinic { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
     public Appointment? Appointment { get; set; }

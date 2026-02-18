@@ -39,12 +39,9 @@ public class TokenService : ITokenService
             new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim())
         };
 
-        // Add all roles to claims (required for [Authorize(Roles = "...")] attribute)
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        // CRITICAL: ClinicId claim required for multi-tenancy isolation
-        // ClinicId comes from Staff table (passed as parameter)
-        // SuperAdmin has no ClinicId (null) - don't add claim if null
+        // ClinicId claim required for multi-tenancy. SuperAdmin has no ClinicId.
         if (clinicId.HasValue)
         {
             claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));

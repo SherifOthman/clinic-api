@@ -10,7 +10,7 @@ public class Specialization : BaseEntity
     public string? DescriptionAr { get; set; }
     public bool IsActive { get; set; } = true;
 
-    // Navigation properties
+
     public virtual ICollection<DoctorProfile> DoctorProfiles { get; set; } = new List<DoctorProfile>();
     public ICollection<SpecializationMeasurementAttribute> DefaultMeasurementAttributes { get; set; } = new List<SpecializationMeasurementAttribute>();
 }

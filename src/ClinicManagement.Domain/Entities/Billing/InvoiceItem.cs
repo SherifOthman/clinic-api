@@ -30,7 +30,7 @@ public class InvoiceItem : BaseEntity
     // Calculated property for total line amount
     public decimal LineTotal => Quantity * UnitPrice;
 
-    // Navigation properties
+
     public Invoice Invoice { get; set; } = null!;
     public MedicalService? MedicalService { get; set; }
     public Medicine? Medicine { get; set; }

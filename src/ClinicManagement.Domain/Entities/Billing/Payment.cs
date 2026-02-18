@@ -13,6 +13,6 @@ public class Payment : AuditableEntity
     public string? Note { get; set; }
     public string? ReferenceNumber { get; set; }
 
-    // Navigation properties
+
     public Invoice Invoice { get; set; } = null!;
 }

@@ -28,7 +28,6 @@ public class SuperAdminSeedService
     {
         try
         {
-            // Check if superadmin already exists
             var existingAdmin = await _unitOfWork.Users.GetByEmailAsync("superadmin@clinic.com");
             if (existingAdmin != null)
             {
@@ -38,7 +37,6 @@ public class SuperAdminSeedService
 
             await _unitOfWork.BeginTransactionAsync();
 
-            // Get SuperAdmin role ID
             var roles = await _unitOfWork.Users.GetRolesAsync();
             var superAdminRole = roles.FirstOrDefault(r => r.Name == "SuperAdmin");
             if (superAdminRole == null)
@@ -47,7 +45,6 @@ public class SuperAdminSeedService
                 return;
             }
 
-            // Create SuperAdmin user
             var superAdmin = new User
             {
                 UserName = "superadmin@clinic.com",
@@ -61,7 +58,6 @@ public class SuperAdminSeedService
 
             await _unitOfWork.Users.AddAsync(superAdmin);
 
-            // Assign SuperAdmin role
             await _unitOfWork.Users.AddUserRoleAsync(superAdmin.Id, superAdminRole.Id);
 
             await _unitOfWork.CommitTransactionAsync();

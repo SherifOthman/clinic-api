@@ -14,18 +14,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // HttpContextAccessor (required for CurrentUserService)
         services.AddHttpContextAccessor();
         
-        // Core Services
         services.AddScoped<DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         
-        // Database - Dapper with UnitOfWork
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<DbUpMigrationService>();
 
-        // Application Services
         services.AddScoped<PhoneValidationService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -39,10 +35,8 @@ public static class DependencyInjection
         services.AddScoped<ITokenGenerator, TokenGenerator>();
         services.AddScoped<SuperAdminSeedService>();
         
-        // External API Services
         services.AddHttpClient<GeoNamesService>();
         
-        // Background Services
         services.AddHostedService<RefreshTokenCleanupService>();
 
         return services;

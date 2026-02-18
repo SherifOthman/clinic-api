@@ -13,6 +13,6 @@ public class LabTest : TenantEntity
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
     
-    // Navigation properties
+
     public ICollection<MedicalVisitLabTest> MedicalVisitLabTests { get; set; } = new List<MedicalVisitLabTest>();
 }

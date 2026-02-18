@@ -22,7 +22,7 @@ public class LabTestOrder : BaseEntity
     public string? DoctorNotes { get; set; }
     public string? Notes { get; set; }
     
-    // Navigation properties
+
     public ClinicBranch ClinicBranch { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
     public LabTest LabTest { get; set; } = null!;

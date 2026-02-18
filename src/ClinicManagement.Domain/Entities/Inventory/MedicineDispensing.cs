@@ -14,7 +14,7 @@ public class MedicineDispensing : BaseEntity
     public DispensingStatus Status { get; set; }
     public string? Notes { get; set; }
     
-    // Navigation properties
+
     public ClinicBranch ClinicBranch { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
     public Medicine Medicine { get; set; } = null!;

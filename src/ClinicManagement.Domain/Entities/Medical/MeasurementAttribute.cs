@@ -15,7 +15,7 @@ public class MeasurementAttribute : BaseEntity
     public string? DescriptionAr { get; set; }
     public MeasurementDataType DataType { get; set; }
     
-    // Navigation properties
+
     public ICollection<MedicalVisitMeasurement> VisitMeasurements { get; set; } = new List<MedicalVisitMeasurement>();
     public ICollection<DoctorMeasurementAttribute> DoctorMeasurements { get; set; } = new List<DoctorMeasurementAttribute>();
     public ICollection<SpecializationMeasurementAttribute> SpecializationDefaults { get; set; } = new List<SpecializationMeasurementAttribute>();

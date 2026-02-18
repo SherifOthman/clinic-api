@@ -9,6 +9,6 @@ public class ChronicDisease : BaseEntity
     public string? DescriptionEn { get; set; }
     public string? DescriptionAr { get; set; }
     
-    // Navigation properties
+
     public ICollection<PatientChronicDisease> Patients { get; set; } = new List<PatientChronicDisease>();
 }

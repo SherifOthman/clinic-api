@@ -20,7 +20,7 @@ public class MedicalVisitMeasurement : BaseEntity
     
     public string? Notes { get; set; }
 
-    // Navigation properties
+
     public MedicalVisit MedicalVisit { get; set; } = null!;
     public MeasurementAttribute MeasurementAttribute { get; set; } = null!;
     

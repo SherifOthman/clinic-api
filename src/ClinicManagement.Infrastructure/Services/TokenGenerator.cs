@@ -57,7 +57,6 @@ public class TokenGenerator : ITokenGenerator
 
     public string GeneratePasswordResetToken(int userId, string email, string passwordHash)
     {
-        // Include password hash so token becomes invalid if password changes
         var payload = $"{userId}|{email}|{passwordHash}|{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
         return _passwordProtector.Protect(payload);
     }

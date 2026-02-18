@@ -20,7 +20,7 @@ public class Patient : TenantEntity
     public string? EmergencyContactPhone { get; set; }
     public string? EmergencyContactRelation { get; set; }
     
-    // Navigation properties
+
     public Clinic Clinic { get; set; } = null!;
     public IReadOnlyCollection<PatientPhone> PhoneNumbers => _phoneNumbers.AsReadOnly();
     public IReadOnlyCollection<PatientChronicDisease> ChronicDiseases => _chronicDiseases.AsReadOnly();

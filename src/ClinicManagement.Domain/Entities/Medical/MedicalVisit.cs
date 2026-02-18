@@ -26,7 +26,7 @@ public class MedicalVisit : BaseEntity
     
     public Prescription? Prescription { get; set; }
     
-    // Navigation properties for lab tests, radiology tests, medical files, and measurements
+
     public ICollection<MedicalVisitLabTest> LabTests { get; set; } = new List<MedicalVisitLabTest>();
     public ICollection<MedicalVisitRadiology> RadiologyTests { get; set; } = new List<MedicalVisitRadiology>();
     public ICollection<MedicalFile> MedicalFiles { get; set; } = new List<MedicalFile>();

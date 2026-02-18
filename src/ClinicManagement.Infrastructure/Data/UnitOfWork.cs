@@ -40,7 +40,6 @@ public class UnitOfWork : IUnitOfWork
     {
         _transaction = _connection.BeginTransaction();
         
-        // Reset repositories to use new transaction
         Users = null!;
         RefreshTokens = null!;
         SubscriptionPlans = null!;

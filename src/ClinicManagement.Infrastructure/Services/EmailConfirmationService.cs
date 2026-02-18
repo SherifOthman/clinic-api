@@ -49,14 +49,12 @@ public class EmailConfirmationService : IEmailConfirmationService
 
     public async Task ConfirmEmailAsync(User user, string token, CancellationToken cancellationToken = default)
     {
-        // Validate token
         if (!_tokenGenerator.ValidateEmailConfirmationToken(user.Id, user.Email!, token))
         {
             _logger.LogWarning("Invalid email confirmation token for {Email}", user.Email);
             throw new InvalidOperationException("Invalid or expired confirmation token");
         }
 
-        // Update user email confirmed status
         user.EmailConfirmed = true;
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
 

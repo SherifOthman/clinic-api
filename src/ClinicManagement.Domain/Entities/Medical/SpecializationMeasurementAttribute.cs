@@ -15,7 +15,7 @@ public class SpecializationMeasurementAttribute : BaseEntity
 
     public bool DefaultIsRequired { get; set; } = false;
     
-    // Navigation properties
+
     public Specialization Specialization { get; set; } = null!;
     public MeasurementAttribute MeasurementAttribute { get; set; } = null!;
 }

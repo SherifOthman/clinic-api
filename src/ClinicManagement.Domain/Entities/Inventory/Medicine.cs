@@ -22,7 +22,7 @@ public class Medicine : AuditableEntity
     public bool IsActive { get; set; } = true;
     public bool IsDiscontinued { get; set; } = false;
 
-    // Navigation properties
+
     public ClinicBranch ClinicBranch { get; set; } = null!;
     public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 

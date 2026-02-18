@@ -13,6 +13,6 @@ public class RadiologyTest : TenantEntity
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
     
-    // Navigation properties
+
     public ICollection<MedicalVisitRadiology> MedicalVisitRadiologies { get; set; } = new List<MedicalVisitRadiology>();
 }

@@ -9,7 +9,7 @@ public class MedicalService : AuditableEntity
     public decimal DefaultPrice { get; set; }
     public bool IsOperation { get; set; } // Is it a surgical operation?
 
-    // Navigation properties
+
     public ClinicBranch ClinicBranch { get; set; } = null!;
     public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 }

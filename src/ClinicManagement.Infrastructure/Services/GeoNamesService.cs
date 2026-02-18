@@ -35,13 +35,8 @@ public partial class GeoNamesService
 
         try
         {
-            // Fetch English data
             var countriesEn = await FetchCountriesInLanguageAsync("en", cancellationToken);
-            
-            // Fetch Arabic data
             var countriesAr = await FetchCountriesInLanguageAsync("ar", cancellationToken);
-
-            // Merge by GeonameId
             var countries = MergeCountryData(countriesEn, countriesAr);
 
             _logger.LogInformation("Fetched {Count} countries (bilingual)", countries.Count);
@@ -61,13 +56,9 @@ public partial class GeoNamesService
 
         try
         {
-            // Fetch English data
             var statesEn = await FetchChildrenInLanguageAsync(countryGeonameId, "en", cancellationToken);
-            
-            // Fetch Arabic data
             var statesAr = await FetchChildrenInLanguageAsync(countryGeonameId, "ar", cancellationToken);
 
-            // Filter for ADM1 (administrative division level 1) and merge
             var states = MergeLocationData(
                 statesEn.Where(s => s.Fcode.StartsWith("ADM1")).ToList(),
                 statesAr.Where(s => s.Fcode.StartsWith("ADM1")).ToList()
@@ -91,7 +82,6 @@ public partial class GeoNamesService
 
         try
         {
-            // First, get the state info to extract adminCode1
             var stateInfoEn = await GetLocationInfoAsync(stateGeonameId, "en", cancellationToken);
             
             if (stateInfoEn == null)
@@ -100,8 +90,6 @@ public partial class GeoNamesService
                 return new List<GeoNamesLocation>();
             }
 
-            // Use search API to get ALL populated places within the state
-            // This includes cities, towns, villages that children API might miss
             var citiesEn = await SearchCitiesInStateAsync(
                 stateInfoEn.CountryCode, 
                 stateInfoEn.AdminCode1, 
@@ -114,7 +102,6 @@ public partial class GeoNamesService
                 "ar", 
                 cancellationToken);
 
-            // Merge bilingual data
             var cities = MergeLocationData(citiesEn, citiesAr);
 
             _logger.LogInformation("Fetched {Count} cities for state {StateGeonameId} (bilingual)", 
@@ -153,8 +140,6 @@ public partial class GeoNamesService
         string language,
         CancellationToken cancellationToken)
     {
-        // Use maxRows=1000 to get all children (GeoNames API allows up to 1000)
-        // Default is only 200 which may not include all cities/districts
         var url = $"{_options.BaseUrl}/childrenJSON?geonameId={parentGeonameId}&username={_options.Username}&lang={language}&maxRows=1000";
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -192,10 +177,8 @@ public partial class GeoNamesService
         string language,
         CancellationToken cancellationToken)
     {
-        // Use search API to get populated places and administrative divisions
-        // Ordered by population to prioritize important cities
         var url = $"{_options.BaseUrl}/searchJSON?country={countryCode}&adminCode1={adminCode1}" +
-                  $"&featureClass=P&featureClass=A" + // P=populated places, A=administrative
+                  $"&featureClass=P&featureClass=A" +
                   $"&username={_options.Username}&lang={language}&maxRows=1000&orderby=population";
         
         var response = await _httpClient.GetAsync(url, cancellationToken);
@@ -207,10 +190,6 @@ public partial class GeoNamesService
             PropertyNameCaseInsensitive = true
         });
 
-        // Filter strategy:
-        // - Always include ADM2 (administrative divisions)
-        // - Always include PPLA2, PPLA3, PPLA4 (administrative capitals)
-        // - Include PPL only if population >= 5000 (filters out tiny villages)
         return result?.Geonames?
             .Where(g => g.Fcode.StartsWith("ADM2") || 
                        g.Fcode == "PPLA2" || 
@@ -227,8 +206,8 @@ public partial class GeoNamesService
     }
 
     /// <summary>
-    /// Merges English and Arabic country data by GeonameId
-    /// Falls back to English name if Arabic translation not found
+    /// Merges English and Arabic country data by GeonameId.
+    /// Falls back to English name if Arabic translation not found.
     /// </summary>
     private List<GeoNamesCountry> MergeCountryData(
         List<GeoNamesCountryInfo> englishData,
@@ -253,8 +232,8 @@ public partial class GeoNamesService
     }
 
     /// <summary>
-    /// Merges English and Arabic location data (states/cities) by GeonameId
-    /// Falls back to English name if Arabic translation not found
+    /// Merges English and Arabic location data (states/cities) by GeonameId.
+    /// Falls back to English name if Arabic translation not found.
     /// </summary>
     private List<GeoNamesLocation> MergeLocationData(
         List<GeoNamesChildInfo> englishData,
@@ -330,7 +309,6 @@ public partial class GeoNamesService
     #endregion
 }
 
-// Public response types
 public record GeoNamesCountry
 {
     public int GeonameId { get; init; }
