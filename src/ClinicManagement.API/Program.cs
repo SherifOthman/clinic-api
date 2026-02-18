@@ -1,5 +1,7 @@
 using ClinicManagement.API;
-using Scalar.AspNetCore;
+using ClinicManagement.Application;
+using ClinicManagement.Infrastructure;
+using ClinicManagement.Infrastructure.Data;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -17,6 +19,12 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
+    
+    // Clean Architecture layers
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
+    
+    // API layer (endpoints, middleware, etc.)
     builder.Services.AddApi(builder.Configuration, builder.Environment);
     
 
@@ -30,9 +38,14 @@ try
             var services = scope.ServiceProvider;
             try
             {
-                var dbInitializer = services.GetRequiredService<DatabaseInitializationService>();
-                dbInitializer.InitializeAsync().GetAwaiter().GetResult();
-                Log.Information("Database initialized and seeded successfully");
+                var dbMigration = services.GetRequiredService<DbUpMigrationService>();
+                dbMigration.MigrateDatabase();
+                Log.Information("Database migrated successfully with DbUp");
+
+                // Seed SuperAdmin user with hashed password
+                var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
+                await superAdminSeed.SeedSuperAdminAsync();
+                Log.Information("SuperAdmin user seeded successfully");
             }
             catch (Exception ex)
             {
