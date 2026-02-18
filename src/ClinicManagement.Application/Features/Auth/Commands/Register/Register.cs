@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Exceptions;
 using MediatR;
@@ -7,7 +8,16 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
-public class RegisterHandler : IRequestHandler<RegisterCommand, RegisterResult>
+public record RegisterCommand(
+    string FirstName,
+    string LastName,
+    string UserName,
+    string Email,
+    string Password,
+    string? PhoneNumber
+) : IRequest<Result>;
+
+public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 {
     private readonly IUserRegistrationService _userRegistrationService;
     private readonly ILogger<RegisterHandler> _logger;
@@ -20,56 +30,37 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, RegisterResult>
         _logger = logger;
     }
 
-    public async Task<RegisterResult> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         try
         {
-            // SECURITY: Public registration can only create ClinicOwner accounts
-            // SuperAdmin accounts must be created through seeding
-            // Staff accounts (Doctor, Receptionist) are created by ClinicOwner through admin panel
             var registrationRequest = new UserRegistrationRequest(
                 Email: request.Email,
                 Password: request.Password,
                 FirstName: request.FirstName,
                 LastName: request.LastName,
                 PhoneNumber: request.PhoneNumber,
-                Role: Roles.ClinicOwner, // Public registration = ClinicOwner only
-                ClinicId: null, // No clinic yet - will be created during onboarding
+                Role: Roles.ClinicOwner,
+                ClinicId: null,
                 UserName: request.UserName,
                 EmailConfirmed: false,
                 SendConfirmationEmail: true
             );
 
-            var userId = await _userRegistrationService.RegisterUserAsync(registrationRequest, cancellationToken);
-
+            await _userRegistrationService.RegisterUserAsync(registrationRequest, cancellationToken);
             _logger.LogInformation("User registered successfully: {Email}", request.Email);
 
-            return new RegisterResult(
-                Success: true,
-                UserId: userId,
-                ErrorCode: null,
-                ErrorMessage: null
-            );
+            return Result.Success();
         }
         catch (DomainException ex)
         {
             _logger.LogWarning("Registration failed: {ErrorCode} - {Message}", ex.ErrorCode, ex.Message);
-            return new RegisterResult(
-                Success: false,
-                UserId: null,
-                ErrorCode: ex.ErrorCode,
-                ErrorMessage: ex.Message
-            );
+            return Result.Failure(ex.ErrorCode, ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during registration for {Email}", request.Email);
-            return new RegisterResult(
-                Success: false,
-                UserId: null,
-                ErrorCode: "REGISTRATION_FAILED",
-                ErrorMessage: "An unexpected error occurred during registration"
-            );
+            return Result.Failure("REGISTRATION_FAILED", "An unexpected error occurred during registration");
         }
     }
 }
