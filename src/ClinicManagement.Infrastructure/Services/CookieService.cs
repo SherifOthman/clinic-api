@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Infrastructure.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

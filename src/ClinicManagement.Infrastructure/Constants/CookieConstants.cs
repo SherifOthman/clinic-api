@@ -1,4 +1,4 @@
-namespace ClinicManagement.Domain.Common.Constants;
+namespace ClinicManagement.Infrastructure.Constants;
 
 /// <summary>
 /// Cookie names used in the application
