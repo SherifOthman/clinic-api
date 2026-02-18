@@ -1,22 +1,22 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 public class SuperAdminSeedService
 {
-    private readonly UserManager<User> _userManager;
-    private readonly RoleManager<IdentityRole<int>> _roleManager;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly PasswordHasher _passwordHasher;
     private readonly ILogger<SuperAdminSeedService> _logger;
 
     public SuperAdminSeedService(
-        UserManager<User> userManager,
-        RoleManager<IdentityRole<int>> roleManager,
+        IUnitOfWork unitOfWork,
+        PasswordHasher passwordHasher,
         ILogger<SuperAdminSeedService> logger)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _unitOfWork = unitOfWork;
+        _passwordHasher = passwordHasher;
         _logger = logger;
     }
 
@@ -25,18 +25,22 @@ public class SuperAdminSeedService
         try
         {
             // Check if superadmin already exists
-            var existingAdmin = await _userManager.FindByEmailAsync("superadmin@clinic.com");
+            var existingAdmin = await _unitOfWork.Users.GetByEmailAsync("superadmin@clinic.com");
             if (existingAdmin != null)
             {
                 _logger.LogInformation("SuperAdmin user already exists");
                 return;
             }
 
-            // Ensure SuperAdmin role exists
-            if (!await _roleManager.RoleExistsAsync("SuperAdmin"))
+            await _unitOfWork.BeginTransactionAsync();
+
+            // Get SuperAdmin role ID
+            var roles = await _unitOfWork.Users.GetRolesAsync();
+            var superAdminRole = roles.FirstOrDefault(r => r.Name == "SuperAdmin");
+            if (superAdminRole == null)
             {
-                await _roleManager.CreateAsync(new IdentityRole<int> { Name = "SuperAdmin" });
-                _logger.LogInformation("Created SuperAdmin role");
+                _logger.LogError("SuperAdmin role not found");
+                return;
             }
 
             // Create SuperAdmin user
@@ -46,23 +50,23 @@ public class SuperAdminSeedService
                 Email = "superadmin@clinic.com",
                 FirstName = "System",
                 LastName = "Administrator",
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                PasswordHash = _passwordHasher.HashPassword("SuperAdmin123!"),
+                SecurityStamp = Guid.NewGuid().ToString()
             };
 
-            var result = await _userManager.CreateAsync(superAdmin, "SuperAdmin123!");
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
-                _logger.LogInformation("Created SuperAdmin user with email: superadmin@clinic.com");
-            }
-            else
-            {
-                _logger.LogError("Failed to create SuperAdmin user: {Errors}", 
-                    string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
+            await _unitOfWork.Users.AddAsync(superAdmin);
+
+            // Assign SuperAdmin role
+            await _unitOfWork.Users.AddUserRoleAsync(superAdmin.Id, superAdminRole.Id);
+
+            await _unitOfWork.CommitTransactionAsync();
+
+            _logger.LogInformation("Created SuperAdmin user with email: superadmin@clinic.com");
         }
         catch (Exception ex)
         {
+            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, "Error seeding SuperAdmin user");
             throw;
         }

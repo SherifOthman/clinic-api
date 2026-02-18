@@ -25,48 +25,37 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT * FROM Users WHERE NormalizedEmail = @NormalizedEmail";
+        const string sql = "SELECT * FROM Users WHERE Email = @Email";
         return await _connection.QueryFirstOrDefaultAsync<User>(
-            new CommandDefinition(sql, new { NormalizedEmail = email.ToUpperInvariant() }, _transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { Email = email }, _transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT * FROM Users WHERE NormalizedUserName = @NormalizedUserName";
+        const string sql = "SELECT * FROM Users WHERE UserName = @UserName";
         return await _connection.QueryFirstOrDefaultAsync<User>(
-            new CommandDefinition(sql, new { NormalizedUserName = username.ToUpperInvariant() }, _transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { UserName = username }, _transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername, CancellationToken cancellationToken = default)
     {
-        const string sql = @"
-            SELECT * FROM Users 
-            WHERE NormalizedEmail = @Normalized OR NormalizedUserName = @Normalized";
-        
+        const string sql = "SELECT * FROM Users WHERE Email = @Value OR UserName = @Value";
         return await _connection.QueryFirstOrDefaultAsync<User>(
-            new CommandDefinition(sql, new { Normalized = emailOrUsername.ToUpperInvariant() }, _transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { Value = emailOrUsername }, _transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
     {
-        const string sql = @"
-            SELECT CAST(CASE WHEN EXISTS(
-                SELECT 1 FROM Users WHERE NormalizedEmail = @NormalizedEmail
-            ) THEN 1 ELSE 0 END AS BIT)";
-        
+        const string sql = "SELECT CAST(CASE WHEN EXISTS(SELECT 1 FROM Users WHERE Email = @Email) THEN 1 ELSE 0 END AS BIT)";
         return await _connection.ExecuteScalarAsync<bool>(
-            new CommandDefinition(sql, new { NormalizedEmail = email.ToUpperInvariant() }, _transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { Email = email }, _transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken = default)
     {
-        const string sql = @"
-            SELECT CAST(CASE WHEN EXISTS(
-                SELECT 1 FROM Users WHERE NormalizedUserName = @NormalizedUserName
-            ) THEN 1 ELSE 0 END AS BIT)";
-        
+        const string sql = "SELECT CAST(CASE WHEN EXISTS(SELECT 1 FROM Users WHERE UserName = @UserName) THEN 1 ELSE 0 END AS BIT)";
         return await _connection.ExecuteScalarAsync<bool>(
-            new CommandDefinition(sql, new { NormalizedUserName = username.ToUpperInvariant() }, _transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { UserName = username }, _transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -80,15 +69,11 @@ public class UserRepository : IUserRepository
     {
         const string sql = @"
             INSERT INTO Users (
-                UserName, NormalizedUserName, Email, NormalizedEmail, 
-                EmailConfirmed, PasswordHash, SecurityStamp,
-                PhoneNumber, PhoneNumberConfirmed,
-                FirstName, LastName, ProfileImageUrl
+                UserName, Email, PasswordHash, SecurityStamp,
+                FirstName, LastName, PhoneNumber, ProfileImageUrl, EmailConfirmed
             ) VALUES (
-                @UserName, @NormalizedUserName, @Email, @NormalizedEmail,
-                @EmailConfirmed, @PasswordHash, @SecurityStamp,
-                @PhoneNumber, @PhoneNumberConfirmed,
-                @FirstName, @LastName, @ProfileImageUrl
+                @UserName, @Email, @PasswordHash, @SecurityStamp,
+                @FirstName, @LastName, @PhoneNumber, @ProfileImageUrl, @EmailConfirmed
             );
             SELECT CAST(SCOPE_IDENTITY() as int)";
         
@@ -103,17 +88,14 @@ public class UserRepository : IUserRepository
         const string sql = @"
             UPDATE Users SET
                 UserName = @UserName,
-                NormalizedUserName = @NormalizedUserName,
                 Email = @Email,
-                NormalizedEmail = @NormalizedEmail,
-                EmailConfirmed = @EmailConfirmed,
                 PasswordHash = @PasswordHash,
                 SecurityStamp = @SecurityStamp,
-                PhoneNumber = @PhoneNumber,
-                PhoneNumberConfirmed = @PhoneNumberConfirmed,
                 FirstName = @FirstName,
                 LastName = @LastName,
-                ProfileImageUrl = @ProfileImageUrl
+                PhoneNumber = @PhoneNumber,
+                ProfileImageUrl = @ProfileImageUrl,
+                EmailConfirmed = @EmailConfirmed
             WHERE Id = @Id";
         
         await _connection.ExecuteAsync(
@@ -129,10 +111,7 @@ public class UserRepository : IUserRepository
 
     public async Task<Staff?> GetStaffByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
-        const string sql = @"
-            SELECT * FROM Staff 
-            WHERE UserId = @UserId AND IsActive = 1";
-        
+        const string sql = "SELECT * FROM Staff WHERE UserId = @UserId AND IsActive = 1";
         return await _connection.QueryFirstOrDefaultAsync<Staff>(
             new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
     }
@@ -147,5 +126,33 @@ public class UserRepository : IUserRepository
         
         return await _connection.ExecuteScalarAsync<bool>(
             new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
+    }
+
+    public async Task<List<Role>> GetRolesAsync(CancellationToken cancellationToken = default)
+    {
+        const string sql = "SELECT * FROM Roles";
+        var roles = await _connection.QueryAsync<Role>(
+            new CommandDefinition(sql, transaction: _transaction, cancellationToken: cancellationToken));
+        return roles.ToList();
+    }
+
+    public async Task<List<string>> GetUserRolesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        const string sql = @"
+            SELECT r.Name 
+            FROM Roles r
+            INNER JOIN UserRoles ur ON r.Id = ur.RoleId
+            WHERE ur.UserId = @UserId";
+        
+        var roles = await _connection.QueryAsync<string>(
+            new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
+        return roles.ToList();
+    }
+
+    public async Task AddUserRoleAsync(int userId, int roleId, CancellationToken cancellationToken = default)
+    {
+        const string sql = "INSERT INTO UserRoles (UserId, RoleId) VALUES (@UserId, @RoleId)";
+        await _connection.ExecuteAsync(
+            new CommandDefinition(sql, new { UserId = userId, RoleId = roleId }, _transaction, cancellationToken: cancellationToken));
     }
 }

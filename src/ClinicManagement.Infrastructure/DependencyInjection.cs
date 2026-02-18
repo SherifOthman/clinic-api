@@ -1,9 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data;
 using ClinicManagement.Infrastructure.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,27 +21,6 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<DbUpMigrationService>();
 
-        // Identity (still using EF Core for Identity tables)
-        services.AddDbContext<IdentityDbContext>(options =>
-        {
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName));
-        });
-
-        services.AddIdentity<User, IdentityRole<int>>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequiredLength = 6;
-            options.User.RequireUniqueEmail = true;
-            options.SignIn.RequireConfirmedEmail = true;
-        })
-        .AddEntityFrameworkStores<IdentityDbContext>()
-        .AddDefaultTokenProviders();
-
         // Application Services
         services.AddScoped<PhoneValidationService>();
         services.AddScoped<ITokenService, TokenService>();
@@ -55,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<MailKitSmtpClient>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<PasswordHasher>();
         services.AddScoped<SuperAdminSeedService>();
         
         // External API Services

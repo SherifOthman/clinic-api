@@ -8,18 +8,9 @@ namespace ClinicManagement.API.Controllers;
 [Produces("application/json")]
 public abstract class BaseApiController : ControllerBase
 {
-    protected readonly ISender Sender;
-    protected readonly ILogger Logger;
+    private ISender? _sender;
+    protected ISender Sender => _sender ??= HttpContext.RequestServices.GetRequiredService<ISender>();
 
-    protected BaseApiController(ISender sender, ILogger logger)
-    {
-        Sender = sender;
-        Logger = logger;
-    }
-
-    /// <summary>
-    /// Create BadRequest response from error code and message
-    /// </summary>
     protected IActionResult Error(string errorCode, string errorMessage, string title)
     {
         return BadRequest(new ApiProblemDetails

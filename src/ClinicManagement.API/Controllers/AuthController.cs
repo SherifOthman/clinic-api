@@ -14,7 +14,6 @@ using ClinicManagement.Application.Features.Auth.Commands.UploadProfileImage;
 using ClinicManagement.Application.Features.Auth.Queries.CheckEmailAvailability;
 using ClinicManagement.Application.Features.Auth.Queries.CheckUsernameAvailability;
 using ClinicManagement.Application.Features.Auth.Queries.GetMe;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ApiProblemDetails = ClinicManagement.Application.Common.Models.ApiProblemDetails;
@@ -23,20 +22,13 @@ using CookieService = ClinicManagement.Infrastructure.Services.CookieService;
 
 namespace ClinicManagement.API.Controllers;
 
-[ApiController]
 [Route("api/auth")]
-[Produces("application/json")]
 public class AuthController : BaseApiController
 {
     private readonly CookieService _cookieService;
     private readonly ICurrentUserService _currentUser;
 
-    public AuthController(
-        ISender sender,
-        CookieService cookieService,
-        ICurrentUserService currentUser,
-        ILogger<AuthController> logger)
-        : base(sender, logger)
+    public AuthController(CookieService cookieService, ICurrentUserService currentUser)
     {
         _cookieService = cookieService;
         _currentUser = currentUser;
@@ -138,17 +130,13 @@ public class AuthController : BaseApiController
             : _cookieService.GetRefreshTokenFromCookie();
 
         if (string.IsNullOrEmpty(refreshToken))
-        {
-            Logger.LogWarning("{ClientType} client refresh request with missing token", isMobile ? "Mobile" : "Web");
             return Unauthorized();
-        }
 
         var command = new RefreshTokenCommand(refreshToken, isMobile);
         var result = await Sender.Send(command, ct);
 
         if (!result.Success)
         {
-            Logger.LogWarning("Token refresh failed");
             if (!isMobile) _cookieService.ClearRefreshTokenCookie();
             return Unauthorized();
         }
@@ -287,7 +275,6 @@ public class AuthController : BaseApiController
             _cookieService.ClearRefreshTokenCookie();
         }
 
-        Logger.LogInformation("{ClientType} client logged out", isMobile ? "Mobile" : "Web");
         return Ok(new MessageResponse("Logged out successfully"));
     }
 

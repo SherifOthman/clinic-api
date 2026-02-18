@@ -1,17 +1,16 @@
 -- Seed Roles
 IF NOT EXISTS (SELECT 1 FROM Roles WHERE Name = 'SuperAdmin')
 BEGIN
-    INSERT INTO Roles (Name, NormalizedName)
+    INSERT INTO Roles (Name)
     VALUES 
-        ('SuperAdmin', 'SUPERADMIN'),
-        ('ClinicOwner', 'CLINICOWNER'),
-        ('Doctor', 'DOCTOR'),
-        ('Receptionist', 'RECEPTIONIST')
+        ('SuperAdmin'),
+        ('ClinicOwner'),
+        ('Doctor'),
+        ('Receptionist')
 END
 GO
 
--- Subscription Plans will be seeded here
--- SuperAdmin user is seeded via SuperAdminSeedService with properly hashed password
+-- SuperAdmin user will be seeded via SuperAdminSeedService with properly hashed password
 
 -- Seed Subscription Plans
 IF NOT EXISTS (SELECT 1 FROM SubscriptionPlans)
