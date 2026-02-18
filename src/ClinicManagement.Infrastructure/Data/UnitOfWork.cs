@@ -18,15 +18,33 @@ public class UnitOfWork : IUnitOfWork
         _connection.Open();
     }
 
-    public IUserRepository Users => new UserRepository(_connection, _transaction);
+    public IUserRepository Users
+    {
+        get => field ??= new UserRepository(_connection, _transaction);
+        set => field = value;
+    }
 
-    public IRefreshTokenRepository RefreshTokens => new RefreshTokenRepository(_connection, _transaction);
+    public IRefreshTokenRepository RefreshTokens
+    {
+        get => field ??= new RefreshTokenRepository(_connection, _transaction);
+        set => field = value;
+    }
 
-    public ISubscriptionPlanRepository SubscriptionPlans => new SubscriptionPlanRepository(_connection, _transaction);
+    public ISubscriptionPlanRepository SubscriptionPlans
+    {
+        get => field ??= new SubscriptionPlanRepository(_connection, _transaction);
+        set => field = value;
+    }
 
     public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _transaction = _connection.BeginTransaction();
+        
+        // Reset repositories to use new transaction
+        Users = null!;
+        RefreshTokens = null!;
+        SubscriptionPlans = null!;
+        
         return Task.CompletedTask;
     }
 
