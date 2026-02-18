@@ -1,9 +1,8 @@
-using ClinicManagement.Application.Common.Extensions;
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
+using ClinicManagement.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,18 +10,21 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class EmailConfirmationService : IEmailConfirmationService
 {
-    private readonly UserManager<User> _userManager;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenGenerator _tokenGenerator;
     private readonly SmtpEmailSender _emailSender;
     private readonly SmtpOptions _options;
     private readonly ILogger<EmailConfirmationService> _logger;
 
     public EmailConfirmationService(
-        UserManager<User> userManager,
+        IUnitOfWork unitOfWork,
+        ITokenGenerator tokenGenerator,
         SmtpEmailSender emailSender,
         IOptions<SmtpOptions> options,
         ILogger<EmailConfirmationService> logger)
     {
-        _userManager = userManager;
+        _unitOfWork = unitOfWork;
+        _tokenGenerator = tokenGenerator;
         _emailSender = emailSender;
         _options = options.Value;
         _logger = logger;
@@ -30,7 +32,7 @@ public class EmailConfirmationService : IEmailConfirmationService
 
     public async Task SendConfirmationEmailAsync(User user, CancellationToken cancellationToken = default)
     {
-        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var token = _tokenGenerator.GenerateEmailConfirmationToken(user.Id, user.Email!);
         var confirmationLink = $"{_options.FrontendUrl}/confirm-email?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
         
         var emailBody = EmailTemplates.GetEmailConfirmationTemplate($"{user.FirstName} {user.LastName}".Trim(), confirmationLink);
@@ -44,20 +46,22 @@ public class EmailConfirmationService : IEmailConfirmationService
 
     public async Task ConfirmEmailAsync(User user, string token, CancellationToken cancellationToken = default)
     {
-        var result = await _userManager.ConfirmEmailAsync(user, token);
-        
-        if (!result.Succeeded)
+        // Validate token
+        if (!_tokenGenerator.ValidateEmailConfirmationToken(user.Id, user.Email!, token))
         {
-            _logger.LogWarning("Email confirmation failed for {Email}. Errors: {Errors}", 
-                user.Email, 
-                string.Join(", ", result.Errors.Select(e => $"{e.Code}: {e.Description}")));
+            _logger.LogWarning("Invalid email confirmation token for {Email}", user.Email);
+            throw new InvalidOperationException("Invalid or expired confirmation token");
         }
-        
-        result.ThrowIfFailed();
+
+        // Update user email confirmed status
+        user.EmailConfirmed = true;
+        await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
+
+        _logger.LogInformation("Email confirmed successfully for {Email}", user.Email);
     }
 
     public async Task<bool> IsEmailConfirmedAsync(User user, CancellationToken cancellationToken = default)
     {
-        return await _userManager.IsEmailConfirmedAsync(user);
+        return user.EmailConfirmed;
     }
 }

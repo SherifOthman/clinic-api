@@ -1,16 +1,15 @@
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Repositories;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Application.Features.Auth.Queries.CheckEmailAvailability;
 
 public class CheckEmailAvailabilityHandler : IRequestHandler<CheckEmailAvailabilityQuery, CheckEmailAvailabilityDto>
 {
-    private readonly UserManager<User> _userManager;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CheckEmailAvailabilityHandler(UserManager<User> userManager)
+    public CheckEmailAvailabilityHandler(IUnitOfWork unitOfWork)
     {
-        _userManager = userManager;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<CheckEmailAvailabilityDto> Handle(
@@ -22,7 +21,7 @@ public class CheckEmailAvailabilityHandler : IRequestHandler<CheckEmailAvailabil
             return new CheckEmailAvailabilityDto(false, "Email is required");
         }
 
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
         var isAvailable = user == null;
 
         return new CheckEmailAvailabilityDto(

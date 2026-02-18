@@ -1,16 +1,15 @@
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Repositories;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Application.Features.Auth.Queries.CheckUsernameAvailability;
 
 public class CheckUsernameAvailabilityHandler : IRequestHandler<CheckUsernameAvailabilityQuery, CheckUsernameAvailabilityDto>
 {
-    private readonly UserManager<User> _userManager;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CheckUsernameAvailabilityHandler(UserManager<User> userManager)
+    public CheckUsernameAvailabilityHandler(IUnitOfWork unitOfWork)
     {
-        _userManager = userManager;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<CheckUsernameAvailabilityDto> Handle(
@@ -22,7 +21,7 @@ public class CheckUsernameAvailabilityHandler : IRequestHandler<CheckUsernameAva
             return new CheckUsernameAvailabilityDto(false, "Username is required");
         }
 
-        var user = await _userManager.FindByNameAsync(request.Username);
+        var user = await _unitOfWork.Users.GetByUsernameAsync(request.Username, cancellationToken);
         var isAvailable = user == null;
 
         return new CheckUsernameAvailabilityDto(
