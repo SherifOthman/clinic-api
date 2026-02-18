@@ -1,6 +1,8 @@
 using ClinicManagement.API;
-using Scalar.AspNetCore;
+using ClinicManagement.Application;
+using ClinicManagement.Infrastructure;
 using Serilog;
+using DatabaseInitializationService = ClinicManagement.Infrastructure.Services.DatabaseInitializationService;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -17,6 +19,12 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
+    
+    // Clean Architecture layers
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
+    
+    // API layer (endpoints, middleware, etc.)
     builder.Services.AddApi(builder.Configuration, builder.Environment);
     
 

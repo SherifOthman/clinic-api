@@ -1,5 +1,5 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Options;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class LocalFileStorageService
+public class LocalFileStorageService : IFileStorageService
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly IHostEnvironment _environment;
     private readonly ILogger<LocalFileStorageService> _logger;
     private readonly FileStorageOptions _options;
 
     public LocalFileStorageService(
-        IWebHostEnvironment environment, 
+        IHostEnvironment environment, 
         ILogger<LocalFileStorageService> logger,
         IOptions<FileStorageOptions> options)
     {
@@ -33,7 +33,8 @@ public class LocalFileStorageService
             }
 
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var folderPath = Path.Combine(_environment.WebRootPath, _options.UploadPath, folder);
+            var webRootPath = _environment.ContentRootPath; // Use ContentRootPath instead of WebRootPath
+            var folderPath = Path.Combine(webRootPath, "wwwroot", _options.UploadPath, folder);
             
             if (!Directory.Exists(folderPath))
             {
@@ -99,7 +100,8 @@ public class LocalFileStorageService
         }
 
         var cleanPath = filePath.TrimStart('/');
-        var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
+        var webRootPath = _environment.ContentRootPath;
+        var fullPath = Path.Combine(webRootPath, "wwwroot", cleanPath);
 
         if (File.Exists(fullPath))
         {
@@ -120,7 +122,8 @@ public class LocalFileStorageService
         }
 
         var cleanPath = relativePath.TrimStart('/');
-        return Path.Combine(_environment.WebRootPath, cleanPath);
+        var webRootPath = _environment.ContentRootPath;
+        return Path.Combine(webRootPath, "wwwroot", cleanPath);
     }
 
     public void ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)

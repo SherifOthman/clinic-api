@@ -12,7 +12,7 @@ namespace ClinicManagement.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>, IApplicationDbContext
 {
-    private readonly CurrentUserService _currentUserService;
+    private readonly ICurrentUserService _currentUserService;
     private readonly DateTimeProvider _dateTimeProvider;
 
     public DbSet<ChronicDisease> ChronicDiseases => Set<ChronicDisease>();
@@ -56,7 +56,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
-        CurrentUserService currentUserService,
+        ICurrentUserService currentUserService,
         DateTimeProvider dateTimeProvider) : base(options)
     {
         _currentUserService = currentUserService;

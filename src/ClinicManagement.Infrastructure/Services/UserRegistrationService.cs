@@ -1,26 +1,29 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Application.Common.Extensions;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Exceptions;
 using ClinicManagement.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class UserRegistrationService
+public class UserRegistrationService : IUserRegistrationService
 {
     private readonly ApplicationDbContext _db;
     private readonly UserManager<User> _userManager;
-    private readonly EmailConfirmationService _emailConfirmationService;
+    private readonly IEmailConfirmationService _emailConfirmationService;
     private readonly DateTimeProvider _dateTimeProvider;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
         ApplicationDbContext db,
         UserManager<User> userManager,
-        EmailConfirmationService emailConfirmationService,
+        IEmailConfirmationService emailConfirmationService,
         DateTimeProvider dateTimeProvider,
         ILogger<UserRegistrationService> logger)
     {
@@ -188,16 +191,3 @@ public class UserRegistrationService
         // Receptionist and ClinicOwner don't need profiles - just Staff record + Role
     }
 }
-
-public record UserRegistrationRequest(
-    string Email,
-    string Password,
-    string FirstName,
-    string LastName,
-    string? PhoneNumber,
-    string Role, // ASP.NET Identity role name (e.g., "ClinicOwner", "Doctor")
-    Guid? ClinicId = null, // Clinic membership (null for SuperAdmin)
-    string? UserName = null,
-    bool EmailConfirmed = false,
-    bool SendConfirmationEmail = true
-);

@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class TokenService
+public class TokenService : ITokenService
 {
     private readonly JwtOptions _jwtOptions;
     private readonly DateTimeProvider _dateTimeProvider;

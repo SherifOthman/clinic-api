@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -8,20 +9,20 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class AuthenticationService
+public class AuthenticationService : IAuthenticationService
 {
-    private readonly TokenService _tokenService;
+    private readonly ITokenService _tokenService;
     private readonly UserManager<User> _userManager;
-    private readonly EmailConfirmationService _emailConfirmationService;
-    private readonly RefreshTokenService _refreshTokenService;
+    private readonly IEmailConfirmationService _emailConfirmationService;
+    private readonly IRefreshTokenService _refreshTokenService;
     private readonly ApplicationDbContext _db;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
-        TokenService tokenService,
+        ITokenService tokenService,
         UserManager<User> userManager,
-        EmailConfirmationService emailConfirmationService,
-        RefreshTokenService refreshTokenService,
+        IEmailConfirmationService emailConfirmationService,
+        IRefreshTokenService refreshTokenService,
         ApplicationDbContext db,
         ILogger<AuthenticationService> logger)
     {
@@ -128,6 +129,3 @@ public class AuthenticationService
         }
     }
 }
-
-public record TokenRefreshResult(string AccessToken, string RefreshToken);
-public record LoginResult(string AccessToken, string RefreshToken);

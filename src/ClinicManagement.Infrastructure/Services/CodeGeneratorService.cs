@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,10 +7,10 @@ namespace ClinicManagement.Infrastructure.Services;
 public class CodeGeneratorService
 {
     private readonly ApplicationDbContext _db;
-    private readonly CurrentUserService _currentUser;
+    private readonly ICurrentUserService _currentUser;
     private readonly DateTimeProvider _dateTimeProvider;
 
-    public CodeGeneratorService(ApplicationDbContext db, CurrentUserService currentUser, DateTimeProvider dateTimeProvider)
+    public CodeGeneratorService(ApplicationDbContext db, ICurrentUserService currentUser, DateTimeProvider dateTimeProvider)
     {
         _db = db;
         _currentUser = currentUser;

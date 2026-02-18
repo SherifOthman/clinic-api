@@ -1,10 +1,10 @@
-using ClinicManagement.API.Common.Constants;
-using ClinicManagement.API.Common.Models;
-using ClinicManagement.API.Common.Options;
-using ClinicManagement.API.Entities;
-using ClinicManagement.API.Infrastructure.Data;
-using ClinicManagement.API.Infrastructure.Middleware;
-using ClinicManagement.API.Infrastructure.Services;
+using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Options;
+using ClinicManagement.Domain.Entities;
+using ClinicManagement.Infrastructure.Data;
+using ClinicManagement.API.Middleware;
+using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -49,6 +49,9 @@ public static class DependencyInjection
         // API Documentation
         AddSwagger(services);
 
+        // Controllers
+        services.AddControllers();
+
         return services;
     }
 
@@ -65,37 +68,14 @@ public static class DependencyInjection
 
     private static void AddDatabase(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment)
     {
-        // Skip registration in Testing environment (handled by test factory)
-        if (environment?.EnvironmentName != "Testing")
-        {
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseSqlServer(
-                    configuration.GetConnectionString("DefaultConnection"),
-                    b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
-            });
-        }
+        // Database is now registered in Infrastructure layer
+        // This method is kept for backward compatibility but does nothing
     }
 
     private static void AddIdentity(IServiceCollection services)
     {
-        services.AddIdentity<User, IdentityRole<Guid>>(options =>
-        {
-            // Password settings - match frontend validation for consistency
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequiredLength = 6;
-
-            // User settings
-            options.User.RequireUniqueEmail = true;
-
-            // Sign-in settings
-            options.SignIn.RequireConfirmedEmail = true;
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
+        // Identity is now registered in Infrastructure layer
+        // This method is kept for backward compatibility but does nothing
     }
 
     private static void AddAuthentication(IServiceCollection services, IConfiguration configuration)
@@ -155,38 +135,8 @@ public static class DependencyInjection
 
     private static void AddApplicationServices(IServiceCollection services)
     {
-        // External API Services
-        services.AddHttpClient<GeoNamesService>();
-
-        // Core Services
-        services.AddScoped<DateTimeProvider>();
-        services.AddScoped<CodeGeneratorService>();
-        services.AddScoped<PhoneValidationService>();
-
-        // User Management Services
-        services.AddScoped<UserRegistrationService>();
-        services.AddScoped<CurrentUserService>();
-
-        // Authentication Services
-        services.AddScoped<AuthenticationService>();
-        services.AddScoped<TokenService>();
-        services.AddScoped<RefreshTokenService>();
-        services.AddScoped<CookieService>();
-
-        // Email Services
-        services.AddScoped<EmailConfirmationService>();
-        services.AddScoped<SmtpEmailSender>();
-        services.AddScoped<MailKitSmtpClient>();
-
-        // File Storage Services
-        services.AddScoped<LocalFileStorageService>();
-
-        // Database Services
-        services.AddScoped<DatabaseInitializationService>();
-        services.AddScoped<ComprehensiveSeedService>();
-
-        // Background Services
-        services.AddHostedService<RefreshTokenCleanupService>();
+        // Most services are now registered in Infrastructure layer
+        // Only API-specific services remain here (none currently)
     }
 
     private static void AddOptions(IServiceCollection services, IConfiguration configuration)
@@ -243,8 +193,8 @@ public static class DependencyInjection
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // Endpoints
-        app.MapEndpoints();
+        // Controllers
+        app.MapControllers();
 
         // API Documentation - Swagger
         app.UseSwagger(options =>

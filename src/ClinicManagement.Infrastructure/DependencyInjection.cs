@@ -3,6 +3,7 @@ using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // HttpContextAccessor (required for CurrentUserService)
+        services.AddHttpContextAccessor();
+        
+        // Core Services (needed by DbContext)
+        services.AddScoped<DateTimeProvider>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        
         // Database
         services.AddDbContext<ApplicationDbContext>(options =>
         {
@@ -38,20 +46,19 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        // Services
-        services.AddScoped<DateTimeProvider>();
-        services.AddScoped<CurrentUserService>();
+        // Application Services
         services.AddScoped<CodeGeneratorService>();
         services.AddScoped<PhoneValidationService>();
-        services.AddScoped<UserRegistrationService>();
-        services.AddScoped<AuthenticationService>();
-        services.AddScoped<TokenService>();
-        services.AddScoped<RefreshTokenService>();
+        services.AddScoped<IUserRegistrationService, UserRegistrationService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<CookieService>();
-        services.AddScoped<EmailConfirmationService>();
+        services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
+        services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<MailKitSmtpClient>();
-        services.AddScoped<LocalFileStorageService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<DatabaseInitializationService>();
         services.AddScoped<ComprehensiveSeedService>();
         

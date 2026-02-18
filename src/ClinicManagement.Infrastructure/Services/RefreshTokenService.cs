@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data;
@@ -8,17 +9,17 @@ using System.Security.Cryptography;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class RefreshTokenService
+public class RefreshTokenService : IRefreshTokenService
 {
     private readonly ApplicationDbContext _db;
-    private readonly CurrentUserService _currentUserService;
+    private readonly ICurrentUserService _currentUserService;
     private readonly DateTimeProvider _dateTimeProvider;
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<RefreshTokenService> _logger;
 
     public RefreshTokenService(
         ApplicationDbContext db,
-        CurrentUserService currentUserService,
+        ICurrentUserService currentUserService,
         DateTimeProvider dateTimeProvider,
         IOptions<JwtOptions> jwtOptions,
         ILogger<RefreshTokenService> logger)

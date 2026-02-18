@@ -1,14 +1,15 @@
+using ClinicManagement.Application.Common.Extensions;
+using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Application.Common.Extensions;
-using ClinicManagement.Application.Common.Options;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class EmailConfirmationService
+public class EmailConfirmationService : IEmailConfirmationService
 {
     private readonly UserManager<User> _userManager;
     private readonly SmtpEmailSender _emailSender;

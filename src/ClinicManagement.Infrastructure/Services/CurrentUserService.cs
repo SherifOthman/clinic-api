@@ -1,9 +1,10 @@
+using ClinicManagement.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class CurrentUserService
+public class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 

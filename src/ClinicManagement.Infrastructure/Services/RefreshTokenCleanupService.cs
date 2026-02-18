@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -43,7 +44,7 @@ public class RefreshTokenCleanupService : BackgroundService
     private async Task CleanupExpiredTokensAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
-        var refreshTokenService = scope.ServiceProvider.GetRequiredService<RefreshTokenService>();
+        var refreshTokenService = scope.ServiceProvider.GetRequiredService<IRefreshTokenService>();
 
         var cleanedCount = await refreshTokenService.CleanupExpiredTokensAsync(cancellationToken);
         
