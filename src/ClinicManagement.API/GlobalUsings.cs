@@ -5,7 +5,6 @@ global using ClinicManagement.Domain.Enums;
 global using ClinicManagement.Domain.Exceptions;
 global using ClinicManagement.Domain.Entities;
 global using Microsoft.AspNetCore.Http.HttpResults;
-global using Microsoft.EntityFrameworkCore;
 global using System.ComponentModel.DataAnnotations;
 global using System.Security.Claims;
 global using System.Linq.Expressions;
