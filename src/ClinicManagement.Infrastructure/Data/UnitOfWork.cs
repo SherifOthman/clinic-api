@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Repositories;
 using ClinicManagement.Infrastructure.Data.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;

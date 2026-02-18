@@ -1,16 +1,13 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Features.Auth.Commands;
 using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
-using ClinicManagement.Application.Features.Auth.Commands.DeleteProfileImage;
 using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Features.Auth.Commands.Login;
-using ClinicManagement.Application.Features.Auth.Commands.Logout;
-using ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
-using ClinicManagement.Application.Features.Auth.Commands.UploadProfileImage;
 using ClinicManagement.Application.Features.Auth.Queries.CheckEmailAvailability;
 using ClinicManagement.Application.Features.Auth.Queries.CheckUsernameAvailability;
 using ClinicManagement.Application.Features.Auth.Queries.GetMe;
@@ -54,19 +51,19 @@ public class AuthController : BaseApiController
 
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Login Failed");
 
         // For web clients, set refresh token as HTTP-only cookie
-        if (!isMobile && result.RefreshToken != null)
+        if (!isMobile && result.Value!.RefreshToken != null)
         {
-            _cookieService.SetRefreshTokenCookie(result.RefreshToken);
+            _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
         return Ok(new LoginResponseDto(
-            result.AccessToken!,
-            isMobile ? result.RefreshToken : null,
-            result.EmailNotConfirmed
+            result.Value!.AccessToken,
+            isMobile ? result.Value.RefreshToken : null,
+            result.Value.EmailNotConfirmed
         ));
     }
 
@@ -90,7 +87,7 @@ public class AuthController : BaseApiController
 
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Registration Failed");
 
         return CreatedAtAction(
@@ -135,21 +132,21 @@ public class AuthController : BaseApiController
         var command = new RefreshTokenCommand(refreshToken, isMobile);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
         {
             if (!isMobile) _cookieService.ClearRefreshTokenCookie();
             return Unauthorized();
         }
 
         // For web clients, set new refresh token as HTTP-only cookie
-        if (!isMobile && result.RefreshToken != null)
+        if (!isMobile && result.Value!.RefreshToken != null)
         {
-            _cookieService.SetRefreshTokenCookie(result.RefreshToken);
+            _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
         return Ok(new RefreshTokenResponseDto(
-            result.AccessToken!,
-            isMobile ? result.RefreshToken : null
+            result.Value!.AccessToken,
+            isMobile ? result.Value.RefreshToken : null
         ));
     }
 
@@ -165,10 +162,10 @@ public class AuthController : BaseApiController
         var command = new ConfirmEmailCommand(request.Email, request.Token);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Email Confirmation Failed");
 
-        var message = result.AlreadyConfirmed
+        var message = result.Value!.AlreadyConfirmed
             ? "Email already confirmed"
             : "Email confirmed successfully";
 
@@ -202,7 +199,7 @@ public class AuthController : BaseApiController
         var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Password Reset Failed");
 
         return Ok(new MessageResponse("Password reset successfully"));
@@ -220,7 +217,7 @@ public class AuthController : BaseApiController
         var command = new ChangePasswordCommand(request.CurrentPassword, request.NewPassword);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Password Change Failed");
 
         return Ok(new MessageResponse("Password changed successfully"));
@@ -290,7 +287,7 @@ public class AuthController : BaseApiController
         var command = new ResendEmailVerificationCommand(request.Email);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Resend Failed");
 
         return Ok(new MessageResponse("Verification email sent"));
@@ -308,7 +305,7 @@ public class AuthController : BaseApiController
         var command = new UpdateProfileCommand(request.FirstName, request.LastName, request.PhoneNumber);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Update Failed");
 
         return NoContent();
@@ -326,7 +323,7 @@ public class AuthController : BaseApiController
         var command = new UploadProfileImageCommand(file);
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Upload Failed");
 
         return NoContent();
@@ -344,7 +341,7 @@ public class AuthController : BaseApiController
         var command = new DeleteProfileImageCommand();
         var result = await Sender.Send(command, ct);
 
-        if (!result.Success)
+        if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Delete Failed");
 
         return NoContent();

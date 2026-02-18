@@ -1,10 +1,15 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace ClinicManagement.Application.Features.Auth.Commands.Logout;
+namespace ClinicManagement.Application.Features.Auth.Commands;
 
-public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResult>
+public record LogoutCommand(
+    string? RefreshToken
+) : IRequest<Result>;
+
+public class LogoutHandler : IRequestHandler<LogoutCommand, Result>
 {
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ILogger<LogoutHandler> _logger;
@@ -17,7 +22,7 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResult>
         _logger = logger;
     }
 
-    public async Task<LogoutResult> Handle(
+    public async Task<Result> Handle(
         LogoutCommand request,
         CancellationToken cancellationToken)
     {
@@ -28,10 +33,10 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResult>
                 null,
                 null,
                 cancellationToken);
-            
+
             _logger.LogInformation("User logged out and refresh token revoked");
         }
 
-        return new LogoutResult(Success: true);
+        return Result.Success();
     }
 }

@@ -1,15 +1,26 @@
 using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
-namespace ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
+namespace ClinicManagement.Application.Features.Auth.Commands;
 
-public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshTokenResult>
+public record RefreshTokenCommand(
+    string Token,
+    bool IsMobile
+) : IRequest<Result<RefreshTokenResponseDto>>;
+
+public record RefreshTokenResponseDto(
+    string AccessToken,
+    string? RefreshToken
+);
+
+public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponseDto>>
 {
     private static readonly ConcurrentDictionary<int, SemaphoreSlim> _userLocks = new();
-    
+
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IAuthenticationService _authService;
     private readonly ILogger<RefreshTokenHandler> _logger;
@@ -24,7 +35,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshT
         _logger = logger;
     }
 
-    public async Task<RefreshTokenResult> Handle(
+    public async Task<Result<RefreshTokenResponseDto>> Handle(
         RefreshTokenCommand request,
         CancellationToken cancellationToken)
     {
@@ -33,52 +44,35 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshT
         if (tokenEntity == null)
         {
             _logger.LogWarning("Invalid or expired refresh token");
-            return new RefreshTokenResult(
-                Success: false,
-                AccessToken: null,
-                RefreshToken: null,
-                ErrorCode: ErrorCodes.TOKEN_INVALID,
-                ErrorMessage: "Invalid or expired refresh token"
-            );
+            return Result.Failure<RefreshTokenResponseDto>(ErrorCodes.TOKEN_INVALID, "Invalid or expired refresh token");
         }
 
         var userId = tokenEntity.UserId;
-        
+
         // Use per-user semaphore to prevent concurrent refresh requests
         var semaphore = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
-        
+
         await semaphore.WaitAsync(cancellationToken);
         try
         {
             var result = await _authService.RefreshTokenAsync(request.Token, cancellationToken);
-            
+
             if (result == null)
             {
                 _logger.LogWarning("Token refresh failed for user {UserId}", userId);
-                return new RefreshTokenResult(
-                    Success: false,
-                    AccessToken: null,
-                    RefreshToken: null,
-                    ErrorCode: ErrorCodes.TOKEN_INVALID,
-                    ErrorMessage: "Failed to refresh token"
-                );
+                return Result.Failure<RefreshTokenResponseDto>(ErrorCodes.TOKEN_INVALID, "Failed to refresh token");
             }
 
-            _logger.LogInformation("Token refreshed for user {UserId} ({ClientType})", 
+            _logger.LogInformation("Token refreshed for user {UserId} ({ClientType})",
                 userId, request.IsMobile ? "mobile" : "web");
 
-            return new RefreshTokenResult(
-                Success: true,
-                AccessToken: result.AccessToken,
-                RefreshToken: result.RefreshToken,
-                ErrorCode: null,
-                ErrorMessage: null
-            );
+            var response = new RefreshTokenResponseDto(result.AccessToken, result.RefreshToken);
+            return Result.Success(response);
         }
         finally
         {
             semaphore.Release();
-            
+
             // Clean up semaphore if no one is waiting
             if (semaphore.CurrentCount == 1)
             {

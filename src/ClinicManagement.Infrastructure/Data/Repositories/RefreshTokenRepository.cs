@@ -1,5 +1,5 @@
-using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Repositories;
 using Dapper;
 using Microsoft.Data.SqlClient;
 

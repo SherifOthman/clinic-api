@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;

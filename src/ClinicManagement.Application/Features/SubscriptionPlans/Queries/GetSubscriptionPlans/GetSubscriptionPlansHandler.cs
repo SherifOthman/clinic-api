@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Domain.Repositories;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.SubscriptionPlans.Queries.GetSubscriptionPlans;
