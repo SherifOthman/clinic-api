@@ -1,7 +1,16 @@
 using ClinicManagement.Domain.Repositories;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Auth.Queries.CheckUsernameAvailability;
+namespace ClinicManagement.Application.Features.Auth.Queries;
+
+public record CheckUsernameAvailabilityQuery(
+    string Username
+) : IRequest<CheckUsernameAvailabilityDto>;
+
+public record CheckUsernameAvailabilityDto(
+    bool IsAvailable,
+    string? Message
+);
 
 public class CheckUsernameAvailabilityHandler : IRequestHandler<CheckUsernameAvailabilityQuery, CheckUsernameAvailabilityDto>
 {

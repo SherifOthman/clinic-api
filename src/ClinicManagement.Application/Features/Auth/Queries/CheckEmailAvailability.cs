@@ -1,7 +1,16 @@
 using ClinicManagement.Domain.Repositories;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Auth.Queries.CheckEmailAvailability;
+namespace ClinicManagement.Application.Features.Auth.Queries;
+
+public record CheckEmailAvailabilityQuery(
+    string Email
+) : IRequest<CheckEmailAvailabilityDto>;
+
+public record CheckEmailAvailabilityDto(
+    bool IsAvailable,
+    string? Message
+);
 
 public class CheckEmailAvailabilityHandler : IRequestHandler<CheckEmailAvailabilityQuery, CheckEmailAvailabilityDto>
 {

@@ -1,7 +1,22 @@
 using ClinicManagement.Domain.Repositories;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Auth.Queries.GetMe;
+namespace ClinicManagement.Application.Features.Auth.Queries;
+
+public record GetMeQuery(int UserId) : IRequest<GetMeDto?>;
+
+public record GetMeDto(
+    int Id,
+    string UserName,
+    string FirstName,
+    string LastName,
+    string Email,
+    string? PhoneNumber,
+    string? ProfileImageUrl,
+    List<string> Roles,
+    bool EmailConfirmed,
+    bool OnboardingCompleted
+);
 
 public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 {
