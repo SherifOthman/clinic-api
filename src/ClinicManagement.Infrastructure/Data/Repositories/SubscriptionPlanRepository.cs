@@ -16,7 +16,7 @@ public class SubscriptionPlanRepository : ISubscriptionPlanRepository
         _transaction = transaction;
     }
 
-    public async Task<SubscriptionPlan?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<SubscriptionPlan?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = "SELECT * FROM SubscriptionPlans WHERE Id = @Id";
         return await _connection.QueryFirstOrDefaultAsync<SubscriptionPlan>(
@@ -41,18 +41,19 @@ public class SubscriptionPlanRepository : ISubscriptionPlanRepository
     {
         const string sql = @"
             INSERT INTO SubscriptionPlans (
-                Id, Name, NameAr, Description, DescriptionAr, MonthlyFee, YearlyFee,
+                Name, NameAr, Description, DescriptionAr, MonthlyFee, YearlyFee,
                 SetupFee, MaxBranches, MaxStaff, MaxPatientsPerMonth, MaxAppointmentsPerMonth,
                 MaxInvoicesPerMonth, StorageLimitGB, HasInventoryManagement, HasReporting,
                 IsActive, IsPopular, DisplayOrder
             ) VALUES (
-                @Id, @Name, @NameAr, @Description, @DescriptionAr, @MonthlyFee, @YearlyFee,
+                @Name, @NameAr, @Description, @DescriptionAr, @MonthlyFee, @YearlyFee,
                 @SetupFee, @MaxBranches, @MaxStaff, @MaxPatientsPerMonth, @MaxAppointmentsPerMonth,
                 @MaxInvoicesPerMonth, @StorageLimitGB, @HasInventoryManagement, @HasReporting,
                 @IsActive, @IsPopular, @DisplayOrder
-            )";
+            );
+            SELECT CAST(SCOPE_IDENTITY() as int)";
         
-        await _connection.ExecuteAsync(
+        entity.Id = await _connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, entity, _transaction, cancellationToken: cancellationToken));
         
         return entity;
@@ -86,7 +87,7 @@ public class SubscriptionPlanRepository : ISubscriptionPlanRepository
             new CommandDefinition(sql, entity, _transaction, cancellationToken: cancellationToken));
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = "DELETE FROM SubscriptionPlans WHERE Id = @Id";
         await _connection.ExecuteAsync(

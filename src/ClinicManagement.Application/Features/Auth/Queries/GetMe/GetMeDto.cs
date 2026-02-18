@@ -1,7 +1,7 @@
 namespace ClinicManagement.Application.Features.Auth.Queries.GetMe;
 
 public record GetMeDto(
-    Guid Id,
+    int Id,
     string UserName,
     string FirstName,
     string LastName,

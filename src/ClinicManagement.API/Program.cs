@@ -41,10 +41,15 @@ try
                 var dbMigration = services.GetRequiredService<DbUpMigrationService>();
                 dbMigration.MigrateDatabase();
                 Log.Information("Database migrated successfully with DbUp");
+
+                // Seed SuperAdmin user with hashed password
+                var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
+                await superAdminSeed.SeedSuperAdminAsync();
+                Log.Information("SuperAdmin user seeded successfully");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occurred while migrating the database");
+                Log.Error(ex, "An error occurred while initializing the database");
             }
         }
     }

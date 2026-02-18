@@ -1,4 +1,5 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Features.SubscriptionPlans.Queries.GetSubscriptionPlans;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -8,13 +9,11 @@ namespace ClinicManagement.API.Controllers;
 [ApiController]
 [Route("api/subscription-plans")]
 [Produces("application/json")]
-public class SubscriptionPlansController : ControllerBase
+public class SubscriptionPlansController : BaseApiController
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public SubscriptionPlansController(IUnitOfWork unitOfWork)
+    public SubscriptionPlansController(ISender sender, ILogger<SubscriptionPlansController> logger) 
+        : base(sender, logger)
     {
-        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -26,33 +25,7 @@ public class SubscriptionPlansController : ControllerBase
     [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
     {
-        var plans = await _unitOfWork.SubscriptionPlans.GetActiveAsync(ct);
-
-        var dtos = plans.Select(sp => new SubscriptionPlanDto(
-            sp.Id,
-            sp.Name,
-            sp.Description,
-            sp.MonthlyFee,
-            sp.YearlyFee,
-            sp.MaxBranches,
-            sp.MaxStaff,
-            sp.HasInventoryManagement,
-            sp.HasReporting,
-            sp.IsActive
-        )).ToList();
-
-        return Ok(dtos);
+        var plans = await Sender.Send(new GetSubscriptionPlansQuery(), ct);
+        return Ok(plans);
     }
 }
-
-public record SubscriptionPlanDto(
-    Guid Id,
-    string Name,
-    string Description,
-    decimal MonthlyFee,
-    decimal YearlyFee,
-    int MaxBranches,
-    int MaxStaff,
-    bool HasInventoryManagement,
-    bool HasReporting,
-    bool IsActive);

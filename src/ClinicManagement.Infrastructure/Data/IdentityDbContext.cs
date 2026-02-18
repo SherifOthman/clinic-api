@@ -6,10 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ClinicManagement.Infrastructure.Data;
 
 /// <summary>
-/// Minimal DbContext for ASP.NET Core Identity tables only
-/// All other data access is done through Dapper repositories
+/// Minimal DbContext for ASP.NET Core Identity with int IDs
 /// </summary>
-public class IdentityDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
+public class IdentityDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options) : base(options)
     {
@@ -19,13 +18,13 @@ public class IdentityDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     {
         base.OnModelCreating(builder);
 
-        // Customize Identity table names if needed
+        // Customize Identity table names
         builder.Entity<User>().ToTable("Users");
-        builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
-        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
-        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
-        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
-        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
-        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+        builder.Entity<IdentityRole<int>>().ToTable("Roles");
+        builder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<int>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<int>>().ToTable("UserLogins");
+        builder.Entity<IdentityUserToken<int>>().ToTable("UserTokens");
+        builder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
     }
 }

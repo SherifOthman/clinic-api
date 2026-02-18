@@ -8,7 +8,7 @@ namespace ClinicManagement.Application.Features.Auth.Commands.RefreshToken;
 
 public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshTokenResult>
 {
-    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _userLocks = new();
+    private static readonly ConcurrentDictionary<int, SemaphoreSlim> _userLocks = new();
     
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IAuthenticationService _authService;

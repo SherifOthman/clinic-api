@@ -32,7 +32,7 @@ public static class DependencyInjection
                 b => b.MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName));
         });
 
-        services.AddIdentity<User, IdentityRole<Guid>>(options =>
+        services.AddIdentity<User, IdentityRole<int>>(options =>
         {
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
@@ -46,10 +46,7 @@ public static class DependencyInjection
         .AddDefaultTokenProviders();
 
         // Application Services
-        services.AddScoped<CodeGeneratorService>();
         services.AddScoped<PhoneValidationService>();
-        services.AddScoped<IUserRegistrationService, UserRegistrationService>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<CookieService>();
@@ -58,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<MailKitSmtpClient>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<SuperAdminSeedService>();
         
         // External API Services
         services.AddHttpClient<GeoNamesService>();

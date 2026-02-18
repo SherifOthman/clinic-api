@@ -1,15 +1,9 @@
 namespace ClinicManagement.Domain.Common;
 
 /// <summary>
-/// Base entity with GUID primary key.
-/// ID is generated in constructor for immediate availability.
+/// Base entity with int primary key (database identity).
 /// </summary>
 public abstract class BaseEntity
 {
-    protected BaseEntity()
-    {
-        Id = Guid.NewGuid();
-    }
-
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 }

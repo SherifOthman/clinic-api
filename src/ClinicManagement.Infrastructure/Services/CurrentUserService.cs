@@ -13,21 +13,21 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public Guid? UserId
+    public int? UserId
     {
         get
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
         }
     }
 
-    public Guid? ClinicId
+    public int? ClinicId
     {
         get
         {
             var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("ClinicId")?.Value;
-            return Guid.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
+            return int.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
         }
     }
 
@@ -40,8 +40,6 @@ public class CurrentUserService : ICurrentUserService
             var context = _httpContextAccessor.HttpContext;
             if (context == null) return "unknown";
 
-            // Check X-Forwarded-For header first (for proxied requests)
-            // Takes first IP in chain as that's the original client IP
             var xForwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (!string.IsNullOrEmpty(xForwardedFor))
                 return xForwardedFor.Split(',')[0].Trim();
@@ -56,7 +54,7 @@ public class CurrentUserService : ICurrentUserService
 
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
-    public Guid GetRequiredUserId()
+    public int GetRequiredUserId()
     {
         if (!UserId.HasValue)
             throw new UnauthorizedAccessException("User ID is required but not available");
@@ -64,7 +62,7 @@ public class CurrentUserService : ICurrentUserService
         return UserId.Value;
     }
 
-    public Guid GetRequiredClinicId()
+    public int GetRequiredClinicId()
     {
         if (!ClinicId.HasValue)
             throw new UnauthorizedAccessException("Clinic ID is required but not available");
@@ -72,9 +70,9 @@ public class CurrentUserService : ICurrentUserService
         return ClinicId.Value;
     }
 
-    public bool TryGetUserId(out Guid userId)
+    public bool TryGetUserId(out int userId)
     {
-        userId = Guid.Empty;
+        userId = 0;
         if (UserId.HasValue)
         {
             userId = UserId.Value;
@@ -83,9 +81,9 @@ public class CurrentUserService : ICurrentUserService
         return false;
     }
 
-    public bool TryGetClinicId(out Guid clinicId)
+    public bool TryGetClinicId(out int clinicId)
     {
-        clinicId = Guid.Empty;
+        clinicId = 0;
         if (ClinicId.HasValue)
         {
             clinicId = ClinicId.Value;
