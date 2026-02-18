@@ -22,7 +22,7 @@ public class Appointment : AuditableEntity
     public AppointmentType AppointmentType { get; set; } = null!;
     public Invoice? Invoice { get; set; }
     
-    // Calculated properties
+
     public bool IsConsultationFeePaid => Invoice?.IsFullyPaid ?? false;
     public bool IsPending => Status == AppointmentStatus.Pending;
     public bool IsConfirmed => Status == AppointmentStatus.Confirmed;

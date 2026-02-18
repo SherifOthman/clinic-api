@@ -28,7 +28,7 @@ public class Patient : TenantEntity
     public ICollection<MedicalFile> MedicalFiles { get; set; } = new List<MedicalFile>();
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     
-    // Calculated properties
+
     public int Age => DateTime.UtcNow.Year - DateOfBirth.Year - 
         (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
     public bool IsAdult => Age >= 18;

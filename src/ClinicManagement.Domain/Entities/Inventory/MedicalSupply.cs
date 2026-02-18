@@ -15,7 +15,7 @@ public class MedicalSupply : AuditableEntity
     public int QuantityInStock { get; set; } // Simple quantity count
     public int MinimumStockLevel { get; set; } = 10;
     
-    // Calculated properties
+
     public bool IsLowStock => QuantityInStock <= MinimumStockLevel;
     public bool HasStock => QuantityInStock > 0;
 

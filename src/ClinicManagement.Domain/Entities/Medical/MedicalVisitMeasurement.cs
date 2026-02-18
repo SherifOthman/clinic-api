@@ -24,7 +24,7 @@ public class MedicalVisitMeasurement : BaseEntity
     public MedicalVisit MedicalVisit { get; set; } = null!;
     public MeasurementAttribute MeasurementAttribute { get; set; } = null!;
     
-    // Helper methods to get/set values based on data type
+
     public object? GetValue()
     {
         return MeasurementAttribute?.DataType switch
@@ -45,7 +45,7 @@ public class MedicalVisitMeasurement : BaseEntity
         DecimalValue = null;
         BooleanValue = null;
         
-        // Set the appropriate value based on data type
+
         if (value != null && MeasurementAttribute != null)
         {
             switch (MeasurementAttribute.DataType)

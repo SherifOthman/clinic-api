@@ -205,10 +205,6 @@ public partial class GeoNamesService
             .ToList() ?? new List<GeoNamesChildInfo>();
     }
 
-    /// <summary>
-    /// Merges English and Arabic country data by GeonameId.
-    /// Falls back to English name if Arabic translation not found.
-    /// </summary>
     private List<GeoNamesCountry> MergeCountryData(
         List<GeoNamesCountryInfo> englishData,
         List<GeoNamesCountryInfo> arabicData)
@@ -231,10 +227,6 @@ public partial class GeoNamesService
             .ToList();
     }
 
-    /// <summary>
-    /// Merges English and Arabic location data (states/cities) by GeonameId.
-    /// Falls back to English name if Arabic translation not found.
-    /// </summary>
     private List<GeoNamesLocation> MergeLocationData(
         List<GeoNamesChildInfo> englishData,
         List<GeoNamesChildInfo> arabicData)

@@ -7,10 +7,6 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Service for managing HTTP-only refresh token cookies
-/// Access tokens are now sent via Authorization header
-/// </summary>
 public class CookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -27,9 +23,6 @@ public class CookieService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Sets refresh token in HTTP-only cookie (web clients only)
-    /// </summary>
     public void SetRefreshTokenCookie(string refreshToken)
     {
         if (string.IsNullOrEmpty(refreshToken))
@@ -47,17 +40,11 @@ public class CookieService
         _logger.LogInformation("Refresh token cookie set");
     }
 
-    /// <summary>
-    /// Gets refresh token from HTTP-only cookie (web clients only)
-    /// </summary>
     public string? GetRefreshTokenFromCookie()
     {
         return _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.RefreshToken];
     }
 
-    /// <summary>
-    /// Clears refresh token cookie (web clients only)
-    /// </summary>
     public void ClearRefreshTokenCookie()
     {
         var context = _httpContextAccessor.HttpContext;

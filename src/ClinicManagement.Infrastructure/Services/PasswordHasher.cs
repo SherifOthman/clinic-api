@@ -5,9 +5,6 @@ using ClinicManagement.Application.Abstractions.Storage;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Password hasher using BCrypt
-/// </summary>
 public class PasswordHasher : IPasswordHasher
 {
     public string HashPassword(string password)

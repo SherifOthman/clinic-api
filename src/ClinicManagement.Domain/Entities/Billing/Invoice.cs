@@ -28,7 +28,7 @@ public class Invoice : TenantEntity
     public IReadOnlyCollection<InvoiceItem> Items => _items.AsReadOnly();
     public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
 
-    // Calculated properties
+
     public decimal SubtotalAmount => _items.Sum(i => i.LineTotal);
     public decimal FinalAmount => SubtotalAmount - Discount + TaxAmount;
     public decimal TotalPaid => _payments.Where(p => p.Status == PaymentStatus.Paid).Sum(p => p.Amount);

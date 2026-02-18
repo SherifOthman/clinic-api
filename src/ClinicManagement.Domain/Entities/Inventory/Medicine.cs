@@ -26,7 +26,7 @@ public class Medicine : AuditableEntity
     public ClinicBranch ClinicBranch { get; set; } = null!;
     public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 
-    // Calculated properties
+
     public decimal StripPrice => StripsPerBox > 0 ? BoxPrice / StripsPerBox : 0;
     public int FullBoxesInStock => StripsPerBox > 0 ? TotalStripsInStock / StripsPerBox : 0;
     public int RemainingStrips => StripsPerBox > 0 ? TotalStripsInStock % StripsPerBox : TotalStripsInStock;

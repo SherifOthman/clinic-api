@@ -17,37 +17,19 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment = null)
     {
-        // HTTP Context
         services.AddHttpContextAccessor();
-
-        // Enable Minimal API validation (.NET 10+)
-        // Data annotations are validated automatically - these should already be validated on frontend
         services.AddValidation();
 
-        // Caching
         AddCaching(services);
-
-        // Database
         AddDatabase(services, configuration, environment);
-
-        // Identity & Authentication
         AddIdentity(services);
         AddAuthentication(services, configuration);
         AddAuthorization(services);
-
-        // Application Services
         AddApplicationServices(services);
-
-        // Configuration Options
         AddOptions(services, configuration);
-
-        // CORS
         AddCors(services, configuration);
-
-        // API Documentation
         AddSwagger(services);
 
-        // Controllers
         services.AddControllers();
 
         return services;
@@ -66,14 +48,10 @@ public static class DependencyInjection
 
     private static void AddDatabase(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment)
     {
-        // Database is now registered in Infrastructure layer
-        // This method is kept for backward compatibility but does nothing
     }
 
     private static void AddIdentity(IServiceCollection services)
     {
-        // Identity is now registered in Infrastructure layer
-        // This method is kept for backward compatibility but does nothing
     }
 
     private static void AddAuthentication(IServiceCollection services, IConfiguration configuration)
@@ -109,23 +87,18 @@ public static class DependencyInjection
     {
         services.AddAuthorization(options =>
         {
-            // Policy: Only SuperAdmin
             options.AddPolicy("SuperAdminOnly", policy =>
                 policy.RequireRole(Roles.SuperAdmin));
 
-            // Policy: Clinic Management (ClinicOwner only)
             options.AddPolicy("ClinicManagement", policy =>
                 policy.RequireRole(Roles.ClinicOwner));
 
-            // Policy: Medical Staff (Doctor or ClinicOwner)
             options.AddPolicy("MedicalStaff", policy =>
                 policy.RequireRole(Roles.Doctor, Roles.ClinicOwner));
 
-            // Policy: Staff Access (Doctor, Receptionist, or ClinicOwner)
             options.AddPolicy("StaffAccess", policy =>
                 policy.RequireRole(Roles.Doctor, Roles.Receptionist, Roles.ClinicOwner));
 
-            // Policy: Inventory Management (ClinicOwner or Doctor)
             options.AddPolicy("InventoryManagement", policy =>
                 policy.RequireRole(Roles.ClinicOwner, Roles.Doctor));
         });
@@ -133,8 +106,6 @@ public static class DependencyInjection
 
     private static void AddApplicationServices(IServiceCollection services)
     {
-        // Most services are now registered in Infrastructure layer
-        // Only API-specific services remain here (none currently)
     }
 
     private static void AddOptions(IServiceCollection services, IConfiguration configuration)
@@ -168,40 +139,26 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
-            // Use full type name to avoid schema ID conflicts
             options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
         });
     }
 
     public static WebApplication UseAppConfigurations(this WebApplication app)
     {
-        // Exception Handling
         app.UseMiddleware<GlobalExceptionMiddleware>();
-
-        // Static Files
         app.UseStaticFiles();
-
-        // CORS
         app.UseCors("AllowAll");
-
-        // Caching
         app.UseOutputCache();
-
-        // Authentication & Authorization
         app.UseAuthentication();
         app.UseAuthorization();
-
-        // Controllers
         app.MapControllers();
 
-        // API Documentation - Swagger
         app.UseSwagger(options =>
         {
             options.RouteTemplate = "openapi/{documentName}.json";
         });
 
         app.MapScalarApiReference();
-
 
         return app;
     }

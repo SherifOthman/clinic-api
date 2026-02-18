@@ -47,7 +47,7 @@ public class UploadProfileImageHandler : IRequestHandler<UploadProfileImageComma
 
         try
         {
-            // Delete old profile image if exists
+
             if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
             {
                 await _fileStorageService.DeleteFileAsync(user.ProfileImageUrl, cancellationToken);
@@ -59,7 +59,7 @@ public class UploadProfileImageHandler : IRequestHandler<UploadProfileImageComma
                 "ProfileImage",
                 cancellationToken);
 
-            // Update user profile image URL
+
             user.ProfileImageUrl = filePath;
 
             await _unitOfWork.Users.UpdateAsync(user, cancellationToken);

@@ -42,7 +42,7 @@ public class DeleteProfileImageHandler : IRequestHandler<DeleteProfileImageComma
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        // Delete profile image file if exists
+
         if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
         {
             await _fileStorageService.DeleteFileAsync(user.ProfileImageUrl, cancellationToken);

@@ -55,7 +55,6 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return Error(result.ErrorCode!, result.ErrorMessage!, "Login Failed");
 
-        // For web clients, set refresh token as HTTP-only cookie
         if (!isMobile && result.Value!.RefreshToken != null)
         {
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);

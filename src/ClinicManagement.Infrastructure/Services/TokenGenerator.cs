@@ -7,9 +7,6 @@ using System.Text;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Token generator using ASP.NET Core Data Protection for secure, time-limited tokens
-/// </summary>
 public class TokenGenerator : ITokenGenerator
 {
     private readonly IDataProtector _emailProtector;

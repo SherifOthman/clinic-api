@@ -62,7 +62,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<R
         await semaphore.WaitAsync(cancellationToken);
         try
         {
-            // Get user and roles
+
             var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {

@@ -27,7 +27,7 @@ public class InvoiceItem : BaseEntity
     // Medical services, supplies, lab tests, and radiology don't use this
     public SaleUnit? SaleUnit { get; set; }
     
-    // Calculated property for total line amount
+
     public decimal LineTotal => Quantity * UnitPrice;
 
 

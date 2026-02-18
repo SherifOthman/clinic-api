@@ -21,17 +21,12 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
     
-    // Clean Architecture layers
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
-    
-    // API layer (endpoints, middleware, etc.)
     builder.Services.AddApi(builder.Configuration, builder.Environment);
-    
 
     var app = builder.Build();
 
-    // Skip database initialization in Testing environment (handled by test factory)
     if (app.Environment.EnvironmentName != "Testing")
     {
         using (var scope = app.Services.CreateScope())
@@ -43,7 +38,6 @@ try
                 dbMigration.MigrateDatabase();
                 Log.Information("Database migrated successfully with DbUp");
 
-                // Seed SuperAdmin user with hashed password
                 var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
                 await superAdminSeed.SeedSuperAdminAsync();
                 Log.Information("SuperAdmin user seeded successfully");
@@ -71,5 +65,4 @@ finally
     Log.CloseAndFlush();
 }
 
-// Expose Program class to integration tests for WebApplicationFactory
 public partial class Program { }

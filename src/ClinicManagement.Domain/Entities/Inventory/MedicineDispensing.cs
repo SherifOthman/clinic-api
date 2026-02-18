@@ -19,7 +19,7 @@ public class MedicineDispensing : BaseEntity
     public Patient Patient { get; set; } = null!;
     public Medicine Medicine { get; set; } = null!;
     
-    // Calculated properties
+
     public decimal TotalPrice => Quantity * UnitPrice;
 }
 

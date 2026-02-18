@@ -66,7 +66,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         // Generate password reset token
         var token = _tokenGenerator.GeneratePasswordResetToken(user.Id, user.Email!, user.PasswordHash);
 
-        // Create reset link
+
         var resetLink = $"{_smtpOptions.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
 
         // Send email

@@ -1,8 +1,5 @@
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Centralized email templates for the application.
-/// </summary>
 public static class EmailTemplates
 {
     public static string GetEmailConfirmationTemplate(string firstName, string confirmationLink)

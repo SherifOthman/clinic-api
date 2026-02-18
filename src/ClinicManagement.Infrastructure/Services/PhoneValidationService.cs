@@ -2,10 +2,6 @@ using PhoneNumbers;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <summary>
-/// Validates and formats phone numbers using libphonenumber library
-/// Used internally by validators to ensure phone numbers are valid
-/// </summary>
 public class PhoneValidationService
 {
     private readonly PhoneNumberUtil _phoneUtil;

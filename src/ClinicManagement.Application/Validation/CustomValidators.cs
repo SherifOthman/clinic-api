@@ -1,8 +1,5 @@
 namespace ClinicManagement.Application.Validation;
 
-/// <summary>
-/// Custom validation methods for FluentValidation
-/// </summary>
 public static class CustomValidators
 {
     public static bool MustBeInPast(DateTime date)
