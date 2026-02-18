@@ -21,11 +21,6 @@ public class LabTestOrder : BaseEntity
     public Guid? ReviewedByDoctorId { get; set; }
     public string? DoctorNotes { get; set; }
     public string? Notes { get; set; }
-    
-
-    public ClinicBranch ClinicBranch { get; set; } = null!;
-    public Patient Patient { get; set; } = null!;
-    public LabTest LabTest { get; set; } = null!;
     public MedicalVisit? MedicalVisit { get; set; }
     public DoctorProfile? OrderedByDoctor { get; set; }
 }

@@ -12,7 +12,4 @@ public class Payment : AuditableEntity
     public PaymentStatus Status { get; set; } = PaymentStatus.Paid;
     public string? Note { get; set; }
     public string? ReferenceNumber { get; set; }
-
-
-    public Invoice Invoice { get; set; } = null!;
 }

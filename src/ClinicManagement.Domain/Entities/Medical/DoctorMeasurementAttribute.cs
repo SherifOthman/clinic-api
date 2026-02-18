@@ -14,8 +14,4 @@ public class DoctorMeasurementAttribute : BaseEntity
     public int DisplayOrder { get; set; } = 0;
 
     public bool IsRequired { get; set; } = false;
-
-
-    public DoctorProfile DoctorProfile { get; set; } = null!;
-    public MeasurementAttribute MeasurementAttribute { get; set; } = null!;
 }

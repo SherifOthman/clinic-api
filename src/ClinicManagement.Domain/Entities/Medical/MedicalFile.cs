@@ -10,9 +10,6 @@ public class MedicalFile : BaseEntity
     public MedicalVisit? MedicalVisit { get; set; }
     
     public Guid PatientId { get; set; }
-    public Patient Patient { get; set; } = null!;
-    
-    public string FilePath { get; set; } = null!;
     public MedicalFileType FileType { get; set; } // Lab / Radiology
     public DateTime UploadedAt { get; set; }
 }

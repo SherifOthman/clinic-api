@@ -5,7 +5,6 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Appointment : AuditableEntity
 {
-    public string AppointmentNumber { get; set; } = null!;
     public Guid ClinicBranchId { get; set; }
     public Guid PatientId { get; set; }
     public Guid DoctorId { get; set; }
@@ -15,15 +14,6 @@ public class Appointment : AuditableEntity
     public AppointmentStatus Status { get; set; }
     public Guid? InvoiceId { get; set; }
 
-
-    public ClinicBranch ClinicBranch { get; set; } = null!;
-    public Patient Patient { get; set; } = null!;
-    public DoctorProfile DoctorProfile { get; set; } = null!;
-    public AppointmentType AppointmentType { get; set; } = null!;
-    public Invoice? Invoice { get; set; }
-    
-
-    public bool IsConsultationFeePaid => Invoice?.IsFullyPaid ?? false;
     public bool IsPending => Status == AppointmentStatus.Pending;
     public bool IsConfirmed => Status == AppointmentStatus.Confirmed;
     public bool IsCompleted => Status == AppointmentStatus.Completed;

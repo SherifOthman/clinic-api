@@ -29,9 +29,6 @@ public class InvoiceItem : BaseEntity
     
 
     public decimal LineTotal => Quantity * UnitPrice;
-
-
-    public Invoice Invoice { get; set; } = null!;
     public MedicalService? MedicalService { get; set; }
     public Medicine? Medicine { get; set; }
     public MedicalSupply? MedicalSupply { get; set; }

@@ -17,5 +17,4 @@ public class PatientAllergy : BaseEntity
     public string? Notes { get; set; }
     
     // Navigation
-    public Patient Patient { get; set; } = null!;
 }

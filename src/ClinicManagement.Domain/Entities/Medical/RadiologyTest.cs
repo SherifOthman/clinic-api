@@ -7,12 +7,8 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class RadiologyTest : TenantEntity
 {
-    public Clinic Clinic { get; set; } = null!;
     
     public string Name { get; set; } = null!; // X-Ray Chest
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
-    
-
-    public ICollection<MedicalVisitRadiology> MedicalVisitRadiologies { get; set; } = new List<MedicalVisitRadiology>();
 }

@@ -41,8 +41,4 @@ public class AppointmentType : BaseEntity
     /// Color code for UI display (optional)
     /// </summary>
     public string? ColorCode { get; set; }
-    
-
-    public ICollection<ClinicBranchAppointmentPrice> ClinicBranchPrices { get; set; } = new List<ClinicBranchAppointmentPrice>();
-    public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

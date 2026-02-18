@@ -12,8 +12,4 @@ public class Staff : TenantEntity
     public bool IsActive { get; set; } = true;
     public DateTime HireDate { get; set; }
     public DateTime? TerminationDate { get; set; }
-
-    public virtual User User { get; set; } = null!;
-    public virtual Clinic Clinic { get; set; } = null!;
-    public virtual DoctorProfile? DoctorProfile { get; set; }
 }

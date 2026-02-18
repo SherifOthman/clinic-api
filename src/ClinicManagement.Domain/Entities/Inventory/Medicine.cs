@@ -6,7 +6,6 @@ namespace ClinicManagement.Domain.Entities;
 public class Medicine : AuditableEntity
 {
     public Guid ClinicBranchId { get; set; }
-    public string Name { get; set; } = null!;
     public string? Description { get; set; }
     public string? Manufacturer { get; set; }
     public string? BatchNumber { get; set; }
@@ -21,10 +20,6 @@ public class Medicine : AuditableEntity
     
     public bool IsActive { get; set; } = true;
     public bool IsDiscontinued { get; set; } = false;
-
-
-    public ClinicBranch ClinicBranch { get; set; } = null!;
-    public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 
 
     public decimal StripPrice => StripsPerBox > 0 ? BoxPrice / StripsPerBox : 0;

@@ -15,11 +15,6 @@ public class MedicineDispensing : BaseEntity
     public string? Notes { get; set; }
     
 
-    public ClinicBranch ClinicBranch { get; set; } = null!;
-    public Patient Patient { get; set; } = null!;
-    public Medicine Medicine { get; set; } = null!;
-    
-
     public decimal TotalPrice => Quantity * UnitPrice;
 }
 

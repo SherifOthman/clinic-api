@@ -14,8 +14,4 @@ public class SpecializationMeasurementAttribute : BaseEntity
     public int DefaultDisplayOrder { get; set; } = 0;
 
     public bool DefaultIsRequired { get; set; } = false;
-    
-
-    public Specialization Specialization { get; set; } = null!;
-    public MeasurementAttribute MeasurementAttribute { get; set; } = null!;
 }

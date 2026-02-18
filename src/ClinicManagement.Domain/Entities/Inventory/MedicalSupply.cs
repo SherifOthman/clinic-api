@@ -18,8 +18,4 @@ public class MedicalSupply : AuditableEntity
 
     public bool IsLowStock => QuantityInStock <= MinimumStockLevel;
     public bool HasStock => QuantityInStock > 0;
-
-
-    public ClinicBranch ClinicBranch { get; set; } = null!;
-    public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 }
