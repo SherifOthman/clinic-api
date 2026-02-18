@@ -38,6 +38,15 @@ public class GlobalExceptionMiddleware
 
         var problemDetails = exception switch
         {
+            FluentValidation.ValidationException validationEx => new ApiProblemDetails
+            {
+                Code = ErrorCodes.VALIDATION_ERROR,
+                Title = "Validation Error",
+                Status = 400,
+                Detail = string.Join("; ", validationEx.Errors.Select(e => e.ErrorMessage)),
+                TraceId = context.TraceIdentifier
+            },
+            
             UnauthorizedAccessException => new ApiProblemDetails
             {
                 Code = ErrorCodes.ACCESS_DENIED,
