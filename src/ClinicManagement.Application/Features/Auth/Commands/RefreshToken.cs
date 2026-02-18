@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Common.Interfaces;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -21,17 +22,20 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<R
 {
     private static readonly ConcurrentDictionary<int, SemaphoreSlim> _userLocks = new();
 
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IRefreshTokenService _refreshTokenService;
-    private readonly IAuthenticationService _authService;
+    private readonly ITokenService _tokenService;
     private readonly ILogger<RefreshTokenHandler> _logger;
 
     public RefreshTokenHandler(
+        IUnitOfWork unitOfWork,
         IRefreshTokenService refreshTokenService,
-        IAuthenticationService authService,
+        ITokenService tokenService,
         ILogger<RefreshTokenHandler> logger)
     {
+        _unitOfWork = unitOfWork;
         _refreshTokenService = refreshTokenService;
-        _authService = authService;
+        _tokenService = tokenService;
         _logger = logger;
     }
 
@@ -55,18 +59,29 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<R
         await semaphore.WaitAsync(cancellationToken);
         try
         {
-            var result = await _authService.RefreshTokenAsync(request.Token, cancellationToken);
-
-            if (result == null)
+            // Get user and roles
+            var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+            if (user == null)
             {
-                _logger.LogWarning("Token refresh failed for user {UserId}", userId);
-                return Result.Failure<RefreshTokenResponseDto>(ErrorCodes.TOKEN_INVALID, "Failed to refresh token");
+                _logger.LogWarning("User not found for refresh token: {UserId}", userId);
+                return Result.Failure<RefreshTokenResponseDto>(ErrorCodes.USER_NOT_FOUND, "User not found");
             }
+
+            var roles = await _unitOfWork.Users.GetUserRolesAsync(userId, cancellationToken);
+            var staff = await _unitOfWork.Users.GetStaffByUserIdAsync(userId, cancellationToken);
+            var clinicId = staff?.ClinicId;
+
+            // Generate new tokens
+            var newAccessToken = _tokenService.GenerateAccessToken(user, roles, clinicId);
+            var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(userId, null, cancellationToken);
+
+            // Revoke old refresh token
+            await _refreshTokenService.RevokeRefreshTokenAsync(request.Token, null, newRefreshToken.Token, cancellationToken);
 
             _logger.LogInformation("Token refreshed for user {UserId} ({ClientType})",
                 userId, request.IsMobile ? "mobile" : "web");
 
-            var response = new RefreshTokenResponseDto(result.AccessToken, result.RefreshToken);
+            var response = new RefreshTokenResponseDto(newAccessToken, newRefreshToken.Token);
             return Result.Success(response);
         }
         finally
