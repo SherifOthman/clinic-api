@@ -11,10 +11,6 @@ public class UnitOfWork : IUnitOfWork
     private SqlTransaction? _transaction;
     private bool _disposed;
 
-    private IUserRepository? _users;
-    private IRefreshTokenRepository? _refreshTokens;
-    private ISubscriptionPlanRepository? _subscriptionPlans;
-
     public UnitOfWork(IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -22,24 +18,15 @@ public class UnitOfWork : IUnitOfWork
         _connection.Open();
     }
 
-    public IUserRepository Users => 
-        _users ??= new UserRepository(_connection, _transaction);
+    public IUserRepository Users => new UserRepository(_connection, _transaction);
 
-    public IRefreshTokenRepository RefreshTokens => 
-        _refreshTokens ??= new RefreshTokenRepository(_connection, _transaction);
+    public IRefreshTokenRepository RefreshTokens => new RefreshTokenRepository(_connection, _transaction);
 
-    public ISubscriptionPlanRepository SubscriptionPlans => 
-        _subscriptionPlans ??= new SubscriptionPlanRepository(_connection, _transaction);
+    public ISubscriptionPlanRepository SubscriptionPlans => new SubscriptionPlanRepository(_connection, _transaction);
 
     public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _transaction = _connection.BeginTransaction();
-        
-        // Reset repositories to use new transaction
-        _users = new UserRepository(_connection, _transaction);
-        _refreshTokens = new RefreshTokenRepository(_connection, _transaction);
-        _subscriptionPlans = new SubscriptionPlanRepository(_connection, _transaction);
-        
         return Task.CompletedTask;
     }
 
