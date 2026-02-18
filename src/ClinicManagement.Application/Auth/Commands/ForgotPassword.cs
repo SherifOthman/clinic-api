@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Abstractions.Authentication;`nusing ClinicManagement.Application.Abstractions.Email;`nusing ClinicManagement.Application.Abstractions.Services;`nusing ClinicManagement.Application.Abstractions.Storage;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Repositories;
@@ -86,3 +89,4 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         return Result.Success();
     }
 }
+

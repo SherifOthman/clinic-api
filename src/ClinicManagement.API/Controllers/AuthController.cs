@@ -1,14 +1,17 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Features.Auth.Commands;
-using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
-using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
-using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
-using ClinicManagement.Application.Features.Auth.Commands.Login;
-using ClinicManagement.Application.Features.Auth.Commands.Register;
-using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerification;
-using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
-using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
-using ClinicManagement.Application.Features.Auth.Queries;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
+using ClinicManagement.Application.Auth.Commands;
+using ClinicManagement.Application.Auth.Commands.ChangePassword;
+using ClinicManagement.Application.Auth.Commands.ConfirmEmail;
+using ClinicManagement.Application.Auth.Commands.ForgotPassword;
+using ClinicManagement.Application.Auth.Commands.Login;
+using ClinicManagement.Application.Auth.Commands.Register;
+using ClinicManagement.Application.Auth.Commands.ResendEmailVerification;
+using ClinicManagement.Application.Auth.Commands.ResetPassword;
+using ClinicManagement.Application.Auth.Commands.UpdateProfile;
+using ClinicManagement.Application.Auth.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ApiProblemDetails = ClinicManagement.Application.Common.Models.ApiProblemDetails;
@@ -359,3 +362,4 @@ public record ChangePasswordRequestDto(string CurrentPassword, string NewPasswor
 public record LogoutRequestDto(string? RefreshToken);
 public record ResendEmailVerificationRequestDto(string Email);
 public record UpdateProfileRequestDto(string FirstName, string LastName, string? PhoneNumber);
+

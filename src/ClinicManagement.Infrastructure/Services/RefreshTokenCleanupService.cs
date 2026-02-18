@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -64,3 +67,4 @@ public class RefreshTokenCleanupService : BackgroundService
         await base.StopAsync(stoppingToken);
     }
 }
+

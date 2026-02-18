@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -65,3 +68,4 @@ public class EmailConfirmationService : IEmailConfirmationService
         return user.EmailConfirmed;
     }
 }
+

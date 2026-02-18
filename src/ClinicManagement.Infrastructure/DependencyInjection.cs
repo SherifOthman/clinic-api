@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Domain.Repositories;
 using ClinicManagement.Infrastructure.Data;
 using ClinicManagement.Infrastructure.Services;
@@ -45,3 +48,4 @@ public static class DependencyInjection
         return services;
     }
 }
+

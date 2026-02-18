@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 
 namespace ClinicManagement.Infrastructure.Services;
 
@@ -17,3 +20,4 @@ public class PasswordHasher : IPasswordHasher
         return BCrypt.Net.BCrypt.Verify(password, passwordHash);
     }
 }
+

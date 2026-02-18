@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -92,3 +95,4 @@ public class CurrentUserService : ICurrentUserService
         return false;
     }
 }
+
