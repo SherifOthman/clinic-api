@@ -8,7 +8,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class Staff : TenantEntity
 {
-    public Guid UserId { get; set; }
+    public int UserId { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime HireDate { get; set; }
     public DateTime? TerminationDate { get; set; }

@@ -6,6 +6,6 @@ namespace ClinicManagement.Domain.Entities;
 public class ClinicMedication : TenantEntity
 {
     
-    public Guid? MedicationId { get; set; }
+    public int? MedicationId { get; set; }
     public Medication? Medication { get; set; }
 }

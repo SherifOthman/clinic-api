@@ -6,8 +6,9 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Clinic : AuditableEntity
 {
-    public Guid OwnerUserId { get; set; }
-    public Guid SubscriptionPlanId { get; set; }
+    public string Name { get; set; } = null!;
+    public int OwnerUserId { get; set; }
+    public int SubscriptionPlanId { get; set; }
     public bool OnboardingCompleted { get; set; }
     public DateTime? OnboardingCompletedDate { get; set; }
 }

@@ -7,7 +7,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class MedicalSupply : AuditableEntity
 {
-    public Guid ClinicBranchId { get; set; } // Linked to branch, not clinic
+    public int ClinicBranchId { get; set; } // Linked to branch, not clinic
     public string Name { get; set; } = null!; // Supply name only (gauze, syringes, etc.)
     
     // Simple pricing and inventory

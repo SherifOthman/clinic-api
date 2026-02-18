@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Payment : AuditableEntity
 {
-    public Guid InvoiceId { get; set; }
+    public int InvoiceId { get; set; }
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;

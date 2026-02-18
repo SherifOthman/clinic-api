@@ -30,7 +30,7 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null)
     {
         var claims = new List<Claim>
         {

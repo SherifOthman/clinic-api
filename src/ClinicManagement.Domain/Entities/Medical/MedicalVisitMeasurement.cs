@@ -9,8 +9,8 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class MedicalVisitMeasurement : BaseEntity
 {
-    public Guid MedicalVisitId { get; set; }
-    public Guid MeasurementAttributeId { get; set; }  
+    public int MedicalVisitId { get; set; }
+    public int MeasurementAttributeId { get; set; }  
     
     public string? StringValue { get; set; }
     public int? IntValue { get; set; }

@@ -4,5 +4,5 @@ namespace ClinicManagement.Application.Abstractions.Authentication;
 
 public interface ITokenService
 {
-    string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null);
+    string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null);
 }

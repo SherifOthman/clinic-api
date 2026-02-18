@@ -8,7 +8,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class DoctorProfile : TenantEntity
 {
-    public Guid StaffId { get; set; }
-    public Guid? SpecializationId { get; set; }
+    public int StaffId { get; set; }
+    public int? SpecializationId { get; set; }
     public string? LicenseNumber { get; set; }
 }

@@ -8,9 +8,9 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class DoctorWorkingDay : BaseEntity
 {
-    public Guid DoctorId { get; set; }
+    public int DoctorId { get; set; }
     
-    public Guid ClinicBranchId { get; set; }
+    public int ClinicBranchId { get; set; }
     
     public DayOfWeek Day { get; set; }
     public TimeOnly StartTime { get; set; }

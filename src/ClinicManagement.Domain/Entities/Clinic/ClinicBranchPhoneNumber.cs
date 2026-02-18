@@ -4,7 +4,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class ClinicBranchPhoneNumber : BaseEntity
 {
-    public Guid ClinicBranchId { get; set; }
+    public int ClinicBranchId { get; set; }
     
     public string? Label { get; set; }
 }

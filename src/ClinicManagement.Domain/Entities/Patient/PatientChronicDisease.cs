@@ -7,7 +7,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class PatientChronicDisease : AuditableEntity
 {
-    public Guid PatientId { get; set; }
+    public int PatientId { get; set; }
     
-    public Guid ChronicDiseaseId { get; set; }
+    public int ChronicDiseaseId { get; set; }
 }

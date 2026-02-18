@@ -6,7 +6,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class PrescriptionItem : BaseEntity
 {
-    public Guid PrescriptionId { get; set; }
+    public int PrescriptionId { get; set; }
 
     public string? Dosage { get; set; } 
 

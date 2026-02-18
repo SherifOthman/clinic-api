@@ -8,8 +8,8 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class SpecializationMeasurementAttribute : BaseEntity
 {
-    public Guid SpecializationId { get; set; }
-    public Guid MeasurementAttributeId { get; set; }
+    public int SpecializationId { get; set; }
+    public int MeasurementAttributeId { get; set; }
     
     public int DefaultDisplayOrder { get; set; } = 0;
 

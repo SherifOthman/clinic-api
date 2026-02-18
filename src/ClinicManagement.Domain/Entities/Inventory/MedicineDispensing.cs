@@ -4,13 +4,13 @@ namespace ClinicManagement.Domain.Entities;
 
 public class MedicineDispensing : BaseEntity
 {
-    public Guid ClinicBranchId { get; set; }
-    public Guid PatientId { get; set; }
-    public Guid MedicineId { get; set; }
+    public int ClinicBranchId { get; set; }
+    public int PatientId { get; set; }
+    public int MedicineId { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public DateTime DispensedAt { get; set; }
-    public Guid DispensedByUserId { get; set; }
+    public int DispensedByUserId { get; set; }
     public DispensingStatus Status { get; set; }
     public string? Notes { get; set; }
     

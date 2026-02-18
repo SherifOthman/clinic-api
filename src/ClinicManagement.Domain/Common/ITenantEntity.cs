@@ -6,9 +6,5 @@ namespace ClinicManagement.Domain.Common;
 /// </summary>
 public interface ITenantEntity
 {
-    /// <summary>
-    /// The clinic (tenant) this entity belongs to.
-    /// Automatically set by the repository on entity creation.
-    /// </summary>
-    Guid ClinicId { get; set; }
+    int ClinicId { get; set; }
 }

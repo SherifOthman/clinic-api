@@ -4,7 +4,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class PatientPhone : BaseEntity
 {
-    public Guid PatientId { get; set; }
+    public int PatientId { get; set; }
     
     public bool IsPrimary { get; set; } = false;
 }
