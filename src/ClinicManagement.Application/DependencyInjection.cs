@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Common.Behaviors;
+using ClinicManagement.Application.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
