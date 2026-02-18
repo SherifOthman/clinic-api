@@ -2,6 +2,7 @@ using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
 using ClinicManagement.Infrastructure.Data;
+using ClinicManagement.Infrastructure.Services;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
