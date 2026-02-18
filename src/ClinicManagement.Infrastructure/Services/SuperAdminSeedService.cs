@@ -8,12 +8,12 @@ namespace ClinicManagement.Infrastructure.Services;
 public class SuperAdminSeedService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly PasswordHasher _passwordHasher;
+    private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<SuperAdminSeedService> _logger;
 
     public SuperAdminSeedService(
         IUnitOfWork unitOfWork,
-        PasswordHasher passwordHasher,
+        IPasswordHasher passwordHasher,
         ILogger<SuperAdminSeedService> logger)
     {
         _unitOfWork = unitOfWork;

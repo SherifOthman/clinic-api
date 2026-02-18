@@ -1,9 +1,11 @@
+using ClinicManagement.Application.Common.Interfaces;
+
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
 /// Password hasher using BCrypt
 /// </summary>
-public class PasswordHasher
+public class PasswordHasher : IPasswordHasher
 {
     public string HashPassword(string password)
     {

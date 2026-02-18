@@ -32,7 +32,8 @@ public static class DependencyInjection
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<MailKitSmtpClient>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
-        services.AddScoped<PasswordHasher>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<ITokenGenerator, TokenGenerator>();
         services.AddScoped<SuperAdminSeedService>();
         
         // External API Services
