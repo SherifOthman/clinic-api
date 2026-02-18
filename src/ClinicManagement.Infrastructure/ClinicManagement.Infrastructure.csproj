@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="dbup-sqlserver" Version="5.0.40" />
     <PackageReference Include="libphonenumber-csharp" Version="9.0.24" />

@@ -31,12 +31,6 @@ public class UnitOfWork : IUnitOfWork
     public ISubscriptionPlanRepository SubscriptionPlans => 
         _subscriptionPlans ??= new SubscriptionPlanRepository(_connection, _transaction);
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        // Dapper executes immediately, so this is just for interface compatibility
-        return Task.FromResult(0);
-    }
-
     public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _transaction = _connection.BeginTransaction();
