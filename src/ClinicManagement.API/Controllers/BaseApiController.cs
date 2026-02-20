@@ -32,6 +32,7 @@ public abstract class BaseApiController : ControllerBase
             Title = title,
             Status = StatusCodes.Status400BadRequest,
             Detail = result.ErrorMessage,
+            Code = result.ErrorCode,
             Errors = errors,
             TraceId = HttpContext.TraceIdentifier
         });
@@ -57,6 +58,7 @@ public abstract class BaseApiController : ControllerBase
             Title = title,
             Status = StatusCodes.Status400BadRequest,
             Detail = result.ErrorMessage,
+            Code = result.ErrorCode,
             Errors = errors,
             TraceId = HttpContext.TraceIdentifier
         });
