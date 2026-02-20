@@ -51,6 +51,7 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result<C
 
         try
         {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _emailConfirmationService.ConfirmEmailAsync(user, request.Token, cancellationToken);
             _logger.LogInformation("Email confirmed successfully for user: {UserId}", user.Id);
             return Result.Success(new ConfirmEmailResponseDto(AlreadyConfirmed: false));
@@ -58,11 +59,13 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result<C
         catch (DomainException ex)
         {
             _logger.LogWarning("Email confirmation failed for user {UserId}: {ErrorCode}", user.Id, ex.ErrorCode);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             return Result.Failure<ConfirmEmailResponseDto>(ex.ErrorCode, ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("Email confirmation failed for user {UserId}: {Message}", user.Id, ex.Message);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             return Result.Failure<ConfirmEmailResponseDto>(ErrorCodes.TOKEN_INVALID, ex.Message);
         }
     }
