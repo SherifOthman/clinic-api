@@ -1,9 +1,5 @@
 using ClinicManagement.Application.Abstractions.Authentication;
-using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using Microsoft.AspNetCore.DataProtection;
-using System.Text;
 
 namespace ClinicManagement.Infrastructure.Services;
 
