@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using FluentValidation;
@@ -39,8 +38,11 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         if (failures.Any())
         {
             var validationErrors = failures
-                .Select(f => new ValidationError(f.PropertyName, f.ErrorMessage))
-                .ToList();
+                .GroupBy(f => f.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray()
+                );
 
             var responseType = typeof(TResponse);
             
