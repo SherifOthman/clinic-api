@@ -1,8 +1,5 @@
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.Abstractions.Authentication;
-using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Auth.Commands;
 using ClinicManagement.Application.Auth.Commands.ChangePassword;
 using ClinicManagement.Application.Auth.Commands.ConfirmEmail;
@@ -38,7 +35,7 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         var clientType = HttpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
@@ -79,17 +76,8 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
     {
-        var command = new RegisterCommand(
-            request.Email,
-            request.Username,
-            request.Password,
-            request.FirstName,
-            request.LastName,
-            request.PhoneNumber
-        );
-
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -117,9 +105,9 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(RefreshTokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto? request, CancellationToken ct)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest? request, CancellationToken ct)
     {
         var clientType = HttpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
@@ -155,7 +143,7 @@ public class AuthController : BaseApiController
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
-        return Ok(new RefreshTokenResponseDto(
+        return Ok(new RefreshTokenResponse(
             result.Value!.AccessToken,
             isMobile ? result.Value.RefreshToken : null
         ));
@@ -168,9 +156,8 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailCommand command, CancellationToken ct)
     {
-        var command = new ConfirmEmailCommand(request.Email, request.Token);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -185,9 +172,8 @@ public class AuthController : BaseApiController
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken ct)
     {
-        var command = new ForgotPasswordCommand(request.Email);
         await Sender.Send(command, ct);
 
         return NoContent();
@@ -200,9 +186,8 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken ct)
     {
-        var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -218,9 +203,8 @@ public class AuthController : BaseApiController
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken ct)
     {
-        var command = new ChangePasswordCommand(request.CurrentPassword, request.NewPassword);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -261,7 +245,7 @@ public class AuthController : BaseApiController
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequestDto? request, CancellationToken ct)
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest? request, CancellationToken ct)
     {
         var clientType = HttpContext.Request.Headers["X-Client-Type"].ToString();
         var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
@@ -288,9 +272,8 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationCommand command, CancellationToken ct)
     {
-        var command = new ResendEmailVerificationCommand(request.Email);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -306,9 +289,8 @@ public class AuthController : BaseApiController
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequestDto request, CancellationToken ct)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileCommand command, CancellationToken ct)
     {
-        var command = new UpdateProfileCommand(request.FirstName, request.LastName, request.PhoneNumber);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -355,16 +337,8 @@ public class AuthController : BaseApiController
 }
 
 // DTOs for request/response
-public record LoginRequestDto(string EmailOrUsername, string Password);
-public record LoginResponseDto(string AccessToken, string? RefreshToken, bool? EmailNotConfirmed);
-public record RegisterRequestDto(string Email, string Username, string Password, string FirstName, string LastName, string? PhoneNumber);
-public record RefreshTokenRequestDto(string? RefreshToken);
-public record RefreshTokenResponseDto(string AccessToken, string? RefreshToken);
-public record ConfirmEmailRequestDto(string Email, string Token);
-public record ForgotPasswordRequestDto(string Email);
-public record ResetPasswordRequestDto(string Email, string Token, string NewPassword);
-public record ChangePasswordRequestDto(string CurrentPassword, string NewPassword);
-public record LogoutRequestDto(string? RefreshToken);
-public record ResendEmailVerificationRequestDto(string Email);
-public record UpdateProfileRequestDto(string FirstName, string LastName, string? PhoneNumber);
+public record LoginRequest(string EmailOrUsername, string Password);
+public record RefreshTokenRequest(string? RefreshToken);
+public record RefreshTokenResponse(string AccessToken, string? RefreshToken);
+public record LogoutRequest(string? RefreshToken);
 
