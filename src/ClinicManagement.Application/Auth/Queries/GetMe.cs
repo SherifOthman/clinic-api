@@ -14,7 +14,7 @@ public record GetMeDto(
     string? PhoneNumber,
     string? ProfileImageUrl,
     List<string> Roles,
-    bool IsEmailConfirmed,
+    bool EmailConfirmed,
     bool OnboardingCompleted
 );
 
