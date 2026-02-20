@@ -17,17 +17,22 @@ public abstract class BaseApiController : ControllerBase
         if (result.IsSuccess)
             return Ok();
 
+        var errors = result.ValidationErrors != null && result.ValidationErrors.Count > 0
+            ? result.ValidationErrors
+                .GroupBy(e => e.Field)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.Message).ToArray()
+                )
+            : null;
+
         return BadRequest(new ApiProblemDetails
         {
-            Code = result.ErrorCode!,
+            Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
             Title = title,
             Status = StatusCodes.Status400BadRequest,
             Detail = result.ErrorMessage,
-            Errors = result.ValidationErrors?.Select(e => new ErrorItem
-            {
-                Field = e.Field,
-                Message = e.Message
-            }).ToList(),
+            Errors = errors,
             TraceId = HttpContext.TraceIdentifier
         });
     }
@@ -37,17 +42,22 @@ public abstract class BaseApiController : ControllerBase
         if (result.IsSuccess)
             return Ok(result.Value);
 
+        var errors = result.ValidationErrors != null && result.ValidationErrors.Count > 0
+            ? result.ValidationErrors
+                .GroupBy(e => e.Field)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.Message).ToArray()
+                )
+            : null;
+
         return BadRequest(new ApiProblemDetails
         {
-            Code = result.ErrorCode!,
+            Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
             Title = title,
             Status = StatusCodes.Status400BadRequest,
             Detail = result.ErrorMessage,
-            Errors = result.ValidationErrors?.Select(e => new ErrorItem
-            {
-                Field = e.Field,
-                Message = e.Message
-            }).ToList(),
+            Errors = errors,
             TraceId = HttpContext.TraceIdentifier
         });
     }

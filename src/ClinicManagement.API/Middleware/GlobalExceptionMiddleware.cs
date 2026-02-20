@@ -1,5 +1,4 @@
 using ClinicManagement.API.Models;
-using ClinicManagement.Domain.Common.Constants;
 using System.Text.Json;
 
 namespace ClinicManagement.API.Middleware;
@@ -40,24 +39,23 @@ public class GlobalExceptionMiddleware
         {
             FluentValidation.ValidationException validationEx => new ApiProblemDetails
             {
-                Code = ErrorCodes.VALIDATION_ERROR,
-                Title = "Validation Failed",
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = "One or more validation errors occurred.",
                 Status = 400,
                 Detail = "One or more validation errors occurred",
                 Errors = validationEx.Errors
-                    .Select(e => new ErrorItem
-                    {
-                        Field = e.PropertyName,
-                        Message = e.ErrorMessage
-                    })
-                    .ToList(),
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray()
+                    ),
                 TraceId = context.TraceIdentifier
             },
             
             UnauthorizedAccessException => new ApiProblemDetails
             {
-                Code = ErrorCodes.ACCESS_DENIED,
-                Title = "Access Denied",
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                Title = "Forbidden",
                 Status = 403,
                 Detail = exception.Message,
                 TraceId = context.TraceIdentifier
@@ -65,8 +63,8 @@ public class GlobalExceptionMiddleware
             
             KeyNotFoundException => new ApiProblemDetails
             {
-                Code = ErrorCodes.RESOURCE_NOT_FOUND,
-                Title = "Resource Not Found",
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                Title = "Not Found",
                 Status = 404,
                 Detail = exception.Message,
                 TraceId = context.TraceIdentifier
@@ -74,8 +72,8 @@ public class GlobalExceptionMiddleware
             
             InvalidOperationException => new ApiProblemDetails
             {
-                Code = ErrorCodes.OPERATION_NOT_ALLOWED,
-                Title = "Operation Not Allowed",
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = "Bad Request",
                 Status = 400,
                 Detail = exception.Message,
                 TraceId = context.TraceIdentifier
@@ -83,8 +81,8 @@ public class GlobalExceptionMiddleware
             
             ArgumentException => new ApiProblemDetails
             {
-                Code = ErrorCodes.VALIDATION_ERROR,
-                Title = "Validation Error",
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = "Bad Request",
                 Status = 400,
                 Detail = exception.Message,
                 TraceId = context.TraceIdentifier
@@ -92,7 +90,7 @@ public class GlobalExceptionMiddleware
             
             _ => new ApiProblemDetails
             {
-                Code = ErrorCodes.INTERNAL_ERROR,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
                 Title = "Internal Server Error",
                 Status = 500,
                 Detail = "An unexpected error occurred. Please try again later.",

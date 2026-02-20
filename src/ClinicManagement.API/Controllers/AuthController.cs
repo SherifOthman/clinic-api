@@ -10,9 +10,9 @@ using ClinicManagement.Application.Auth.Commands.ResendEmailVerification;
 using ClinicManagement.Application.Auth.Commands.ResetPassword;
 using ClinicManagement.Application.Auth.Commands.UpdateProfile;
 using ClinicManagement.Application.Auth.Queries;
+using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using CookieService = ClinicManagement.Infrastructure.Services.CookieService;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -79,7 +79,6 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
     {
         var result = await Sender.Send(command, ct);
-
         if (result.IsFailure)
             return HandleResult(result, "Registration Failed");
 

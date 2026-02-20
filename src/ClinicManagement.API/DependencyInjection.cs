@@ -18,14 +18,11 @@ public static class DependencyInjection
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment = null)
     {
         services.AddHttpContextAccessor();
-        services.AddValidation();
+        //services.AddValidation();
 
         AddCaching(services);
-        AddDatabase(services, configuration, environment);
-        AddIdentity(services);
         AddAuthentication(services, configuration);
         AddAuthorization(services);
-        AddApplicationServices(services);
         AddOptions(services, configuration);
         AddCors(services, configuration);
         AddSwagger(services);
@@ -46,13 +43,6 @@ public static class DependencyInjection
         });
     }
 
-    private static void AddDatabase(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment)
-    {
-    }
-
-    private static void AddIdentity(IServiceCollection services)
-    {
-    }
 
     private static void AddAuthentication(IServiceCollection services, IConfiguration configuration)
     {
@@ -104,9 +94,6 @@ public static class DependencyInjection
         });
     }
 
-    private static void AddApplicationServices(IServiceCollection services)
-    {
-    }
 
     private static void AddOptions(IServiceCollection services, IConfiguration configuration)
     {
