@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Common.Models;
+using ClinicManagement.API.Models;
 using ClinicManagement.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

@@ -1,3 +1,4 @@
+using ClinicManagement.API.Models;
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
@@ -14,8 +15,6 @@ using ClinicManagement.Application.Auth.Commands.UpdateProfile;
 using ClinicManagement.Application.Auth.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ApiProblemDetails = ClinicManagement.Application.Common.Models.ApiProblemDetails;
-using MessageResponse = ClinicManagement.Application.Common.Models.MessageResponse;
 using CookieService = ClinicManagement.Infrastructure.Services.CookieService;
 
 namespace ClinicManagement.API.Controllers;
@@ -78,7 +77,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request, CancellationToken ct)
     {
@@ -96,10 +95,7 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Registration Failed");
 
-        return CreatedAtAction(
-            nameof(GetMe),
-            new MessageResponse("Registration successful. Please check your email to verify your account.")
-        );
+        return CreatedAtAction(nameof(GetMe), null);
     }
 
     /// <summary>
@@ -170,7 +166,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("confirm-email")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequestDto request, CancellationToken ct)
     {
@@ -180,11 +176,7 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Email Confirmation Failed");
 
-        var message = result.Value!.AlreadyConfirmed
-            ? "Email already confirmed"
-            : "Email confirmed successfully";
-
-        return Ok(new MessageResponse(message));
+        return NoContent();
     }
 
     /// <summary>
@@ -192,14 +184,13 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request, CancellationToken ct)
     {
         var command = new ForgotPasswordCommand(request.Email);
         await Sender.Send(command, ct);
 
-        // Always return success to prevent email enumeration
-        return Ok(new MessageResponse("Password reset email sent"));
+        return NoContent();
     }
 
     /// <summary>
@@ -207,7 +198,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("reset-password")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken ct)
     {
@@ -217,7 +208,7 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Password Reset Failed");
 
-        return Ok(new MessageResponse("Password reset successfully"));
+        return NoContent();
     }
 
     /// <summary>
@@ -225,7 +216,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("change-password")]
     [Authorize]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request, CancellationToken ct)
     {
@@ -235,7 +226,7 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Password Change Failed");
 
-        return Ok(new MessageResponse("Password changed successfully"));
+        return NoContent();
     }
 
     /// <summary>
@@ -269,7 +260,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequestDto? request, CancellationToken ct)
     {
         var clientType = HttpContext.Request.Headers["X-Client-Type"].ToString();
@@ -287,7 +278,7 @@ public class AuthController : BaseApiController
             _cookieService.ClearRefreshTokenCookie();
         }
 
-        return Ok(new MessageResponse("Logged out successfully"));
+        return NoContent();
     }
 
     /// <summary>
@@ -295,7 +286,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("resend-email-verification")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationRequestDto request, CancellationToken ct)
     {
@@ -305,7 +296,7 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Resend Failed");
 
-        return Ok(new MessageResponse("Verification email sent"));
+        return NoContent();
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-namespace ClinicManagement.Application.Common.Models;
+namespace ClinicManagement.API.Models;
 
 public class ErrorItem
 {
