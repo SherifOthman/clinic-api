@@ -5,7 +5,7 @@ public record UserRegistrationRequest(
     string Password,
     string FirstName,
     string LastName,
-    string? PhoneNumber,
+    string PhoneNumber,
     string Role,
     int? ClinicId = null,
     string? UserName = null,

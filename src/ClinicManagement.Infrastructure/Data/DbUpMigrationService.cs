@@ -25,6 +25,7 @@ public class DbUpMigrationService
         var upgrader = DeployChanges.To
             .SqlDatabase(_connectionString)
             .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+            .WithTransactionPerScript()
             .LogToConsole()
             .Build();
 

@@ -41,9 +41,16 @@ public class GlobalExceptionMiddleware
             FluentValidation.ValidationException validationEx => new ApiProblemDetails
             {
                 Code = ErrorCodes.VALIDATION_ERROR,
-                Title = "Validation Error",
+                Title = "Validation Failed",
                 Status = 400,
-                Detail = string.Join("; ", validationEx.Errors.Select(e => e.ErrorMessage)),
+                Detail = "One or more validation errors occurred",
+                Errors = validationEx.Errors
+                    .Select(e => new ErrorItem
+                    {
+                        Field = e.PropertyName,
+                        Message = e.ErrorMessage
+                    })
+                    .ToList(),
                 TraceId = context.TraceIdentifier
             },
             

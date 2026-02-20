@@ -37,7 +37,8 @@ public class CookieService
             refreshToken, 
             cookieOptions);
         
-        _logger.LogInformation("Refresh token cookie set");
+        _logger.LogInformation("Refresh token cookie set with options: HttpOnly={HttpOnly}, Secure={Secure}, SameSite={SameSite}, Expires={Expires}", 
+            cookieOptions.HttpOnly, cookieOptions.Secure, cookieOptions.SameSite, cookieOptions.Expires);
     }
 
     public string? GetRefreshTokenFromCookie()
@@ -67,12 +68,11 @@ public class CookieService
         return new CookieOptions
         {
             HttpOnly = true, // Prevents JavaScript access (XSS protection)
-            Secure = isProduction, // HTTPS only in production
-            SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax,
+            Secure = false, // Allow HTTP in development
+            SameSite = SameSiteMode.Lax, // Lax for same-site requests
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",
-            IsEssential = true,
-            Domain = null
+            IsEssential = true
         };
     }
 }

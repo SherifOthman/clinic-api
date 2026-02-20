@@ -2,7 +2,7 @@ using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
 using ClinicManagement.Infrastructure.Data;
-using ClinicManagement.Infrastructure.Services;
+using ClinicManagement.Infrastructure.Seeders;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -41,6 +41,10 @@ try
                 var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
                 await superAdminSeed.SeedSuperAdminAsync();
                 Log.Information("SuperAdmin user seeded successfully");
+
+                var clinicOwnerSeed = services.GetRequiredService<ClinicOwnerSeedService>();
+                await clinicOwnerSeed.SeedClinicOwnerDataAsync();
+                Log.Information("Clinic Owner demo data seeded successfully");
             }
             catch (Exception ex)
             {

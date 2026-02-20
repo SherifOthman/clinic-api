@@ -55,7 +55,7 @@ public class EmailConfirmationService : IEmailConfirmationService
             throw new InvalidOperationException("Invalid or expired confirmation token");
         }
 
-        user.EmailConfirmed = true;
+        user.IsEmailConfirmed = true;
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
 
         _logger.LogInformation("Email confirmed successfully for {Email}", user.Email);
@@ -63,7 +63,7 @@ public class EmailConfirmationService : IEmailConfirmationService
 
     public async Task<bool> IsEmailConfirmedAsync(User user, CancellationToken cancellationToken = default)
     {
-        return user.EmailConfirmed;
+        return user.IsEmailConfirmed;
     }
 }
 

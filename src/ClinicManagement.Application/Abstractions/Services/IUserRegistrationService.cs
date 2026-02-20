@@ -4,5 +4,5 @@ namespace ClinicManagement.Application.Abstractions.Services;
 
 public interface IUserRegistrationService
 {
-    Task<Guid> RegisterUserAsync(UserRegistrationRequest request, CancellationToken cancellationToken = default);
+    Task<int> RegisterUserAsync(UserRegistrationRequest request, CancellationToken cancellationToken = default);
 }

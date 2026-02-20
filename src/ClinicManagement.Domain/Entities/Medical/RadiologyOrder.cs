@@ -22,8 +22,6 @@ public class RadiologyOrder : BaseEntity
     public int? ReviewedByDoctorId { get; set; }
     public string? DoctorNotes { get; set; }
     public string? Notes { get; set; }
-    public MedicalVisit? MedicalVisit { get; set; }
-    public DoctorProfile? OrderedByDoctor { get; set; }
 }
 
 public enum RadiologyStatus

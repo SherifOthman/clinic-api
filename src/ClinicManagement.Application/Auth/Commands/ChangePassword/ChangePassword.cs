@@ -50,7 +50,6 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         }
 
         user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-        user.SecurityStamp = Guid.NewGuid().ToString();
         
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
 

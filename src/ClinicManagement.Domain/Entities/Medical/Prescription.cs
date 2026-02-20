@@ -6,6 +6,6 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Prescription : AuditableEntity
 {
+    public string PrescriptionNumber { get; set; } = null!;
     public int VisitId { get; set; }
-
 }

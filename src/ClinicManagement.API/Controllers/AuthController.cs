@@ -53,10 +53,16 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Login Failed");
+            return HandleResult(result, "Login Failed");
+
+        // Log for debugging
+        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
+        logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}", 
+            request.EmailOrUsername, isMobile, result.Value!.RefreshToken != null);
 
         if (!isMobile && result.Value!.RefreshToken != null)
         {
+            logger.LogInformation("Setting refresh token cookie for web client");
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
@@ -88,7 +94,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Registration Failed");
+            return HandleResult(result, "Registration Failed");
 
         return CreatedAtAction(
             nameof(GetMe),
@@ -126,14 +132,22 @@ public class AuthController : BaseApiController
             ? request?.RefreshToken
             : _cookieService.GetRefreshTokenFromCookie();
 
+        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
+        logger.LogInformation("RefreshToken called: isMobile={IsMobile}, HasRefreshToken={HasToken}", 
+            isMobile, !string.IsNullOrEmpty(refreshToken));
+
         if (string.IsNullOrEmpty(refreshToken))
+        {
+            logger.LogWarning("RefreshToken failed: No refresh token provided");
             return Unauthorized();
+        }
 
         var command = new RefreshTokenCommand(refreshToken, isMobile);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
         {
+            logger.LogWarning("RefreshToken failed: {Error}", result.ErrorMessage);
             if (!isMobile) _cookieService.ClearRefreshTokenCookie();
             return Unauthorized();
         }
@@ -141,6 +155,7 @@ public class AuthController : BaseApiController
         // For web clients, set new refresh token as HTTP-only cookie
         if (!isMobile && result.Value!.RefreshToken != null)
         {
+            logger.LogInformation("Setting new refresh token cookie");
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
@@ -163,7 +178,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Email Confirmation Failed");
+            return HandleResult(result, "Email Confirmation Failed");
 
         var message = result.Value!.AlreadyConfirmed
             ? "Email already confirmed"
@@ -200,7 +215,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Password Reset Failed");
+            return HandleResult(result, "Password Reset Failed");
 
         return Ok(new MessageResponse("Password reset successfully"));
     }
@@ -218,7 +233,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Password Change Failed");
+            return HandleResult(result, "Password Change Failed");
 
         return Ok(new MessageResponse("Password changed successfully"));
     }
@@ -288,7 +303,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Resend Failed");
+            return HandleResult(result, "Resend Failed");
 
         return Ok(new MessageResponse("Verification email sent"));
     }
@@ -306,7 +321,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Update Failed");
+            return HandleResult(result, "Update Failed");
 
         return NoContent();
     }
@@ -324,7 +339,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Upload Failed");
+            return HandleResult(result, "Upload Failed");
 
         return NoContent();
     }
@@ -342,7 +357,7 @@ public class AuthController : BaseApiController
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
-            return Error(result.ErrorCode!, result.ErrorMessage!, "Delete Failed");
+            return HandleResult(result, "Delete Failed");
 
         return NoContent();
     }

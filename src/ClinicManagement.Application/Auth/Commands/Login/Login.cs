@@ -54,7 +54,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
             return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
 
-        var emailNotConfirmed = !user.EmailConfirmed;
+        var emailNotConfirmed = !user.IsEmailConfirmed;
         if (emailNotConfirmed)
         {
             _logger.LogInformation("User {UserId} logged in with unconfirmed email", user.Id);
@@ -72,7 +72,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
 
         var response = new LoginResponseDto(
             AccessToken: accessToken,
-            RefreshToken: request.IsMobile ? refreshToken.Token : null,
+            RefreshToken: refreshToken.Token,
             EmailNotConfirmed: emailNotConfirmed
         );
 

@@ -5,6 +5,8 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Patient : TenantEntity
 {
+    public string PatientCode { get; set; } = null!;
+    public string FullName { get; set; } = null!;
     public bool IsMale { get; set; }
     public int? CityGeoNameId { get; set; }
     public DateTime DateOfBirth { get; set; }
@@ -19,4 +21,6 @@ public class Patient : TenantEntity
     public bool IsAdult => Age >= 18;
     public bool IsMinor => Age < 18;
     public bool IsSenior => Age >= 65;
+    public bool HasEmergencyContact => !string.IsNullOrWhiteSpace(EmergencyContactName);
+    public bool HasAllergies => !string.IsNullOrWhiteSpace(KnownAllergies);
 }

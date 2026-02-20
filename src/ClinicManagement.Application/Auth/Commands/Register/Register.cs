@@ -6,6 +6,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Exceptions;
+using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +18,7 @@ public record RegisterCommand(
     string UserName,
     string Email,
     string Password,
-    string? PhoneNumber
+    string PhoneNumber
 ) : IRequest<Result>;
 
 public class RegisterHandler : IRequestHandler<RegisterCommand, Result>

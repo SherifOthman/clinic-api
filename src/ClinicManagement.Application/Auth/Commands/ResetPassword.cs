@@ -79,9 +79,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
         // Hash new password
         var passwordHash = _passwordHasher.HashPassword(request.NewPassword);
 
-
         user.PasswordHash = passwordHash;
-        user.SecurityStamp = Guid.NewGuid().ToString();
 
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
 

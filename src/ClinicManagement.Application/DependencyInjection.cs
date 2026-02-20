@@ -1,5 +1,8 @@
 using ClinicManagement.Application.Behaviors;
+using ClinicManagement.Application.Common.Mappings;
 using FluentValidation;
+using Mapster;
+using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -22,6 +25,13 @@ public static class DependencyInjection
         
         // Register FluentValidation validators
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        
+        // Register Mapster
+        var config = TypeAdapterConfig.GlobalSettings;
+        config.Scan(Assembly.GetExecutingAssembly());
+        MappingConfig.RegisterMappings();
+        services.AddSingleton(config);
+        services.AddScoped<IMapper, ServiceMapper>();
         
         return services;
     }

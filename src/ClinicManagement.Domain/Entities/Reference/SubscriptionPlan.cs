@@ -9,9 +9,9 @@ namespace ClinicManagement.Domain.Entities;
 public class SubscriptionPlan : BaseEntity
 {
     public string Name { get; set; } = null!;
-    public string? NameAr { get; set; }
+    public string NameAr { get; set; } = null!;
     public string Description { get; set; } = null!;
-    public string? DescriptionAr { get; set; }
+    public string DescriptionAr { get; set; } = null!;
     
     // Pricing
     public decimal MonthlyFee { get; set; }

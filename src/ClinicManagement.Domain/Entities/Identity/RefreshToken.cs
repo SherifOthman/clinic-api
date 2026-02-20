@@ -19,4 +19,12 @@ public class RefreshToken : BaseEntity
     
     public bool IsExpired(DateTime currentTime) => currentTime >= ExpiryTime;
     public bool IsActive(DateTime currentTime) => !IsRevoked && !IsExpired(currentTime);
+
+    public void Revoke(string ipAddress, DateTime revokedAt, string? replacedByToken = null)
+    {
+        IsRevoked = true;
+        RevokedAt = revokedAt;
+        RevokedByIp = ipAddress;
+        ReplacedByToken = replacedByToken;
+    }
 }

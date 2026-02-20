@@ -55,7 +55,7 @@ public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerific
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        if (user.EmailConfirmed)
+        if (user.IsEmailConfirmed)
         {
             _logger.LogInformation("Resend email verification attempted for already confirmed email: {Email}", request.Email);
             return Result.Failure(ErrorCodes.EMAIL_ALREADY_CONFIRMED, "Email is already confirmed");

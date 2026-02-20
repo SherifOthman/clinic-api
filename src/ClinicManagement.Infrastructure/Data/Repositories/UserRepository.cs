@@ -69,11 +69,11 @@ public class UserRepository : IUserRepository
     {
         const string sql = @"
             INSERT INTO Users (
-                UserName, Email, PasswordHash, SecurityStamp,
-                FirstName, LastName, PhoneNumber, ProfileImageUrl, EmailConfirmed
+                UserName, Email, PasswordHash,
+                FirstName, LastName, PhoneNumber, ProfileImageUrl, IsEmailConfirmed
             ) VALUES (
-                @UserName, @Email, @PasswordHash, @SecurityStamp,
-                @FirstName, @LastName, @PhoneNumber, @ProfileImageUrl, @EmailConfirmed
+                @UserName, @Email, @PasswordHash,
+                @FirstName, @LastName, @PhoneNumber, @ProfileImageUrl, @IsEmailConfirmed
             );
             SELECT CAST(SCOPE_IDENTITY() as int)";
         
@@ -90,12 +90,11 @@ public class UserRepository : IUserRepository
                 UserName = @UserName,
                 Email = @Email,
                 PasswordHash = @PasswordHash,
-                SecurityStamp = @SecurityStamp,
                 FirstName = @FirstName,
                 LastName = @LastName,
                 PhoneNumber = @PhoneNumber,
                 ProfileImageUrl = @ProfileImageUrl,
-                EmailConfirmed = @EmailConfirmed
+                IsEmailConfirmed = @IsEmailConfirmed
             WHERE Id = @Id";
         
         await _connection.ExecuteAsync(
@@ -118,14 +117,16 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> HasCompletedClinicOnboardingAsync(int userId, CancellationToken cancellationToken = default)
     {
-        const string sql = @"
-            SELECT CAST(CASE WHEN EXISTS(
-                SELECT 1 FROM Clinics 
-                WHERE OwnerUserId = @UserId AND OnboardingCompleted = 1
-            ) THEN 1 ELSE 0 END AS BIT)";
-        
-        return await _connection.ExecuteScalarAsync<bool>(
-            new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
+
+            const string sql = @"
+                SELECT CAST(CASE WHEN EXISTS(
+                    SELECT 1 FROM Clinics 
+                    WHERE OwnerUserId = @UserId AND OnboardingCompleted = 1
+                ) THEN 1 ELSE 0 END AS BIT)";
+            
+            return await _connection.ExecuteScalarAsync<bool>(
+                new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
+     
     }
 
     public async Task<List<Role>> GetRolesAsync(CancellationToken cancellationToken = default)

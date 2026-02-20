@@ -15,9 +15,3 @@ public interface IUserRepository : IRepository<User>
     Task<List<string>> GetUserRolesAsync(int userId, CancellationToken cancellationToken = default);
     Task AddUserRoleAsync(int userId, int roleId, CancellationToken cancellationToken = default);
 }
-
-public class Role
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-}

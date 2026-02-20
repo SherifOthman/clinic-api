@@ -14,7 +14,7 @@ public record GetMeDto(
     string? PhoneNumber,
     string? ProfileImageUrl,
     List<string> Roles,
-    bool EmailConfirmed,
+    bool IsEmailConfirmed,
     bool OnboardingCompleted
 );
 
@@ -47,7 +47,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             user.PhoneNumber,
             user.ProfileImageUrl,
             roles.ToList(),
-            user.EmailConfirmed,
+            user.IsEmailConfirmed,
             hasClinic
         );
     }

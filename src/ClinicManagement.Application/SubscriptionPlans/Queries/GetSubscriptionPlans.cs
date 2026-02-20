@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace ClinicManagement.Application.SubscriptionPlans.Queries;
@@ -29,18 +30,6 @@ public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQ
     public async Task<List<SubscriptionPlanDto>> Handle(GetSubscriptionPlansQuery request, CancellationToken cancellationToken)
     {
         var plans = await _unitOfWork.SubscriptionPlans.GetActiveAsync(cancellationToken);
-
-        return plans.Select(sp => new SubscriptionPlanDto(
-            sp.Id,
-            sp.Name,
-            sp.Description,
-            sp.MonthlyFee,
-            sp.YearlyFee,
-            sp.MaxBranches,
-            sp.MaxStaff,
-            sp.HasInventoryManagement,
-            sp.HasReporting,
-            sp.IsActive
-        )).ToList();
+        return plans.Adapt<List<SubscriptionPlanDto>>();
     }
 }

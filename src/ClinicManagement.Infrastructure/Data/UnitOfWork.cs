@@ -8,11 +8,13 @@ namespace ClinicManagement.Infrastructure.Data;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly SqlConnection _connection;
+    private readonly IConfiguration _configuration;
     private SqlTransaction? _transaction;
     private bool _disposed;
 
     public UnitOfWork(IConfiguration configuration)
     {
+        _configuration = configuration;
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         _connection = new SqlConnection(connectionString);
         _connection.Open();
@@ -36,6 +38,24 @@ public class UnitOfWork : IUnitOfWork
         set => field = value;
     }
 
+    public IStaffInvitationRepository StaffInvitations
+    {
+        get => field ??= new StaffInvitationRepository(_connection, _transaction);
+        set => field = value;
+    }
+
+    public IStaffRepository Staff
+    {
+        get => field ??= new StaffRepository(_connection, _transaction);
+        set => field = value;
+    }
+
+    public ISpecializationRepository Specializations
+    {
+        get => field ??= new SpecializationRepository(_configuration);
+        set => field = value;
+    }
+
     public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _transaction = _connection.BeginTransaction();
@@ -43,6 +63,9 @@ public class UnitOfWork : IUnitOfWork
         Users = null!;
         RefreshTokens = null!;
         SubscriptionPlans = null!;
+        StaffInvitations = null!;
+        Staff = null!;
+        // Note: Specializations uses separate connection for caching, not affected by transaction
         
         return Task.CompletedTask;
     }

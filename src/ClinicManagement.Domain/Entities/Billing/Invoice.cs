@@ -5,6 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Invoice : TenantEntity
 {
+    public string InvoiceNumber { get; set; } = null!;
     public int PatientId { get; set; }
     public int? AppointmentId { get; set; }
     public int? MedicalVisitId { get; set; }
@@ -15,4 +16,10 @@ public class Invoice : TenantEntity
     public DateTime? IssuedDate { get; set; }
     public DateTime? DueDate { get; set; }
     public string? Notes { get; set; }
+
+    public decimal NetAmount => TotalAmount - Discount + TaxAmount;
+    public bool IsDraft => Status == InvoiceStatus.Draft;
+    public bool IsPaid => Status == InvoiceStatus.FullyPaid;
+    public bool IsCancelled => Status == InvoiceStatus.Cancelled;
+    public bool IsOverdue(DateTime currentDate) => DueDate.HasValue && currentDate > DueDate.Value && Status != InvoiceStatus.FullyPaid && Status != InvoiceStatus.Cancelled;
 }

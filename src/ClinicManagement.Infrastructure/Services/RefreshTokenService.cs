@@ -81,10 +81,11 @@ public class RefreshTokenService : IRefreshTokenService
 
         if (refreshToken != null)
         {
-            refreshToken.IsRevoked = true;
-            refreshToken.RevokedAt = _dateTimeProvider.UtcNow;
-            refreshToken.RevokedByIp = ipAddress ?? _currentUserService.IpAddress;
-            refreshToken.ReplacedByToken = replacedByToken;
+            refreshToken.Revoke(
+                ipAddress ?? _currentUserService.IpAddress,
+                _dateTimeProvider.UtcNow,
+                replacedByToken
+            );
 
             await _unitOfWork.RefreshTokens.UpdateAsync(refreshToken, cancellationToken);
 
@@ -102,9 +103,7 @@ public class RefreshTokenService : IRefreshTokenService
 
         foreach (var token in activeTokens)
         {
-            token.IsRevoked = true;
-            token.RevokedAt = now;
-            token.RevokedByIp = revokeIp;
+            token.Revoke(revokeIp, now);
             await _unitOfWork.RefreshTokens.UpdateAsync(token, cancellationToken);
         }
 

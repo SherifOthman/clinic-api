@@ -5,6 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Appointment : AuditableEntity
 {
+    public string AppointmentNumber { get; set; } = null!;
     public int ClinicBranchId { get; set; }
     public int PatientId { get; set; }
     public int DoctorId { get; set; }
