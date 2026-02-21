@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Specializations.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -13,7 +12,6 @@ public class SpecializationsController : BaseApiController
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
-    [OutputCache(PolicyName = "ReferenceData")]
     [ProducesResponseType(typeof(IEnumerable<SpecializationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
