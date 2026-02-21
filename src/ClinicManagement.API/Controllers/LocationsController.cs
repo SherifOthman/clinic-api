@@ -22,7 +22,6 @@ public class LocationsController : ControllerBase
     /// </summary>
     [HttpGet("countries")]
     [AllowAnonymous]
-    [OutputCache(PolicyName = "LocationData")]
     [ProducesResponseType(typeof(List<CountryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCountries(CancellationToken ct)
     {
@@ -45,7 +44,6 @@ public class LocationsController : ControllerBase
     /// </summary>
     [HttpGet("countries/{countryGeonameId:int}/states")]
     [AllowAnonymous]
-    [OutputCache(PolicyName = "LocationData")]
     [ProducesResponseType(typeof(List<StateDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStates([FromRoute] int countryGeonameId, CancellationToken ct)
     {
@@ -67,7 +65,6 @@ public class LocationsController : ControllerBase
     /// </summary>
     [HttpGet("states/{stateGeonameId:int}/cities")]
     [AllowAnonymous]
-    [OutputCache(PolicyName = "LocationData")]
     [ProducesResponseType(typeof(List<CityDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCities([FromRoute] int stateGeonameId, CancellationToken ct)
     {

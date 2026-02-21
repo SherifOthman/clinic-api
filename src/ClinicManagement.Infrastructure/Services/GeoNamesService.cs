@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ClinicManagement.Application.Common.Options;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -9,7 +10,7 @@ namespace ClinicManagement.Infrastructure.Services;
 /// GeoNames API proxy with bilingual support (Arabic + English)
 /// - Fetches location data in both languages
 /// - Merges by GeonameId
-/// - Caching handled by Output Cache at endpoint level
+/// - In-memory caching with 24-hour expiration
 /// - Frontend never calls GeoNames directly
 /// - Cities filtered by population (>= 5000) to exclude tiny villages
 /// </summary>
@@ -17,103 +18,128 @@ public partial class GeoNamesService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GeoNamesService> _logger;
+    private readonly IMemoryCache _cache;
     private readonly GeoNamesOptions _options;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
     public GeoNamesService(
         HttpClient httpClient,
         ILogger<GeoNamesService> logger,
+        IMemoryCache cache,
         IOptions<GeoNamesOptions> options)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _cache = cache;
         _options = options.Value;
     }
 
     public async Task<List<GeoNamesCountry>> GetCountriesAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Fetching countries from GeoNames API (bilingual)");
+        const string cacheKey = "countries";
 
-        try
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var countriesEn = await FetchCountriesInLanguageAsync("en", cancellationToken);
-            var countriesAr = await FetchCountriesInLanguageAsync("ar", cancellationToken);
-            var countries = MergeCountryData(countriesEn, countriesAr);
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            
+            _logger.LogInformation("Fetching countries from GeoNames API (bilingual) - cache miss");
 
-            _logger.LogInformation("Fetched {Count} countries (bilingual)", countries.Count);
+            try
+            {
+                var countriesEn = await FetchCountriesInLanguageAsync("en", cancellationToken);
+                var countriesAr = await FetchCountriesInLanguageAsync("ar", cancellationToken);
+                var countries = MergeCountryData(countriesEn, countriesAr);
 
-            return countries;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to fetch countries from GeoNames API");
-            throw;
-        }
+                _logger.LogInformation("Fetched {Count} countries (bilingual) - cached for 24 hours", countries.Count);
+
+                return countries;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch countries from GeoNames API");
+                throw;
+            }
+        }) ?? new List<GeoNamesCountry>();
     }
 
     public async Task<List<GeoNamesLocation>> GetStatesAsync(int countryGeonameId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Fetching states for country {CountryGeonameId} from GeoNames API (bilingual)", countryGeonameId);
+        var cacheKey = $"states_{countryGeonameId}";
 
-        try
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var statesEn = await FetchChildrenInLanguageAsync(countryGeonameId, "en", cancellationToken);
-            var statesAr = await FetchChildrenInLanguageAsync(countryGeonameId, "ar", cancellationToken);
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            
+            _logger.LogInformation("Fetching states for country {CountryGeonameId} from GeoNames API (bilingual) - cache miss", countryGeonameId);
 
-            var states = MergeLocationData(
-                statesEn.Where(s => s.Fcode.StartsWith("ADM1")).ToList(),
-                statesAr.Where(s => s.Fcode.StartsWith("ADM1")).ToList()
-            );
+            try
+            {
+                var statesEn = await FetchChildrenInLanguageAsync(countryGeonameId, "en", cancellationToken);
+                var statesAr = await FetchChildrenInLanguageAsync(countryGeonameId, "ar", cancellationToken);
 
-            _logger.LogInformation("Fetched {Count} states for country {CountryGeonameId} (bilingual)", 
-                states.Count, countryGeonameId);
+                var states = MergeLocationData(
+                    statesEn.Where(s => s.Fcode.StartsWith("ADM1")).ToList(),
+                    statesAr.Where(s => s.Fcode.StartsWith("ADM1")).ToList()
+                );
 
-            return states;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to fetch states for country {CountryGeonameId} from GeoNames API", countryGeonameId);
-            throw;
-        }
+                _logger.LogInformation("Fetched {Count} states for country {CountryGeonameId} (bilingual) - cached for 24 hours", 
+                    states.Count, countryGeonameId);
+
+                return states;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch states for country {CountryGeonameId} from GeoNames API", countryGeonameId);
+                throw;
+            }
+        }) ?? new List<GeoNamesLocation>();
     }
 
     public async Task<List<GeoNamesLocation>> GetCitiesAsync(int stateGeonameId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Fetching cities for state {StateGeonameId} from GeoNames API (bilingual)", stateGeonameId);
+        var cacheKey = $"cities_{stateGeonameId}";
 
-        try
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var stateInfoEn = await GetLocationInfoAsync(stateGeonameId, "en", cancellationToken);
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             
-            if (stateInfoEn == null)
+            _logger.LogInformation("Fetching cities for state {StateGeonameId} from GeoNames API (bilingual) - cache miss", stateGeonameId);
+
+            try
             {
-                _logger.LogWarning("State {StateGeonameId} not found", stateGeonameId);
-                return new List<GeoNamesLocation>();
+                var stateInfoEn = await GetLocationInfoAsync(stateGeonameId, "en", cancellationToken);
+                
+                if (stateInfoEn == null)
+                {
+                    _logger.LogWarning("State {StateGeonameId} not found", stateGeonameId);
+                    return new List<GeoNamesLocation>();
+                }
+
+                var citiesEn = await SearchCitiesInStateAsync(
+                    stateInfoEn.CountryCode, 
+                    stateInfoEn.AdminCode1, 
+                    "en", 
+                    cancellationToken);
+                
+                var citiesAr = await SearchCitiesInStateAsync(
+                    stateInfoEn.CountryCode, 
+                    stateInfoEn.AdminCode1, 
+                    "ar", 
+                    cancellationToken);
+
+                var cities = MergeLocationData(citiesEn, citiesAr);
+
+                _logger.LogInformation("Fetched {Count} cities for state {StateGeonameId} (bilingual) - cached for 24 hours", 
+                    cities.Count, stateGeonameId);
+
+                return cities;
             }
-
-            var citiesEn = await SearchCitiesInStateAsync(
-                stateInfoEn.CountryCode, 
-                stateInfoEn.AdminCode1, 
-                "en", 
-                cancellationToken);
-            
-            var citiesAr = await SearchCitiesInStateAsync(
-                stateInfoEn.CountryCode, 
-                stateInfoEn.AdminCode1, 
-                "ar", 
-                cancellationToken);
-
-            var cities = MergeLocationData(citiesEn, citiesAr);
-
-            _logger.LogInformation("Fetched {Count} cities for state {StateGeonameId} (bilingual)", 
-                cities.Count, stateGeonameId);
-
-            return cities;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to fetch cities for state {StateGeonameId} from GeoNames API", stateGeonameId);
-            throw;
-        }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch cities for state {StateGeonameId} from GeoNames API", stateGeonameId);
+                throw;
+            }
+        }) ?? new List<GeoNamesLocation>();
     }
 
     #region Private Helper Methods

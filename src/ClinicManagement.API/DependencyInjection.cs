@@ -4,6 +4,7 @@ using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Data;
 using ClinicManagement.API.Middleware;
+using ClinicManagement.API.OpenApi;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -35,12 +36,6 @@ public static class DependencyInjection
     private static void AddCaching(IServiceCollection services)
     {
         services.AddMemoryCache();
-        services.AddOutputCache(options =>
-        {
-            options.AddBasePolicy(builder => builder.NoCache());
-            options.AddPolicy("ReferenceData", builder => builder.Expire(TimeSpan.FromHours(1)));
-            options.AddPolicy("LocationData", builder => builder.Expire(TimeSpan.FromHours(24)));
-        });
     }
 
 
@@ -124,9 +119,11 @@ public static class DependencyInjection
     private static void AddSwagger(IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
+        
+        // Add OpenAPI with Bearer authentication transformer
+        services.AddOpenApi(options =>
         {
-            options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+            options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
         });
     }
 
@@ -135,17 +132,23 @@ public static class DependencyInjection
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseStaticFiles();
         app.UseCors("AllowAll");
-        app.UseOutputCache();
+        app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
 
-        app.UseSwagger(options =>
+        // Map OpenAPI document endpoint
+        app.MapOpenApi();
+        
+        // Map Scalar UI
+        app.MapScalarApiReference(options =>
         {
-            options.RouteTemplate = "openapi/{documentName}.json";
+            options
+                .WithTitle("Clinic Management API")
+                .WithTheme(ScalarTheme.DeepSpace)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+                .AddPreferredSecuritySchemes("Bearer");
         });
-
-        app.MapScalarApiReference();
 
         return app;
     }
