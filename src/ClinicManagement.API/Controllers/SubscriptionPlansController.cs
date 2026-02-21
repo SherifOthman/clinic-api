@@ -1,7 +1,6 @@
 using ClinicManagement.Application.SubscriptionPlans.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -13,7 +12,6 @@ public class SubscriptionPlansController : BaseApiController
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
-    [OutputCache(PolicyName = "ReferenceData")]
     [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
     {
