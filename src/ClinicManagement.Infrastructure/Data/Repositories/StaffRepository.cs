@@ -42,9 +42,9 @@ public class StaffRepository : IStaffRepository
 
     const string sql = @"
             INSERT INTO Staff (
-                UserId, ClinicId, IsActive, HireDate, CreatedAt
+                UserId, ClinicId, SpecializationId, IsActive, HireDate, CreatedAt
             ) VALUES (
-                @UserId, @ClinicId, @IsActive, @HireDate, @CreatedAt
+                @UserId, @ClinicId, @SpecializationId, @IsActive, @HireDate, @CreatedAt
             );
             SELECT CAST(SCOPE_IDENTITY() as int)";
         
@@ -60,6 +60,7 @@ public class StaffRepository : IStaffRepository
             UPDATE Staff SET
                 UserId = @UserId,
                 ClinicId = @ClinicId,
+                SpecializationId = @SpecializationId,
                 IsActive = @IsActive,
                 HireDate = @HireDate
             WHERE Id = @Id";

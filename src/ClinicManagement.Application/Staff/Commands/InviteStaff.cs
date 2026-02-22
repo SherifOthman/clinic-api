@@ -8,7 +8,7 @@ using MediatR;
 
 namespace ClinicManagement.Application.Staff.Commands;
 
-public record InviteStaffCommand(string Role, string Email) : IRequest<Result<InviteStaffResponse>>;
+public record InviteStaffCommand(string Role, string Email, int? SpecializationId = null) : IRequest<Result<InviteStaffResponse>>;
 
 public record InviteStaffResponse(int InvitationId, string Token, DateTime ExpiresAt);
 
@@ -39,6 +39,14 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
         if (request.Role != "Doctor" && request.Role != "Receptionist")
             return Result.Failure<InviteStaffResponse>(ErrorCodes.VALIDATION_ERROR, "Role must be either Doctor or Receptionist");
 
+        // Validate specialization for doctors
+        if (request.Role == "Doctor" && request.SpecializationId.HasValue)
+        {
+            var specialization = await _unitOfWork.Specializations.GetByIdAsync(request.SpecializationId.Value, cancellationToken);
+            if (specialization == null)
+                return Result.Failure<InviteStaffResponse>(ErrorCodes.NOT_FOUND, "Specialization not found");
+        }
+
         var token = Guid.NewGuid().ToString("N");
         var expiresAt = DateTime.UtcNow.AddDays(7);
 
@@ -47,6 +55,7 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             ClinicId = clinicId,
             Email = request.Email,
             Role = request.Role,
+            SpecializationId = request.SpecializationId,
             InvitationToken = token,
             ExpiresAt = expiresAt,
             IsAccepted = false,

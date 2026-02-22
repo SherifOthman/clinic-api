@@ -81,6 +81,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             {
                 UserId = user.Id,
                 ClinicId = invitation.ClinicId,
+                SpecializationId = invitation.SpecializationId,
                 IsActive = true,
                 HireDate = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow

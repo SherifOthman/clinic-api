@@ -55,10 +55,10 @@ public class StaffInvitationRepository : IStaffInvitationRepository
     {
         const string sql = @"
             INSERT INTO StaffInvitation (
-                ClinicId, Email, Role, InvitationToken, ExpiresAt, 
+                ClinicId, Email, Role, SpecializationId, InvitationToken, ExpiresAt, 
                 IsAccepted, AcceptedAt, AcceptedByUserId, CreatedByUserId, CreatedAt, IsDeleted
             ) VALUES (
-                @ClinicId, @Email, @Role, @InvitationToken, @ExpiresAt,
+                @ClinicId, @Email, @Role, @SpecializationId, @InvitationToken, @ExpiresAt,
                 @IsAccepted, @AcceptedAt, @AcceptedByUserId, @CreatedByUserId, @CreatedAt, @IsDeleted
             );
             SELECT CAST(SCOPE_IDENTITY() as int)";
@@ -75,6 +75,7 @@ public class StaffInvitationRepository : IStaffInvitationRepository
             UPDATE StaffInvitation SET
                 Email = @Email,
                 Role = @Role,
+                SpecializationId = @SpecializationId,
                 InvitationToken = @InvitationToken,
                 ExpiresAt = @ExpiresAt,
                 IsAccepted = @IsAccepted,

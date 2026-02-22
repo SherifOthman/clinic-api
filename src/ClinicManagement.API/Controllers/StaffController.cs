@@ -20,7 +20,7 @@ public class StaffController : BaseApiController
     [HttpPost("invite")]
     public async Task<IActionResult> InviteStaff([FromBody] InviteStaffRequest request, CancellationToken cancellationToken)
     {
-        var command = new InviteStaffCommand(request.Role, request.Email);
+        var command = new InviteStaffCommand(request.Role, request.Email, request.SpecializationId);
         var result = await _mediator.Send(command, cancellationToken);
         
         if (!result.IsSuccess)
@@ -82,7 +82,7 @@ public class StaffController : BaseApiController
     }
 }
 
-public record InviteStaffRequest(string Role, string Email);
+public record InviteStaffRequest(string Role, string Email, int? SpecializationId = null);
 public record AcceptInvitationWithRegistrationRequest(
     string FirstName,
     string LastName,

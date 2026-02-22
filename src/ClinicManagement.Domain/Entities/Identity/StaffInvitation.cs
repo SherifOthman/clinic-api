@@ -6,6 +6,7 @@ public class StaffInvitation : TenantEntity
 {
     public string Email { get; set; } = null!;
     public string Role { get; set; } = null!;
+    public int? SpecializationId { get; set; }
     public string InvitationToken { get; set; } = null!;
     public DateTime ExpiresAt { get; set; }
     public bool IsAccepted { get; set; }
