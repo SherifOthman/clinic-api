@@ -21,8 +21,8 @@ public class CancelInvitationHandler : IRequestHandler<CancelInvitationCommand, 
 
     public async Task<Result> Handle(CancelInvitationCommand request, CancellationToken cancellationToken)
     {
-        // Policy "RequireClinic" ensures user is authenticated and has clinicId claim
-        var clinicId = _currentUserService.ClinicId!.Value;
+        // Policy "RequireClinic" ensures these values exist, but we use GetRequired* for safety
+        var clinicId = _currentUserService.GetRequiredClinicId();
 
         // Get the invitation
         var invitation = await _unitOfWork.StaffInvitations.GetByIdAsync(request.InvitationId, cancellationToken);

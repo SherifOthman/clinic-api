@@ -31,7 +31,7 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, IEnumerabl
     public async Task<IEnumerable<StaffDto>> Handle(GetStaffListQuery request, CancellationToken cancellationToken)
     {
         // Policy "RequireClinic" ensures user is authenticated and has clinicId claim
-        var clinicId = _currentUserService.ClinicId!.Value;
+        var clinicId = _currentUserService.GetRequiredClinicId();
 
         var staffList = await _unitOfWork.Staff.GetByClinicIdAsync(clinicId, cancellationToken);
 

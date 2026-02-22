@@ -29,8 +29,8 @@ public class GetPendingInvitationsHandler : IRequestHandler<GetPendingInvitation
 
     public async Task<IEnumerable<PendingInvitationDto>> Handle(GetPendingInvitationsQuery request, CancellationToken cancellationToken)
     {
-        // Policy "RequireClinic" ensures user is authenticated and has clinicId claim
-        var clinicId = _currentUserService.ClinicId!.Value;
+        // Policy "RequireClinic" ensures these values exist, but we use GetRequired* for safety
+        var clinicId = _currentUserService.GetRequiredClinicId();
 
         var invitations = await _unitOfWork.StaffInvitations.GetPendingByClinicIdAsync(clinicId, cancellationToken);
 

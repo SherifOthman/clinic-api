@@ -32,9 +32,9 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
     public async Task<Result<InviteStaffResponse>> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
     {
-        // Policy "RequireClinic" ensures user is authenticated and has clinicId claim
-        var currentUserId = _currentUserService.UserId!.Value;
-        var clinicId = _currentUserService.ClinicId!.Value;
+        // Policy "RequireClinic" ensures these values exist, but we use GetRequired* for safety
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var clinicId = _currentUserService.GetRequiredClinicId();
 
         if (request.Role != "Doctor" && request.Role != "Receptionist")
             return Result.Failure<InviteStaffResponse>(ErrorCodes.VALIDATION_ERROR, "Role must be either Doctor or Receptionist");
