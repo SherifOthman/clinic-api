@@ -1,32 +1,12 @@
-using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Exceptions;
 using ClinicManagement.Domain.Repositories;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ResendEmailVerification;
-
-public record ResendEmailVerificationCommand(
-    string Email
-) : IRequest<Result>;
-
-public class ResendEmailVerificationValidator : AbstractValidator<ResendEmailVerificationCommand>
-{
-    public ResendEmailVerificationValidator()
-    {
-        RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("Email is required")
-            .EmailAddress()
-            .WithMessage("Invalid email format");
-    }
-}
 
 public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerificationCommand, Result>
 {
@@ -75,4 +55,3 @@ public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerific
         }
     }
 }
-

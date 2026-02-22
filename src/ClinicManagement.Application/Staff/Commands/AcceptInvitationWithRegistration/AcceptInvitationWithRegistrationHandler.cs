@@ -6,15 +6,6 @@ using MediatR;
 
 namespace ClinicManagement.Application.Staff.Commands;
 
-public record AcceptInvitationWithRegistrationCommand(
-    string Token,
-    string FirstName,
-    string LastName,
-    string UserName,
-    string Password,
-    string PhoneNumber
-) : IRequest<Result>;
-
 public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInvitationWithRegistrationCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;

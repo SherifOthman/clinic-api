@@ -1,43 +1,11 @@
 using ClinicManagement.Application.Abstractions.Authentication;
-using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Repositories;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ResetPassword;
-
-public record ResetPasswordCommand(
-    string Email,
-    string Token,
-    string NewPassword
-) : IRequest<Result>;
-
-public class ResetPasswordValidator : AbstractValidator<ResetPasswordCommand>
-{
-    public ResetPasswordValidator()
-    {
-        RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("Email is required")
-            .EmailAddress()
-            .WithMessage("Invalid email format");
-
-        RuleFor(x => x.Token)
-            .NotEmpty()
-            .WithMessage("Token is required");
-
-        RuleFor(x => x.NewPassword)
-            .NotEmpty()
-            .WithMessage("New password is required")
-            .MinimumLength(6)
-            .WithMessage("Password must be at least 6 characters");
-    }
-}
 
 public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result>
 {
@@ -88,4 +56,3 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
         return Result.Success();
     }
 }
-

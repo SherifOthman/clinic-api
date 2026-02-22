@@ -1,32 +1,13 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Repositories;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Application.Auth.Commands.ForgotPassword;
-
-public record ForgotPasswordCommand(
-    string Email
-) : IRequest<Result>;
-
-public class ForgotPasswordValidator : AbstractValidator<ForgotPasswordCommand>
-{
-    public ForgotPasswordValidator()
-    {
-        RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("Email is required")
-            .EmailAddress()
-            .WithMessage("Invalid email format");
-    }
-}
 
 public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Result>
 {
@@ -89,4 +70,3 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         return Result.Success();
     }
 }
-
