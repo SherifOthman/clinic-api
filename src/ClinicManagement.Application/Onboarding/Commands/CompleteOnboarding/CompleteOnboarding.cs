@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Repositories;
 using MediatR;
@@ -37,21 +38,21 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         var existingClinic = await _unitOfWork.Clinics.GetByOwnerUserIdAsync(userId, cancellationToken);
         if (existingClinic != null)
         {
-            return Result.Failure("Onboarding.AlreadyCompleted", "User has already completed onboarding");
+            return Result.Failure(ErrorCodes.ALREADY_ONBOARDED, "User has already completed onboarding");
         }
 
        var userRoles =  await _unitOfWork.Users.GetUserRolesAsync(userId);
 
         if (!userRoles.Contains(UserRoles.ClinicOwner))
         {
-            return Result.Failure("User.NotClinicOwner", "user must be clinic owner");
+            return Result.Failure(ErrorCodes.FORBIDDEN, "User must be clinic owner");
         }
 
         // Verify subscription plan exists
         var subscriptionPlan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(request.SubscriptionPlanId, cancellationToken);
         if (subscriptionPlan == null)
         {
-            return Result.Failure("SubscriptionPlan.NotFound", "The selected subscription plan does not exist");
+            return Result.Failure(ErrorCodes.PLAN_NOT_FOUND, "The selected subscription plan does not exist");
         }
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);

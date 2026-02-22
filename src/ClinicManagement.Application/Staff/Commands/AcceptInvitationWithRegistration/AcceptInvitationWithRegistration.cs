@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Repositories;
 using MediatR;
@@ -33,13 +34,13 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var invitation = await _unitOfWork.StaffInvitations.GetByTokenAsync(request.Token, cancellationToken);
 
         if (invitation == null)
-            return Result.Failure("InvitationNotFound", "Invitation not found");
+            return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
         if (invitation.IsAccepted)
-            return Result.Failure("InvitationAlreadyAccepted", "Invitation already accepted");
+            return Result.Failure(ErrorCodes.INVITATION_ALREADY_ACCEPTED, "Invitation already accepted");
 
         if (invitation.ExpiresAt < DateTime.UtcNow)
-            return Result.Failure("InvitationExpired", "Invitation has expired");
+            return Result.Failure(ErrorCodes.INVITATION_EXPIRED, "Invitation has expired");
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
