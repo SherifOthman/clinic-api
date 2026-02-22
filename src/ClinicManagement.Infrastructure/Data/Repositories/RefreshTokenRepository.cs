@@ -30,13 +30,6 @@ public class RefreshTokenRepository : IRefreshTokenRepository
             new CommandDefinition(sql, new { Token = token }, _transaction, cancellationToken: cancellationToken));
     }
 
-    public async Task<IEnumerable<RefreshToken>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
-    {
-        const string sql = "SELECT * FROM RefreshTokens WHERE UserId = @UserId";
-        return await _connection.QueryAsync<RefreshToken>(
-            new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
-    }
-
     public async Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         const string sql = @"

@@ -44,22 +44,6 @@ public class StaffInvitationRepository : IStaffInvitationRepository
             new CommandDefinition(sql, new { ClinicId = clinicId }, _transaction, cancellationToken: cancellationToken));
     }
 
-    public async Task<bool> HasPendingInvitationAsync(int clinicId, string role, CancellationToken cancellationToken = default)
-    {
-        const string sql = @"
-            SELECT CAST(CASE WHEN EXISTS(
-                SELECT 1 FROM StaffInvitation 
-                WHERE ClinicId = @ClinicId 
-                AND Role = @Role 
-                AND IsAccepted = 0 
-                AND ExpiresAt > GETUTCDATE()
-                AND IsDeleted = 0
-            ) THEN 1 ELSE 0 END AS BIT)";
-        
-        return await _connection.ExecuteScalarAsync<bool>(
-            new CommandDefinition(sql, new { ClinicId = clinicId, Role = role }, _transaction, cancellationToken: cancellationToken));
-    }
-
     public async Task<IEnumerable<StaffInvitation>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = "SELECT * FROM StaffInvitation WHERE IsDeleted = 0";

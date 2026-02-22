@@ -23,13 +23,6 @@ public class ClinicBranchRepository : IClinicBranchRepository
             new CommandDefinition(sql, new { Id = id }, _transaction, cancellationToken: cancellationToken));
     }
 
-    public async Task<IEnumerable<ClinicBranch>> GetByClinicIdAsync(int clinicId, CancellationToken cancellationToken = default)
-    {
-        const string sql = "SELECT * FROM ClinicBranches WHERE ClinicId = @ClinicId";
-        return await _connection.QueryAsync<ClinicBranch>(
-            new CommandDefinition(sql, new { ClinicId = clinicId }, _transaction, cancellationToken: cancellationToken));
-    }
-
     public async Task<IEnumerable<ClinicBranch>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = "SELECT * FROM ClinicBranches";

@@ -23,23 +23,9 @@ public class StaffRepository : IStaffRepository
             new CommandDefinition(sql, new { Id = id }, _transaction, cancellationToken: cancellationToken));
     }
 
-    public async Task<Staff?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
-    {
-        const string sql = "SELECT * FROM Staff WHERE UserId = @UserId AND IsDeleted = 0";
-        return await _connection.QueryFirstOrDefaultAsync<Staff>(
-            new CommandDefinition(sql, new { UserId = userId }, _transaction, cancellationToken: cancellationToken));
-    }
-
     public async Task<IEnumerable<Staff>> GetByClinicIdAsync(int clinicId, CancellationToken cancellationToken = default)
     {
         const string sql = "SELECT * FROM Staff WHERE ClinicId = @ClinicId AND IsDeleted = 0 ORDER BY HireDate DESC";
-        return await _connection.QueryAsync<Staff>(
-            new CommandDefinition(sql, new { ClinicId = clinicId }, _transaction, cancellationToken: cancellationToken));
-    }
-
-    public async Task<IEnumerable<Staff>> GetActiveByClinicIdAsync(int clinicId, CancellationToken cancellationToken = default)
-    {
-        const string sql = "SELECT * FROM Staff WHERE ClinicId = @ClinicId AND IsActive = 1 AND IsDeleted = 0 ORDER BY HireDate DESC";
         return await _connection.QueryAsync<Staff>(
             new CommandDefinition(sql, new { ClinicId = clinicId }, _transaction, cancellationToken: cancellationToken));
     }
