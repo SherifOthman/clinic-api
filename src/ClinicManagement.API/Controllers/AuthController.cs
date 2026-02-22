@@ -92,7 +92,8 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMe(CancellationToken ct)
     {
-        var query = new GetMeQuery(_currentUser.UserId!.Value);
+        var userId = _currentUser.GetRequiredUserId();
+        var query = new GetMeQuery(userId);
         var result = await Sender.Send(query, ct);
         return Ok(result);
     }
