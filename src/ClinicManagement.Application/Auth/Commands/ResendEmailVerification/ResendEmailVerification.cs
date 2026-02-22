@@ -8,6 +8,10 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ResendEmailVerification;
 
+public record ResendEmailVerificationCommand(
+    string Email
+) : IRequest<Result>;
+
 public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerificationCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;

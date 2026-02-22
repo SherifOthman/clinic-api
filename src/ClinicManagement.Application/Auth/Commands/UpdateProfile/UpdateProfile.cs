@@ -7,6 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.UpdateProfile;
 
+public record UpdateProfileCommand(
+    string FirstName,
+    string LastName,
+    string? PhoneNumber
+) : IRequest<Result>;
+
 public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;

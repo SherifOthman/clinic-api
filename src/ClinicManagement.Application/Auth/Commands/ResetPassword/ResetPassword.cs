@@ -7,6 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ResetPassword;
 
+public record ResetPasswordCommand(
+    string Email,
+    string Token,
+    string NewPassword
+) : IRequest<Result>;
+
 public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;

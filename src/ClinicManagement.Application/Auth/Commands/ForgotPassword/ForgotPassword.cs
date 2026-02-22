@@ -9,6 +9,10 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Application.Auth.Commands.ForgotPassword;
 
+public record ForgotPasswordCommand(
+    string Email
+) : IRequest<Result>;
+
 public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
