@@ -64,9 +64,7 @@ public class AuthController : BaseApiController
 
         return Ok(new LoginResponseDto(
             result.Value!.AccessToken,
-            isMobile ? result.Value.RefreshToken : null,
-            result.Value.EmailNotConfirmed
-        ));
+            isMobile ? result.Value.RefreshToken : null));
     }
 
     /// <summary>

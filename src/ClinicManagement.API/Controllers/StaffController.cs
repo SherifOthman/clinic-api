@@ -33,30 +33,6 @@ public class StaffController : BaseApiController
         return Ok(result);
     }
 
-    [HttpGet("invitations/{token}")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetInvitationByToken(string token, CancellationToken cancellationToken)
-    {
-        var query = new GetInvitationByTokenQuery(token);
-        var result = await _mediator.Send(query, cancellationToken);
-        
-        if (result == null)
-            return NotFound(new { message = "Invitation not found" });
-        
-        return Ok(result);
-    }
-
-    [HttpPost("invitations/{token}/accept")]
-    public async Task<IActionResult> AcceptInvitation(string token, [FromBody] AcceptInvitationRequest request, CancellationToken cancellationToken)
-    {
-        var command = new AcceptInvitationCommand(token, request.UserId);
-        var result = await _mediator.Send(command, cancellationToken);
-        
-        if (!result.Success)
-            return BadRequest(new { message = result.Message });
-        
-        return Ok(result);
-    }
 
     [HttpPost("invitations/{token}/accept-with-registration")]
     [AllowAnonymous]
@@ -70,22 +46,26 @@ public class StaffController : BaseApiController
             request.FirstName,
             request.LastName,
             request.UserName,
-            request.Email,
             request.Password,
             request.PhoneNumber
         );
         var result = await _mediator.Send(command, cancellationToken);
         
-        if (!result.Success)
-            return BadRequest(new { message = result.Message });
+        if (!result.IsSuccess)
+            return HandleResult(result,"Invitaiton Filed");
         
-        return Ok(result);
+        return NoContent();
     }
 
     [HttpDelete("invitations/{id}")]
     public async Task<IActionResult> CancelInvitation(int id, CancellationToken cancellationToken)
     {
-        // TODO: Implement cancel invitation command
+        var command = new CancelInvitationCommand(id);
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
+            return HandleResult(result, "Failed to cancel invitation");
+        
         return NoContent();
     }
 
@@ -99,12 +79,10 @@ public class StaffController : BaseApiController
 }
 
 public record InviteStaffRequest(string Role, string Email);
-public record AcceptInvitationRequest(int UserId);
 public record AcceptInvitationWithRegistrationRequest(
     string FirstName,
     string LastName,
     string UserName,
-    string Email,
     string Password,
     string PhoneNumber
 );

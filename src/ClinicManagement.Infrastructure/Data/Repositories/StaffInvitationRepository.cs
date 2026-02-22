@@ -109,4 +109,12 @@ public class StaffInvitationRepository : IStaffInvitationRepository
         await _connection.ExecuteAsync(
             new CommandDefinition(sql, new { Id = id }, _transaction, cancellationToken: cancellationToken));
     }
+
+    public async Task CancelInvitationAsync(int id, CancellationToken cancellationToken = default)
+    {
+        const string sql = "UPDATE StaffInvitation SET IsCanceled = 1 WHERE Id = @Id";
+
+        await _connection.ExecuteAsync(
+            new CommandDefinition(sql, new { Id = id }, _transaction, cancellationToken: cancellationToken));
+    }
 }

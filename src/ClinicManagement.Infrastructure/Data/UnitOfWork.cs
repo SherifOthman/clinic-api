@@ -56,6 +56,18 @@ public class UnitOfWork : IUnitOfWork
         set => field = value;
     }
 
+    public IClinicRepository Clinics
+    {
+        get => field ??= new ClinicRepository(_connection, _transaction);
+        set => field = value;
+    }
+
+    public IClinicBranchRepository ClinicBranches
+    {
+        get => field ??= new ClinicBranchRepository(_connection, _transaction);
+        set => field = value;
+    }
+
     public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         _transaction = _connection.BeginTransaction();
@@ -65,6 +77,8 @@ public class UnitOfWork : IUnitOfWork
         SubscriptionPlans = null!;
         StaffInvitations = null!;
         Staff = null!;
+        Clinics = null!;
+        ClinicBranches = null!;
         // Note: Specializations uses separate connection for caching, not affected by transaction
         
         return Task.CompletedTask;

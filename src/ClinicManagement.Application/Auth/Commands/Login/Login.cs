@@ -18,8 +18,7 @@ public record LoginCommand(
 
 public record LoginResponseDto(
     string AccessToken,
-    string? RefreshToken,
-    bool EmailNotConfirmed = false
+    string? RefreshToken
 );
 
 public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
@@ -61,8 +60,19 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
         }
 
         var roles = await _unitOfWork.Users.GetUserRolesAsync(user.Id, cancellationToken);
-        var staff = await _unitOfWork.Users.GetStaffByUserIdAsync(user.Id, cancellationToken);
-        var clinicId = staff?.ClinicId;
+        
+        // Get ClinicId - check if user is a clinic owner first, then check if they're staff
+        int? clinicId = null;
+        if (roles.Contains(Roles.ClinicOwner))
+        {
+            var clinic = await _unitOfWork.Clinics.GetByOwnerUserIdAsync(user.Id, cancellationToken);
+            clinicId = clinic?.Id;
+        }
+        else
+        {
+            var staff = await _unitOfWork.Users.GetStaffByUserIdAsync(user.Id, cancellationToken);
+            clinicId = staff?.ClinicId;
+        }
 
         var accessToken = _tokenService.GenerateAccessToken(user, roles, clinicId);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
@@ -72,8 +82,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
 
         var response = new LoginResponseDto(
             AccessToken: accessToken,
-            RefreshToken: refreshToken.Token,
-            EmailNotConfirmed: emailNotConfirmed
+            RefreshToken: refreshToken.Token
         );
 
         return Result.Success(response);

@@ -27,7 +27,9 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
 
         RuleFor(x => x.Password)
             .NotEmpty()
-            .MinimumLength(6);
+            .MinimumLength(6)
+            .Matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$")
+            .WithMessage("Password must contain at least one uppercase letter, one lowercase letter, and one number.");
 
         RuleFor(x => x.PhoneNumber)
             .NotEmpty()

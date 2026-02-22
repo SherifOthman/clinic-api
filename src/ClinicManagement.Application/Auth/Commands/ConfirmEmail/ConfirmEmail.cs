@@ -1,7 +1,4 @@
-using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Exceptions;
@@ -14,11 +11,10 @@ namespace ClinicManagement.Application.Auth.Commands.ConfirmEmail;
 public record ConfirmEmailCommand(
     string Email,
     string Token
-) : IRequest<Result<ConfirmEmailResponseDto>>;
+) : IRequest<Result>;
 
-public record ConfirmEmailResponseDto(bool AlreadyConfirmed);
 
-public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result<ConfirmEmailResponseDto>>
+public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailConfirmationService _emailConfirmationService;
@@ -34,19 +30,19 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result<C
         _logger = logger;
     }
 
-    public async Task<Result<ConfirmEmailResponseDto>> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
         if (user == null)
         {
             _logger.LogWarning("Email confirmation attempted for non-existent user: {Email}", request.Email);
-            return Result.Failure<ConfirmEmailResponseDto>(ErrorCodes.USER_NOT_FOUND, "User not found");
+            return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
         if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
         {
             _logger.LogInformation("Email already confirmed for user: {UserId}", user.Id);
-            return Result.Success(new ConfirmEmailResponseDto(AlreadyConfirmed: true));
+            return Result.Failure(ErrorCodes.EMAIL_ALREADY_CONFIRMED, "Email is arelady confirmed");
         }
 
         try
@@ -54,19 +50,19 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result<C
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _emailConfirmationService.ConfirmEmailAsync(user, request.Token, cancellationToken);
             _logger.LogInformation("Email confirmed successfully for user: {UserId}", user.Id);
-            return Result.Success(new ConfirmEmailResponseDto(AlreadyConfirmed: false));
+            return Result.Success();
         }
         catch (DomainException ex)
         {
             _logger.LogWarning("Email confirmation failed for user {UserId}: {ErrorCode}", user.Id, ex.ErrorCode);
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result.Failure<ConfirmEmailResponseDto>(ex.ErrorCode, ex.Message);
+            return Result.Failure(ex.ErrorCode, ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("Email confirmation failed for user {UserId}: {Message}", user.Id, ex.Message);
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result.Failure<ConfirmEmailResponseDto>(ErrorCodes.TOKEN_INVALID, ex.Message);
+            return Result.Failure(ErrorCodes.TOKEN_INVALID, ex.Message);
         }
     }
 }

@@ -1,3 +1,5 @@
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Repositories;
 using MediatR;
 
@@ -11,7 +13,7 @@ public record GetMeDto(
     string FirstName,
     string LastName,
     string Email,
-    string? PhoneNumber,
+    string PhoneNumber,
     string? ProfileImageUrl,
     List<string> Roles,
     bool EmailConfirmed,
@@ -21,10 +23,12 @@ public record GetMeDto(
 public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenService _tokenService;
 
-    public GetMeHandler(IUnitOfWork unitOfWork)
+    public GetMeHandler(IUnitOfWork unitOfWork, ITokenService tokenService)
     {
         _unitOfWork = unitOfWork;
+        _tokenService = tokenService;
     }
 
     public async Task<GetMeDto?> Handle(GetMeQuery request, CancellationToken cancellationToken)
@@ -37,6 +41,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 
         // Check if user has completed onboarding by checking if they own a clinic
         var hasClinic = await _unitOfWork.Users.HasCompletedClinicOnboardingAsync(user.Id, cancellationToken);
+
 
         return new GetMeDto(
             user.Id,

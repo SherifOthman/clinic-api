@@ -8,6 +8,8 @@ public interface IUnitOfWork : IDisposable
     IStaffInvitationRepository StaffInvitations { get; }
     IStaffRepository Staff { get; }
     ISpecializationRepository Specializations { get; }
+    IClinicRepository Clinics { get; }
+    IClinicBranchRepository ClinicBranches { get; }
     
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

@@ -2,19 +2,21 @@ using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
+using ClinicManagement.Application.Common.Options;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 public class EmailService : IEmailService
 {
     private readonly SmtpEmailSender _smtpEmailSender;
-    private readonly IConfiguration _configuration;
+    private readonly SmtpOptions _smtpOptions;
 
-    public EmailService(SmtpEmailSender smtpEmailSender, IConfiguration configuration)
+    public EmailService(SmtpEmailSender smtpEmailSender, IOptions<SmtpOptions> options)
     {
         _smtpEmailSender = smtpEmailSender;
-        _configuration = configuration;
+        _smtpOptions = options.Value;
     }
 
     public async Task SendPasswordResetEmailAsync(
@@ -39,10 +41,8 @@ public class EmailService : IEmailService
         string invitationLink,
         CancellationToken cancellationToken = default)
     {
-        var frontendUrl = _configuration["Email:FrontendUrl"] ?? "http://localhost:3000";
-        var fullInvitationLink = invitationLink.StartsWith("http") 
-            ? invitationLink 
-            : $"{frontendUrl}{invitationLink}";
+        var frontendUrl = _smtpOptions.FrontendUrl ?? "http://localhost:3000";
+        var fullInvitationLink = $"{frontendUrl}{invitationLink}";
             
         var emailBody = EmailTemplates.GetStaffInvitationTemplate(clinicName, role, invitedBy, fullInvitationLink);
         await _smtpEmailSender.SendEmailAsync(

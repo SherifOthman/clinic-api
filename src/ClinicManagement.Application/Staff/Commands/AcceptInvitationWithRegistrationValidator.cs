@@ -23,11 +23,6 @@ public class AcceptInvitationWithRegistrationValidator : AbstractValidator<Accep
             .MinimumLength(3)
             .MaximumLength(50);
 
-        RuleFor(x => x.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(256);
-
         RuleFor(x => x.Password)
             .NotEmpty()
             .MinimumLength(6);

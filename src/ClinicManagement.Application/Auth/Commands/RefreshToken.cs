@@ -70,9 +70,20 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<R
                 return Result.Failure<RefreshTokenResponseDto>(ErrorCodes.USER_NOT_FOUND, "User not found");
             }
 
-            var roles = await _unitOfWork.Users.GetUserRolesAsync(userId, cancellationToken);
-            var staff = await _unitOfWork.Users.GetStaffByUserIdAsync(userId, cancellationToken);
-            var clinicId = staff?.ClinicId;
+            var roles = await _unitOfWork.Users.GetUserRolesAsync(user.Id, cancellationToken);
+
+            // Get ClinicId - check if user is a clinic owner first, then check if they're staff
+            int? clinicId = null;
+            if (roles.Contains(Roles.ClinicOwner))
+            {
+                var clinic = await _unitOfWork.Clinics.GetByOwnerUserIdAsync(user.Id, cancellationToken);
+                clinicId = clinic?.Id;
+            }
+            else
+            {
+                var staff = await _unitOfWork.Users.GetStaffByUserIdAsync(user.Id, cancellationToken);
+                clinicId = staff?.ClinicId;
+            }
 
             // Generate new tokens
             var newAccessToken = _tokenService.GenerateAccessToken(user, roles, clinicId);

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Repositories;
 using MediatR;
@@ -10,12 +11,11 @@ public record AcceptInvitationWithRegistrationCommand(
     string FirstName,
     string LastName,
     string UserName,
-    string Email,
     string Password,
     string PhoneNumber
-) : IRequest<AcceptInvitationResponse>;
+) : IRequest<Result>;
 
-public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInvitationWithRegistrationCommand, AcceptInvitationResponse>
+public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInvitationWithRegistrationCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
@@ -28,18 +28,18 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         _passwordHasher = passwordHasher;
     }
 
-    public async Task<AcceptInvitationResponse> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
     {
         var invitation = await _unitOfWork.StaffInvitations.GetByTokenAsync(request.Token, cancellationToken);
 
         if (invitation == null)
-            return new AcceptInvitationResponse(false, "Invitation not found");
+            return Result.Failure("InvitationNotFound", "Invitation not found");
 
         if (invitation.IsAccepted)
-            return new AcceptInvitationResponse(false, "Invitation already accepted");
+            return Result.Failure("InvitationAlreadyAccepted", "Invitation already accepted");
 
         if (invitation.ExpiresAt < DateTime.UtcNow)
-            return new AcceptInvitationResponse(false, "Invitation has expired");
+            return Result.Failure("InvitationExpired", "Invitation has expired");
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -51,7 +51,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 UserName = request.UserName,
-                Email = request.Email,
+                Email = invitation.Email, // Use email from invitation to ensure it matches
                 PhoneNumber = request.PhoneNumber,
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
                 IsEmailConfirmed = true
@@ -89,7 +89,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            return new AcceptInvitationResponse(true, "Invitation accepted successfully", staff.Id);
+            return Result.Success();
         }
         catch
         {

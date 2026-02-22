@@ -15,11 +15,13 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, InviteStaf
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
+    
 
     public InviteStaffHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IEmailService emailService)
+        IEmailService emailService
+        )
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
@@ -59,25 +61,21 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, InviteStaf
         var inviter = await _unitOfWork.Users.GetByIdAsync(currentUserId.Value, cancellationToken);
         var invitedBy = inviter?.FullName ?? "Clinic Administrator";
         
+        var clinic = await _unitOfWork.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
+        var clinicName = clinic?.Name ?? "Clinic";
+
         // Build invitation link - will be constructed in EmailService with FrontendUrl from config
         var invitationLink = $"/accept-invitation/{token}";
 
-        // Send invitation email
-        try
-        {
+ 
             await _emailService.SendStaffInvitationEmailAsync(
                 request.Email,
-                "Clinic", // TODO: Get actual clinic name
+                clinicName,
                 request.Role,
                 invitedBy,
                 invitationLink,
                 cancellationToken);
-        }
-        catch
-        {
-            // Log error but don't fail the invitation creation
-            // The invitation can still be used manually
-        }
+   
 
         return new InviteStaffResponse(invitation.Id, token, expiresAt);
     }

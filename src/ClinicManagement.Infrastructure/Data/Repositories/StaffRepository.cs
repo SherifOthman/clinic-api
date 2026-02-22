@@ -53,11 +53,12 @@ public class StaffRepository : IStaffRepository
 
     public async Task<Staff> AddAsync(Staff entity, CancellationToken cancellationToken = default)
     {
-        const string sql = @"
+
+    const string sql = @"
             INSERT INTO Staff (
-                UserId, ClinicId, IsActive, HireDate, CreatedAt, IsDeleted
+                UserId, ClinicId, IsActive, HireDate, CreatedAt
             ) VALUES (
-                @UserId, @ClinicId, @IsActive, @HireDate, @CreatedAt, @IsDeleted
+                @UserId, @ClinicId, @IsActive, @HireDate, @CreatedAt
             );
             SELECT CAST(SCOPE_IDENTITY() as int)";
         

@@ -17,6 +17,8 @@ public static class ErrorCodes
     public const string EMAIL_ALREADY_CONFIRMED = "EMAIL_ALREADY_CONFIRMED";
     public const string TOKEN_INVALID = "TOKEN_INVALID";
     public const string ACCESS_DENIED = "ACCESS_DENIED";
+    public const string UNAUTHORIZED = "UNAUTHORIZED";
+    public const string FORBIDDEN = "FORBIDDEN";
 
     // Not Found (404)
     public const string RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND";
@@ -27,6 +29,7 @@ public static class ErrorCodes
     public const string APPOINTMENT_NOT_FOUND = "APPOINTMENT_NOT_FOUND";
     public const string DISEASE_NOT_FOUND = "DISEASE_NOT_FOUND";
     public const string PLAN_NOT_FOUND = "PLAN_NOT_FOUND";
+    public const string NOT_FOUND = "NOT_FOUND";
 
     // Duplicates
     public const string DUPLICATE_ENTRY = "DUPLICATE_ENTRY";
@@ -40,6 +43,11 @@ public static class ErrorCodes
 
     // Onboarding
     public const string ALREADY_ONBOARDED = "ALREADY_ONBOARDED";
+
+    // Staff Invitations
+    public const string INVITATION_ALREADY_ACCEPTED = "INVITATION_ALREADY_ACCEPTED";
+    public const string INVITATION_ALREADY_CANCELED = "INVITATION_ALREADY_CANCELED";
+    public const string INVITATION_EXPIRED = "INVITATION_EXPIRED";
 
     // General
     public const string OPERATION_NOT_ALLOWED = "OPERATION_NOT_ALLOWED";

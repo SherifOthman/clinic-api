@@ -1,0 +1,1 @@
+ALTER TABLE [StaffInvitation] ADD [IsCanceled] BIT NOT NULL DEFAULT(0);
