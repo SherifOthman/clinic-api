@@ -72,18 +72,30 @@ public static class DependencyInjection
     {
         services.AddAuthorization(options =>
         {
+            // Super Admin only
             options.AddPolicy("SuperAdminOnly", policy =>
                 policy.RequireRole(Roles.SuperAdmin));
 
+            // Clinic Owner only
             options.AddPolicy("ClinicManagement", policy =>
                 policy.RequireRole(Roles.ClinicOwner));
 
+            // Medical staff (Doctor or Clinic Owner)
             options.AddPolicy("MedicalStaff", policy =>
                 policy.RequireRole(Roles.Doctor, Roles.ClinicOwner));
 
+            // Any staff member (Doctor, Receptionist, or Clinic Owner)
             options.AddPolicy("StaffAccess", policy =>
                 policy.RequireRole(Roles.Doctor, Roles.Receptionist, Roles.ClinicOwner));
 
+            // Requires authenticated user with clinic membership
+            options.AddPolicy("RequireClinic", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("clinicId");
+            });
+
+            // Inventory management access
             options.AddPolicy("InventoryManagement", policy =>
                 policy.RequireRole(Roles.ClinicOwner, Roles.Doctor));
         });

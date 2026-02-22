@@ -32,11 +32,9 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
     public async Task<Result<InviteStaffResponse>> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
     {
-        var currentUserId = _currentUserService.UserId;
-        var clinicId = _currentUserService.ClinicId;
-
-        if (!currentUserId.HasValue || !clinicId.HasValue)
-            return Result.Failure<InviteStaffResponse>(ErrorCodes.UNAUTHORIZED, "User must be authenticated and belong to a clinic");
+        // Policy "RequireClinic" ensures user is authenticated and has clinicId claim
+        var currentUserId = _currentUserService.UserId!.Value;
+        var clinicId = _currentUserService.ClinicId!.Value;
 
         if (request.Role != "Doctor" && request.Role != "Receptionist")
             return Result.Failure<InviteStaffResponse>(ErrorCodes.VALIDATION_ERROR, "Role must be either Doctor or Receptionist");
@@ -46,13 +44,13 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         var invitation = new StaffInvitation
         {
-            ClinicId = clinicId.Value,
+            ClinicId = clinicId,
             Email = request.Email,
             Role = request.Role,
             InvitationToken = token,
             ExpiresAt = expiresAt,
             IsAccepted = false,
-            CreatedByUserId = currentUserId.Value,
+            CreatedByUserId = currentUserId,
             CreatedAt = DateTime.UtcNow,
             IsDeleted = false
         };
@@ -60,10 +58,10 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
         await _unitOfWork.StaffInvitations.AddAsync(invitation, cancellationToken);
 
         // Get inviter information for email
-        var inviter = await _unitOfWork.Users.GetByIdAsync(currentUserId.Value, cancellationToken);
+        var inviter = await _unitOfWork.Users.GetByIdAsync(currentUserId, cancellationToken);
         var invitedBy = inviter?.FullName ?? "Clinic Administrator";
         
-        var clinic = await _unitOfWork.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
+        var clinic = await _unitOfWork.Clinics.GetByIdAsync(clinicId, cancellationToken);
         var clinicName = clinic?.Name ?? "Clinic";
 
         // Build invitation link - will be constructed in EmailService with FrontendUrl from config

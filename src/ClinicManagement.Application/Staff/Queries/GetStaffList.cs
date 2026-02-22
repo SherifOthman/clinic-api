@@ -30,12 +30,10 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, IEnumerabl
 
     public async Task<IEnumerable<StaffDto>> Handle(GetStaffListQuery request, CancellationToken cancellationToken)
     {
-        var clinicId = _currentUserService.ClinicId;
+        // Policy "RequireClinic" ensures user is authenticated and has clinicId claim
+        var clinicId = _currentUserService.ClinicId!.Value;
 
-        if (!clinicId.HasValue)
-            throw new UnauthorizedAccessException("User must belong to a clinic");
-
-        var staffList = await _unitOfWork.Staff.GetByClinicIdAsync(clinicId.Value, cancellationToken);
+        var staffList = await _unitOfWork.Staff.GetByClinicIdAsync(clinicId, cancellationToken);
 
         var result = new List<StaffDto>();
 

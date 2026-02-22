@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize]
+[Authorize(Policy = "RequireClinic")]
 [Route("api/staff")]
 public class StaffController : BaseApiController
 {

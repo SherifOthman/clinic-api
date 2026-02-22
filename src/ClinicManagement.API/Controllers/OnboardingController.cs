@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
+[Authorize] // Only requires authentication, not clinic membership (user is onboarding)
 [Route("api/onboarding")]
-[Authorize]
 public class OnboardingController : BaseApiController
 {
     [HttpPost("complete")]
