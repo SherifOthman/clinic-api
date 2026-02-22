@@ -22,7 +22,11 @@ public class StaffController : BaseApiController
     {
         var command = new InviteStaffCommand(request.Role, request.Email);
         var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result);
+        
+        if (!result.IsSuccess)
+            return HandleResult(result, "Failed to send invitation");
+        
+        return Ok(result.Value);
     }
 
     [HttpGet("invitations")]
