@@ -7,6 +7,7 @@ public interface IUnitOfWork : IDisposable
     ISubscriptionPlanRepository SubscriptionPlans { get; }
     IStaffInvitationRepository StaffInvitations { get; }
     IStaffRepository Staff { get; }
+    IDoctorProfileRepository DoctorProfiles { get; }
     ISpecializationRepository Specializations { get; }
     IClinicRepository Clinics { get; }
     IClinicBranchRepository ClinicBranches { get; }

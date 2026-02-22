@@ -50,6 +50,12 @@ public class UnitOfWork : IUnitOfWork
         set => field = value;
     }
 
+    public IDoctorProfileRepository DoctorProfiles
+    {
+        get => field ??= new DoctorProfileRepository(_connection, _transaction);
+        set => field = value;
+    }
+
     public ISpecializationRepository Specializations
     {
         get => field ??= new SpecializationRepository(_configuration);
@@ -77,6 +83,7 @@ public class UnitOfWork : IUnitOfWork
         SubscriptionPlans = null!;
         StaffInvitations = null!;
         Staff = null!;
+        DoctorProfiles = null!;
         Clinics = null!;
         ClinicBranches = null!;
         // Note: Specializations uses separate connection for caching, not affected by transaction

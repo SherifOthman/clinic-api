@@ -81,13 +81,24 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             {
                 UserId = user.Id,
                 ClinicId = invitation.ClinicId,
-                SpecializationId = invitation.SpecializationId,
                 IsActive = true,
                 HireDate = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.Staff.AddAsync(staff, cancellationToken);
+
+            // Create doctor profile if role is Doctor
+            if (invitation.Role == "Doctor")
+            {
+                var doctorProfile = new DoctorProfile
+                {
+                    StaffId = staff.Id,
+                    SpecializationId = invitation.SpecializationId
+                };
+
+                await _unitOfWork.DoctorProfiles.AddAsync(doctorProfile, cancellationToken);
+            }
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 

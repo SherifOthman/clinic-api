@@ -36,6 +36,7 @@ public class StaffInvitationRepository : IStaffInvitationRepository
             SELECT * FROM StaffInvitation 
             WHERE ClinicId = @ClinicId 
             AND IsAccepted = 0 
+            AND IsCanceled = 0
             AND ExpiresAt > GETUTCDATE()
             AND IsDeleted = 0
             ORDER BY CreatedAt DESC";
