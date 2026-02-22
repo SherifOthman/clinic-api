@@ -5,7 +5,6 @@ namespace ClinicManagement.Domain.Entities;
 public class Staff : TenantEntity
 {
     public int UserId { get; set; }
-    public int? SpecializationId { get; set; }
     public DateTime HireDate { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
