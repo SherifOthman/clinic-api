@@ -42,6 +42,7 @@ public class StaffInvitationBuilder
             _email,
             _role,
             _createdByUserId,
+            DateTime.UtcNow,
             _specializationId,
             _expirationDays);
     }

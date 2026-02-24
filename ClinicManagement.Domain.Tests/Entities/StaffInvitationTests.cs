@@ -22,16 +22,17 @@ public class StaffInvitationTests
         var email = "doctor@test.com";
         var role = "Doctor";
         var createdByUserId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
 
         // Act
         var invitation = StaffInvitation.Create(
             clinicId,
             email,
             role,
-            createdByUserId);
+            createdByUserId,
+            now);
 
         // Assert
-
         invitation.ClinicId.Should().Be(clinicId);
         invitation.Email.Should().Be(email);
         invitation.Role.Should().Be(role);
@@ -40,7 +41,7 @@ public class StaffInvitationTests
         invitation.IsCanceled.Should().BeFalse();
 
         invitation.InvitationToken.Should().NotBeNullOrWhiteSpace();
-        invitation.ExpiresAt.Should().BeAfter(DateTime.UtcNow.AddDays(6));
+        invitation.ExpiresAt.Should().BeAfter(now.AddDays(6));
     }
 
     [Fact]
@@ -87,6 +88,7 @@ public class StaffInvitationTests
                     "doctor@test.com",
                     "Doctor",
                     Guid.NewGuid(),
+                    DateTime.UtcNow,
                     null,
                     -1);
                 break;
@@ -178,13 +180,13 @@ public class StaffInvitationTests
     public void IsValid_ShouldReturnTrue_WhenInvitationIsValid()
     {
         // Arrange
+        var now = DateTime.UtcNow;
         var invitation = StaffInvitation.Create(
             Guid.NewGuid(),
             "doctor@test.com",
             "Doctor",
-            Guid.NewGuid());
-
-        var now = DateTime.UtcNow;
+            Guid.NewGuid(),
+            now);
 
         // Act
         var result = invitation.IsValid(now);
@@ -221,7 +223,8 @@ public class StaffInvitationTests
                     "doctor@test.com",
                     "Doctor",
                     Guid.NewGuid(),
-                                        null,
+                    now,
+                    null,
                     -1);
                 break;
 

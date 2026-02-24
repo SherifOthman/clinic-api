@@ -1,71 +1,95 @@
 ﻿using ClinicManagement.Domain.Entities;
 using FluentAssertions;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ClinicManagement.Domain.Tests.Entities;
 
 public class UserTokenTests
 {
     [Fact]
-    public void IsExpired_ShouldReturnFalse_WhenTokenNoExpired()
+    public void IsExpired_ShouldReturnFalse_WhenTokenNotExpired()
     {
+        // Arrange
+        var now = new DateTime(2026, 2, 24, 12, 0, 0, DateTimeKind.Utc);
         var token = new UserToken
         {
-            ExpiresAt = DateTime.UtcNow.AddMinutes(10)
+            ExpiresAt = now.AddMinutes(10)
         };
 
-        token.IsExpired.Should().BeFalse();
+        // Act
+        var result = token.IsExpired(now);
+
+        // Assert
+        result.Should().BeFalse();
     }
 
     [Fact]
-    public void IsExpired_ShouldReturnTrue_WhenTokenNoExpired()
+    public void IsExpired_ShouldReturnTrue_WhenTokenExpired()
     {
+        // Arrange
+        var now = new DateTime(2026, 2, 24, 12, 0, 0, DateTimeKind.Utc);
         var token = new UserToken
         {
-            ExpiresAt = DateTime.UtcNow.AddMinutes(-10)
+            ExpiresAt = now.AddMinutes(-10)
         };
 
-        token.IsExpired.Should().BeTrue();
+        // Act
+        var result = token.IsExpired(now);
+
+        // Assert
+        result.Should().BeTrue();
     }
 
     [Fact]
     public void IsValid_ShouldReturnTrue_WhenNotUsedAndNotExpired()
     {
+        // Arrange
+        var now = new DateTime(2026, 2, 24, 12, 0, 0, DateTimeKind.Utc);
         var token = new UserToken
         {
-            ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+            ExpiresAt = now.AddMinutes(10),
             IsUsed = false
         };
 
-        token.IsValid.Should().BeTrue();
+        // Act
+        var result = token.IsValid(now);
+
+        // Assert
+        result.Should().BeTrue();
     }
 
     [Fact]
     public void IsValid_ShouldReturnFalse_WhenTokenUsed()
     {
+        // Arrange
+        var now = new DateTime(2026, 2, 24, 12, 0, 0, DateTimeKind.Utc);
         var token = new UserToken
         {
-            ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+            ExpiresAt = now.AddMinutes(10),
             IsUsed = true
         };
 
-        token.IsValid.Should().BeFalse();
-    }
+        // Act
+        var result = token.IsValid(now);
 
+        // Assert
+        result.Should().BeFalse();
+    }
 
     [Fact]
     public void IsValid_ShouldReturnFalse_WhenTokenExpired()
     {
+        // Arrange
+        var now = new DateTime(2026, 2, 24, 12, 0, 0, DateTimeKind.Utc);
         var token = new UserToken
         {
-            ExpiresAt = DateTime.UtcNow.AddMinutes(-10),
+            ExpiresAt = now.AddMinutes(-10),
             IsUsed = false
         };
-  
-        
 
-        token.IsValid.Should().BeFalse();
+        // Act
+        var result = token.IsValid(now);
+
+        // Assert
+        result.Should().BeFalse();
     }
 }
