@@ -4,4 +4,5 @@ public interface IEmailService
 {
     Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetLink, CancellationToken cancellationToken = default);
     Task SendStaffInvitationEmailAsync(string toEmail, string clinicName, string role, string invitedBy, string invitationLink, CancellationToken cancellationToken = default);
+    Task SendEmailAsync(string toEmail, string? toName, string subject, string body, bool isHtml = true, CancellationToken cancellationToken = default);
 }

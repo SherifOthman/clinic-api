@@ -1,8 +1,8 @@
 using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
-using ClinicManagement.Infrastructure.Data;
-using ClinicManagement.Infrastructure.Seeders;
+using ClinicManagement.Infrastructure.Persistence.Data;
+using ClinicManagement.Infrastructure.Persistence.Seeders;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()

@@ -19,6 +19,7 @@ public static class ErrorCodes
     public const string ACCESS_DENIED = "ACCESS_DENIED";
     public const string UNAUTHORIZED = "UNAUTHORIZED";
     public const string FORBIDDEN = "FORBIDDEN";
+    public const string ACCOUNT_LOCKED = "ACCOUNT_LOCKED";
 
     // Not Found (404)
     public const string RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND";
@@ -47,6 +48,7 @@ public static class ErrorCodes
     // Staff Invitations
     public const string INVITATION_ALREADY_ACCEPTED = "INVITATION_ALREADY_ACCEPTED";
     public const string INVITATION_ALREADY_CANCELED = "INVITATION_ALREADY_CANCELED";
+    public const string INVITATION_CANCELED = "INVITATION_CANCELED";
     public const string INVITATION_EXPIRED = "INVITATION_EXPIRED";
 
     // General

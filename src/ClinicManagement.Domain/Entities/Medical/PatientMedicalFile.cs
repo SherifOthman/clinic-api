@@ -6,7 +6,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class PatientMedicalFile : AuditableEntity
 {
-    public int PatientId { get; set; }
-    public int? VisitId { get; set; }
+    public Guid PatientId { get; set; }
+    public Guid? VisitId { get; set; }
     public ServiceType FileType { get; set; }
 }

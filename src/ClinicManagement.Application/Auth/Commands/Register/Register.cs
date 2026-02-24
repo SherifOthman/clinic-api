@@ -2,7 +2,6 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -32,36 +31,30 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 
     public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var registrationRequest = new UserRegistrationRequest(
-                Email: request.Email,
-                Password: request.Password,
-                FirstName: request.FirstName,
-                LastName: request.LastName,
-                PhoneNumber: request.PhoneNumber,
-                Role: Roles.ClinicOwner,
-                ClinicId: null,
-                UserName: request.UserName,
-                EmailConfirmed: false,
-                SendConfirmationEmail: true
-            );
+        var registrationRequest = new UserRegistrationRequest(
+            Email: request.Email,
+            Password: request.Password,
+            FirstName: request.FirstName,
+            LastName: request.LastName,
+            PhoneNumber: request.PhoneNumber,
+            Role: Roles.ClinicOwner,
+            ClinicId: null,
+            UserName: request.UserName,
+            EmailConfirmed: false,
+            SendConfirmationEmail: true
+        );
 
-            await _userRegistrationService.RegisterUserAsync(registrationRequest, cancellationToken);
-            _logger.LogInformation("User registered successfully: {Email}", request.Email);
+        var registrationResult = await _userRegistrationService.RegisterUserAsync(registrationRequest, cancellationToken);
+        
+        if (registrationResult.IsFailure)
+        {
+            _logger.LogWarning("Registration failed: {ErrorCode} - {Message}", registrationResult.ErrorCode, registrationResult.ErrorMessage);
+            return Result.Failure(registrationResult.ErrorCode, registrationResult.ErrorMessage);
+        }
 
-            return Result.Success();
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning("Registration failed: {ErrorCode} - {Message}", ex.ErrorCode, ex.Message);
-            return Result.Failure(ex.ErrorCode, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error during registration for {Email}", request.Email);
-            return Result.Failure("REGISTRATION_FAILED", "An unexpected error occurred during registration");
-        }
+        _logger.LogInformation("User registered successfully: {Email}", request.Email);
+
+        return Result.Success();
     }
 }
 

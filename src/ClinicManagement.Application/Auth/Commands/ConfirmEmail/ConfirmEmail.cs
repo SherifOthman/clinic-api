@@ -17,16 +17,16 @@ public record ConfirmEmailCommand(
 public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IEmailConfirmationService _emailConfirmationService;
+    private readonly IEmailTokenService _emailTokenService;
     private readonly ILogger<ConfirmEmailHandler> _logger;
 
     public ConfirmEmailHandler(
         IUnitOfWork unitOfWork,
-        IEmailConfirmationService emailConfirmationService,
+        IEmailTokenService emailTokenService,
         ILogger<ConfirmEmailHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _emailConfirmationService = emailConfirmationService;
+        _emailTokenService = emailTokenService;
         _logger = logger;
     }
 
@@ -39,7 +39,7 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        if (await _emailConfirmationService.IsEmailConfirmedAsync(user, cancellationToken))
+        if (await _emailTokenService.IsEmailConfirmedAsync(user, cancellationToken))
         {
             _logger.LogInformation("Email already confirmed for user: {UserId}", user.Id);
             return Result.Failure(ErrorCodes.EMAIL_ALREADY_CONFIRMED, "Email is arelady confirmed");
@@ -48,7 +48,7 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
         try
         {
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
-            await _emailConfirmationService.ConfirmEmailAsync(user, request.Token, cancellationToken);
+            await _emailTokenService.ConfirmEmailAsync(user, request.Token, cancellationToken);
             _logger.LogInformation("Email confirmed successfully for user: {UserId}", user.Id);
             return Result.Success();
         }

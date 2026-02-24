@@ -2,7 +2,6 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Infrastructure.Data;
 using ClinicManagement.API.Middleware;
 using ClinicManagement.API.OpenApi;
 using ClinicManagement.Infrastructure.Services;
@@ -72,20 +71,12 @@ public static class DependencyInjection
     {
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("SuperAdminOnly", policy =>
-                policy.RequireRole(Roles.SuperAdmin));
-
-            options.AddPolicy("ClinicManagement", policy =>
-                policy.RequireRole(Roles.ClinicOwner));
-
-            options.AddPolicy("MedicalStaff", policy =>
-                policy.RequireRole(Roles.Doctor, Roles.ClinicOwner));
-
-            options.AddPolicy("StaffAccess", policy =>
-                policy.RequireRole(Roles.Doctor, Roles.Receptionist, Roles.ClinicOwner));
-
-            options.AddPolicy("InventoryManagement", policy =>
-                policy.RequireRole(Roles.ClinicOwner, Roles.Doctor));
+            // Requires authenticated user with clinic membership
+            options.AddPolicy("RequireClinic", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("ClinicId");
+            });
         });
     }
 

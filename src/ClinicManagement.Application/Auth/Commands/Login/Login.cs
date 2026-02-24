@@ -47,11 +47,52 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
     {
         var user = await _unitOfWork.Users.GetByEmailOrUsernameAsync(request.EmailOrUsername, cancellationToken);
 
-        if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        if (user == null)
         {
-            _logger.LogWarning("Failed login attempt for {EmailOrUsername}", request.EmailOrUsername);
+            _logger.LogWarning("Failed login attempt for {EmailOrUsername} - user not found", request.EmailOrUsername);
             return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
+
+        // Check if account is locked out
+        if (user.LockoutEndDate.HasValue && user.LockoutEndDate.Value > DateTime.UtcNow)
+        {
+            var remainingMinutes = (int)(user.LockoutEndDate.Value - DateTime.UtcNow).TotalMinutes + 1;
+            _logger.LogWarning("Login attempt for locked account {UserId}, lockout ends in {Minutes} minutes", 
+                user.Id, remainingMinutes);
+            return Result.Failure<LoginResponseDto>(
+                ErrorCodes.ACCOUNT_LOCKED, 
+                $"Account is locked due to multiple failed login attempts. Please try again in {remainingMinutes} minute(s).");
+        }
+
+        // Verify password
+        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        {
+            _logger.LogWarning("Failed login attempt for {EmailOrUsername} - invalid password", request.EmailOrUsername);
+            
+            // Increment failed login attempts
+            await _unitOfWork.Users.IncrementFailedLoginAttemptsAsync(user.Id, cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            
+            // Check if this was the 5th failed attempt
+            if (user.FailedLoginAttempts + 1 >= 5)
+            {
+                _logger.LogWarning("Account {UserId} locked after 5 failed login attempts", user.Id);
+                return Result.Failure<LoginResponseDto>(
+                    ErrorCodes.ACCOUNT_LOCKED, 
+                    "Account is locked due to multiple failed login attempts. Please try again in 30 minutes.");
+            }
+            
+            return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
+        }
+
+        // Reset failed login attempts on successful login
+        if (user.FailedLoginAttempts > 0 || user.LockoutEndDate.HasValue)
+        {
+            await _unitOfWork.Users.ResetFailedLoginAttemptsAsync(user.Id, cancellationToken);
+        }
+
+        // Update last login timestamp
+        await _unitOfWork.Users.UpdateLastLoginAsync(user.Id, cancellationToken);
 
         var emailNotConfirmed = !user.IsEmailConfirmed;
         if (emailNotConfirmed)
@@ -62,7 +103,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
         var roles = await _unitOfWork.Users.GetUserRolesAsync(user.Id, cancellationToken);
         
         // Get ClinicId - check if user is a clinic owner first, then check if they're staff
-        int? clinicId = null;
+        Guid? clinicId = null;
         if (roles.Contains(Roles.ClinicOwner))
         {
             var clinic = await _unitOfWork.Clinics.GetByOwnerUserIdAsync(user.Id, cancellationToken);

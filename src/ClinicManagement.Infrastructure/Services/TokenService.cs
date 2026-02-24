@@ -30,7 +30,7 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, int? clinicId = null)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null)
     {
         var claims = new List<Claim>
         {
@@ -41,7 +41,6 @@ public class TokenService : ITokenService
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        // ClinicId claim required for multi-tenancy. SuperAdmin has no ClinicId.
         if (clinicId.HasValue)
         {
             claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));

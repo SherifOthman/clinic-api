@@ -12,7 +12,7 @@ public class SubscriptionPlansController : BaseApiController
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<SubscriptionPlanDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
     {
         var plans = await Sender.Send(new GetSubscriptionPlansQuery(), ct);

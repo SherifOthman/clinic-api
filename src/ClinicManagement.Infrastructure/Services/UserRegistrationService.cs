@@ -2,8 +2,8 @@ using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Exceptions;
 using ClinicManagement.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -13,32 +13,32 @@ public class UserRegistrationService : IUserRegistrationService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IEmailConfirmationService _emailConfirmationService;
+    private readonly IEmailTokenService _emailTokenService;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
-        IEmailConfirmationService emailConfirmationService,
+        IEmailTokenService emailTokenService,
         ILogger<UserRegistrationService> logger)
     {
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
-        _emailConfirmationService = emailConfirmationService;
+        _emailTokenService = emailTokenService;
         _logger = logger;
     }
 
-    public async Task<int> RegisterUserAsync(UserRegistrationRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<Guid>> RegisterUserAsync(UserRegistrationRequest request, CancellationToken cancellationToken = default)
     {
         if (await _unitOfWork.Users.EmailExistsAsync(request.Email, cancellationToken))
         {
-            throw new DomainException("EMAIL_ALREADY_EXISTS", "Email is already registered");
+            return Result.Failure<Guid>("EMAIL_ALREADY_EXISTS", "Email is already registered");
         }
 
         if (!string.IsNullOrEmpty(request.UserName) &&
             await _unitOfWork.Users.UsernameExistsAsync(request.UserName, cancellationToken))
         {
-            throw new DomainException("USERNAME_ALREADY_EXISTS", "Username is already taken");
+            return Result.Failure<Guid>("USERNAME_ALREADY_EXISTS", "Username is already taken");
         }
 
         var user = new User
@@ -62,7 +62,8 @@ public class UserRegistrationService : IUserRegistrationService
 
             if (role == null)
             {
-                throw new DomainException("INVALID_ROLE", $"Role '{request.Role}' not found");
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return Result.Failure<Guid>("INVALID_ROLE", $"Role '{request.Role}' not found");
             }
 
             await _unitOfWork.Users.AddUserRoleAsync(user.Id, role.Id, cancellationToken);
@@ -80,7 +81,7 @@ public class UserRegistrationService : IUserRegistrationService
         {
             try
             {
-                await _emailConfirmationService.SendConfirmationEmailAsync(user, cancellationToken);
+                await _emailTokenService.SendConfirmationEmailAsync(user, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -89,6 +90,6 @@ public class UserRegistrationService : IUserRegistrationService
         }
 
         _logger.LogInformation("User registered successfully: {Email} with role {Role}", request.Email, request.Role);
-        return user.Id;
+        return Result.Success(user.Id);
     }
 }

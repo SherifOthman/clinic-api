@@ -1,8 +1,4 @@
 namespace ClinicManagement.Domain.Enums;
-
-/// <summary>
-/// Type of medical file
-/// </summary>
 public enum MedicalFileType : byte
 {
     Lab = 1,

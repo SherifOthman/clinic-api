@@ -6,9 +6,9 @@ namespace ClinicManagement.Domain.Entities;
 public class Invoice : TenantEntity
 {
     public string InvoiceNumber { get; set; } = null!;
-    public int PatientId { get; set; }
-    public int? AppointmentId { get; set; }
-    public int? MedicalVisitId { get; set; }
+    public Guid PatientId { get; set; }
+    public Guid? AppointmentId { get; set; }
+    public Guid? MedicalVisitId { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal TaxAmount { get; set; }

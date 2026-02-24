@@ -51,5 +51,18 @@ public class EmailService : IEmailService
             emailBody,
             cancellationToken);
     }
+
+    public async Task SendEmailAsync(
+        string toEmail,
+        string? toName,
+        string subject,
+        string body,
+        bool isHtml = true,
+        CancellationToken cancellationToken = default)
+    {
+        // For now, we only support HTML emails via SmtpEmailSender
+        // If plain text is needed in the future, SmtpEmailSender would need to be updated
+        await _smtpEmailSender.SendEmailAsync(toEmail, subject, body, cancellationToken);
+    }
 }
 

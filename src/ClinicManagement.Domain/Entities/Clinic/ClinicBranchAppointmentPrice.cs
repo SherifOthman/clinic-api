@@ -7,9 +7,9 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class ClinicBranchAppointmentPrice : AuditableEntity
 {
-    public int ClinicBranchId { get; set; }
+    public Guid ClinicBranchId { get; set; }
     
-    public int AppointmentTypeId { get; set; }
+    public Guid AppointmentTypeId { get; set; }
     
     /// <summary>
     /// Base price for this appointment type at this clinic branch

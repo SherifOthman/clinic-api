@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Common.Options;
+using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -8,13 +9,11 @@ namespace ClinicManagement.Infrastructure.Services;
 public class SmtpEmailSender
 {
     private readonly SmtpOptions _options;
-    private readonly MailKitSmtpClient _smtpClient;
     private readonly ILogger<SmtpEmailSender> _logger;
 
-    public SmtpEmailSender(IOptions<SmtpOptions> options, MailKitSmtpClient smtpClient, ILogger<SmtpEmailSender> logger)
+    public SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger)
     {
         _options = options.Value;
-        _smtpClient = smtpClient;
         _logger = logger;
     }
 
@@ -37,11 +36,12 @@ public class SmtpEmailSender
             };
             email.Body = bodyBuilder.ToMessageBody();
 
-            await _smtpClient.ConnectAsync(_options.Host, _options.Port,
+            using var smtpClient = new SmtpClient();
+            await smtpClient.ConnectAsync(_options.Host, _options.Port,
                 MailKit.Security.SecureSocketOptions.StartTls, cancellationToken);
-            await _smtpClient.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
-            await _smtpClient.SendAsync(email, cancellationToken);
-            await _smtpClient.DisconnectAsync(true, cancellationToken);
+            await smtpClient.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
+            await smtpClient.SendAsync(email, cancellationToken);
+            await smtpClient.DisconnectAsync(true, cancellationToken);
 
             _logger.LogInformation("Email sent successfully to {Email}", toEmail);
         }

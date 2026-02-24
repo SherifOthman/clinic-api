@@ -9,7 +9,7 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class PatientAllergy : BaseEntity
 {
-    public int PatientId { get; set; }
+    public Guid PatientId { get; set; }
     public string AllergyName { get; set; } = null!;  // Penicillin, Aspirin, Peanuts, etc.
     public AllergySeverity Severity { get; set; }
     public string? Reaction { get; set; }  // Rash, Anaphylaxis, Swelling, etc.

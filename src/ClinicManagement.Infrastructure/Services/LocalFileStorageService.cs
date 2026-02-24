@@ -3,6 +3,7 @@ using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Common.Options;
+using ClinicManagement.Domain.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -62,35 +63,24 @@ public class LocalFileStorageService : IFileStorageService
         }
     }
 
-    public async Task<string> UploadFileWithValidationAsync(
+    public async Task<Result<string>> UploadFileWithValidationAsync(
         IFormFile file,
         string fileType,
         CancellationToken cancellationToken = default)
     {
         if (!_options.FileTypes.TryGetValue(fileType, out var fileTypeSettings))
         {
-            throw new ArgumentException($"File type '{fileType}' is not configured");
+            return Result.Failure<string>("FILE_TYPE_NOT_CONFIGURED", $"File type '{fileType}' is not configured");
         }
 
-        if (file == null || file.Length == 0)
+        var validationResult = ValidateFile(file, fileTypeSettings.AllowedExtensions.ToArray(), fileTypeSettings.MaxFileSizeBytes);
+        if (validationResult.IsFailure)
         {
-            throw new ArgumentException("File is required");
+            return Result.Failure<string>(validationResult.ErrorCode, validationResult.ErrorMessage);
         }
 
-        if (file.Length > fileTypeSettings.MaxFileSizeBytes)
-        {
-            var maxSizeMB = fileTypeSettings.MaxFileSizeBytes / (1024 * 1024);
-            throw new ArgumentException($"File size must not exceed {maxSizeMB}MB");
-        }
-
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!fileTypeSettings.AllowedExtensions.Contains(extension))
-        {
-            var allowedTypes = string.Join(", ", fileTypeSettings.AllowedExtensions);
-            throw new ArgumentException($"File must be one of the following types: {allowedTypes}");
-        }
-
-        return await UploadFileAsync(file, fileTypeSettings.Folder, cancellationToken);
+        var filePath = await UploadFileAsync(file, fileTypeSettings.Folder, cancellationToken);
+        return Result.Success(filePath);
     }
 
     public async Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
@@ -127,25 +117,27 @@ public class LocalFileStorageService : IFileStorageService
         return Path.Combine(webRootPath, "wwwroot", cleanPath);
     }
 
-    public void ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)
+    public Result ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)
     {
         if (file == null || file.Length == 0)
         {
-            throw new ArgumentException("File is required");
+            return Result.Failure("FILE_REQUIRED", "File is required");
         }
 
         if (file.Length > maxSizeInBytes)
         {
             var maxSizeMB = maxSizeInBytes / (1024 * 1024);
-            throw new ArgumentException($"File size must not exceed {maxSizeMB}MB");
+            return Result.Failure("FILE_TOO_LARGE", $"File size must not exceed {maxSizeMB}MB");
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
         {
             var allowedTypes = string.Join(", ", allowedExtensions);
-            throw new ArgumentException($"File must be one of the following types: {allowedTypes}");
+            return Result.Failure("INVALID_FILE_TYPE", $"File must be one of the following types: {allowedTypes}");
         }
+        
+        return Result.Success();
     }
 }
 

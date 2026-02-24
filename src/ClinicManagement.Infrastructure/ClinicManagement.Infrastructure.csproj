@@ -13,12 +13,18 @@
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Persistence\Data\Scripts\*.sql" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -26,9 +32,5 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Data\Scripts\*.sql" />
-  </ItemGroup>
 
 </Project>

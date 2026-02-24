@@ -8,8 +8,8 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class DoctorMeasurementAttribute : BaseEntity
 {
-    public int DoctorId { get; set; }
-    public int MeasurementAttributeId { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid MeasurementAttributeId { get; set; }
     
     public int DisplayOrder { get; set; } = 0;
 

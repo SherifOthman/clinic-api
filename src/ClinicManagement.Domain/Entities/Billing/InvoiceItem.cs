@@ -10,15 +10,15 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class InvoiceItem : BaseEntity
 {
-    public int InvoiceId { get; set; }
+    public Guid InvoiceId { get; set; }
     
     // Flexible item types (exactly ONE should be set - validated in Invoice.AddItem)
-    public int? MedicalServiceId { get; set; }
-    public int? MedicineId { get; set; }
-    public int? MedicalSupplyId { get; set; }
-    public int? MedicineDispensingId { get; set; }  // Link to actual dispensing record
-    public int? LabTestOrderId { get; set; }  // Link to lab test order
-    public int? RadiologyOrderId { get; set; }  // Link to radiology order
+    public Guid? MedicalServiceId { get; set; }
+    public Guid? MedicineId { get; set; }
+    public Guid? MedicalSupplyId { get; set; }
+    public Guid? MedicineDispensingId { get; set; }  // Link to actual dispensing record
+    public Guid? LabTestOrderId { get; set; }  // Link to lab test order
+    public Guid? RadiologyOrderId { get; set; }  // Link to radiology order
     
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }

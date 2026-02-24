@@ -1,9 +1,9 @@
 namespace ClinicManagement.Domain.Common;
 
 /// <summary>
-/// Base entity with int primary key (database identity).
+/// Base entity with Guid primary key generated in code.
 /// </summary>
 public abstract class BaseEntity
 {
-    public int Id { get; set; }
+    public Guid Id { get; private set; } = Guid.NewGuid();
 }

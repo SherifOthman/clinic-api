@@ -1,8 +1,5 @@
 namespace ClinicManagement.Domain.Enums;
 
-/// <summary>
-/// Severity level of patient allergy
-/// </summary>
 public enum AllergySeverity
 {
     Mild,              // Minor reaction (e.g., mild rash)

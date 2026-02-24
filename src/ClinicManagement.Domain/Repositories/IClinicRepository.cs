@@ -4,5 +4,5 @@ namespace ClinicManagement.Domain.Repositories;
 
 public interface IClinicRepository : IRepository<Clinic>
 {
-    Task<Clinic?> GetByOwnerUserIdAsync(int ownerUserId, CancellationToken cancellationToken = default);
+    Task<Clinic?> GetByOwnerUserIdAsync(Guid ownerUserId, CancellationToken cancellationToken = default);
 }

@@ -6,5 +6,5 @@ namespace ClinicManagement.Domain.Common;
 /// </summary>
 public abstract class TenantEntity : BaseEntity, ITenantEntity
 {
-    public int ClinicId { get; set; }
+    public Guid ClinicId { get; set; }
 }

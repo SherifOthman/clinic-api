@@ -34,10 +34,12 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
 
     public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(_currentUser.UserId!.Value, cancellationToken);
+        var userId = _currentUser.GetRequiredUserId();
+        
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user == null)
         {
-            _logger.LogWarning("User not found: {UserId}", _currentUser.UserId);
+            _logger.LogWarning("User not found: {UserId}", userId);
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 

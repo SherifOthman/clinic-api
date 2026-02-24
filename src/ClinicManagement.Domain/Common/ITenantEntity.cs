@@ -6,5 +6,5 @@ namespace ClinicManagement.Domain.Common;
 /// </summary>
 public interface ITenantEntity
 {
-    int ClinicId { get; set; }
+    Guid ClinicId { get; set; }
 }

@@ -4,7 +4,8 @@ namespace ClinicManagement.Domain.Repositories;
 
 public interface IStaffRepository : IRepository<Staff>
 {
-    Task<Staff?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Staff>> GetByClinicIdAsync(int clinicId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Staff>> GetActiveByClinicIdAsync(int clinicId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Staff>> GetByClinicIdAsync(Guid clinicId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsAsync(Guid userId, Guid clinicId, CancellationToken cancellationToken = default);
+    Task UpdateStatusAsync(Guid staffId, string status, Guid changedBy, string reason, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Staff>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

@@ -46,8 +46,12 @@ public class SubscriptionPlan : BaseEntity
     // Display order for UI
     public int DisplayOrder { get; set; }
     
-
-
+    // Versioning (US-4)
+    public int Version { get; set; } = 1;
+    public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
+    public DateTime? ExpiryDate { get; set; }
+    
+    // Business logic - calculated properties
     
     /// <summary>
     /// Calculates the yearly discount percentage
@@ -63,6 +67,8 @@ public class SubscriptionPlan : BaseEntity
     /// Checks if the plan is a free plan
     /// </summary>
     public bool IsFree => MonthlyFee == 0 && YearlyFee == 0;
+    
+    // Business logic - validation methods
     
     /// <summary>
     /// Checks if a clinic can add more branches based on this plan

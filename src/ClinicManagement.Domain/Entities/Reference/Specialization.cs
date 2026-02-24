@@ -9,7 +9,7 @@ public class Specialization : BaseEntity
     public string? DescriptionEn { get; set; }
     public string? DescriptionAr { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
 }

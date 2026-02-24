@@ -2,8 +2,8 @@ namespace ClinicManagement.Domain.Entities;
 
 public class UserToken
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
     public string TokenType { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }

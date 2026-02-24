@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 
 public class Medicine : AuditableEntity
 {
-    public int ClinicBranchId { get; set; }
+    public Guid ClinicBranchId { get; set; }
     public string? Description { get; set; }
     public string? Manufacturer { get; set; }
     public string? BatchNumber { get; set; }

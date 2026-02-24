@@ -4,9 +4,9 @@ namespace ClinicManagement.Domain.Entities;
 
 public class MedicalVisitLabTest : BaseEntity
 {
-    public int MedicalVisitId { get; set; }
+    public Guid MedicalVisitId { get; set; }
     
-    public int LabTestId { get; set; }
+    public Guid LabTestId { get; set; }
     
     public string? Notes { get; set; }
 }

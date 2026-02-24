@@ -1,3 +1,4 @@
+using ClinicManagement.API.Models;
 using ClinicManagement.Application.Staff.Commands;
 using ClinicManagement.Application.Staff.Queries;
 using MediatR;
@@ -6,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize]
+[Authorize(Policy = "RequireClinic")]
 [Route("api/staff")]
 public class StaffController : BaseApiController
 {
@@ -17,10 +18,16 @@ public class StaffController : BaseApiController
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Invite a new staff member to the clinic
+    /// </summary>
     [HttpPost("invite")]
+    [ProducesResponseType(typeof(InviteStaffResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> InviteStaff([FromBody] InviteStaffRequest request, CancellationToken cancellationToken)
     {
-        var command = new InviteStaffCommand(request.Role, request.Email);
+        var command = new InviteStaffCommand(request.Role, request.Email, request.SpecializationId);
         var result = await _mediator.Send(command, cancellationToken);
         
         if (!result.IsSuccess)
@@ -29,7 +36,12 @@ public class StaffController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>
+    /// Get all pending staff invitations for the clinic
+    /// </summary>
     [HttpGet("invitations")]
+    [ProducesResponseType(typeof(IEnumerable<PendingInvitationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetPendingInvitations(CancellationToken cancellationToken)
     {
         var query = new GetPendingInvitationsQuery();
@@ -38,8 +50,13 @@ public class StaffController : BaseApiController
     }
 
 
+    /// <summary>
+    /// Accept a staff invitation and register a new user account
+    /// </summary>
     [HttpPost("invitations/{token}/accept-with-registration")]
     [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AcceptInvitationWithRegistration(
         string token,
         [FromBody] AcceptInvitationWithRegistrationRequest request,
@@ -56,13 +73,19 @@ public class StaffController : BaseApiController
         var result = await _mediator.Send(command, cancellationToken);
         
         if (!result.IsSuccess)
-            return HandleResult(result,"Invitaiton Filed");
+            return HandleResult(result, "Invitation Failed");
         
         return NoContent();
     }
 
+    /// <summary>
+    /// Cancel a pending staff invitation
+    /// </summary>
     [HttpDelete("invitations/{id}")]
-    public async Task<IActionResult> CancelInvitation(int id, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CancelInvitation(Guid id, CancellationToken cancellationToken)
     {
         var command = new CancelInvitationCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
@@ -73,7 +96,12 @@ public class StaffController : BaseApiController
         return NoContent();
     }
 
+    /// <summary>
+    /// Get list of all staff members in the clinic
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<StaffDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetStaffList([FromQuery] string? role, CancellationToken cancellationToken)
     {
         var query = new GetStaffListQuery(role);
@@ -82,7 +110,7 @@ public class StaffController : BaseApiController
     }
 }
 
-public record InviteStaffRequest(string Role, string Email);
+public record InviteStaffRequest(string Role, string Email, Guid? SpecializationId = null);
 public record AcceptInvitationWithRegistrationRequest(
     string FirstName,
     string LastName,

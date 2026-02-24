@@ -11,6 +11,6 @@ public class ClinicBranch : TenantEntity
     public int CityGeoNameId { get; set; }
     public bool IsMainBranch { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; private set; }
     public bool IsDeleted { get; set; }
 }

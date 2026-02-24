@@ -7,7 +7,6 @@ using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Security.Cryptography;
 
 namespace ClinicManagement.Infrastructure.Services;
 
@@ -33,27 +32,19 @@ public class RefreshTokenService : IRefreshTokenService
         _logger = logger;
     }
 
-    public async Task<RefreshToken> GenerateRefreshTokenAsync(int userId, string? ipAddress = null, CancellationToken cancellationToken = default)
+    public async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
-        var randomBytes = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
-        var token = Convert.ToBase64String(randomBytes);
-
         var now = _dateTimeProvider.UtcNow;
         
         var expiryTime = _jwtOptions.RefreshTokenExpirationMinutes.HasValue
             ? now.AddMinutes(_jwtOptions.RefreshTokenExpirationMinutes.Value)
             : now.AddDays(_jwtOptions.RefreshTokenExpirationDays);
         
-        var refreshToken = new RefreshToken
-        {
-            Token = token,
-            UserId = userId,
-            ExpiryTime = expiryTime,
-            CreatedAt = now,
-            CreatedByIp = ipAddress ?? _currentUserService.IpAddress
-        };
+        var refreshToken = RefreshToken.Create(
+            userId,
+            expiryTime,
+            ipAddress ?? _currentUserService.IpAddress
+        );
 
         await _unitOfWork.RefreshTokens.AddAsync(refreshToken, cancellationToken);
 
@@ -94,7 +85,7 @@ public class RefreshTokenService : IRefreshTokenService
         }
     }
 
-    public async Task RevokeAllUserRefreshTokensAsync(int userId, string? ipAddress = null, CancellationToken cancellationToken = default)
+    public async Task RevokeAllUserRefreshTokensAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
         var now = _dateTimeProvider.UtcNow;
         var activeTokens = await _unitOfWork.RefreshTokens.GetActiveTokensByUserIdAsync(userId, cancellationToken);
