@@ -3,9 +3,6 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-/// <summary>
-/// Stores working days for each doctor at each clinic branch
-/// </summary>
 public class DoctorWorkingDay : BaseEntity
 {
     public Guid DoctorId { get; set; }

@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Exceptions;
 using ClinicManagement.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -50,11 +49,6 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
             await _emailTokenService.ConfirmEmailAsync(user, request.Token, cancellationToken);
             _logger.LogInformation("Email confirmed successfully for user: {UserId}", user.Id);
             return Result.Success();
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning("Email confirmation failed for user {UserId}: {ErrorCode}", user.Id, ex.ErrorCode);
-            return Result.Failure(ex.ErrorCode, ex.Message);
         }
         catch (InvalidOperationException ex)
         {

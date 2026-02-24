@@ -4,10 +4,6 @@ using System.Diagnostics;
 
 namespace ClinicManagement.Application.Behaviors;
 
-/// <summary>
-/// Pipeline behavior that logs all requests and their execution time.
-/// Useful for monitoring and debugging.
-/// </summary>
 public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
