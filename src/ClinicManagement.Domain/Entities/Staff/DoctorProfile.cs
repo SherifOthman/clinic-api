@@ -11,6 +11,6 @@ public class DoctorProfile
     public string? LicenseNumber { get; set; }
     public DateTime? LicenseExpiryDate { get; set; }
     public string? Bio { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

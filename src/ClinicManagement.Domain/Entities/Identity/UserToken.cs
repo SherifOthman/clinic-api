@@ -11,8 +11,8 @@ public class UserToken
     public DateTime? UsedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    public bool IsExpired => DateTime.UtcNow > ExpiresAt;
-    public bool IsValid => !IsUsed && !IsExpired;
+    public bool IsExpired(DateTime now) => now > ExpiresAt;
+    public bool IsValid(DateTime now) => !IsUsed && !IsExpired(now);
 }
 
 public static class TokenTypes

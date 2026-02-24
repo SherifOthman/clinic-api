@@ -5,9 +5,6 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-/// <summary>
-/// Medical visit, linked optionally to Appointment
-/// </summary>
 public class MedicalVisit : BaseEntity
 {
     public Guid ClinicBranchId { get; set; }
@@ -15,8 +12,6 @@ public class MedicalVisit : BaseEntity
     public Guid DoctorId { get; set; }
     public Guid AppointmentId { get; set; }
     public string? Diagnosis { get; set; }
-    
-    // Timestamps (US-6)
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

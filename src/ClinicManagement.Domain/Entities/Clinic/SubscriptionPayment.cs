@@ -20,6 +20,8 @@ public class SubscriptionPayment : BaseEntity
     public string? FailureReason { get; set; }
     public DateTime? RefundedAt { get; set; }
     public decimal? RefundAmount { get; set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
+    
+    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

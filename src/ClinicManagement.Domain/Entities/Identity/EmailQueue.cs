@@ -20,6 +20,8 @@ public class EmailQueue : BaseEntity
     public int MaxAttempts { get; set; } = 3;
     public DateTime? SentAt { get; set; }
     public string? ErrorMessage { get; set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
     public DateTime? ScheduledFor { get; set; }
+    
+    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

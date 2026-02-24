@@ -16,6 +16,8 @@ public class Notification : BaseEntity
     public string? ActionUrl { get; set; }
     public bool IsRead { get; set; } = false;
     public DateTime? ReadAt { get; set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
     public DateTime? ExpiresAt { get; set; }
+    
+    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

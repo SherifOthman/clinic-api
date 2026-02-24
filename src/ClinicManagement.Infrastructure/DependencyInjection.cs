@@ -2,6 +2,7 @@ using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Repositories;
 using ClinicManagement.Infrastructure.Persistence.Data;
 using ClinicManagement.Infrastructure.Persistence.Seeders;
@@ -17,6 +18,7 @@ public static class DependencyInjection
     {
         services.AddHttpContextAccessor();
         
+        services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<DbUpMigrationService>();
         services.AddScoped<SuperAdminSeedService>();

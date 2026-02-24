@@ -15,6 +15,8 @@ public class ClinicSubscription : BaseEntity
     public string? CancellationReason { get; set; }
     public DateTime? CancelledAt { get; set; }
     public Guid? CancelledBy { get; set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
+    
+    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

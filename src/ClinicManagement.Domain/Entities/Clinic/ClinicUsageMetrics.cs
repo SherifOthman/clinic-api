@@ -16,6 +16,8 @@ public class ClinicUsageMetrics : BaseEntity
     public int AppointmentsCount { get; set; } = 0;
     public int InvoicesCount { get; set; } = 0;
     public decimal StorageUsedGB { get; set; } = 0;
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
+    
+    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

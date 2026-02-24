@@ -58,17 +58,15 @@ public class StaffInvitation : TenantEntity
         return Result.Success();
     }
 
-    // Factory method for creating new invitations
     public static StaffInvitation Create(
         Guid clinicId,
         string email,
         string role,
         Guid createdByUserId,
+        DateTime now,
         Guid? specializationId = null,
         int expirationDays = DefaultExpirationDays)
     {
-        var now = DateTime.UtcNow;
-        
         return new StaffInvitation
         {
             ClinicId = clinicId,

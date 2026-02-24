@@ -28,18 +28,15 @@ public class Medicine : AuditableEntity
     public bool IsLowStock => TotalStripsInStock <= MinimumStockLevel;
     public bool NeedsReorder => TotalStripsInStock <= ReorderLevel;
     public bool HasStock => TotalStripsInStock > 0;
-    public bool IsExpired => ExpiryDate.HasValue && ExpiryDate.Value.Date < DateTime.UtcNow.Date;
-    public bool IsExpiringSoon => ExpiryDate.HasValue && ExpiryDate.Value.Date <= DateTime.UtcNow.Date.AddDays(30);
-    public StockStatus StockStatus
+    public bool IsExpired(DateTime now) => ExpiryDate.HasValue && ExpiryDate.Value.Date < now.Date;
+    public bool IsExpiringSoon(DateTime now) => ExpiryDate.HasValue && ExpiryDate.Value.Date <= now.Date.AddDays(30);
+    public StockStatus GetStockStatus()
     {
-        get
-        {
-            if (!HasStock) return StockStatus.OutOfStock;
-            if (IsLowStock) return StockStatus.LowStock;
-            if (NeedsReorder) return StockStatus.NeedsReorder;
-            return StockStatus.InStock;
-        }
+        if (!HasStock) return StockStatus.OutOfStock;
+        if (IsLowStock) return StockStatus.LowStock;
+        if (NeedsReorder) return StockStatus.NeedsReorder;
+        return StockStatus.InStock;
     }
-    public int? DaysUntilExpiry => ExpiryDate?.Subtract(DateTime.UtcNow.Date).Days;
+    public int? GetDaysUntilExpiry(DateTime now) => ExpiryDate?.Subtract(now.Date).Days;
     public decimal InventoryValue => (FullBoxesInStock * BoxPrice) + (RemainingStrips * StripPrice);
 }

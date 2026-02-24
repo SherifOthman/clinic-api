@@ -48,7 +48,7 @@ public class SubscriptionPlan : BaseEntity
     
     // Versioning (US-4)
     public int Version { get; set; } = 1;
-    public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
+    public DateTime EffectiveDate { get; set; }
     public DateTime? ExpiryDate { get; set; }
     
     // Business logic - calculated properties

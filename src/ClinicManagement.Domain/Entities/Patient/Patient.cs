@@ -16,11 +16,11 @@ public class Patient : TenantEntity
     public string? EmergencyContactPhone { get; set; }
     public string? EmergencyContactRelation { get; set; }
 
-    public int Age => DateTime.UtcNow.Year - DateOfBirth.Year - 
-        (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
-    public bool IsAdult => Age >= 18;
-    public bool IsMinor => Age < 18;
-    public bool IsSenior => Age >= 65;
+    public int GetAge(DateTime now) => now.Year - DateOfBirth.Year - 
+        (now.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
+    public bool IsAdult(DateTime now) => GetAge(now) >= 18;
+    public bool IsMinor(DateTime now) => GetAge(now) < 18;
+    public bool IsSenior(DateTime now) => GetAge(now) >= 65;
     public bool HasEmergencyContact => !string.IsNullOrWhiteSpace(EmergencyContactName);
     public bool HasAllergies => !string.IsNullOrWhiteSpace(KnownAllergies);
 }
