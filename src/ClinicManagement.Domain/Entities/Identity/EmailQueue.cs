@@ -22,6 +22,4 @@ public class EmailQueue : BaseEntity
     public string? ErrorMessage { get; set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? ScheduledFor { get; set; }
-    
-    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

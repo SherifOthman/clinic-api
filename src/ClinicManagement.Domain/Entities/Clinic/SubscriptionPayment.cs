@@ -22,6 +22,4 @@ public class SubscriptionPayment : BaseEntity
     public decimal? RefundAmount { get; set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
-    
-    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

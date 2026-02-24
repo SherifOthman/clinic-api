@@ -11,6 +11,4 @@ public class DoctorSpecialization : BaseEntity
     public string? CertificationNumber { get; set; }
     public DateTime? CertificationDate { get; set; }
     public DateTime CreatedAt { get; private set; }
-    
-    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

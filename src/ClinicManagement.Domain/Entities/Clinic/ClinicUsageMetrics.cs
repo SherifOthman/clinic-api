@@ -18,6 +18,4 @@ public class ClinicUsageMetrics : BaseEntity
     public decimal StorageUsedGB { get; set; } = 0;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
-    
-    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

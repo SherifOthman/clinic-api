@@ -12,6 +12,4 @@ public class StaffBranch : BaseEntity
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; set; }
-    
-    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }

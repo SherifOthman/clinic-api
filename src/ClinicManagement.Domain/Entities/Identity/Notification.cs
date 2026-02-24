@@ -18,6 +18,4 @@ public class Notification : BaseEntity
     public DateTime? ReadAt { get; set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? ExpiresAt { get; set; }
-    
-    public void SetCreatedAt(DateTime createdAt) => CreatedAt = createdAt;
 }
