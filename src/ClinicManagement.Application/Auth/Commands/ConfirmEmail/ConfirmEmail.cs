@@ -49,6 +49,7 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
         {
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _emailTokenService.ConfirmEmailAsync(user, request.Token, cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
             _logger.LogInformation("Email confirmed successfully for user: {UserId}", user.Id);
             return Result.Success();
         }

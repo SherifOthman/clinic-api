@@ -57,7 +57,6 @@ public class EmailTokenService : IEmailTokenService
 
         user.IsEmailConfirmed = true;
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
-        await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
         _logger.LogInformation("Email confirmed successfully for {Email}", user.Email);
     }

@@ -71,7 +71,6 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
             
             // Increment failed login attempts
             await _unitOfWork.Users.IncrementFailedLoginAttemptsAsync(user.Id, cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
             
             // Check if this was the 5th failed attempt
             if (user.FailedLoginAttempts + 1 >= 5)
