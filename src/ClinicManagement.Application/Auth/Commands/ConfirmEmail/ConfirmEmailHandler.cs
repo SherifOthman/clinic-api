@@ -7,12 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ConfirmEmail;
 
-public record ConfirmEmailCommand(
-    string Email,
-    string Token
-) : IRequest<Result>;
-
-
 public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -57,4 +51,3 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
         }
     }
 }
-

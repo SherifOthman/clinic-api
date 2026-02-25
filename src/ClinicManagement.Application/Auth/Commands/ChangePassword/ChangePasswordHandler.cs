@@ -8,11 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ChangePassword;
 
-public record ChangePasswordCommand(
-    string CurrentPassword,
-    string NewPassword
-) : IRequest<Result>;
-
 public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -57,4 +52,3 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         return Result.Success();
     }
 }
-

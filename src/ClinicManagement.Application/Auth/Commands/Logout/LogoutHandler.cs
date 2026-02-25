@@ -1,16 +1,9 @@
-using ClinicManagement.Application.Abstractions.Authentication;
-using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Domain.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands;
-
-public record LogoutCommand(
-    string? RefreshToken
-) : IRequest<Result>;
 
 public class LogoutHandler : IRequestHandler<LogoutCommand, Result>
 {
@@ -25,9 +18,7 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, Result>
         _logger = logger;
     }
 
-    public async Task<Result> Handle(
-        LogoutCommand request,
-        CancellationToken cancellationToken)
+    public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(request.RefreshToken))
         {
@@ -43,4 +34,3 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, Result>
         return Result.Success();
     }
 }
-
