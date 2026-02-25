@@ -7,15 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.Register;
 
-public record RegisterCommand(
-    string FirstName,
-    string LastName,
-    string UserName,
-    string Email,
-    string Password,
-    string PhoneNumber
-) : IRequest<Result>;
-
 public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 {
     private readonly IUserRegistrationService _userRegistrationService;
@@ -57,4 +48,3 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         return Result.Success();
     }
 }
-
