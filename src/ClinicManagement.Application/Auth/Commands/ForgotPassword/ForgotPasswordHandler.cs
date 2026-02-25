@@ -8,10 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Application.Auth.Commands.ForgotPassword;
 
-public record ForgotPasswordCommand(
-    string Email
-) : IRequest<Result>;
-
 public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -34,40 +30,29 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         _logger = logger;
     }
 
-    public async Task<Result> Handle(
-        ForgotPasswordCommand request,
-        CancellationToken cancellationToken)
+    public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
 
-        // Always return success to prevent email enumeration
         if (user == null)
         {
             _logger.LogInformation("Password reset requested for non-existent email: {Email}", request.Email);
             return Result.Success();
         }
 
-        // Generate password reset token
         var token = _emailTokenService.GeneratePasswordResetToken(user.Id, user.Email!, user.PasswordHash);
 
-
+        var displayName = $"{user.FirstName} {user.LastName}".Trim();
         var resetLink = $"{_smtpOptions.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
 
-        // Send email
         try
         {
-            await _emailService.SendPasswordResetEmailAsync(
-                user.Email!,
-                $"{user.FirstName} {user.LastName}".Trim(),
-                resetLink,
-                cancellationToken);
-
+            await _emailService.SendPasswordResetEmailAsync(user.Email!, displayName, resetLink, cancellationToken);
             _logger.LogInformation("Password reset email sent to: {Email}", user.Email);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send password reset email to: {Email}", user.Email);
-            // Still return success to prevent email enumeration
         }
 
         return Result.Success();
