@@ -8,12 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ResetPassword;
 
-public record ResetPasswordCommand(
-    string Email,
-    string Token,
-    string NewPassword
-) : IRequest<Result>;
-
 public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -44,17 +38,13 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
             return Result.Failure(ErrorCodes.TOKEN_INVALID, "Invalid reset token");
         }
 
-        // Validate token
         if (!_emailTokenService.ValidatePasswordResetToken(user.Id, user.Email!, user.PasswordHash, request.Token))
         {
             _logger.LogWarning("Invalid password reset token for user: {Email}", request.Email);
             return Result.Failure(ErrorCodes.TOKEN_INVALID, "Invalid or expired reset token");
         }
 
-        // Hash new password
-        var passwordHash = _passwordHasher.HashPassword(request.NewPassword);
-
-        user.PasswordHash = passwordHash;
+        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
 
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
 
