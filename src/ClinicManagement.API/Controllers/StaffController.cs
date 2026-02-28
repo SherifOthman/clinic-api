@@ -1,3 +1,4 @@
+using ClinicManagement.API.Contracts.Staff;
 using ClinicManagement.API.Models;
 using ClinicManagement.Application.Staff.Commands;
 using ClinicManagement.Application.Staff.Queries;
@@ -109,12 +110,3 @@ public class StaffController : BaseApiController
         return Ok(result);
     }
 }
-
-public record InviteStaffRequest(string Role, string Email, Guid? SpecializationId = null);
-public record AcceptInvitationWithRegistrationRequest(
-    string FirstName,
-    string LastName,
-    string UserName,
-    string Password,
-    string PhoneNumber
-);

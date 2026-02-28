@@ -1,3 +1,4 @@
+using ClinicManagement.API.Contracts.Auth;
 using ClinicManagement.API.Models;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Auth.Commands;
@@ -51,7 +52,6 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Login Failed");
 
-        // Log for debugging
         var logger = HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
         logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}", 
             request.EmailOrUsername, isMobile, result.Value!.RefreshToken != null);
@@ -74,8 +74,17 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct)
     {
+        var command = new RegisterCommand(
+            request.FirstName,
+            request.LastName,
+            request.UserName,
+            request.Email,
+            request.Password,
+            request.PhoneNumber
+        );
+        
         var result = await Sender.Send(command, ct);
         if (result.IsFailure)
             return HandleResult(result, "Registration Failed");
@@ -95,6 +104,10 @@ public class AuthController : BaseApiController
         var userId = _currentUser.GetRequiredUserId();
         var query = new GetMeQuery(userId);
         var result = await Sender.Send(query, ct);
+        
+        if (result == null)
+            return NotFound();
+        
         return Ok(result);
     }
 
@@ -103,7 +116,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RefreshTokenResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest? request, CancellationToken ct)
     {
@@ -134,14 +147,13 @@ public class AuthController : BaseApiController
             return Unauthorized();
         }
 
-        // For web clients, set new refresh token as HTTP-only cookie
         if (!isMobile && result.Value!.RefreshToken != null)
         {
             logger.LogInformation("Setting new refresh token cookie");
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
-        return Ok(new RefreshTokenResponse(
+        return Ok(new RefreshTokenResponseDto(
             result.Value!.AccessToken,
             isMobile ? result.Value.RefreshToken : null
         ));
@@ -154,8 +166,9 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailCommand command, CancellationToken ct)
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request, CancellationToken ct)
     {
+        var command = new ConfirmEmailCommand(request.Email, request.Token);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -170,8 +183,9 @@ public class AuthController : BaseApiController
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken ct)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
     {
+        var command = new ForgotPasswordCommand(request.Email);
         await Sender.Send(command, ct);
 
         return NoContent();
@@ -184,8 +198,9 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken ct)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
     {
+        var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -201,8 +216,9 @@ public class AuthController : BaseApiController
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken ct)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
+        var command = new ChangePasswordCommand(request.CurrentPassword, request.NewPassword);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -270,8 +286,9 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationCommand command, CancellationToken ct)
+    public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationRequest request, CancellationToken ct)
     {
+        var command = new ResendEmailVerificationCommand(request.Email);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -287,8 +304,9 @@ public class AuthController : BaseApiController
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileCommand command, CancellationToken ct)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken ct)
     {
+        var command = new UpdateProfileCommand(request.FirstName, request.LastName, request.PhoneNumber);
         var result = await Sender.Send(command, ct);
 
         if (result.IsFailure)
@@ -333,10 +351,3 @@ public class AuthController : BaseApiController
         return NoContent();
     }
 }
-
-// DTOs for request/response
-public record LoginRequest(string EmailOrUsername, string Password);
-public record RefreshTokenRequest(string? RefreshToken);
-public record RefreshTokenResponse(string AccessToken, string? RefreshToken);
-public record LogoutRequest(string? RefreshToken);
-
