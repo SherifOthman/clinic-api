@@ -28,8 +28,10 @@ public class ChangePasswordHandlerTests : IDisposable
         _context = new ApplicationDbContext(options);
 
         var userStoreMock = new Mock<IUserStore<User>>();
+#pragma warning disable CS8625
         _userManagerMock = new Mock<UserManager<User>>(
             userStoreMock.Object, null, null, null, null, null, null, null, null);
+#pragma warning restore CS8625
 
         _handler = new ChangePasswordHandler(
             _context,

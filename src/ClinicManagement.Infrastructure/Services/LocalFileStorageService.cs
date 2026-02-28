@@ -76,7 +76,7 @@ public class LocalFileStorageService : IFileStorageService
         var validationResult = ValidateFile(file, fileTypeSettings.AllowedExtensions.ToArray(), fileTypeSettings.MaxFileSizeBytes);
         if (validationResult.IsFailure)
         {
-            return Result.Failure<string>(validationResult.ErrorCode, validationResult.ErrorMessage);
+            return Result.Failure<string>(validationResult.ErrorCode ?? "VALIDATION_FAILED", validationResult.ErrorMessage ?? "File validation failed");
         }
 
         var filePath = await UploadFileAsync(file, fileTypeSettings.Folder, cancellationToken);

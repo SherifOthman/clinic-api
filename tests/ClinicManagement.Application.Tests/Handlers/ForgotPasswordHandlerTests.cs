@@ -28,8 +28,10 @@ public class ForgotPasswordHandlerTests : IDisposable
 
         _context = new ApplicationDbContext(options);
 
+#pragma warning disable CS8625
         _userManagerMock = new Mock<UserManager<User>>(
             Mock.Of<IUserStore<User>>(), null, null, null, null, null, null, null, null);
+#pragma warning restore CS8625
         _emailServiceMock = new Mock<IEmailService>();
         _loggerMock = new Mock<ILogger<ForgotPasswordHandler>>();
 
