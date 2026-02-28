@@ -44,13 +44,45 @@ public class ClinicOwnerSeedService
                 return;
             }
 
+            // Seed subscription plan if it doesn't exist
             var basicPlan = await _context.SubscriptionPlans
                 .FirstOrDefaultAsync(p => p.Name == "Basic");
 
             if (basicPlan == null)
             {
-                _logger.LogError("Basic Plan not found");
-                return;
+                basicPlan = new SubscriptionPlan
+                {
+                    Name = "Basic",
+                    NameAr = "أساسي",
+                    Description = "Basic plan for small clinics",
+                    DescriptionAr = "خطة أساسية للعيادات الصغيرة",
+                    MonthlyFee = 299.00m,
+                    YearlyFee = 2990.00m,
+                    SetupFee = 0m,
+                    MaxBranches = 1,
+                    MaxStaff = 5,
+                    MaxPatientsPerMonth = 500,
+                    MaxAppointmentsPerMonth = 1000,
+                    MaxInvoicesPerMonth = 500,
+                    StorageLimitGB = 5,
+                    HasInventoryManagement = true,
+                    HasReporting = true,
+                    HasAdvancedReporting = false,
+                    HasApiAccess = false,
+                    HasMultipleBranches = false,
+                    HasCustomBranding = false,
+                    HasPrioritySupport = false,
+                    HasBackupAndRestore = true,
+                    HasIntegrations = false,
+                    IsActive = true,
+                    IsPopular = false,
+                    DisplayOrder = 1,
+                    EffectiveDate = DateTime.UtcNow
+                };
+                
+                _context.SubscriptionPlans.Add(basicPlan);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Created Basic subscription plan");
             }
 
             var userRoles = await _userManager.GetRolesAsync(ownerUser);
@@ -70,6 +102,21 @@ public class ClinicOwnerSeedService
             };
 
             _context.Clinics.Add(clinic);
+
+            // Create first branch
+            var mainBranch = new ClinicBranch
+            {
+                ClinicId = clinic.Id,
+                Name = "Main Branch",
+                AddressLine = "123 Medical Street, Downtown",
+                CountryGeoNameId = 6252001, // United States
+                StateGeoNameId = 5332921, // California
+                CityGeoNameId = 5368361, // Los Angeles
+                IsMainBranch = true,
+                IsActive = true
+            };
+
+            _context.ClinicBranches.Add(mainBranch);
 
             var subscription = new ClinicSubscription
             {
@@ -126,7 +173,7 @@ public class ClinicOwnerSeedService
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Created demo clinic for owner@clinic.com");
+            _logger.LogInformation("Created demo clinic with main branch for owner@clinic.com");
         }
         catch (Exception ex)
         {
