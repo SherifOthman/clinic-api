@@ -2,17 +2,18 @@
 using ClinicManagement.Application.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Repositories;
+using ClinicManagement.Infrastructure.Persistence;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
 namespace ClinicManagement.Application.Tests.Handlers;
 
-public class ForgotPasswordHandlerTests
+public class ForgotPasswordHandlerTests : IDisposable
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly ApplicationDbContext _context;
     private readonly Mock<IEmailTokenService> _tokenServiceMock;
     private readonly Mock<IEmailService> _emailServiceMock;
     private readonly Mock<ILogger<ForgotPasswordHandler>> _loggerMock;
@@ -20,7 +21,12 @@ public class ForgotPasswordHandlerTests
 
     public ForgotPasswordHandlerTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new ApplicationDbContext(options);
+
         _tokenServiceMock = new Mock<IEmailTokenService>();
         _emailServiceMock = new Mock<IEmailService>();
         _loggerMock = new Mock<ILogger<ForgotPasswordHandler>>();
@@ -28,7 +34,7 @@ public class ForgotPasswordHandlerTests
         var smtpOptions = Options.Create(new SmtpOptions { FrontendUrl = "https://example.com" });
 
         _handler = new ForgotPasswordHandler(
-            _unitOfWorkMock.Object,
+            _context,
             _tokenServiceMock.Object,
             _emailServiceMock.Object,
             smtpOptions,
@@ -40,9 +46,8 @@ public class ForgotPasswordHandlerTests
     {
         // Arrange
         var email = "nonexistent@test.com";
-        _unitOfWorkMock
-            .Setup(x => x.Users.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((User?)null);
+
+        // No user in database
 
         var command = new ForgotPasswordCommand(email);
 
@@ -60,11 +65,17 @@ public class ForgotPasswordHandlerTests
     public async Task Handle_ShouldSendEmail_WhenUserExists()
     {
         // Arrange
-        var user = new User { Email = "test@test.com", PasswordHash = "hash123" };
+        var user = new User 
+        { 
+            Email = "test@test.com",
+            UserName = "test@test.com",
+            FirstName = "Test",
+            LastName = "User"
+        };
+        user.PasswordHash = "hash123";
 
-        _unitOfWorkMock
-            .Setup(x => x.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         _tokenServiceMock
             .Setup(x => x.GeneratePasswordResetToken(user.Id, user.Email, user.PasswordHash))
@@ -91,11 +102,17 @@ public class ForgotPasswordHandlerTests
     public async Task Handle_ShouldReturnSuccess_WhenEmailServiceThrows()
     {
         // Arrange
-        var user = new User { Email = "test@test.com", PasswordHash = "hash123" };
+        var user = new User 
+        { 
+            Email = "test@test.com",
+            UserName = "test@test.com",
+            FirstName = "Test",
+            LastName = "User"
+        };
+        user.PasswordHash = "hash123";
 
-        _unitOfWorkMock
-            .Setup(x => x.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         _tokenServiceMock
             .Setup(x => x.GeneratePasswordResetToken(user.Id, user.Email, user.PasswordHash))
@@ -116,10 +133,15 @@ public class ForgotPasswordHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        _loggerMock.Verify(x=>x.Log(LogLevel.Error,
+        _loggerMock.Verify(x => x.Log(LogLevel.Error,
             It.IsAny<EventId>(),
             It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send password reset email")),
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.Once);
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
     }
 }

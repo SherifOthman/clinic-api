@@ -1,5 +1,6 @@
-using ClinicManagement.Domain.Repositories;
+using ClinicManagement.Application.Abstractions.Data;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Auth.Queries;
 
@@ -14,11 +15,11 @@ public record CheckUsernameAvailabilityDto(
 
 public class CheckUsernameAvailabilityHandler : IRequestHandler<CheckUsernameAvailabilityQuery, CheckUsernameAvailabilityDto>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public CheckUsernameAvailabilityHandler(IUnitOfWork unitOfWork)
+    public CheckUsernameAvailabilityHandler(IApplicationDbContext context)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<CheckUsernameAvailabilityDto> Handle(
@@ -30,8 +31,10 @@ public class CheckUsernameAvailabilityHandler : IRequestHandler<CheckUsernameAva
             return new CheckUsernameAvailabilityDto(false, "Username is required");
         }
 
-        var user = await _unitOfWork.Users.GetByUsernameAsync(request.Username, cancellationToken);
-        var isAvailable = user == null;
+        var exists = await _context.Users
+            .AnyAsync(u => u.UserName == request.Username, cancellationToken);
+            
+        var isAvailable = !exists;
 
         return new CheckUsernameAvailabilityDto(
             isAvailable,

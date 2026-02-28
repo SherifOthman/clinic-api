@@ -1,11 +1,22 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace ClinicManagement.Domain.Entities;
 
-public class Role
+public class Role : IdentityRole<Guid>
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public string Name { get; set; } = string.Empty;
+    public Role()
+    {
+        Id = Guid.NewGuid();
+    }
+
+    public Role(string roleName) : this()
+    {
+        Name = roleName;
+        NormalizedName = roleName.ToUpperInvariant();
+    }
+
     public string? Description { get; set; }
-    public DateTime CreatedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsDeleted { get; set; }
 }
 

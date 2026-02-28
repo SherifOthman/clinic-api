@@ -1,7 +1,9 @@
 using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Auth.Queries;
 
@@ -22,26 +24,30 @@ public record GetMeDto(
 
 public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ITokenService _tokenService;
+    private readonly IApplicationDbContext _context;
+    private readonly UserManager<Domain.Entities.User> _userManager;
 
-    public GetMeHandler(IUnitOfWork unitOfWork, ITokenService tokenService)
+    public GetMeHandler(
+        IApplicationDbContext context,
+        UserManager<Domain.Entities.User> userManager)
     {
-        _unitOfWork = unitOfWork;
-        _tokenService = tokenService;
+        _context = context;
+        _userManager = userManager;
     }
 
     public async Task<GetMeDto?> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            
         if (user == null)
             return null;
 
-        var roles = await _unitOfWork.Users.GetUserRolesAsync(user.Id, cancellationToken);
+        var roles = await _userManager.GetRolesAsync(user);
 
         // Check if user has completed onboarding by checking if they own a clinic
-        var hasClinic = await _unitOfWork.Users.HasCompletedClinicOnboardingAsync(user.Id, cancellationToken);
-
+        var hasClinic = await _context.Clinics
+            .AnyAsync(c => c.OwnerUserId == user.Id, cancellationToken);
 
         return new GetMeDto(
             user.Id,
@@ -49,10 +55,10 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             user.FirstName,
             user.LastName,
             user.Email!,
-            user.PhoneNumber,
+            user.PhoneNumber ?? string.Empty,
             user.ProfileImageUrl,
             roles.ToList(),
-            user.IsEmailConfirmed,
+            user.EmailConfirmed,
             hasClinic
         );
     }

@@ -1,27 +1,28 @@
 using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Application.Auth.Commands.ChangePassword;
 
 public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Result>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
-        IUnitOfWork unitOfWork,
+        IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         ICurrentUserService currentUser,
         ILogger<ChangePasswordHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _passwordHasher = passwordHasher;
         _currentUser = currentUser;
         _logger = logger;
@@ -31,7 +32,9 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
     {
         var userId = _currentUser.GetRequiredUserId();
         
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            
         if (user == null)
         {
             _logger.LogWarning("User not found: {UserId}", userId);
@@ -45,8 +48,9 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         }
 
         user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        user.LastPasswordChangeAt = DateTime.UtcNow;
         
-        await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);
         return Result.Success();

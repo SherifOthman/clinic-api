@@ -1,17 +1,17 @@
 ﻿using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Auth.Commands.ConfirmEmail;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Repositories;
+using ClinicManagement.Infrastructure.Persistence;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-
 namespace ClinicManagement.Application.Tests.Handlers;
 
-public class ConfirmEmailHandlerTests
+public class ConfirmEmailHandlerTests : IDisposable
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly ApplicationDbContext _context;
     private readonly Mock<IEmailTokenService> _emailTokenServiceMock = new();
     private readonly Mock<ILogger<ConfirmEmailHandler>> _loggerMock = new();
 
@@ -19,8 +19,14 @@ public class ConfirmEmailHandlerTests
 
     public ConfirmEmailHandlerTests()
     {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new ApplicationDbContext(options);
+
         _handler = new ConfirmEmailHandler(
-            _unitOfWorkMock.Object,
+            _context,
             _emailTokenServiceMock.Object,
             _loggerMock.Object);
     }
@@ -30,8 +36,7 @@ public class ConfirmEmailHandlerTests
     {
         var email = "test@test.com";
 
-        _unitOfWorkMock.Setup(u => u.Users.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((User?)null);
+        // No user in database
 
         var command = new ConfirmEmailCommand(email, "token");
 
@@ -43,11 +48,14 @@ public class ConfirmEmailHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenEmailAlreadyConfirmed()
     {
-        var user = new User { Email = "test@test.com" };
+        var user = new User 
+        { 
+            Email = "test@test.com",
+            UserName = "test@test.com"
+        };
 
-        _unitOfWorkMock
-            .Setup(x => x.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         _emailTokenServiceMock
             .Setup(x => x.IsEmailConfirmedAsync(user, It.IsAny<CancellationToken>()))
@@ -63,11 +71,14 @@ public class ConfirmEmailHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenTokenIsInvalid()
     {
-        var user = new User {  Email = "test@test.com" };
+        var user = new User 
+        { 
+            Email = "test@test.com",
+            UserName = "test@test.com"
+        };
 
-        _unitOfWorkMock
-            .Setup(x => x.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         _emailTokenServiceMock
             .Setup(x => x.IsEmailConfirmedAsync(user, It.IsAny<CancellationToken>()))
@@ -87,11 +98,14 @@ public class ConfirmEmailHandlerTests
     [Fact]
     public async Task Handle_ShouldConfirmEmail_WhenTokenIsValid()
     {
-        var user = new User {  Email = "test@test.com" };
+        var user = new User 
+        { 
+            Email = "test@test.com",
+            UserName = "test@test.com"
+        };
 
-        _unitOfWorkMock
-            .Setup(x => x.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         _emailTokenServiceMock
             .Setup(x => x.IsEmailConfirmedAsync(user, It.IsAny<CancellationToken>()))
@@ -108,5 +122,8 @@ public class ConfirmEmailHandlerTests
         result.IsSuccess.Should().BeTrue();
     }
 
+    public void Dispose()
+    {
+        _context.Dispose();
+    }
 }
-
