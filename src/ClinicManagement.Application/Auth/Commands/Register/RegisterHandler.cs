@@ -33,13 +33,13 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
     {
         if (await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken))
         {
-            return Result.Failure("EMAIL_ALREADY_EXISTS", "Email is already registered");
+            return Result.Failure(ErrorCodes.EMAIL_ALREADY_EXISTS, "Email is already registered");
         }
 
         if (!string.IsNullOrEmpty(request.UserName) &&
             await _context.Users.AnyAsync(u => u.UserName == request.UserName, cancellationToken))
         {
-            return Result.Failure("USERNAME_ALREADY_EXISTS", "Username is already taken");
+            return Result.Failure(ErrorCodes.USERNAME_ALREADY_EXISTS, "Username is already taken");
         }
 
         var user = new User
@@ -58,7 +58,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             _logger.LogError("Failed to create user {Email}: {Errors}", request.Email, errors);
-            return Result.Failure("USER_CREATION_FAILED", errors);
+            return Result.Failure(ErrorCodes.USER_CREATION_FAILED, errors);
         }
 
         var roleResult = await _userManager.AddToRoleAsync(user, Roles.ClinicOwner);
@@ -69,7 +69,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             _logger.LogError("Failed to add user {Email} to role {Role}: {Errors}", request.Email, Roles.ClinicOwner, errors);
             
             await _userManager.DeleteAsync(user);
-            return Result.Failure("ROLE_ASSIGNMENT_FAILED", $"Failed to assign role: {errors}");
+            return Result.Failure(ErrorCodes.ROLE_ASSIGNMENT_FAILED, $"Failed to assign role: {errors}");
         }
 
         try

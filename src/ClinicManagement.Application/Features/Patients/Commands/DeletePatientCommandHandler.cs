@@ -30,7 +30,7 @@ public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand,
 
         if (patient == null)
         {
-            return Result.Failure("PATIENT.NOT_FOUND", "Patient not found");
+            return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
         }
 
         // Soft delete

@@ -34,7 +34,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
 
         if (patient is null)
         {
-            return Result.Failure<PatientDto>("PATIENT.NOT_FOUND", "Patient not found");
+            return Result.Failure<PatientDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
         }
 
         BloodType? bloodType = null;

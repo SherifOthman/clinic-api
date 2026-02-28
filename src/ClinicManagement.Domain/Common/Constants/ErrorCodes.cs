@@ -40,6 +40,8 @@ public static class ErrorCodes
     public const string DUPLICATE_SUPPLY = "DUPLICATE_SUPPLY";
     public const string DUPLICATE_ATTRIBUTE = "DUPLICATE_ATTRIBUTE";
     public const string ALREADY_EXISTS = "ALREADY_EXISTS";
+    public const string EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
+    public const string USERNAME_ALREADY_EXISTS = "USERNAME_ALREADY_EXISTS";
 
     // Appointments
     public const string APPOINTMENT_CONFLICT = "APPOINTMENT_CONFLICT";
@@ -56,6 +58,8 @@ public static class ErrorCodes
     // General
     public const string OPERATION_NOT_ALLOWED = "OPERATION_NOT_ALLOWED";
     public const string OPERATION_FAILED = "OPERATION_FAILED";
+    public const string USER_CREATION_FAILED = "USER_CREATION_FAILED";
+    public const string ROLE_ASSIGNMENT_FAILED = "ROLE_ASSIGNMENT_FAILED";
 
     // System (500)
     public const string INTERNAL_ERROR = "INTERNAL_ERROR";
