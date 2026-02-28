@@ -1,28 +1,33 @@
 using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 public class UserRegistrationService : IUserRegistrationService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
+    private readonly UserManager<User> _userManager;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IEmailTokenService _emailTokenService;
     private readonly ILogger<UserRegistrationService> _logger;
 
     public UserRegistrationService(
-        IUnitOfWork unitOfWork,
+        IApplicationDbContext context,
+        UserManager<User> userManager,
         IPasswordHasher passwordHasher,
         IEmailTokenService emailTokenService,
         ILogger<UserRegistrationService> logger)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
+        _userManager = userManager;
         _passwordHasher = passwordHasher;
         _emailTokenService = emailTokenService;
         _logger = logger;
@@ -30,13 +35,15 @@ public class UserRegistrationService : IUserRegistrationService
 
     public async Task<Result<Guid>> RegisterUserAsync(UserRegistrationRequest request, CancellationToken cancellationToken = default)
     {
-        if (await _unitOfWork.Users.EmailExistsAsync(request.Email, cancellationToken))
+        // Check if email exists
+        if (await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken))
         {
             return Result.Failure<Guid>("EMAIL_ALREADY_EXISTS", "Email is already registered");
         }
 
+        // Check if username exists
         if (!string.IsNullOrEmpty(request.UserName) &&
-            await _unitOfWork.Users.UsernameExistsAsync(request.UserName, cancellationToken))
+            await _context.Users.AnyAsync(u => u.UserName == request.UserName, cancellationToken))
         {
             return Result.Failure<Guid>("USERNAME_ALREADY_EXISTS", "Username is already taken");
         }
@@ -45,36 +52,33 @@ public class UserRegistrationService : IUserRegistrationService
         {
             Email = request.Email,
             UserName = request.UserName ?? request.Email,
-            PasswordHash = _passwordHasher.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
             PhoneNumber = request.PhoneNumber,
-            IsEmailConfirmed = request.EmailConfirmed,
+            EmailConfirmed = request.EmailConfirmed,
         };
 
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-        try
+        // Use UserManager to create user with password
+        var result = await _userManager.CreateAsync(user, request.Password);
+        
+        if (!result.Succeeded)
         {
-            await _unitOfWork.Users.AddAsync(user, cancellationToken);
-
-            var roles = await _unitOfWork.Users.GetRolesAsync(cancellationToken);
-            var role = roles.FirstOrDefault(r => r.Name == request.Role);
-
-            if (role == null)
-            {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                return Result.Failure<Guid>("INVALID_ROLE", $"Role '{request.Role}' not found");
-            }
-
-            await _unitOfWork.Users.AddUserRoleAsync(user.Id, role.Id, cancellationToken);
-
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            _logger.LogError("Failed to create user {Email}: {Errors}", request.Email, errors);
+            return Result.Failure<Guid>("USER_CREATION_FAILED", errors);
         }
-        catch (Exception ex)
+
+        // Add user to role using UserManager
+        var roleResult = await _userManager.AddToRoleAsync(user, request.Role);
+        
+        if (!roleResult.Succeeded)
         {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            _logger.LogError(ex, "Error occurred while registering user: {Email}", request.Email);
-            throw;
+            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+            _logger.LogError("Failed to add user {Email} to role {Role}: {Errors}", request.Email, request.Role, errors);
+            
+            // Rollback: delete the user
+            await _userManager.DeleteAsync(user);
+            return Result.Failure<Guid>("ROLE_ASSIGNMENT_FAILED", $"Failed to assign role: {errors}");
         }
 
         if (request.SendConfirmationEmail && !request.EmailConfirmed)

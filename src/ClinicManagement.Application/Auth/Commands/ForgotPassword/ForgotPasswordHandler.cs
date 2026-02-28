@@ -2,7 +2,9 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Entities;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,20 +14,20 @@ namespace ClinicManagement.Application.Auth.Commands.ForgotPassword;
 public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Result>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IEmailTokenService _emailTokenService;
+    private readonly UserManager<User> _userManager;
     private readonly IEmailService _emailService;
     private readonly SmtpOptions _smtpOptions;
     private readonly ILogger<ForgotPasswordHandler> _logger;
 
     public ForgotPasswordHandler(
         IApplicationDbContext context,
-        IEmailTokenService emailTokenService,
+        UserManager<User> userManager,
         IEmailService emailService,
         IOptions<SmtpOptions> smtpOptions,
         ILogger<ForgotPasswordHandler> logger)
     {
         _context = context;
-        _emailTokenService = emailTokenService;
+        _userManager = userManager;
         _emailService = emailService;
         _smtpOptions = smtpOptions.Value;
         _logger = logger;
@@ -42,7 +44,8 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
             return Result.Success();
         }
 
-        var token = _emailTokenService.GeneratePasswordResetToken(user.Id, user.Email!, user.PasswordHash!);
+        // Use Identity's built-in password reset token
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
         var displayName = $"{user.FirstName} {user.LastName}".Trim();
         var resetLink = $"{_smtpOptions.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
