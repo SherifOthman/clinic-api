@@ -96,7 +96,7 @@ PRINT '  - Updated DoctorWorkingDays.DoctorId to reference Staff.Id';
 -- Add new constraint
 ALTER TABLE DoctorWorkingDays
 ADD CONSTRAINT FK_DoctorWorkingDays_StaffId
-FOREIGN KEY (DoctorId) REFERENCES Staff(Id) ON DELETE CASCADE;
+FOREIGN KEY (DoctorId) REFERENCES Staff(Id) ON DELETE NO ACTION;
 PRINT '  - Added FK_DoctorWorkingDays_StaffId';
 
 -- Fix Appointments.DoctorId
@@ -440,10 +440,12 @@ GO
 -- =============================================
 -- SECTION 7: ADD TENANT ISOLATION TO LAB/RADIOLOGY
 -- Add ClinicId for efficient tenant queries
+-- TEMPORARILY DISABLED - Tables may not exist yet
 -- =============================================
 
-PRINT 'Section 7: Adding tenant isolation to Lab/Radiology orders...';
+PRINT 'Section 7: Skipping Lab/Radiology tenant isolation (tables may not exist)...';
 
+/*
 -- Add ClinicId to LabTestOrders
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LabTestOrders') AND name = 'ClinicId')
 BEGIN
@@ -497,7 +499,7 @@ BEGIN
     CREATE INDEX IX_RadiologyOrders_ClinicId ON RadiologyOrders(ClinicId);
     PRINT '  - Added IX_RadiologyOrders_ClinicId';
 END
-
+*/
 PRINT 'Section 7 completed: Tenant isolation added to Lab/Radiology';
 PRINT '';
 

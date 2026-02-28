@@ -84,6 +84,10 @@ CREATE TABLE Users (
     PhoneNumber NVARCHAR(20),
     ProfileImageUrl NVARCHAR(500),
     IsEmailConfirmed BIT NOT NULL DEFAULT 0,
+    FailedLoginAttempts INT NOT NULL DEFAULT 0,
+    LockoutEndDate DATETIME2,
+    LastLoginAt DATETIME2,
+    LastPasswordChangeAt DATETIME2,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
 
@@ -134,9 +138,30 @@ CREATE TABLE Clinics (
     SubscriptionPlanId UNIQUEIDENTIFIER NOT NULL,
     OnboardingCompleted BIT NOT NULL DEFAULT 0,
     IsActive BIT NOT NULL DEFAULT 1,
+    SubscriptionStartDate DATETIME2,
+    SubscriptionEndDate DATETIME2,
+    TrialEndDate DATETIME2,
+    BillingEmail NVARCHAR(256),
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     IsDeleted BIT NOT NULL DEFAULT 0,
     FOREIGN KEY (OwnerUserId) REFERENCES Users(Id),
+    FOREIGN KEY (SubscriptionPlanId) REFERENCES SubscriptionPlans(Id)
+);
+
+-- ClinicSubscriptions table
+CREATE TABLE ClinicSubscriptions (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    ClinicId UNIQUEIDENTIFIER NOT NULL,
+    SubscriptionPlanId UNIQUEIDENTIFIER NOT NULL,
+    Status INT NOT NULL, -- 0=Trial, 1=Active, 2=Suspended, 3=Cancelled, 4=Expired
+    StartDate DATETIME2 NOT NULL,
+    EndDate DATETIME2,
+    TrialEndDate DATETIME2,
+    AutoRenew BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2,
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    FOREIGN KEY (ClinicId) REFERENCES Clinics(Id) ON DELETE CASCADE,
     FOREIGN KEY (SubscriptionPlanId) REFERENCES SubscriptionPlans(Id)
 );
 
@@ -176,6 +201,8 @@ CREATE TABLE Staff (
     ClinicId UNIQUEIDENTIFIER NOT NULL,
     IsActive BIT NOT NULL DEFAULT 1,
     HireDate DATETIME2 NOT NULL,
+    IsPrimaryClinic BIT NOT NULL DEFAULT 1,
+    Status INT NOT NULL DEFAULT 1, -- 0=Inactive, 1=Active, 2=OnLeave, 3=Terminated
     IsDeleted BIT NOT NULL DEFAULT 0,
     FOREIGN KEY (UserId) REFERENCES Users(Id),
     FOREIGN KEY (ClinicId) REFERENCES Clinics(Id) ON DELETE CASCADE
@@ -185,9 +212,17 @@ CREATE TABLE Staff (
 CREATE TABLE DoctorProfiles (
     Id UNIQUEIDENTIFIER PRIMARY KEY,
     StaffId UNIQUEIDENTIFIER NOT NULL,
+    FOREIGN KEY (StaffId) REFERENCES Staff(Id) ON DELETE CASCADE
+);
+
+-- DoctorSpecializations junction table
+CREATE TABLE DoctorSpecializations (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    DoctorProfileId UNIQUEIDENTIFIER NOT NULL,
     SpecializationId UNIQUEIDENTIFIER NOT NULL,
+    IsPrimary BIT NOT NULL DEFAULT 0,
     YearsOfExperience INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (StaffId) REFERENCES Staff(Id) ON DELETE CASCADE,
+    FOREIGN KEY (DoctorProfileId) REFERENCES DoctorProfiles(Id) ON DELETE CASCADE,
     FOREIGN KEY (SpecializationId) REFERENCES Specializations(Id)
 );
 

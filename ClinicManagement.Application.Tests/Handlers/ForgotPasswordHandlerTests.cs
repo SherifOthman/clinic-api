@@ -116,5 +116,10 @@ public class ForgotPasswordHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
+        _loggerMock.Verify(x=>x.Log(LogLevel.Error,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to send password reset email")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.Once);
     }
 }

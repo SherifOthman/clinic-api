@@ -1,9 +1,5 @@
-using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Common.Options;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
