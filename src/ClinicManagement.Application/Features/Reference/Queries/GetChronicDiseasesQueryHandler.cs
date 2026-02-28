@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -32,14 +33,7 @@ public class GetChronicDiseasesQueryHandler : IRequestHandler<GetChronicDiseases
 
         var diseases = await _context.ChronicDiseases
             .OrderBy(d => d.NameEn)
-            .Select(d => new ChronicDiseaseDto
-            {
-                Id = d.Id,
-                NameEn = d.NameEn,
-                NameAr = d.NameAr,
-                DescriptionEn = d.DescriptionEn,
-                DescriptionAr = d.DescriptionAr
-            })
+            .ProjectToType<ChronicDiseaseDto>()
             .ToListAsync(cancellationToken);
 
         _cache.Set(CacheKey, diseases, CacheExpiration);
