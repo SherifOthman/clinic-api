@@ -47,6 +47,10 @@ try
                 await specializationSeed.SeedSpecializationsAsync();
                 Log.Information("Specializations seeded successfully");
 
+                var chronicDiseaseSeed = services.GetRequiredService<ChronicDiseaseSeedService>();
+                await chronicDiseaseSeed.SeedChronicDiseasesAsync();
+                Log.Information("Chronic diseases seeded successfully");
+
                 var subscriptionPlanSeed = services.GetRequiredService<SubscriptionPlanSeedService>();
                 await subscriptionPlanSeed.SeedSubscriptionPlansAsync();
                 Log.Information("Subscription plans seeded successfully");
