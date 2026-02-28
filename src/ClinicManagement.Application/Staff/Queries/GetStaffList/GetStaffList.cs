@@ -1,6 +1,9 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Domain.Repositories;
+using ClinicManagement.Domain.Entities;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Staff.Queries;
 
@@ -19,30 +22,36 @@ public record StaffDto(
 
 public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, IEnumerable<StaffDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly UserManager<User> _userManager;
 
-    public GetStaffListHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public GetStaffListHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        UserManager<User> userManager)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _currentUserService = currentUserService;
+        _userManager = userManager;
     }
 
     public async Task<IEnumerable<StaffDto>> Handle(GetStaffListQuery request, CancellationToken cancellationToken)
     {
         var clinicId = _currentUserService.GetRequiredClinicId();
 
-        var staffList = await _unitOfWork.Staff.GetByClinicIdAsync(clinicId, cancellationToken);
+        var staffList = await _context.Staff
+            .Where(s => s.ClinicId == clinicId)
+            .Include(s => s.User)
+            .ToListAsync(cancellationToken);
 
         var result = new List<StaffDto>();
 
         foreach (var staff in staffList)
         {
-            var user = await _unitOfWork.Users.GetByIdAsync(staff.UserId, cancellationToken);
-            
-            if (user == null) continue;
+            if (staff.User == null) continue;
 
-            var userRoles = await _unitOfWork.Users.GetUserRolesAsync(user.Id, cancellationToken);
+            var userRoles = await _userManager.GetRolesAsync(staff.User);
             var role = userRoles.FirstOrDefault() ?? "Unknown";
 
             if (!string.IsNullOrEmpty(request.RoleFilter) && role != request.RoleFilter)
@@ -50,10 +59,10 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, IEnumerabl
 
             result.Add(new StaffDto(
                 staff.Id,
-                user.Id,
-                user.FullName,
-                user.Email,
-                user.PhoneNumber,
+                staff.User.Id,
+                staff.User.FullName,
+                staff.User.Email!,
+                staff.User.PhoneNumber,
                 role,
                 staff.IsActive,
                 staff.HireDate

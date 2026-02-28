@@ -1,9 +1,10 @@
-using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Staff.Commands;
 
@@ -18,89 +19,84 @@ public record AcceptInvitationWithRegistrationCommand(
 
 public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInvitationWithRegistrationCommand, Result>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IPasswordHasher _passwordHasher;
+    private readonly IApplicationDbContext _context;
+    private readonly UserManager<User> _userManager;
 
     public AcceptInvitationWithRegistrationHandler(
-        IUnitOfWork unitOfWork,
-        IPasswordHasher passwordHasher)
+        IApplicationDbContext context,
+        UserManager<User> userManager)
     {
-        _unitOfWork = unitOfWork;
-        _passwordHasher = passwordHasher;
+        _context = context;
+        _userManager = userManager;
     }
 
     public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
     {
-        var invitation = await _unitOfWork.StaffInvitations.GetByTokenAsync(request.Token, cancellationToken);
+        var invitation = await _context.StaffInvitations
+            .FirstOrDefaultAsync(si => si.InvitationToken == request.Token, cancellationToken);
 
         if (invitation == null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        var now = DateTime.UtcNow;
 
-        try
+        var user = new User
         {
-            var now = DateTime.UtcNow;
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            UserName = request.UserName,
+            Email = invitation.Email,
+            PhoneNumber = request.PhoneNumber,
+            EmailConfirmed = true
+        };
 
-            var user = new User
+        var createResult = await _userManager.CreateAsync(user, request.Password);
+        
+        if (!createResult.Succeeded)
+        {
+            var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+            return Result.Failure(ErrorCodes.USER_CREATION_FAILED, errors);
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(user, invitation.Role);
+        
+        if (!roleResult.Succeeded)
+        {
+            await _userManager.DeleteAsync(user);
+            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+            return Result.Failure(ErrorCodes.ROLE_ASSIGNMENT_FAILED, errors);
+        }
+
+        var acceptResult = invitation.Accept(user.Id, now);
+        if (acceptResult.IsFailure)
+        {
+            await _userManager.DeleteAsync(user);
+            return acceptResult;
+        }
+
+        var staff = new Domain.Entities.Staff
+        {
+            UserId = user.Id,
+            ClinicId = invitation.ClinicId,
+            IsActive = true,
+            HireDate = now
+        };
+
+        _context.Staff.Add(staff);
+
+        if (invitation.Role == "Doctor")
+        {
+            var doctorProfile = new DoctorProfile
             {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                UserName = request.UserName,
-                Email = invitation.Email, // Use email from invitation to ensure it matches
-                PhoneNumber = request.PhoneNumber,
-                PasswordHash = _passwordHasher.HashPassword(request.Password),
-                IsEmailConfirmed = true
+                StaffId = staff.Id,
+                SpecializationId = invitation.SpecializationId
             };
 
-            await _unitOfWork.Users.AddAsync(user, cancellationToken);
-
-            var roles = await _unitOfWork.Users.GetRolesAsync(cancellationToken);
-            var role = roles.FirstOrDefault(r => r.Name == invitation.Role);
-            
-            if (role != null)
-            {
-                await _unitOfWork.Users.AddUserRoleAsync(user.Id, role.Id, cancellationToken);
-            }
-
-            var acceptResult = invitation.Accept(user.Id, now);
-            if (acceptResult.IsFailure)
-            {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                return acceptResult;
-            }
-            
-            await _unitOfWork.StaffInvitations.UpdateAsync(invitation, cancellationToken);
-
-            var staff = new Domain.Entities.Staff
-            {
-                UserId = user.Id,
-                ClinicId = invitation.ClinicId,
-                IsActive = true,
-                HireDate = now
-            };
-
-            await _unitOfWork.Staff.AddAsync(staff, cancellationToken);
-
-            if (invitation.Role == "Doctor")
-            {
-                var doctorProfile = new DoctorProfile
-                {
-                    StaffId = staff.Id,
-                    SpecializationId = invitation.SpecializationId
-                };
-
-                await _unitOfWork.DoctorProfiles.AddAsync(doctorProfile, cancellationToken);
-            }
-
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            return Result.Success();
+            _context.DoctorProfiles.Add(doctorProfile);
         }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
     }
 }

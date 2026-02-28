@@ -1,6 +1,7 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Staff.Queries;
 
@@ -18,38 +19,36 @@ public record PendingInvitationDto(
 
 public class GetPendingInvitationsHandler : IRequestHandler<GetPendingInvitationsQuery, IEnumerable<PendingInvitationDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetPendingInvitationsHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public GetPendingInvitationsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _currentUserService = currentUserService;
     }
 
     public async Task<IEnumerable<PendingInvitationDto>> Handle(GetPendingInvitationsQuery request, CancellationToken cancellationToken)
     {
         var clinicId = _currentUserService.GetRequiredClinicId();
+        var now = DateTime.UtcNow;
 
-        var invitations = await _unitOfWork.StaffInvitations.GetPendingByClinicIdAsync(clinicId, cancellationToken);
+        var invitations = await _context.StaffInvitations
+            .Where(si => si.ClinicId == clinicId && 
+                        !si.IsAccepted && 
+                        !si.IsCancelled && 
+                        si.ExpiresAt > now)
+            .Include(si => si.CreatedByUser)
+            .ToListAsync(cancellationToken);
 
-        var result = new List<PendingInvitationDto>();
-
-        foreach (var invitation in invitations)
-        {
-            var invitedByUser = await _unitOfWork.Users.GetByIdAsync(invitation.CreatedByUserId, cancellationToken);
-            
-            result.Add(new PendingInvitationDto(
-                invitation.Id,
-                invitation.Email,
-                invitation.Role,
-                invitation.InvitationToken,
-                invitation.ExpiresAt,
-                invitation.CreatedAt,
-                invitedByUser?.FullName ?? "Unknown"
-            ));
-        }
-
-        return result;
+        return invitations.Select(invitation => new PendingInvitationDto(
+            invitation.Id,
+            invitation.Email,
+            invitation.Role,
+            invitation.InvitationToken,
+            invitation.ExpiresAt,
+            invitation.CreatedAt,
+            invitation.CreatedByUser?.FullName ?? "Unknown"
+        ));
     }
 }

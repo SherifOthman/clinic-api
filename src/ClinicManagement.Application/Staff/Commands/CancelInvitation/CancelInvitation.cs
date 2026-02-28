@@ -1,8 +1,9 @@
-﻿using ClinicManagement.Application.Abstractions.Services;
+﻿using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Staff.Commands;
 
@@ -10,12 +11,12 @@ public record CancelInvitationCommand(Guid InvitationId) : IRequest<Result>;
 
 public class CancelInvitationHandler : IRequestHandler<CancelInvitationCommand, Result>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
 
-    public CancelInvitationHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public CancelInvitationHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _currentUserService = currentUserService;
     }
 
@@ -23,7 +24,8 @@ public class CancelInvitationHandler : IRequestHandler<CancelInvitationCommand, 
     {
         var clinicId = _currentUserService.GetRequiredClinicId();
 
-        var invitation = await _unitOfWork.StaffInvitations.GetByIdAsync(request.InvitationId, cancellationToken);
+        var invitation = await _context.StaffInvitations
+            .FirstOrDefaultAsync(si => si.Id == request.InvitationId, cancellationToken);
         
         if (invitation == null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
@@ -35,7 +37,7 @@ public class CancelInvitationHandler : IRequestHandler<CancelInvitationCommand, 
         if (cancelResult.IsFailure)
             return cancelResult;
         
-        await _unitOfWork.StaffInvitations.UpdateAsync(invitation, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

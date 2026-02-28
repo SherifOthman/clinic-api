@@ -1,10 +1,11 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Staff.Commands;
 
@@ -14,20 +15,18 @@ public record InviteStaffResponseDto(Guid InvitationId, string Token, DateTime E
 
 public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<InviteStaffResponseDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
     private readonly IClock _clock;
-    
 
     public InviteStaffHandler(
-        IUnitOfWork unitOfWork,
+        IApplicationDbContext context,
         ICurrentUserService currentUserService,
         IEmailService emailService,
-        IClock clock
-        )
+        IClock clock)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _currentUserService = currentUserService;
         _emailService = emailService;
         _clock = clock;
@@ -43,8 +42,10 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         if (request.Role == "Doctor" && request.SpecializationId.HasValue)
         {
-            var specialization = await _unitOfWork.Specializations.GetByIdAsync(request.SpecializationId.Value, cancellationToken);
-            if (specialization == null)
+            var specializationExists = await _context.Specializations
+                .AnyAsync(s => s.Id == request.SpecializationId.Value, cancellationToken);
+                
+            if (!specializationExists)
                 return Result.Failure<InviteStaffResponseDto>(ErrorCodes.NOT_FOUND, "Specialization not found");
         }
 
@@ -57,12 +58,14 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             request.SpecializationId
         );
 
-        await _unitOfWork.StaffInvitations.AddAsync(invitation, cancellationToken);
+        _context.StaffInvitations.Add(invitation);
 
-        var inviter = await _unitOfWork.Users.GetByIdAsync(currentUserId, cancellationToken);
+        var inviter = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
         var invitedBy = inviter?.FullName ?? "Clinic Administrator";
         
-        var clinic = await _unitOfWork.Clinics.GetByIdAsync(clinicId, cancellationToken);
+        var clinic = await _context.Clinics
+            .FirstOrDefaultAsync(c => c.Id == clinicId, cancellationToken);
         var clinicName = clinic?.Name ?? "Clinic";
 
         var invitationLink = $"/accept-invitation/{invitation.InvitationToken}";
@@ -74,6 +77,8 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             invitedBy,
             invitationLink,
             cancellationToken);
+
+        await _context.SaveChangesAsync(cancellationToken);
 
         var response = new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt);
         return Result.Success(response);
