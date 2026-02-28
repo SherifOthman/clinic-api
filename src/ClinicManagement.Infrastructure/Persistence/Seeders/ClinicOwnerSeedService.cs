@@ -1,20 +1,25 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Persistence.Seeders;
 
 public class ClinicOwnerSeedService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
+    private readonly UserManager<User> _userManager;
     private readonly ILogger<ClinicOwnerSeedService> _logger;
 
     public ClinicOwnerSeedService(
-        IUnitOfWork unitOfWork,
+        IApplicationDbContext context,
+        UserManager<User> userManager,
         ILogger<ClinicOwnerSeedService> logger)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -22,7 +27,7 @@ public class ClinicOwnerSeedService
     {
         try
         {
-            var ownerUser = await _unitOfWork.Users.GetByEmailAsync("owner@clinic.com");
+            var ownerUser = await _userManager.FindByEmailAsync("owner@clinic.com");
 
             if (ownerUser == null)
             {
@@ -30,7 +35,8 @@ public class ClinicOwnerSeedService
                 return;
             }
 
-            var existingClinic = await _unitOfWork.Clinics.GetByOwnerUserIdAsync(ownerUser.Id);
+            var existingClinic = await _context.Clinics
+                .FirstOrDefaultAsync(c => c.OwnerUserId == ownerUser.Id);
 
             if (existingClinic != null)
             {
@@ -38,8 +44,8 @@ public class ClinicOwnerSeedService
                 return;
             }
 
-            var subscriptionPlans = await _unitOfWork.SubscriptionPlans.GetAllAsync();
-            var basicPlan = subscriptionPlans.FirstOrDefault(p => p.Name == "Basic");
+            var basicPlan = await _context.SubscriptionPlans
+                .FirstOrDefaultAsync(p => p.Name == "Basic");
 
             if (basicPlan == null)
             {
@@ -47,14 +53,10 @@ public class ClinicOwnerSeedService
                 return;
             }
 
-            // Get user roles to determine if owner is also a doctor/receptionist
-            var userRoles = await _unitOfWork.Users.GetUserRolesAsync(ownerUser.Id);
+            var userRoles = await _userManager.GetRolesAsync(ownerUser);
             var isDoctorRole = userRoles.Contains(UserRoles.Doctor);
             var isReceptionistRole = userRoles.Contains(UserRoles.Receptionist);
 
-            await _unitOfWork.BeginTransactionAsync();
-
-            // Create clinic with subscription dates
             var clinic = new Clinic
             {
                 Name = "Demo Medical Clinic",
@@ -67,9 +69,8 @@ public class ClinicOwnerSeedService
                 TrialEndDate = DateTime.UtcNow.AddDays(14)
             };
 
-            await _unitOfWork.Clinics.AddAsync(clinic);
+            _context.Clinics.Add(clinic);
 
-            // Create ClinicSubscription record with Trial status
             var subscription = new ClinicSubscription
             {
                 ClinicId = clinic.Id,
@@ -80,9 +81,8 @@ public class ClinicOwnerSeedService
                 AutoRenew = true
             };
 
-            await _unitOfWork.ClinicSubscriptions.AddAsync(subscription);
+            _context.ClinicSubscriptions.Add(subscription);
 
-            // If owner has Doctor or Receptionist role, create Staff record
             if (isDoctorRole || isReceptionistRole)
             {
                 var staff = new Staff
@@ -95,14 +95,12 @@ public class ClinicOwnerSeedService
                     Status = StaffStatus.Active
                 };
 
-                await _unitOfWork.Staff.AddAsync(staff);
+                _context.Staff.Add(staff);
 
-                // If owner is a doctor, create DoctorProfile
                 if (isDoctorRole)
                 {
-                    // Get General Practice specialization
-                    var specializations = await _unitOfWork.Specializations.GetAllAsync();
-                    var generalPractice = specializations.FirstOrDefault(s => s.NameEn == "General Practice");
+                    var generalPractice = await _context.Specializations
+                        .FirstOrDefaultAsync(s => s.NameEn == "General Practice");
 
                     if (generalPractice != null)
                     {
@@ -111,9 +109,8 @@ public class ClinicOwnerSeedService
                             StaffId = staff.Id
                         };
 
-                        await _unitOfWork.DoctorProfiles.AddAsync(doctorProfile);
+                        _context.DoctorProfiles.Add(doctorProfile);
 
-                        // Create DoctorSpecialization with primary specialization
                         var doctorSpecialization = new DoctorSpecialization
                         {
                             DoctorProfileId = doctorProfile.Id,
@@ -122,18 +119,17 @@ public class ClinicOwnerSeedService
                             YearsOfExperience = 0
                         };
 
-                        await _unitOfWork.DoctorSpecializations.AddAsync(doctorSpecialization);
+                        _context.DoctorSpecializations.Add(doctorSpecialization);
                     }
                 }
             }
 
-            await _unitOfWork.CommitTransactionAsync();
+            await _context.SaveChangesAsync();
 
             _logger.LogInformation("Created demo clinic for owner@clinic.com");
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, "Error seeding clinic owner data");
             throw;
         }

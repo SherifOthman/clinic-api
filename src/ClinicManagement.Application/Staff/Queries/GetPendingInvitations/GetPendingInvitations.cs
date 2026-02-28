@@ -36,7 +36,7 @@ public class GetPendingInvitationsHandler : IRequestHandler<GetPendingInvitation
         var invitations = await _context.StaffInvitations
             .Where(si => si.ClinicId == clinicId && 
                         !si.IsAccepted && 
-                        !si.IsCancelled && 
+                        !si.IsCanceled && 
                         si.ExpiresAt > now)
             .Include(si => si.CreatedByUser)
             .ToListAsync(cancellationToken);

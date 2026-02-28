@@ -11,4 +11,8 @@ public class DoctorSpecialization : BaseEntity
     public string? CertificationNumber { get; set; }
     public DateTime? CertificationDate { get; set; }
     public DateTime CreatedAt { get; private set; }
+    
+    // Navigation properties
+    public DoctorProfile DoctorProfile { get; set; } = null!;
+    public Specialization Specialization { get; set; } = null!;
 }

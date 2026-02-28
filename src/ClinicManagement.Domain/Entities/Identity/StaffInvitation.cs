@@ -20,8 +20,13 @@ public class StaffInvitation : TenantEntity
     public Guid CreatedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public bool IsDeleted { get; private set; }
+    
+    // Navigation properties
+    public Clinic Clinic { get; set; } = null!;
+    public Specialization? Specialization { get; set; }
+    public User? AcceptedByUser { get; set; }
+    public User CreatedByUser { get; set; } = null!;
 
-    // Business logic methods
     public bool IsExpired(DateTime currentTime) => currentTime >= ExpiresAt;
     
     public bool IsValid(DateTime currentTime) => !IsAccepted && !IsCanceled && !IsExpired(currentTime);

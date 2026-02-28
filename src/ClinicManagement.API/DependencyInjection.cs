@@ -1,5 +1,4 @@
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.API.Middleware;

@@ -1,6 +1,7 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -70,32 +71,34 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
     private async Task ProcessExpiringSubscriptionsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
         try
         {
-            // Find subscriptions expiring within 7 days
-            var expiringSubscriptions = await unitOfWork.ClinicSubscriptions
-                .GetExpiringSubscriptionsAsync(daysBeforeExpiry: 7, cancellationToken);
-            
-            var subscriptionList = expiringSubscriptions.ToList();
+            var expiryThreshold = DateTime.UtcNow.AddDays(7);
+            var expiringSubscriptions = await context.ClinicSubscriptions
+                .Where(s => s.EndDate.HasValue && 
+                           s.EndDate.Value <= expiryThreshold && 
+                           s.EndDate.Value > DateTime.UtcNow &&
+                           s.Status == SubscriptionStatus.Active)
+                .ToListAsync(cancellationToken);
 
-            if (!subscriptionList.Any())
+            if (!expiringSubscriptions.Any())
             {
                 _logger.LogDebug("No expiring subscriptions found");
                 return;
             }
 
-            _logger.LogInformation("Processing {Count} expiring subscriptions", subscriptionList.Count);
+            _logger.LogInformation("Processing {Count} expiring subscriptions", expiringSubscriptions.Count);
 
             var notificationCount = 0;
             var errorCount = 0;
 
-            foreach (var subscription in subscriptionList)
+            foreach (var subscription in expiringSubscriptions)
             {
                 try
                 {
-                    await CreateNotificationAndEmailAsync(unitOfWork, subscription, cancellationToken);
+                    await CreateNotificationAndEmailAsync(context, subscription, cancellationToken);
                     notificationCount++;
                 }
                 catch (Exception ex)
@@ -119,12 +122,13 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
     }
 
     private async Task CreateNotificationAndEmailAsync(
-        IUnitOfWork unitOfWork,
+        IApplicationDbContext context,
         ClinicSubscription subscription,
         CancellationToken cancellationToken)
     {
-        // Get clinic details
-        var clinic = await unitOfWork.Clinics.GetByIdAsync(subscription.ClinicId, cancellationToken);
+        var clinic = await context.Clinics
+            .FirstOrDefaultAsync(c => c.Id == subscription.ClinicId, cancellationToken);
+        
         if (clinic == null)
         {
             _logger.LogWarning("Clinic {ClinicId} not found for subscription {SubscriptionId}", 
@@ -132,8 +136,9 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
             return;
         }
 
-        // Get clinic owner
-        var owner = await unitOfWork.Users.GetByIdAsync(clinic.OwnerUserId, cancellationToken);
+        var owner = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId, cancellationToken);
+        
         if (owner == null)
         {
             _logger.LogWarning("Owner user {UserId} not found for clinic {ClinicId}", 
@@ -141,12 +146,10 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
             return;
         }
 
-        // Calculate days until expiry
         var daysUntilExpiry = subscription.EndDate.HasValue 
             ? (subscription.EndDate.Value.Date - DateTime.UtcNow.Date).Days 
             : 0;
 
-        // Create notification for clinic owner
         var notification = new Notification
         {
             UserId = owner.Id,
@@ -155,9 +158,8 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
             Message = $"Your subscription for {clinic.Name} will expire on {subscription.EndDate:yyyy-MM-dd} ({daysUntilExpiry} days remaining). Please renew to avoid service interruption.",
             ActionUrl = "/billing/renew"
         };
-        await unitOfWork.Notifications.AddAsync(notification, cancellationToken);
+        context.Notifications.Add(notification);
 
-        // Queue email to billing address (or owner email if billing email not set)
         var emailAddress = !string.IsNullOrWhiteSpace(clinic.BillingEmail) 
             ? clinic.BillingEmail 
             : owner.Email;
@@ -166,14 +168,16 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
 
         var email = new EmailQueue
         {
-            ToEmail = emailAddress,
+            ToEmail = emailAddress!,
             ToName = $"{owner.FirstName} {owner.LastName}",
             Subject = "Subscription Expiring Soon - Action Required",
             Body = emailBody,
             IsHtml = true,
-            Priority = 3 // Medium priority
+            Priority = 3
         };
-        await unitOfWork.EmailQueue.AddAsync(email, cancellationToken);
+        context.EmailQueue.Add(email);
+
+        await context.SaveChangesAsync(cancellationToken);
 
         _logger.LogDebug(
             "Created notification and queued email for clinic {ClinicId} (expires in {Days} days)", 

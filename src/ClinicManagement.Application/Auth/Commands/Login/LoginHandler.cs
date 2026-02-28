@@ -14,7 +14,6 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
 {
     private readonly IApplicationDbContext _context;
     private readonly UserManager<Domain.Entities.User> _userManager;
-    private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ILogger<LoginHandler> _logger;
@@ -22,14 +21,12 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
     public LoginHandler(
         IApplicationDbContext context,
         UserManager<Domain.Entities.User> userManager,
-        IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
         ILogger<LoginHandler> logger)
     {
         _context = context;
         _userManager = userManager;
-        _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _refreshTokenService = refreshTokenService;
         _logger = logger;
@@ -46,7 +43,6 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
             return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
 
-        // Check lockout using Identity
         if (await _userManager.IsLockedOutAsync(user))
         {
             var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
@@ -61,11 +57,10 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
                 $"Account is locked due to multiple failed login attempts. Please try again in {remainingMinutes} minute(s).");
         }
 
-        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash!))
+        if (!await _userManager.CheckPasswordAsync(user, request.Password))
         {
             _logger.LogWarning("Failed login attempt for {EmailOrUsername} - invalid password", request.EmailOrUsername);
             
-            // Increment failed login attempts using Identity
             await _userManager.AccessFailedAsync(user);
             
             if (await _userManager.IsLockedOutAsync(user))
@@ -79,10 +74,8 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
             return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
 
-        // Reset failed login attempts on successful login
         await _userManager.ResetAccessFailedCountAsync(user);
 
-        // Update last login
         user.LastLoginAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 

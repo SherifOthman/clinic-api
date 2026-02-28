@@ -1,8 +1,9 @@
 using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
-using ClinicManagement.Infrastructure.Persistence.Data;
+using ClinicManagement.Infrastructure.Persistence;
 using ClinicManagement.Infrastructure.Persistence.Seeders;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -20,7 +21,7 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
-    
+
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApi(builder.Configuration, builder.Environment);
@@ -34,9 +35,9 @@ try
             var services = scope.ServiceProvider;
             try
             {
-                var dbMigration = services.GetRequiredService<DbUpMigrationService>();
-                dbMigration.MigrateDatabase();
-                Log.Information("Database migrated successfully with DbUp");
+                var context = services.GetRequiredService<ApplicationDbContext>();
+                await context.Database.MigrateAsync();
+                Log.Information("Database migrated successfully with EF Core");
 
                 var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
                 await superAdminSeed.SeedSuperAdminAsync();

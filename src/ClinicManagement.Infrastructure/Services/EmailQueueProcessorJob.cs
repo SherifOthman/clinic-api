@@ -1,6 +1,7 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -51,52 +52,52 @@ public class EmailQueueProcessorJob : BackgroundService
     private async Task ProcessEmailQueueAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
         try
         {
-            var pendingEmails = await unitOfWork.EmailQueue.GetPendingEmailsAsync(50, cancellationToken);
-            var emailList = pendingEmails.ToList();
+            var pendingEmails = await context.EmailQueue
+                .Where(e => e.Status == EmailQueueStatus.Pending && e.Attempts < e.MaxAttempts)
+                .OrderBy(e => e.Priority)
+                .ThenBy(e => e.CreatedAt)
+                .Take(50)
+                .ToListAsync(cancellationToken);
 
-            if (!emailList.Any())
+            if (!pendingEmails.Any())
             {
                 _logger.LogDebug("No pending emails to process");
                 return;
             }
 
-            _logger.LogInformation("Processing {Count} pending emails", emailList.Count);
+            _logger.LogInformation("Processing {Count} pending emails", pendingEmails.Count);
 
             var sentCount = 0;
             var failedCount = 0;
 
-            foreach (var email in emailList)
+            foreach (var email in pendingEmails)
             {
                 try
                 {
-                    // Update status to Sending and increment attempts
                     email.Status = EmailQueueStatus.Sending;
                     email.Attempts++;
-                    await unitOfWork.EmailQueue.UpdateAsync(email, cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
 
-                    // Send the email using the generic send method
                     await SendEmailAsync(emailService, email, cancellationToken);
 
-                    // Mark as sent
                     email.Status = EmailQueueStatus.Sent;
                     email.SentAt = DateTime.UtcNow;
                     email.ErrorMessage = null;
-                    await unitOfWork.EmailQueue.UpdateAsync(email, cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
 
                     sentCount++;
                     _logger.LogDebug("Email sent successfully to {ToEmail}", email.ToEmail);
                 }
                 catch (Exception ex)
                 {
-                    // Determine if we should retry or mark as failed
                     email.Status = email.Attempts >= email.MaxAttempts ? EmailQueueStatus.Failed : EmailQueueStatus.Pending;
                     email.ErrorMessage = ex.Message;
-                    await unitOfWork.EmailQueue.UpdateAsync(email, cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
 
                     failedCount++;
                     _logger.LogWarning(ex, 

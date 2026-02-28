@@ -55,7 +55,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         if (!createResult.Succeeded)
         {
             var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            return Result.Failure(ErrorCodes.USER_CREATION_FAILED, errors);
+            return Result.Failure(ErrorCodes.OPERATION_FAILED, errors);
         }
 
         var roleResult = await _userManager.AddToRoleAsync(user, invitation.Role);
@@ -64,7 +64,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         {
             await _userManager.DeleteAsync(user);
             var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-            return Result.Failure(ErrorCodes.ROLE_ASSIGNMENT_FAILED, errors);
+            return Result.Failure(ErrorCodes.OPERATION_FAILED, errors);
         }
 
         var acceptResult = invitation.Accept(user.Id, now);

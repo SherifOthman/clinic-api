@@ -43,8 +43,8 @@ Domain Layer (Entities, Domain Logic)
 
 ### Infrastructure Layer
 
-- **Data Access**: Dapper + 3 repositories (User, RefreshToken, SubscriptionPlan) + UnitOfWork + DbUp migrations
-- **17 Services**: Authentication (PasswordHasher, TokenService, TokenGenerator, CookieService), Email (EmailService, EmailConfirmationService, SmtpEmailSender, MailKitSmtpClient, EmailTemplates), Storage (LocalFileStorageService), Identity (RefreshTokenService, SuperAdminSeedService), Utilities (CurrentUserService, DateTimeProvider, PhoneValidationService, GeoNamesService), Background (RefreshTokenCleanupService)
+- **Data Access**: EF Core + ApplicationDbContext + ASP.NET Identity + Entity Configurations
+- **17 Services**: Authentication (TokenService, CookieService), Email (EmailService, EmailTokenService, SmtpEmailSender, MailKitSmtpClient, EmailTemplates), Storage (LocalFileStorageService), Identity (RefreshTokenService, SuperAdminSeedService, ClinicOwnerSeedService), Utilities (CurrentUserService, DateTimeProvider, PhoneValidationService, GeoNamesService), Background (RefreshTokenCleanupService, EmailQueueProcessorJob, SubscriptionExpiryNotificationJob, UsageMetricsAggregationJob)
 
 ### API Layer
 
@@ -117,20 +117,20 @@ Domain Layer (Entities, Domain Logic)
 ### Modern .NET Practices
 
 - Result pattern instead of exceptions for flow control
-- Repository pattern with Dapper (lightweight, performant)
+- EF Core with change tracking and LINQ queries
+- ASP.NET Identity for authentication and authorization
 - FluentValidation for complex business rules
-- DbUp for version-controlled SQL migrations
+- Entity configurations for database schema
 
 ---
 
 ## Tech Stack
 
 - .NET 10
-- Dapper (data access)
-- DbUp (migrations)
+- EF Core (data access)
+- ASP.NET Identity (authentication)
 - MediatR (CQRS)
 - FluentValidation
-- BCrypt.Net-Next (password hashing)
 - JWT Bearer Authentication
 - Serilog (logging)
 - Scalar (API docs)
@@ -144,7 +144,7 @@ Domain Layer (Entities, Domain Logic)
 - Clean Architecture & SOLID principles
 - CQRS pattern with MediatR
 - Multi-tenant SaaS design
-- Repository pattern with Dapper
+- EF Core with ASP.NET Identity
 - JWT authentication with refresh tokens
 - Email workflows (confirmation, password reset)
 - Result pattern for error handling
@@ -152,7 +152,7 @@ Domain Layer (Entities, Domain Logic)
 - Structured logging with Serilog
 - Background services
 - RESTful API design
-- SQL migrations with DbUp
+- Entity configurations
 
 ---
 

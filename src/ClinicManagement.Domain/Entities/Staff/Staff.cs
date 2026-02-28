@@ -10,11 +10,16 @@ public class Staff : TenantEntity
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; private set; }
     
-    // Employment tracking (US-2, US-8)
     public bool IsPrimaryClinic { get; set; } = false;
     public StaffStatus Status { get; set; } = StaffStatus.Active;
     public DateTime? StatusChangedAt { get; set; }
     public Guid? StatusChangedBy { get; set; }
     public string? StatusReason { get; set; }
     public DateTime? TerminationDate { get; set; }
+    
+    // Navigation properties
+    public User User { get; set; } = null!;
+    public Clinic Clinic { get; set; } = null!;
+    public DoctorProfile? DoctorProfile { get; set; }
+    public ICollection<StaffBranch> StaffBranches { get; set; } = new List<StaffBranch>();
 }

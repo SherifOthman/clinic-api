@@ -3,9 +3,6 @@ using System.Security.Cryptography;
 
 namespace ClinicManagement.Domain.Entities;
 
-/// <summary>
-/// Refresh token for JWT authentication
-/// </summary>
 public class RefreshToken : BaseEntity
 {
     public string Token { get; private set; } = string.Empty;
@@ -18,7 +15,9 @@ public class RefreshToken : BaseEntity
     public string? RevokedByIp { get; private set; }
     public string? ReplacedByToken { get; private set; }
     
-    // Business logic methods
+    // Navigation properties
+    public User User { get; set; } = null!;
+    
     public bool IsExpired(DateTime currentTime) => currentTime >= ExpiryTime;
     public bool IsActive(DateTime currentTime) => !IsRevoked && !IsExpired(currentTime);
 
@@ -30,7 +29,6 @@ public class RefreshToken : BaseEntity
         ReplacedByToken = replacedByToken;
     }
 
-    // Factory method for creating new refresh tokens
     public static RefreshToken Create(
         Guid userId,
         DateTime expiryTime,

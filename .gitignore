@@ -373,9 +373,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-# Entity Framework
-Migrations/
-
 # Application Logs
 **/Logs/*.log
 

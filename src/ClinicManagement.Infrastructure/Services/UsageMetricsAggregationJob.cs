@@ -1,6 +1,7 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -70,13 +71,14 @@ public class UsageMetricsAggregationJob : BackgroundService
     private async Task AggregateUsageMetricsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
         try
         {
             var yesterday = DateTime.UtcNow.Date.AddDays(-1);
-            var clinics = await unitOfWork.Clinics.GetAllAsync(cancellationToken);
-            var activeClinics = clinics.Where(c => c.IsActive && !c.IsDeleted).ToList();
+            var activeClinics = await context.Clinics
+                .Where(c => c.IsActive && !c.IsDeleted)
+                .ToListAsync(cancellationToken);
 
             _logger.LogInformation("Starting usage metrics aggregation for {Count} clinics for date {Date}", 
                 activeClinics.Count, yesterday);
@@ -89,12 +91,30 @@ public class UsageMetricsAggregationJob : BackgroundService
                 try
                 {
                     var metrics = await CalculateMetricsForClinicAsync(
-                        unitOfWork, 
+                        context, 
                         clinic.Id, 
                         yesterday, 
                         cancellationToken);
 
-                    await unitOfWork.ClinicUsageMetrics.UpsertAsync(metrics, cancellationToken);
+                    var existing = await context.ClinicUsageMetrics
+                        .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == yesterday, cancellationToken);
+
+                    if (existing != null)
+                    {
+                        existing.ActiveStaffCount = metrics.ActiveStaffCount;
+                        existing.NewPatientsCount = metrics.NewPatientsCount;
+                        existing.TotalPatientsCount = metrics.TotalPatientsCount;
+                        existing.AppointmentsCount = metrics.AppointmentsCount;
+                        existing.InvoicesCount = metrics.InvoicesCount;
+                        existing.StorageUsedGB = metrics.StorageUsedGB;
+                        existing.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        context.ClinicUsageMetrics.Add(metrics);
+                    }
+
+                    await context.SaveChangesAsync(cancellationToken);
                     processedCount++;
                 }
                 catch (Exception ex)
@@ -116,20 +136,17 @@ public class UsageMetricsAggregationJob : BackgroundService
     }
 
     private async Task<ClinicUsageMetrics> CalculateMetricsForClinicAsync(
-        IUnitOfWork unitOfWork,
+        IApplicationDbContext context,
         Guid clinicId,
         DateTime metricDate,
         CancellationToken cancellationToken)
     {
-        // Get all staff for the clinic
-        var allStaff = await unitOfWork.Staff.GetByClinicIdAsync(clinicId, cancellationToken);
-        var activeStaffCount = allStaff.Count(s => 
-            s.IsActive && 
-            s.Status == StaffStatus.Active);
+        var activeStaffCount = await context.Staff
+            .CountAsync(s => s.ClinicId == clinicId && 
+                           s.IsActive && 
+                           s.Status == StaffStatus.Active, 
+                       cancellationToken);
 
-        // For now, we'll set these to 0 since Patient, Appointment, and Invoice repositories
-        // are not yet available in the IUnitOfWork interface
-        // TODO: Add these repositories to IUnitOfWork and implement proper counting
         var newPatientsCount = 0;
         var totalPatientsCount = 0;
         var appointmentsCount = 0;

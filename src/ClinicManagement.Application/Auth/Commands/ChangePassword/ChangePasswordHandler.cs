@@ -1,9 +1,9 @@
-using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,18 +12,18 @@ namespace ClinicManagement.Application.Auth.Commands.ChangePassword;
 public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Result>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IPasswordHasher _passwordHasher;
+    private readonly UserManager<Domain.Entities.User> _userManager;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
         IApplicationDbContext context,
-        IPasswordHasher passwordHasher,
+        UserManager<Domain.Entities.User> userManager,
         ICurrentUserService currentUser,
         ILogger<ChangePasswordHandler> logger)
     {
         _context = context;
-        _passwordHasher = passwordHasher;
+        _userManager = userManager;
         _currentUser = currentUser;
         _logger = logger;
     }
@@ -41,15 +41,16 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        
+        if (!result.Succeeded)
         {
-            _logger.LogWarning("Invalid current password for user: {UserId}", user.Id);
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            _logger.LogWarning("Failed to change password for user {UserId}: {Errors}", user.Id, errors);
             return Result.Failure(ErrorCodes.INVALID_CREDENTIALS, "Current password is incorrect");
         }
 
-        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
         user.LastPasswordChangeAt = DateTime.UtcNow;
-        
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);

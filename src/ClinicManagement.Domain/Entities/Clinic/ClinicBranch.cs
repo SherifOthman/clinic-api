@@ -13,4 +13,10 @@ public class ClinicBranch : TenantEntity
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; private set; }
     public bool IsDeleted { get; set; }
+    
+    // Navigation properties
+    public Clinic Clinic { get; set; } = null!;
+    public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();
+    public ICollection<ClinicBranchAppointmentPrice> AppointmentPrices { get; set; } = new List<ClinicBranchAppointmentPrice>();
+    public ICollection<StaffBranch> StaffBranches { get; set; } = new List<StaffBranch>();
 }

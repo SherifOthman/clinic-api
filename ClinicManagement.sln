@@ -20,9 +20,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicManagement.Infrastruc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{42E032AA-4E34-48A1-8336-E4A2306600E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicManagement.Domain.Tests", "ClinicManagement.Domain.Tests\ClinicManagement.Domain.Tests.csproj", "{C70C990D-54E5-4891-B968-D135E5E963A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicManagement.Domain.Tests", "tests\ClinicManagement.Domain.Tests\ClinicManagement.Domain.Tests.csproj", "{C70C990D-54E5-4891-B968-D135E5E963A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicManagement.Application.Tests", "ClinicManagement.Application.Tests\ClinicManagement.Application.Tests.csproj", "{6803C262-FFB0-4AD6-95AA-AA2485425A2F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicManagement.Application.Tests", "tests\ClinicManagement.Application.Tests\ClinicManagement.Application.Tests.csproj", "{6803C262-FFB0-4AD6-95AA-AA2485425A2F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

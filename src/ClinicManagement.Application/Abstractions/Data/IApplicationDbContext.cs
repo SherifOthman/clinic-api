@@ -31,7 +31,7 @@ public interface IApplicationDbContext
     DbSet<SubscriptionPayment> SubscriptionPayments { get; }
 
     // Staff
-    DbSet<Staff> Staff { get; }
+    DbSet<Domain.Entities.Staff> Staff { get; }
     DbSet<DoctorProfile> DoctorProfiles { get; }
     DbSet<DoctorSpecialization> DoctorSpecializations { get; }
     DbSet<StaffBranch> StaffBranches { get; }

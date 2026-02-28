@@ -7,10 +7,15 @@ public class DoctorProfile
     public Guid? SpecializationId { get; set; }
     public int? YearsOfExperience { get; set; }
     
-    // License tracking (US-2)
     public string? LicenseNumber { get; set; }
     public DateTime? LicenseExpiryDate { get; set; }
     public string? Bio { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    
+    // Navigation properties
+    public Staff Staff { get; set; } = null!;
+    public Specialization? Specialization { get; set; }
+    public ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new List<DoctorSpecialization>();
+    public ICollection<DoctorWorkingDay> WorkingDays { get; set; } = new List<DoctorWorkingDay>();
 }
