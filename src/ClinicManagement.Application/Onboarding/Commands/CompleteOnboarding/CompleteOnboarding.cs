@@ -1,9 +1,11 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Repositories;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Application.Onboarding.Commands;
 
@@ -19,77 +21,82 @@ public record CompleteOnboarding(
 
 public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Result>
 {
+    private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly UserManager<User> _userManager;
 
     public CompleteOnboardingHandler(
+        IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IUnitOfWork unitOfWork)
+        UserManager<User> userManager)
     {
+        _context = context;
         _currentUserService = currentUserService;
-        _unitOfWork = unitOfWork;
+        _userManager = userManager;
     }
 
     public async Task<Result> Handle(CompleteOnboarding request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.GetRequiredUserId();
 
-        var existingClinic = await _unitOfWork.Clinics.GetByOwnerUserIdAsync(userId, cancellationToken);
+        var existingClinic = await _context.Clinics
+            .FirstOrDefaultAsync(c => c.OwnerUserId == userId, cancellationToken);
+            
         if (existingClinic != null)
         {
             return Result.Failure(ErrorCodes.ALREADY_ONBOARDED, "User has already completed onboarding");
         }
 
-       var userRoles =  await _unitOfWork.Users.GetUserRolesAsync(userId);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            
+        if (user == null)
+        {
+            return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
+        }
+
+        var userRoles = await _userManager.GetRolesAsync(user);
 
         if (!userRoles.Contains(UserRoles.ClinicOwner))
         {
             return Result.Failure(ErrorCodes.FORBIDDEN, "User must be clinic owner");
         }
 
-        var subscriptionPlan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(request.SubscriptionPlanId, cancellationToken);
+        var subscriptionPlan = await _context.SubscriptionPlans
+            .FirstOrDefaultAsync(sp => sp.Id == request.SubscriptionPlanId, cancellationToken);
+            
         if (subscriptionPlan == null)
         {
             return Result.Failure(ErrorCodes.PLAN_NOT_FOUND, "The selected subscription plan does not exist");
         }
 
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        var clinic = new Clinic
         {
-            var clinic = new Clinic
-            {
-                Name = request.ClinicName,
-                OwnerUserId = userId,
-                SubscriptionPlanId = request.SubscriptionPlanId,
-                OnboardingCompleted = true,
-                IsActive = true
-            };
+            Name = request.ClinicName,
+            OwnerUserId = userId,
+            SubscriptionPlanId = request.SubscriptionPlanId,
+            OnboardingCompleted = true,
+            IsActive = true
+        };
 
-            await _unitOfWork.Clinics.AddAsync(clinic, cancellationToken);
+        _context.Clinics.Add(clinic);
 
-            var branch = new ClinicBranch
-            {
-                ClinicId = clinic.Id,
-                Name = request.BranchName,
-                AddressLine = request.AddressLine,
-                CountryGeoNameId = request.CountryGeoNameId,
-                StateGeoNameId = request.StateGeoNameId,
-                CityGeoNameId = request.CityGeoNameId,
-                IsMainBranch = true,
-                IsActive = true
-            };
-
-            await _unitOfWork.ClinicBranches.AddAsync(branch, cancellationToken);
-
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            return Result.Success();
-        }
-        catch
+        var branch = new ClinicBranch
         {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+            ClinicId = clinic.Id,
+            Name = request.BranchName,
+            AddressLine = request.AddressLine,
+            CountryGeoNameId = request.CountryGeoNameId,
+            StateGeoNameId = request.StateGeoNameId,
+            CityGeoNameId = request.CityGeoNameId,
+            IsMainBranch = true,
+            IsActive = true
+        };
+
+        _context.ClinicBranches.Add(branch);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
     }
 }

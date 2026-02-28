@@ -1,6 +1,7 @@
-using ClinicManagement.Domain.Repositories;
+using ClinicManagement.Application.Abstractions.Data;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ClinicManagement.Application.SubscriptionPlans.Queries;
@@ -21,14 +22,14 @@ public record SubscriptionPlanDto(
 
 public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQuery, IEnumerable<SubscriptionPlanDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly IMemoryCache _cache;
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
     private const string CacheKey = "subscription_plans";
 
-    public GetSubscriptionPlansHandler(IUnitOfWork unitOfWork, IMemoryCache cache)
+    public GetSubscriptionPlansHandler(IApplicationDbContext context, IMemoryCache cache)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _cache = cache;
     }
 
@@ -37,7 +38,9 @@ public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQ
         return await _cache.GetOrCreateAsync(CacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
-            var plans = await _unitOfWork.SubscriptionPlans.GetActiveAsync(cancellationToken);
+            var plans = await _context.SubscriptionPlans
+                .Where(p => p.IsActive)
+                .ToListAsync(cancellationToken);
             return plans.Adapt<List<SubscriptionPlanDto>>().AsEnumerable();
         }) ?? Enumerable.Empty<SubscriptionPlanDto>();
     }

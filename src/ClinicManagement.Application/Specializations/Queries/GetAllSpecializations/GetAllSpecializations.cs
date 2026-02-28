@@ -1,6 +1,7 @@
-using ClinicManagement.Domain.Repositories;
+using ClinicManagement.Application.Abstractions.Data;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ClinicManagement.Application.Specializations.Queries;
@@ -17,14 +18,14 @@ public record SpecializationDto(
 
 public class GetAllSpecializationsHandler : IRequestHandler<GetAllSpecializationsQuery, IEnumerable<SpecializationDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly IMemoryCache _cache;
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
     private const string CacheKey = "specializations";
 
-    public GetAllSpecializationsHandler(IUnitOfWork unitOfWork, IMemoryCache cache)
+    public GetAllSpecializationsHandler(IApplicationDbContext context, IMemoryCache cache)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _cache = cache;
     }
 
@@ -33,7 +34,8 @@ public class GetAllSpecializationsHandler : IRequestHandler<GetAllSpecialization
         return await _cache.GetOrCreateAsync(CacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
-            var specializations = await _unitOfWork.Specializations.GetAllAsync(cancellationToken);
+            var specializations = await _context.Specializations
+                .ToListAsync(cancellationToken);
             return specializations.Adapt<IEnumerable<SpecializationDto>>();
         }) ?? Enumerable.Empty<SpecializationDto>();
     }
