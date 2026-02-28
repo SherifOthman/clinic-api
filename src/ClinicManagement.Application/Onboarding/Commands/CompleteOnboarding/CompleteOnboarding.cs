@@ -3,6 +3,7 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,11 @@ public record CompleteOnboarding(
     string AddressLine,
     int CountryGeoNameId,
     int StateGeoNameId,
-    int CityGeoNameId
+    int CityGeoNameId,
+    bool ProvideMedicalServices,
+    Guid? SpecializationId,
+    string? LicenseNumber,
+    int? YearsOfExperience
 ) : IRequest<Result>;
 
 public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Result>
@@ -94,6 +99,33 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         };
 
         _context.ClinicBranches.Add(branch);
+
+        // Create Staff and DoctorProfile records if owner will provide medical services
+        if (request.ProvideMedicalServices)
+        {
+            var staff = new Domain.Entities.Staff
+            {
+                UserId = userId,
+                ClinicId = clinic.Id,
+                IsActive = true,
+                HireDate = DateTime.UtcNow,
+                IsPrimaryClinic = true,
+                Status = StaffStatus.Active
+            };
+
+            _context.Staff.Add(staff);
+
+            var doctorProfile = new DoctorProfile
+            {
+                StaffId = staff.Id,
+                SpecializationId = request.SpecializationId,
+                LicenseNumber = request.LicenseNumber,
+                YearsOfExperience = request.YearsOfExperience,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.DoctorProfiles.Add(doctorProfile);
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

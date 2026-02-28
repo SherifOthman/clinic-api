@@ -71,7 +71,6 @@ public class ClinicOwnerSeedService
 
             _context.Clinics.Add(clinic);
 
-            // Create first branch
             var mainBranch = new ClinicBranch
             {
                 ClinicId = clinic.Id,
@@ -121,7 +120,8 @@ public class ClinicOwnerSeedService
                     {
                         var doctorProfile = new DoctorProfile
                         {
-                            StaffId = staff.Id
+                            StaffId = staff.Id,
+                            YearsOfExperience = 5
                         };
 
                         _context.DoctorProfiles.Add(doctorProfile);
@@ -131,7 +131,7 @@ public class ClinicOwnerSeedService
                             DoctorProfileId = doctorProfile.Id,
                             SpecializationId = generalPractice.Id,
                             IsPrimary = true,
-                            YearsOfExperience = 0
+                            YearsOfExperience = 5
                         };
 
                         _context.DoctorSpecializations.Add(doctorSpecialization);

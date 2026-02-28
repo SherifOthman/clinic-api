@@ -30,6 +30,7 @@ public static class ErrorCodes
     public const string APPOINTMENT_NOT_FOUND = "APPOINTMENT_NOT_FOUND";
     public const string DISEASE_NOT_FOUND = "DISEASE_NOT_FOUND";
     public const string PLAN_NOT_FOUND = "PLAN_NOT_FOUND";
+    public const string CLINIC_NOT_FOUND = "CLINIC_NOT_FOUND";
     public const string NOT_FOUND = "NOT_FOUND";
 
     // Duplicates
@@ -38,6 +39,7 @@ public static class ErrorCodes
     public const string DUPLICATE_SERVICE = "DUPLICATE_SERVICE";
     public const string DUPLICATE_SUPPLY = "DUPLICATE_SUPPLY";
     public const string DUPLICATE_ATTRIBUTE = "DUPLICATE_ATTRIBUTE";
+    public const string ALREADY_EXISTS = "ALREADY_EXISTS";
 
     // Appointments
     public const string APPOINTMENT_CONFLICT = "APPOINTMENT_CONFLICT";

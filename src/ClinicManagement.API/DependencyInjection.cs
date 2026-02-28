@@ -17,7 +17,6 @@ public static class DependencyInjection
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment? environment = null)
     {
         services.AddHttpContextAccessor();
-        //services.AddValidation();
 
         AddCaching(services);
         AddAuthentication(services, configuration);
@@ -70,7 +69,6 @@ public static class DependencyInjection
     {
         services.AddAuthorization(options =>
         {
-            // Requires authenticated user with clinic membership
             options.AddPolicy("RequireClinic", policy =>
             {
                 policy.RequireAuthenticatedUser();
@@ -78,7 +76,6 @@ public static class DependencyInjection
             });
         });
     }
-
 
     private static void AddOptions(IServiceCollection services, IConfiguration configuration)
     {
@@ -110,7 +107,6 @@ public static class DependencyInjection
     {
         services.AddEndpointsApiExplorer();
         
-        // Add OpenAPI with Bearer authentication transformer
         services.AddOpenApi(options =>
         {
             options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
@@ -127,10 +123,8 @@ public static class DependencyInjection
         app.UseAuthorization();
         app.MapControllers();
 
-        // Map OpenAPI document endpoint
         app.MapOpenApi();
         
-        // Map Scalar UI
         app.MapScalarApiReference(options =>
         {
             options

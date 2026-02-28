@@ -10,7 +10,6 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
     {
         builder.Property(p => p.PatientCode).HasMaxLength(50).IsRequired();
         builder.Property(p => p.FullName).HasMaxLength(200).IsRequired();
-        builder.Property(p => p.BloodType).HasMaxLength(10);
         builder.Property(p => p.EmergencyContactName).HasMaxLength(200);
         builder.Property(p => p.EmergencyContactPhone).HasMaxLength(20);
         builder.Property(p => p.EmergencyContactRelation).HasMaxLength(50);

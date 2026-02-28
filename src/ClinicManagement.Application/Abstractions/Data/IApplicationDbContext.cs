@@ -10,7 +10,6 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<StaffInvitation> StaffInvitations { get; }
-    DbSet<UserRoleHistory> UserRoleHistory { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<EmailQueue> EmailQueue { get; }
 
@@ -63,9 +62,6 @@ public interface IApplicationDbContext
     DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes { get; }
     DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes { get; }
 
-    // Inventory
-    DbSet<Medication> Medications { get; }
-    DbSet<ClinicMedication> ClinicMedications { get; }
     DbSet<Medicine> Medicines { get; }
     DbSet<MedicineDispensing> MedicineDispensings { get; }
     DbSet<MedicalService> MedicalServices { get; }

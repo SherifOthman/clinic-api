@@ -115,6 +115,7 @@ public class SuperAdminSeedService
         }
 
         await userManager.AddToRoleAsync(owner, "ClinicOwner");
+        await userManager.AddToRoleAsync(owner, "Doctor");
 
         _logger.LogInformation("Created Clinic Owner demo user with email: owner@clinic.com");
     }

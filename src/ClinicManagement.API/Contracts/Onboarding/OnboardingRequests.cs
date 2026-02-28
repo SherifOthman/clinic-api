@@ -7,5 +7,9 @@ public record CompleteOnboardingRequest(
     string AddressLine,
     int CountryGeoNameId,
     int StateGeoNameId,
-    int CityGeoNameId
+    int CityGeoNameId,
+    bool ProvideMedicalServices,
+    Guid? SpecializationId,
+    string? LicenseNumber,
+    int? YearsOfExperience
 );

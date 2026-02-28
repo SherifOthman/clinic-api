@@ -16,7 +16,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     // Identity (Users and Roles are inherited from IdentityDbContext)
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
-    public DbSet<UserRoleHistory> UserRoleHistory => Set<UserRoleHistory>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<EmailQueue> EmailQueue => Set<EmailQueue>();
 
@@ -68,9 +67,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     public DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes => Set<DoctorMeasurementAttribute>();
     public DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes => Set<SpecializationMeasurementAttribute>();
 
-    // Inventory
-    public DbSet<Medication> Medications => Set<Medication>();
-    public DbSet<ClinicMedication> ClinicMedications => Set<ClinicMedication>();
     public DbSet<Medicine> Medicines => Set<Medicine>();
     public DbSet<MedicineDispensing> MedicineDispensings => Set<MedicineDispensing>();
     public DbSet<MedicalService> MedicalServices => Set<MedicalService>();

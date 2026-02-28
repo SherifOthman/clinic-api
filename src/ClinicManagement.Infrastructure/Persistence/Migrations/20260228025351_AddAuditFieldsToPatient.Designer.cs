@@ -4,6 +4,7 @@ using ClinicManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260228025351_AddAuditFieldsToPatient")]
+    partial class AddAuditFieldsToPatient
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1133,8 +1136,9 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("BloodType")
-                        .HasColumnType("int");
+                    b.Property<string>("BloodType")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int?>("CityGeoNameId")
                         .HasColumnType("int");
@@ -1170,6 +1174,9 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("IsMale")
                         .HasColumnType("bit");
+
+                    b.Property<string>("KnownAllergies")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PatientCode")
                         .IsRequired()

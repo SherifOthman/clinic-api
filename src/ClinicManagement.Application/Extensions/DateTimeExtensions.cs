@@ -10,19 +10,4 @@ public static class DateTimeExtensions
             age--;
         return age;
     }
-
-    public static DateTime GetDateForAge(int age)
-    {
-        return DateTime.UtcNow.AddYears(-age);
-    }
-
-    public static DateTime GetMaxDateOfBirthForMinAge(int minAge)
-    {
-        return DateTime.UtcNow.AddYears(-minAge);
-    }
-
-    public static DateTime GetMinDateOfBirthForMaxAge(int maxAge)
-    {
-        return DateTime.UtcNow.AddYears(-maxAge - 1);
-    }
 }

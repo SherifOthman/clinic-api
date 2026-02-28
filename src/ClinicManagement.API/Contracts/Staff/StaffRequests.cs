@@ -13,3 +13,9 @@ public record AcceptInvitationWithRegistrationRequest(
     string Password,
     string PhoneNumber
 );
+
+public record SetOwnerAsDoctorRequest(
+    Guid? SpecializationId,
+    string? LicenseNumber,
+    int? YearsOfExperience
+);

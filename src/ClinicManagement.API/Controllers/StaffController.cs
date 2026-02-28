@@ -109,4 +109,26 @@ public class StaffController : BaseApiController
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Set clinic owner as a doctor (can be done after onboarding)
+    /// </summary>
+    [HttpPost("set-owner-as-doctor")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SetOwnerAsDoctor([FromBody] SetOwnerAsDoctorRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SetOwnerAsDoctor(
+            request.SpecializationId,
+            request.LicenseNumber,
+            request.YearsOfExperience
+        );
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
+            return HandleResult(result, "Failed to set owner as doctor");
+        
+        return NoContent();
+    }
 }

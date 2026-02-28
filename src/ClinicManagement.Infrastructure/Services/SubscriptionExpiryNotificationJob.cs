@@ -57,7 +57,6 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
 
     private static DateTime GetNextRunTime(DateTime now)
     {
-        // Schedule to run daily at 9:00 AM UTC
         var nextRun = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0, DateTimeKind.Utc);
         
         if (now >= nextRun)
