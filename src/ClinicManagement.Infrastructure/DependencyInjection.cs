@@ -49,6 +49,7 @@ public static class DependencyInjection
         .AddDefaultTokenProviders();
         
         services.AddSingleton<IClock, SystemClock>();
+        services.AddScoped<RoleSeedService>();
         services.AddScoped<SuperAdminSeedService>();
         services.AddScoped<ClinicOwnerSeedService>();
         

@@ -14,7 +14,7 @@ public class StaffBranchConfiguration : IEntityTypeConfiguration<StaffBranch>
             .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasOne<ClinicBranch>()
-            .WithMany()
+            .WithMany(cb => cb.StaffBranches)
             .HasForeignKey(sb => sb.ClinicBranchId)
             .OnDelete(DeleteBehavior.Restrict);
     }

@@ -39,6 +39,10 @@ try
                 await context.Database.MigrateAsync();
                 Log.Information("Database migrated successfully with EF Core");
 
+                var roleSeed = services.GetRequiredService<RoleSeedService>();
+                await roleSeed.SeedRolesAsync();
+                Log.Information("Roles seeded successfully");
+
                 var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
                 await superAdminSeed.SeedSuperAdminAsync();
                 Log.Information("SuperAdmin user seeded successfully");
