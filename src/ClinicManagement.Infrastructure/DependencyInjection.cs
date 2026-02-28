@@ -50,6 +50,8 @@ public static class DependencyInjection
         
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<RoleSeedService>();
+        services.AddScoped<SpecializationSeedService>();
+        services.AddScoped<SubscriptionPlanSeedService>();
         services.AddScoped<SuperAdminSeedService>();
         services.AddScoped<ClinicOwnerSeedService>();
         

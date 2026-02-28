@@ -44,45 +44,13 @@ public class ClinicOwnerSeedService
                 return;
             }
 
-            // Seed subscription plan if it doesn't exist
             var basicPlan = await _context.SubscriptionPlans
                 .FirstOrDefaultAsync(p => p.Name == "Basic");
 
             if (basicPlan == null)
             {
-                basicPlan = new SubscriptionPlan
-                {
-                    Name = "Basic",
-                    NameAr = "أساسي",
-                    Description = "Basic plan for small clinics",
-                    DescriptionAr = "خطة أساسية للعيادات الصغيرة",
-                    MonthlyFee = 299.00m,
-                    YearlyFee = 2990.00m,
-                    SetupFee = 0m,
-                    MaxBranches = 1,
-                    MaxStaff = 5,
-                    MaxPatientsPerMonth = 500,
-                    MaxAppointmentsPerMonth = 1000,
-                    MaxInvoicesPerMonth = 500,
-                    StorageLimitGB = 5,
-                    HasInventoryManagement = true,
-                    HasReporting = true,
-                    HasAdvancedReporting = false,
-                    HasApiAccess = false,
-                    HasMultipleBranches = false,
-                    HasCustomBranding = false,
-                    HasPrioritySupport = false,
-                    HasBackupAndRestore = true,
-                    HasIntegrations = false,
-                    IsActive = true,
-                    IsPopular = false,
-                    DisplayOrder = 1,
-                    EffectiveDate = DateTime.UtcNow
-                };
-                
-                _context.SubscriptionPlans.Add(basicPlan);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Created Basic subscription plan");
+                _logger.LogError("Basic Plan not found");
+                return;
             }
 
             var userRoles = await _userManager.GetRolesAsync(ownerUser);

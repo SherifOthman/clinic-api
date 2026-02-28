@@ -43,6 +43,14 @@ try
                 await roleSeed.SeedRolesAsync();
                 Log.Information("Roles seeded successfully");
 
+                var specializationSeed = services.GetRequiredService<SpecializationSeedService>();
+                await specializationSeed.SeedSpecializationsAsync();
+                Log.Information("Specializations seeded successfully");
+
+                var subscriptionPlanSeed = services.GetRequiredService<SubscriptionPlanSeedService>();
+                await subscriptionPlanSeed.SeedSubscriptionPlansAsync();
+                Log.Information("Subscription plans seeded successfully");
+
                 var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
                 await superAdminSeed.SeedSuperAdminAsync();
                 Log.Information("SuperAdmin user seeded successfully");
