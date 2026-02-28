@@ -4,6 +4,7 @@ using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -86,21 +87,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Return DTO
-        var dto = new PatientDto
-        {
-            Id = patient.Id.ToString(),
-            PatientCode = patient.PatientCode,
-            FullName = patient.FullName,
-            DateOfBirth = patient.DateOfBirth.ToString("yyyy-MM-dd"),
-            IsMale = patient.IsMale,
-            Age = DateTime.UtcNow.Year - patient.DateOfBirth.Year,
-            BloodType = patient.BloodType?.ToString(),
-            PhoneNumbers = request.PhoneNumbers.Select(p => p.PhoneNumber).ToList(),
-            PrimaryPhone = request.PhoneNumbers.FirstOrDefault(p => p.IsPrimary)?.PhoneNumber,
-            CreatedAt = patient.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")
-        };
-
+        var dto = patient.Adapt<PatientDto>();
         return Result<PatientDto>.Success(dto);
     }
 }

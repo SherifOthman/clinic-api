@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,16 +40,9 @@ public class GetPendingInvitationsHandler : IRequestHandler<GetPendingInvitation
                         !si.IsCanceled && 
                         si.ExpiresAt > now)
             .Include(si => si.CreatedByUser)
+            .ProjectToType<PendingInvitationDto>()
             .ToListAsync(cancellationToken);
 
-        return invitations.Select(invitation => new PendingInvitationDto(
-            invitation.Id,
-            invitation.Email,
-            invitation.Role,
-            invitation.InvitationToken,
-            invitation.ExpiresAt,
-            invitation.CreatedAt,
-            invitation.CreatedByUser?.FullName ?? "Unknown"
-        ));
+        return invitations;
     }
 }

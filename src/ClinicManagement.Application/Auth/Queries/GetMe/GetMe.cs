@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common.Constants;
+using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -45,21 +46,14 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 
         var roles = await _userManager.GetRolesAsync(user);
 
-        // Check if user has completed onboarding by checking if they own a clinic
         var hasClinic = await _context.Clinics
             .AnyAsync(c => c.OwnerUserId == user.Id, cancellationToken);
 
-        return new GetMeDto(
-            user.Id,
-            user.UserName!,
-            user.FirstName,
-            user.LastName,
-            user.Email!,
-            user.PhoneNumber ?? string.Empty,
-            user.ProfileImageUrl,
-            roles.ToList(),
-            user.EmailConfirmed,
-            hasClinic
-        );
+        var dto = user.Adapt<GetMeDto>();
+        return dto with 
+        { 
+            Roles = roles.ToList(), 
+            OnboardingCompleted = hasClinic 
+        };
     }
 }
