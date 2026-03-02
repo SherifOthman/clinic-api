@@ -11,14 +11,33 @@ public record GetSubscriptionPlansQuery : IRequest<IEnumerable<SubscriptionPlanD
 public record SubscriptionPlanDto(
     Guid Id,
     string Name,
+    string NameAr,
     string Description,
+    string DescriptionAr,
     decimal MonthlyFee,
     decimal YearlyFee,
+    decimal SetupFee,
     int MaxBranches,
     int MaxStaff,
+    int MaxPatientsPerMonth,
+    int MaxAppointmentsPerMonth,
+    int MaxInvoicesPerMonth,
+    int StorageLimitGB,
     bool HasInventoryManagement,
     bool HasReporting,
-    bool IsActive);
+    bool HasAdvancedReporting,
+    bool HasApiAccess,
+    bool HasMultipleBranches,
+    bool HasCustomBranding,
+    bool HasPrioritySupport,
+    bool HasBackupAndRestore,
+    bool HasIntegrations,
+    bool IsActive,
+    bool IsPopular,
+    int DisplayOrder,
+    int Version,
+    DateTime EffectiveDate,
+    DateTime? ExpiryDate);
 
 public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQuery, IEnumerable<SubscriptionPlanDto>>
 {
@@ -40,6 +59,7 @@ public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQ
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             var plans = await _context.SubscriptionPlans
                 .Where(p => p.IsActive)
+                .OrderBy(p => p.DisplayOrder)
                 .ToListAsync(cancellationToken);
             return plans.Adapt<List<SubscriptionPlanDto>>().AsEnumerable();
         }) ?? Enumerable.Empty<SubscriptionPlanDto>();

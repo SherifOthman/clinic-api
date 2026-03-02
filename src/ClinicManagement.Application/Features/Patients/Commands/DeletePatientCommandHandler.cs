@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

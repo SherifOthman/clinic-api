@@ -29,26 +29,26 @@ Domain Layer (Entities, Domain Logic)
 
 - 43 entities across 9 modules (Appointment, Billing, Clinic, Identity, Inventory, Medical, Patient, Reference, Staff)
 - 14 enums (Gender, AppointmentStatus, InvoiceStatus, PaymentMethod, etc.)
-- 5 repository interfaces
 - Result pattern for error handling
 - Zero external dependencies
 
 ### Application Layer
 
-- **Features**: Auth (12 commands + 3 queries), SubscriptionPlans (1 query)
+- **Features**: Auth (12 commands + 3 queries), Patients (3 commands + 1 query), Reference (1 query for chronic diseases), Onboarding (1 command), Staff (2 commands + 2 queries)
 - **Abstractions**: 9 interfaces (IPasswordHasher, ITokenService, IEmailService, IFileStorageService, etc.)
 - **Pipeline Behaviors**: Logging, Validation, Performance
+- **Mapping**: Mapster for object-to-object mapping with custom configurations
 - CQRS with MediatR
 - FluentValidation for input validation
 
 ### Infrastructure Layer
 
-- **Data Access**: EF Core + ApplicationDbContext + ASP.NET Identity + Entity Configurations
+- **Data Access**: EF Core with ApplicationDbContext, ASP.NET Identity, Entity Configurations, and direct DbContext access (no repository pattern)
 - **17 Services**: Authentication (TokenService, CookieService), Email (EmailService, EmailTokenService, SmtpEmailSender, MailKitSmtpClient, EmailTemplates), Storage (LocalFileStorageService), Identity (RefreshTokenService, SuperAdminSeedService, ClinicOwnerSeedService), Utilities (CurrentUserService, DateTimeProvider, PhoneValidationService, GeoNamesService), Background (RefreshTokenCleanupService, EmailQueueProcessorJob, SubscriptionExpiryNotificationJob, UsageMetricsAggregationJob)
 
 ### API Layer
 
-- **4 Controllers**: AuthController (15 endpoints), LocationsController (3 endpoints), SubscriptionPlansController (1 endpoint), BaseApiController
+- **9 Controllers**: AuthController (15 endpoints), PatientsController (4 endpoints), ChronicDiseasesController (1 endpoint), LocationsController (3 endpoints), SpecializationsController (1 endpoint), SubscriptionPlansController (1 endpoint), OnboardingController (1 endpoint), StaffController (3 endpoints), BaseApiController
 - Global exception middleware
 - JWT authentication
 - Swagger/Scalar documentation
@@ -78,7 +78,7 @@ Domain Layer (Entities, Domain Logic)
 
 - Result pattern (no exceptions for flow control)
 - Global exception middleware with RFC 7807 Problem Details
-- Standardized error codes for frontend i18n
+- Standardized error codes (constants) for frontend i18n
 - Structured logging with Serilog
 
 ---
@@ -89,7 +89,8 @@ Domain Layer (Entities, Domain Logic)
 
 - Proper layer separation with dependency inversion (all dependencies point inward)
 - Domain layer has zero external dependencies (pure C#)
-- Application layer defines abstractions, Infrastructure implements them
+- Application layer defines abstractions (IApplicationDbContext), Infrastructure implements them
+- Direct EF Core DbContext usage in handlers (no repository pattern overhead)
 - Highly testable: all dependencies are interfaces with constructor injection
 
 ### CQRS Pattern with MediatR
@@ -117,10 +118,12 @@ Domain Layer (Entities, Domain Logic)
 ### Modern .NET Practices
 
 - Result pattern instead of exceptions for flow control
-- EF Core with change tracking and LINQ queries
+- Direct EF Core DbContext access (no repository pattern abstraction)
+- EF Core with Include, Where, ProjectToType for optimized queries
 - ASP.NET Identity for authentication and authorization
 - FluentValidation for complex business rules
 - Entity configurations for database schema
+- Mapster for efficient object mapping
 
 ---
 
@@ -130,11 +133,13 @@ Domain Layer (Entities, Domain Logic)
 - EF Core (data access)
 - ASP.NET Identity (authentication)
 - MediatR (CQRS)
+- Mapster (object mapping)
 - FluentValidation
 - JWT Bearer Authentication
 - Serilog (logging)
 - Scalar (API docs)
 - MailKit (SMTP)
+- libphonenumber-csharp (phone validation)
 - GeoNames API (location data)
 
 ---
@@ -144,15 +149,18 @@ Domain Layer (Entities, Domain Logic)
 - Clean Architecture & SOLID principles
 - CQRS pattern with MediatR
 - Multi-tenant SaaS design
-- EF Core with ASP.NET Identity
+- EF Core with direct DbContext access (no repository pattern)
+- ASP.NET Identity integration
 - JWT authentication with refresh tokens
 - Email workflows (confirmation, password reset)
 - Result pattern for error handling
+- Object mapping with Mapster
 - FluentValidation
 - Structured logging with Serilog
 - Background services
 - RESTful API design
 - Entity configurations
+- Phone number validation with libphonenumber
 
 ---
 
