@@ -24,20 +24,20 @@ public class CompleteOnboardingHandlerTests : IDisposable
 
     public CompleteOnboardingHandlerTests()
     {
-        _context = TestHelpers.CreateInMemoryContext();
+        _context = TestHandlerHelpers.CreateInMemoryContext();
         _currentUserMock = new Mock<ICurrentUserService>();
-        _userManagerMock = TestHelpers.CreateMockUserManager();
+        _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
 
         // Create test user
-        _testUser = TestHelpers.CreateTestUser("owner@test.com");
+        _testUser = TestHandlerHelpers.CreateTestUser("owner@test.com");
         _context.Users.Add(_testUser);
 
         // Create test subscription plan
-        _testPlan = TestHelpers.CreateTestSubscriptionPlan();
+        _testPlan = TestHandlerHelpers.CreateTestSubscriptionPlan();
         _context.SubscriptionPlans.Add(_testPlan);
 
         // Create test specialization
-        _testSpecialization = TestHelpers.CreateTestSpecialization();
+        _testSpecialization = TestHandlerHelpers.CreateTestSpecialization();
         _context.Specializations.Add(_testSpecialization);
 
         _context.SaveChanges();

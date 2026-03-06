@@ -18,7 +18,7 @@ public class ConfirmEmailHandlerTests : IDisposable
 
     public ConfirmEmailHandlerTests()
     {
-        _context = TestHelpers.CreateInMemoryContext();
+        _context = TestHandlerHelpers.CreateInMemoryContext();
 
         _handler = new ConfirmEmailHandler(
             _context,
@@ -43,7 +43,7 @@ public class ConfirmEmailHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldFail_WhenEmailAlreadyConfirmed()
     {
-        var user = TestHelpers.CreateTestUser(emailConfirmed: true);
+        var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: true);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -52,7 +52,7 @@ public class ConfirmEmailHandlerTests : IDisposable
             .Setup(x => x.IsEmailConfirmedAsync(user, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var command = new ConfirmEmailCommand(user.Email, "token");
+        var command = new ConfirmEmailCommand(user.Email!, "token");
 
         var result = await _handler.Handle(command, default);
 
@@ -62,7 +62,7 @@ public class ConfirmEmailHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldFail_WhenTokenIsInvalid()
     {
-        var user = TestHelpers.CreateTestUser(emailConfirmed: false);
+        var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: false);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -75,7 +75,7 @@ public class ConfirmEmailHandlerTests : IDisposable
             .Setup(x => x.ConfirmEmailAsync(user, "token", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Invalid token"));
 
-        var command = new ConfirmEmailCommand(user.Email, "token");
+        var command = new ConfirmEmailCommand(user.Email!, "token");
 
         var result = await _handler.Handle(command, default);
 
@@ -85,7 +85,7 @@ public class ConfirmEmailHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldConfirmEmail_WhenTokenIsValid()
     {
-        var user = TestHelpers.CreateTestUser(emailConfirmed: false);
+        var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: false);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -98,7 +98,7 @@ public class ConfirmEmailHandlerTests : IDisposable
             .Setup(x => x.ConfirmEmailAsync(user, "token", It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var command = new ConfirmEmailCommand(user.Email, "token");
+        var command = new ConfirmEmailCommand(user.Email!, "token");
 
         var result = await _handler.Handle(command, default);
 

@@ -20,8 +20,8 @@ public class ChangePasswordHandlerTests : IDisposable
 
     public ChangePasswordHandlerTests()
     {
-        _context = TestHelpers.CreateInMemoryContext();
-        _userManagerMock = TestHelpers.CreateMockUserManager();
+        _context = TestHandlerHelpers.CreateInMemoryContext();
+        _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
 
         _handler = new ChangePasswordHandler(
             _context,
@@ -48,7 +48,7 @@ public class ChangePasswordHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldFail_WhenCurrentPasswordIsIncorrect()
     {
-        var user = TestHelpers.CreateTestUser();
+        var user = TestHandlerHelpers.CreateTestUser();
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -71,7 +71,7 @@ public class ChangePasswordHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldSucceed_WhenCurrentPasswordIsCorrect()
     {
-        var user = TestHelpers.CreateTestUser();
+        var user = TestHandlerHelpers.CreateTestUser();
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

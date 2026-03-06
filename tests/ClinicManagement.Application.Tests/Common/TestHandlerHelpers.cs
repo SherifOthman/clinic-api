@@ -10,7 +10,7 @@ namespace ClinicManagement.Application.Tests.Common;
 /// Helper methods for creating test dependencies
 /// Reduces boilerplate while keeping tests isolated
 /// </summary>
-public static class TestHelpers
+public static class TestHandlerHelpers
 {
     /// <summary>
     /// Creates a new in-memory database context with a unique name

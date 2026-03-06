@@ -22,8 +22,8 @@ public class ForgotPasswordHandlerTests : IDisposable
 
     public ForgotPasswordHandlerTests()
     {
-        _context = TestHelpers.CreateInMemoryContext();
-        _userManagerMock = TestHelpers.CreateMockUserManager();
+        _context = TestHandlerHelpers.CreateInMemoryContext();
+        _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
         _emailServiceMock = new Mock<IEmailService>();
         _loggerMock = new Mock<ILogger<ForgotPasswordHandler>>();
 
@@ -61,7 +61,7 @@ public class ForgotPasswordHandlerTests : IDisposable
     public async Task Handle_ShouldSendEmail_WhenUserExists()
     {
         // Arrange
-        var user = TestHelpers.CreateTestUser();
+        var user = TestHandlerHelpers.CreateTestUser();
         user.FirstName = "Test";
         user.LastName = "User";
         user.PasswordHash = "hash123";
@@ -73,7 +73,7 @@ public class ForgotPasswordHandlerTests : IDisposable
             .Setup(x => x.GeneratePasswordResetTokenAsync(It.IsAny<User>()))
             .ReturnsAsync("reset-token-123");
 
-        var command = new ForgotPasswordCommand(user.Email);
+        var command = new ForgotPasswordCommand(user.Email!);
 
         // Act
         var result = await _handler.Handle(command, default);
@@ -83,7 +83,7 @@ public class ForgotPasswordHandlerTests : IDisposable
         
         _emailServiceMock.Verify(
             x => x.SendPasswordResetEmailAsync(
-                user.Email,
+                user.Email!,
                 It.IsAny<string>(),
                 It.Is<string>(link => link.Contains("reset-token-123")),
                 It.IsAny<CancellationToken>()),
@@ -94,7 +94,7 @@ public class ForgotPasswordHandlerTests : IDisposable
     public async Task Handle_ShouldReturnSuccess_WhenEmailServiceThrows()
     {
         // Arrange
-        var user = TestHelpers.CreateTestUser();
+        var user = TestHandlerHelpers.CreateTestUser();
         user.FirstName = "Test";
         user.LastName = "User";
         user.PasswordHash = "hash123";
@@ -114,7 +114,7 @@ public class ForgotPasswordHandlerTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("SMTP error"));
 
-        var command = new ForgotPasswordCommand(user.Email);
+        var command = new ForgotPasswordCommand(user.Email!);
 
         // Act
         var result = await _handler.Handle(command, default);

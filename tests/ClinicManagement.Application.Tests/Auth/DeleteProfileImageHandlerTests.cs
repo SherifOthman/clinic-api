@@ -20,7 +20,7 @@ public class DeleteProfileImageHandlerTests : IDisposable
 
     public DeleteProfileImageHandlerTests()
     {
-        _context = TestHelpers.CreateInMemoryContext();
+        _context = TestHandlerHelpers.CreateInMemoryContext();
 
         _handler = new DeleteProfileImageHandler(
             _context,
@@ -51,7 +51,7 @@ public class DeleteProfileImageHandlerTests : IDisposable
     public async Task Handle_ShouldSucceed_WhenUserHasNoProfileImage()
     {
         // Arrange
-        var user = TestHelpers.CreateTestUser();
+        var user = TestHandlerHelpers.CreateTestUser();
         user.ProfileImageUrl = null;
 
         _context.Users.Add(user);
@@ -75,7 +75,7 @@ public class DeleteProfileImageHandlerTests : IDisposable
     public async Task Handle_ShouldDeleteFileAndClearProfileImage_WhenUserHasProfileImage()
     {
         // Arrange
-        var user = TestHelpers.CreateTestUser();
+        var user = TestHandlerHelpers.CreateTestUser();
         user.ProfileImageUrl = "profile.jpg";
 
         _context.Users.Add(user);
