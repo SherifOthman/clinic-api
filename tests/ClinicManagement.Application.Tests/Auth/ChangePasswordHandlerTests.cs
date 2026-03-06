@@ -1,10 +1,10 @@
 ﻿using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Auth.Commands.ChangePassword;
+using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -16,22 +16,12 @@ public class ChangePasswordHandlerTests : IDisposable
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly Mock<ILogger<ChangePasswordHandler>> _loggerMock = new();
-
     private readonly ChangePasswordHandler _handler;
 
     public ChangePasswordHandlerTests()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ApplicationDbContext(options);
-
-        var userStoreMock = new Mock<IUserStore<User>>();
-#pragma warning disable CS8625
-        _userManagerMock = new Mock<UserManager<User>>(
-            userStoreMock.Object, null, null, null, null, null, null, null, null);
-#pragma warning restore CS8625
+        _context = TestHelpers.CreateInMemoryContext();
+        _userManagerMock = TestHelpers.CreateMockUserManager();
 
         _handler = new ChangePasswordHandler(
             _context,
@@ -58,11 +48,7 @@ public class ChangePasswordHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldFail_WhenCurrentPasswordIsIncorrect()
     {
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com"
-        };
+        var user = TestHelpers.CreateTestUser();
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -85,11 +71,7 @@ public class ChangePasswordHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldSucceed_WhenCurrentPasswordIsCorrect()
     {
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com"
-        };
+        var user = TestHelpers.CreateTestUser();
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

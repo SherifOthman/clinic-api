@@ -1,9 +1,9 @@
 ﻿using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Auth.Commands.ConfirmEmail;
+using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -14,16 +14,11 @@ public class ConfirmEmailHandlerTests : IDisposable
     private readonly ApplicationDbContext _context;
     private readonly Mock<IEmailTokenService> _emailTokenServiceMock = new();
     private readonly Mock<ILogger<ConfirmEmailHandler>> _loggerMock = new();
-
     private readonly ConfirmEmailHandler _handler;
 
     public ConfirmEmailHandlerTests()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ApplicationDbContext(options);
+        _context = TestHelpers.CreateInMemoryContext();
 
         _handler = new ConfirmEmailHandler(
             _context,
@@ -48,11 +43,7 @@ public class ConfirmEmailHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldFail_WhenEmailAlreadyConfirmed()
     {
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com"
-        };
+        var user = TestHelpers.CreateTestUser(emailConfirmed: true);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -71,11 +62,7 @@ public class ConfirmEmailHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldFail_WhenTokenIsInvalid()
     {
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com"
-        };
+        var user = TestHelpers.CreateTestUser(emailConfirmed: false);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -98,11 +85,7 @@ public class ConfirmEmailHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldConfirmEmail_WhenTokenIsValid()
     {
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com"
-        };
+        var user = TestHelpers.CreateTestUser(emailConfirmed: false);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

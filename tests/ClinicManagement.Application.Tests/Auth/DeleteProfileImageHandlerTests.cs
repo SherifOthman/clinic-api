@@ -1,11 +1,10 @@
 ﻿using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Auth.Commands;
+using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -17,16 +16,11 @@ public class DeleteProfileImageHandlerTests : IDisposable
     private readonly Mock<ICurrentUserService> _currentUserServiceMock = new();
     private readonly Mock<IFileStorageService> _fileStorageServiceMock = new();
     private readonly Mock<ILogger<DeleteProfileImageHandler>> _loggerMock = new();
-
     private readonly DeleteProfileImageHandler _handler;
 
     public DeleteProfileImageHandlerTests()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ApplicationDbContext(options);
+        _context = TestHelpers.CreateInMemoryContext();
 
         _handler = new DeleteProfileImageHandler(
             _context,
@@ -57,12 +51,8 @@ public class DeleteProfileImageHandlerTests : IDisposable
     public async Task Handle_ShouldSucceed_WhenUserHasNoProfileImage()
     {
         // Arrange
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com",
-            ProfileImageUrl = null 
-        };
+        var user = TestHelpers.CreateTestUser();
+        user.ProfileImageUrl = null;
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -85,12 +75,8 @@ public class DeleteProfileImageHandlerTests : IDisposable
     public async Task Handle_ShouldDeleteFileAndClearProfileImage_WhenUserHasProfileImage()
     {
         // Arrange
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com",
-            ProfileImageUrl = "profile.jpg" 
-        };
+        var user = TestHelpers.CreateTestUser();
+        user.ProfileImageUrl = "profile.jpg";
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

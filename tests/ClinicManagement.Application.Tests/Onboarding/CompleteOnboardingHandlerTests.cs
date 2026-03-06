@@ -1,6 +1,6 @@
-using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Onboarding.Commands;
+using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
@@ -14,73 +14,30 @@ namespace ClinicManagement.Application.Tests.Onboarding;
 
 public class CompleteOnboardingHandlerTests : IDisposable
 {
-    private ApplicationDbContext _context = null!;
+    private readonly ApplicationDbContext _context;
     private readonly Mock<ICurrentUserService> _currentUserMock;
     private readonly Mock<UserManager<User>> _userManagerMock;
-    private CompleteOnboardingHandler _handler = null!;
-    private User _testUser = null!;
-    private SubscriptionPlan _testPlan = null!;
-    private Specialization _testSpecialization = null!;
+    private readonly CompleteOnboardingHandler _handler;
+    private readonly User _testUser;
+    private readonly SubscriptionPlan _testPlan;
+    private readonly Specialization _testSpecialization;
 
     public CompleteOnboardingHandlerTests()
     {
+        _context = TestHelpers.CreateInMemoryContext();
         _currentUserMock = new Mock<ICurrentUserService>();
-        
-        var userStoreMock = new Mock<IUserStore<User>>();
-#pragma warning disable CS8625
-        _userManagerMock = new Mock<UserManager<User>>(
-            userStoreMock.Object, null, null, null, null, null, null, null, null);
-#pragma warning restore CS8625
-
-        InitializeDatabase();
-    }
-
-    private void InitializeDatabase()
-    {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ApplicationDbContext(options);
+        _userManagerMock = TestHelpers.CreateMockUserManager();
 
         // Create test user
-        _testUser = new User
-        {
-            Email = "owner@test.com",
-            UserName = "owner@test.com",
-            EmailConfirmed = true
-        };
+        _testUser = TestHelpers.CreateTestUser("owner@test.com");
         _context.Users.Add(_testUser);
 
         // Create test subscription plan
-        _testPlan = new SubscriptionPlan
-        {
-            Name = "Basic Plan",
-            NameAr = "خطة أساسية",
-            Description = "Basic subscription plan",
-            DescriptionAr = "خطة اشتراك أساسية",
-            MonthlyFee = 100,
-            YearlyFee = 1000,
-            SetupFee = 0,
-            MaxStaff = 10,
-            MaxBranches = 1,
-            MaxPatientsPerMonth = 100,
-            MaxAppointmentsPerMonth = 500,
-            MaxInvoicesPerMonth = 100,
-            StorageLimitGB = 10,
-            IsActive = true,
-            DisplayOrder = 1,
-            EffectiveDate = DateTime.UtcNow
-        };
+        _testPlan = TestHelpers.CreateTestSubscriptionPlan();
         _context.SubscriptionPlans.Add(_testPlan);
 
         // Create test specialization
-        _testSpecialization = new Specialization
-        {
-            NameEn = "General Practice",
-            NameAr = "طب عام",
-            IsActive = true
-        };
+        _testSpecialization = TestHelpers.CreateTestSpecialization();
         _context.Specializations.Add(_testSpecialization);
 
         _context.SaveChanges();
@@ -402,6 +359,6 @@ public class CompleteOnboardingHandlerTests : IDisposable
 
     public void Dispose()
     {
-        _context?.Dispose();
+        _context.Dispose();
     }
 }

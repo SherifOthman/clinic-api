@@ -1,11 +1,11 @@
 ﻿using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Common.Options;
+using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -22,16 +22,8 @@ public class ForgotPasswordHandlerTests : IDisposable
 
     public ForgotPasswordHandlerTests()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ApplicationDbContext(options);
-
-#pragma warning disable CS8625
-        _userManagerMock = new Mock<UserManager<User>>(
-            Mock.Of<IUserStore<User>>(), null, null, null, null, null, null, null, null);
-#pragma warning restore CS8625
+        _context = TestHelpers.CreateInMemoryContext();
+        _userManagerMock = TestHelpers.CreateMockUserManager();
         _emailServiceMock = new Mock<IEmailService>();
         _loggerMock = new Mock<ILogger<ForgotPasswordHandler>>();
 
@@ -69,13 +61,9 @@ public class ForgotPasswordHandlerTests : IDisposable
     public async Task Handle_ShouldSendEmail_WhenUserExists()
     {
         // Arrange
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com",
-            FirstName = "Test",
-            LastName = "User"
-        };
+        var user = TestHelpers.CreateTestUser();
+        user.FirstName = "Test";
+        user.LastName = "User";
         user.PasswordHash = "hash123";
 
         _context.Users.Add(user);
@@ -106,13 +94,9 @@ public class ForgotPasswordHandlerTests : IDisposable
     public async Task Handle_ShouldReturnSuccess_WhenEmailServiceThrows()
     {
         // Arrange
-        var user = new User 
-        { 
-            Email = "test@test.com",
-            UserName = "test@test.com",
-            FirstName = "Test",
-            LastName = "User"
-        };
+        var user = TestHelpers.CreateTestUser();
+        user.FirstName = "Test";
+        user.LastName = "User";
         user.PasswordHash = "hash123";
 
         _context.Users.Add(user);
