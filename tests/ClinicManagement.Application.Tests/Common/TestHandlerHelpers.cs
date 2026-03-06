@@ -96,4 +96,82 @@ public static class TestHandlerHelpers
             IsActive = true
         };
     }
+
+    /// <summary>
+    /// Creates a test clinic with common defaults
+    /// </summary>
+    public static Clinic CreateTestClinic(
+        Guid? ownerUserId = null,
+        Guid? subscriptionPlanId = null,
+        string name = "Test Clinic",
+        bool onboardingCompleted = true)
+    {
+        return new Clinic
+        {
+            Name = name,
+            OwnerUserId = ownerUserId ?? Guid.NewGuid(),
+            SubscriptionPlanId = subscriptionPlanId ?? Guid.NewGuid(),
+            OnboardingCompleted = onboardingCompleted,
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Creates a test clinic branch with common defaults
+    /// </summary>
+    public static ClinicBranch CreateTestBranch(
+        Guid? clinicId = null,
+        string name = "Main Branch",
+        bool isMainBranch = true)
+    {
+        return new ClinicBranch
+        {
+            ClinicId = clinicId ?? Guid.NewGuid(),
+            Name = name,
+            AddressLine = "123 Test Street",
+            CountryGeoNameId = 1,
+            StateGeoNameId = 2,
+            CityGeoNameId = 3,
+            IsMainBranch = isMainBranch,
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Creates a test staff member with common defaults
+    /// </summary>
+    public static Staff CreateTestStaff(
+        Guid? userId = null,
+        Guid? clinicId = null,
+        bool isPrimaryClinic = true)
+    {
+        return new Staff
+        {
+            UserId = userId ?? Guid.NewGuid(),
+            ClinicId = clinicId ?? Guid.NewGuid(),
+            IsActive = true,
+            IsPrimaryClinic = isPrimaryClinic,
+            Status = Domain.Enums.StaffStatus.Active,
+            HireDate = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Creates a test doctor profile with common defaults
+    /// </summary>
+    public static DoctorProfile CreateTestDoctorProfile(
+        Guid? staffId = null,
+        Guid? specializationId = null,
+        string? licenseNumber = "LIC-12345",
+        int? yearsOfExperience = 5)
+    {
+        return new DoctorProfile
+        {
+            StaffId = staffId ?? Guid.NewGuid(),
+            SpecializationId = specializationId ?? Guid.NewGuid(),
+            LicenseNumber = licenseNumber,
+            YearsOfExperience = yearsOfExperience,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
 }
