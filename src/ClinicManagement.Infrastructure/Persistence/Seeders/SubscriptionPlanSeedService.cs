@@ -83,7 +83,7 @@ public class SubscriptionPlanSeedService
                 HasBackupAndRestore = true,
                 HasIntegrations = false,
                 IsActive = true,
-                IsPopular = true,
+                IsPopular = false,
                 DisplayOrder = 2,
                 EffectiveDate = DateTime.UtcNow
             },
