@@ -25,10 +25,5 @@ public class ClinicBranchConfiguration : IEntityTypeConfiguration<ClinicBranch>
             .WithOne()
             .HasForeignKey(ap => ap.ClinicBranchId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany(cb => cb.StaffBranches)
-            .WithOne()
-            .HasForeignKey(sb => sb.ClinicBranchId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

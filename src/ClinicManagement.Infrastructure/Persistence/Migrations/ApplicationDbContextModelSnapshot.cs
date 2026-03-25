@@ -1609,29 +1609,8 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("HireDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimaryClinic")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StatusChangedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("StatusChangedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("StatusReason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("TerminationDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -1945,6 +1924,9 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("LastPasswordChangeAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool?>("IsMale")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");

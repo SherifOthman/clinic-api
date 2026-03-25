@@ -38,7 +38,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     public DbSet<Staff> Staff => Set<Staff>();
     public DbSet<DoctorProfile> DoctorProfiles => Set<DoctorProfile>();
     public DbSet<DoctorSpecialization> DoctorSpecializations => Set<DoctorSpecialization>();
-    public DbSet<StaffBranch> StaffBranches => Set<StaffBranch>();
 
     // Patient
     public DbSet<Patient> Patients => Set<Patient>();

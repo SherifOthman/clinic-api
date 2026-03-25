@@ -12,6 +12,7 @@ public class User : IdentityUser<Guid>
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string? ProfileImageUrl { get; set; }
+    public bool? IsMale { get; set; }
 
     // Security enhancements (US-7)
     public DateTime? LastLoginAt { get; set; }
