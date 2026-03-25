@@ -1,5 +1,6 @@
 using ClinicManagement.API.Contracts.Staff;
 using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Staff.Commands;
 using ClinicManagement.Application.Staff.Queries;
 using MediatR;
@@ -30,26 +31,29 @@ public class StaffController : BaseApiController
     {
         var command = new InviteStaffCommand(request.Role, request.Email, request.SpecializationId);
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         if (!result.IsSuccess)
             return HandleResult(result, "Failed to send invitation");
-        
+
         return Ok(result.Value);
     }
 
     /// <summary>
-    /// Get all pending staff invitations for the clinic
+    /// Get paginated list of invitations, optionally filtered by status
     /// </summary>
     [HttpGet("invitations")]
-    [ProducesResponseType(typeof(IEnumerable<PendingInvitationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<InvitationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetPendingInvitations(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetInvitations(
+        [FromQuery] InvitationStatus? status,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var query = new GetPendingInvitationsQuery();
+        var query = new GetInvitationsQuery(status, pageNumber, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve invitations");
     }
-
 
     /// <summary>
     /// Accept a staff invitation and register a new user account
@@ -72,10 +76,10 @@ public class StaffController : BaseApiController
             request.PhoneNumber
         );
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         if (!result.IsSuccess)
             return HandleResult(result, "Invitation Failed");
-        
+
         return NoContent();
     }
 
@@ -90,24 +94,28 @@ public class StaffController : BaseApiController
     {
         var command = new CancelInvitationCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         if (!result.IsSuccess)
             return HandleResult(result, "Failed to cancel invitation");
-        
+
         return NoContent();
     }
 
     /// <summary>
-    /// Get list of all staff members in the clinic
+    /// Get paginated list of staff members in the clinic, optionally filtered by role
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<StaffDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<StaffDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetStaffList([FromQuery] string? role, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetStaffList(
+        [FromQuery] string? role,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var query = new GetStaffListQuery(role);
+        var query = new GetStaffListQuery(role, pageNumber, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve staff");
     }
 
     /// <summary>
@@ -125,10 +133,10 @@ public class StaffController : BaseApiController
             request.YearsOfExperience
         );
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         if (!result.IsSuccess)
             return HandleResult(result, "Failed to set owner as doctor");
-        
+
         return NoContent();
     }
 }
