@@ -33,7 +33,6 @@ public interface IApplicationDbContext
     DbSet<Domain.Entities.Staff> Staff { get; }
     DbSet<DoctorProfile> DoctorProfiles { get; }
     DbSet<DoctorSpecialization> DoctorSpecializations { get; }
-    DbSet<StaffBranch> StaffBranches { get; }
 
     // Patient
     DbSet<Patient> Patients { get; }

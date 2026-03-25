@@ -67,19 +67,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ClinicMedications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MedicationId = table.Column<int>(type: "int", nullable: true),
-                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ClinicMedications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ClinicUsageMetrics",
                 columns: table => new
                 {
@@ -91,7 +78,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     TotalPatientsCount = table.Column<int>(type: "int", nullable: false),
                     AppointmentsCount = table.Column<int>(type: "int", nullable: false),
                     InvoicesCount = table.Column<int>(type: "int", nullable: false),
-                    StorageUsedGB = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StorageUsedGB = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -148,9 +135,9 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MedicalVisitId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Discount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Discount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TaxAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IssuedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -241,7 +228,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DefaultPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DefaultPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     IsOperation = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
@@ -258,7 +245,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     QuantityInStock = table.Column<int>(type: "int", nullable: false),
                     MinimumStockLevel = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -292,7 +279,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     MeasurementAttributeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StringValue = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IntValue = table.Column<int>(type: "int", nullable: true),
-                    DecimalValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    DecimalValue = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
                     DateTimeValue = table.Column<DateTime>(type: "datetime2", nullable: true),
                     BooleanValue = table.Column<bool>(type: "bit", nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -335,17 +322,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Medications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Medications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MedicineDispensings",
                 columns: table => new
                 {
@@ -354,7 +330,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MedicineId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     DispensedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DispensedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -375,7 +351,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     Manufacturer = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BatchNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BoxPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    BoxPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     StripsPerBox = table.Column<int>(type: "int", nullable: false),
                     TotalStripsInStock = table.Column<int>(type: "int", nullable: false),
                     MinimumStockLevel = table.Column<int>(type: "int", nullable: false),
@@ -432,7 +408,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     InvoiceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PaymentMethod = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -578,7 +554,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubscriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -587,7 +563,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     PaymentGateway = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FailureReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RefundAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RefundAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -636,23 +612,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRoleHistory",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ChangedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ChangedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserRoleHistory", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -660,6 +619,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ProfileImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsMale = table.Column<bool>(type: "bit", nullable: true),
                     LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastPasswordChangeAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -695,7 +655,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     LabTestOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RadiologyOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     SaleUnit = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -965,11 +925,12 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     IsMale = table.Column<bool>(type: "bit", nullable: false),
                     CityGeoNameId = table.Column<int>(type: "int", nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    BloodType = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    KnownAllergies = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BloodType = table.Column<int>(type: "int", nullable: true),
                     EmergencyContactName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     EmergencyContactPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     EmergencyContactRelation = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -989,15 +950,8 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    HireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsPrimaryClinic = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    StatusChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    StatusChangedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    StatusReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TerminationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -1072,7 +1026,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppointmentTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -1158,7 +1112,10 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IsPrimary = table.Column<bool>(type: "bit", nullable: false)
+                    PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    IsPrimary = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1196,43 +1153,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DoctorProfiles_Staff_StaffId",
-                        column: x => x.StaffId,
-                        principalTable: "Staff",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "StaffBranches",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StaffId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IsPrimaryBranch = table.Column<bool>(type: "bit", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ClinicBranchId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_StaffBranches", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_StaffBranches_ClinicBranches_ClinicBranchId",
-                        column: x => x.ClinicBranchId,
-                        principalTable: "ClinicBranches",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_StaffBranches_ClinicBranches_ClinicBranchId1",
-                        column: x => x.ClinicBranchId1,
-                        principalTable: "ClinicBranches",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_StaffBranches_Staff_StaffId",
                         column: x => x.StaffId,
                         principalTable: "Staff",
                         principalColumn: "Id",
@@ -1432,21 +1352,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StaffBranches_ClinicBranchId",
-                table: "StaffBranches",
-                column: "ClinicBranchId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_StaffBranches_ClinicBranchId1",
-                table: "StaffBranches",
-                column: "ClinicBranchId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_StaffBranches_StaffId",
-                table: "StaffBranches",
-                column: "StaffId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_StaffInvitations_AcceptedByUserId",
                 table: "StaffInvitations",
                 column: "AcceptedByUserId");
@@ -1519,9 +1424,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 name: "ClinicBranchPhoneNumbers");
 
             migrationBuilder.DropTable(
-                name: "ClinicMedications");
-
-            migrationBuilder.DropTable(
                 name: "ClinicSubscriptions");
 
             migrationBuilder.DropTable(
@@ -1567,9 +1469,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 name: "MedicalVisits");
 
             migrationBuilder.DropTable(
-                name: "Medications");
-
-            migrationBuilder.DropTable(
                 name: "Notifications");
 
             migrationBuilder.DropTable(
@@ -1606,9 +1505,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 name: "SpecializationMeasurementAttributes");
 
             migrationBuilder.DropTable(
-                name: "StaffBranches");
-
-            migrationBuilder.DropTable(
                 name: "StaffInvitations");
 
             migrationBuilder.DropTable(
@@ -1621,13 +1517,13 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                 name: "UserLogins");
 
             migrationBuilder.DropTable(
-                name: "UserRoleHistory");
-
-            migrationBuilder.DropTable(
                 name: "UserRoles");
 
             migrationBuilder.DropTable(
                 name: "UserTokens");
+
+            migrationBuilder.DropTable(
+                name: "ClinicBranches");
 
             migrationBuilder.DropTable(
                 name: "DoctorProfiles");
@@ -1652,9 +1548,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Patients");
-
-            migrationBuilder.DropTable(
-                name: "ClinicBranches");
 
             migrationBuilder.DropTable(
                 name: "Roles");

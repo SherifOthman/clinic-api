@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260228025351_AddAuditFieldsToPatient")]
-    partial class AddAuditFieldsToPatient
+    [Migration("20260325121055_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -279,23 +279,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("ClinicBranchId");
 
                     b.ToTable("ClinicBranchPhoneNumbers");
-                });
-
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicMedication", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ClinicId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("MedicationId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ClinicMedications");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicSubscription", b =>
@@ -986,17 +969,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("MedicalVisitRadiologies");
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.Medication", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Medications");
-                });
-
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Medicine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1136,9 +1108,8 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("BloodType")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<int?>("BloodType")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CityGeoNameId")
                         .HasColumnType("int");
@@ -1174,9 +1145,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("IsMale")
                         .HasColumnType("bit");
-
-                    b.Property<string>("KnownAllergies")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PatientCode")
                         .IsRequired()
@@ -1644,29 +1612,8 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("HireDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimaryClinic")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StatusChangedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("StatusChangedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("StatusReason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("TerminationDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -1678,45 +1625,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Staff");
-                });
-
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffBranch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ClinicBranchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimaryBranch")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClinicBranchId");
-
-                    b.HasIndex("StaffId");
-
-                    b.ToTable("StaffBranches");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffInvitation", b =>
@@ -1970,6 +1878,9 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool?>("IsMale")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
 
@@ -2029,36 +1940,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("Users", (string)null);
-                });
-
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.UserRoleHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ChangedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserRoleHistory");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -2374,21 +2255,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffBranch", b =>
-                {
-                    b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", null)
-                        .WithMany("StaffBranches")
-                        .HasForeignKey("ClinicBranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ClinicManagement.Domain.Entities.Staff", null)
-                        .WithMany("StaffBranches")
-                        .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffInvitation", b =>
                 {
                     b.HasOne("ClinicManagement.Domain.Entities.User", "AcceptedByUser")
@@ -2489,8 +2355,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("AppointmentPrices");
 
                     b.Navigation("PhoneNumbers");
-
-                    b.Navigation("StaffBranches");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorProfile", b =>
@@ -2512,8 +2376,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Staff", b =>
                 {
                     b.Navigation("DoctorProfile");
-
-                    b.Navigation("StaffBranches");
                 });
 #pragma warning restore 612, 618
         }

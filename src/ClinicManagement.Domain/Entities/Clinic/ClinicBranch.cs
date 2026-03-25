@@ -18,5 +18,4 @@ public class ClinicBranch : TenantEntity
     public Clinic Clinic { get; set; } = null!;
     public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();
     public ICollection<ClinicBranchAppointmentPrice> AppointmentPrices { get; set; } = new List<ClinicBranchAppointmentPrice>();
-    public ICollection<StaffBranch> StaffBranches { get; set; } = new List<StaffBranch>();
 }

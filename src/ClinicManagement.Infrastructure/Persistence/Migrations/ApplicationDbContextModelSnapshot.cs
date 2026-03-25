@@ -1624,45 +1624,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("Staff");
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffBranch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ClinicBranchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimaryBranch")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClinicBranchId");
-
-                    b.HasIndex("StaffId");
-
-                    b.ToTable("StaffBranches");
-                });
-
             modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffInvitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1914,6 +1875,9 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool?>("IsMale")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
 
@@ -1924,9 +1888,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("LastPasswordChangeAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool?>("IsMale")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -2291,21 +2252,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffBranch", b =>
-                {
-                    b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", null)
-                        .WithMany("StaffBranches")
-                        .HasForeignKey("ClinicBranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ClinicManagement.Domain.Entities.Staff", null)
-                        .WithMany("StaffBranches")
-                        .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffInvitation", b =>
                 {
                     b.HasOne("ClinicManagement.Domain.Entities.User", "AcceptedByUser")
@@ -2406,8 +2352,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Navigation("AppointmentPrices");
 
                     b.Navigation("PhoneNumbers");
-
-                    b.Navigation("StaffBranches");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorProfile", b =>
@@ -2429,8 +2373,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Staff", b =>
                 {
                     b.Navigation("DoctorProfile");
-
-                    b.Navigation("StaffBranches");
                 });
 #pragma warning restore 612, 618
         }
