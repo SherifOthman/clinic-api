@@ -140,19 +140,16 @@ public static class TestHandlerHelpers
     /// <summary>
     /// Creates a test staff member with common defaults
     /// </summary>
-    public static Staff CreateTestStaff(
+    public static ClinicManagement.Domain.Entities.Staff CreateTestStaff(
         Guid? userId = null,
         Guid? clinicId = null,
         bool isPrimaryClinic = true)
     {
-        return new Staff
+        return new ClinicManagement.Domain.Entities.Staff
         {
             UserId = userId ?? Guid.NewGuid(),
             ClinicId = clinicId ?? Guid.NewGuid(),
-            IsActive = true,
-            IsPrimaryClinic = isPrimaryClinic,
-            Status = Domain.Enums.StaffStatus.Active,
-            HireDate = DateTime.UtcNow
+            IsActive = true
         };
     }
 

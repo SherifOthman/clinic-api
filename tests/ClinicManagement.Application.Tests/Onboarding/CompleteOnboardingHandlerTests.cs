@@ -107,9 +107,6 @@ public class CompleteOnboardingHandlerTests : IDisposable
         staff!.UserId.Should().Be(_testUser.Id);
         staff.ClinicId.Should().Be(clinic.Id);
         staff.IsActive.Should().BeTrue();
-        staff.IsPrimaryClinic.Should().BeTrue();
-        staff.Status.Should().Be(StaffStatus.Active);
-        staff.HireDate.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
 
         // Verify DoctorProfile
         var doctorProfile = await _context.DoctorProfiles.FirstOrDefaultAsync();

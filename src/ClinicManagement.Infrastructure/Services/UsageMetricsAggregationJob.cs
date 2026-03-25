@@ -141,10 +141,7 @@ public class UsageMetricsAggregationJob : BackgroundService
         CancellationToken cancellationToken)
     {
         var activeStaffCount = await context.Staff
-            .CountAsync(s => s.ClinicId == clinicId && 
-                           s.IsActive && 
-                           s.Status == StaffStatus.Active, 
-                       cancellationToken);
+            .CountAsync(s => s.ClinicId == clinicId && s.IsActive, cancellationToken);
 
         var newPatientsCount = 0;
         var totalPatientsCount = 0;

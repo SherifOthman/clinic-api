@@ -78,8 +78,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         {
             UserId = user.Id,
             ClinicId = invitation.ClinicId,
-            IsActive = true,
-            HireDate = now
+            IsActive = true
         };
 
         _context.Staff.Add(staff);

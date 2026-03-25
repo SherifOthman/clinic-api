@@ -103,10 +103,7 @@ public class ClinicOwnerSeedService
                 {
                     UserId = ownerUser.Id,
                     ClinicId = clinic.Id,
-                    IsActive = true,
-                    HireDate = DateTime.UtcNow,
-                    IsPrimaryClinic = true,
-                    Status = StaffStatus.Active
+                    IsActive = true
                 };
 
                 _context.Staff.Add(staff);

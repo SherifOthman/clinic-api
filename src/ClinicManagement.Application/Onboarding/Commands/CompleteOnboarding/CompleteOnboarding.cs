@@ -3,7 +3,6 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -107,10 +106,7 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             {
                 UserId = userId,
                 ClinicId = clinic.Id,
-                IsActive = true,
-                HireDate = DateTime.UtcNow,
-                IsPrimaryClinic = true,
-                Status = StaffStatus.Active
+                IsActive = true
             };
 
             _context.Staff.Add(staff);
