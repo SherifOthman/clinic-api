@@ -82,6 +82,7 @@ public class AuthController : BaseApiController
             request.UserName,
             request.Email,
             request.Password,
+            request.IsMale,
             request.PhoneNumber
         );
         

@@ -60,7 +60,8 @@ public class SuperAdminSeedService
             FirstName = "System",
             LastName = "Administrator",
             PhoneNumber = "+966500000000",
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            IsMale = true
         };
 
         var result = await userManager.CreateAsync(superAdmin, "SuperAdmin123!");
@@ -103,7 +104,8 @@ public class SuperAdminSeedService
             FirstName = "John",
             LastName = "Smith",
             PhoneNumber = "+1234567890",
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            IsMale = true
         };
 
         var result = await userManager.CreateAsync(owner, "ClinicOwner123!");

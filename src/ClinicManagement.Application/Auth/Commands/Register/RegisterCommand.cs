@@ -9,5 +9,6 @@ public record RegisterCommand(
     string UserName,
     string Email,
     string Password,
+    bool IsMale,
     string PhoneNumber
 ) : IRequest<Result>;

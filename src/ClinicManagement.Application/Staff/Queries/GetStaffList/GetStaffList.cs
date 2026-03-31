@@ -89,7 +89,7 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
             .Select(x => new StaffDto(
                 x.Staff.Id,
                 x.Staff.User.FullName,
-                x.Staff.User.IsMale.HasValue ? (x.Staff.User.IsMale.Value ? "Male" : "Female") : null,
+                x.Staff.User.IsMale ? (x.Staff.User.IsMale ? "Male" : "Female") : null,
                 x.Role,
                 x.Staff.CreatedAt,
                 x.Staff.User.ProfileImageUrl,
