@@ -97,8 +97,6 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctor, Result>
         {
             StaffId = existingStaff.Id,
             SpecializationId = request.SpecializationId,
-            LicenseNumber = request.LicenseNumber,
-            YearsOfExperience = request.YearsOfExperience,
             CreatedAt = DateTime.UtcNow
         };
 

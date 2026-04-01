@@ -35,15 +35,6 @@ public class CompleteOnboardingValidator : AbstractValidator<CompleteOnboarding>
             RuleFor(x => x.SpecializationId)
                 .NotEmpty()
                 .WithMessage("Specialization is required when providing medical services");
-
-            RuleFor(x => x.LicenseNumber)
-                .MaximumLength(50)
-                .When(x => !string.IsNullOrEmpty(x.LicenseNumber));
-
-            RuleFor(x => x.YearsOfExperience)
-                .GreaterThanOrEqualTo(0)
-                .LessThanOrEqualTo(70)
-                .When(x => x.YearsOfExperience.HasValue);
         });
     }
 }

@@ -18,9 +18,7 @@ public record CompleteOnboarding(
     int StateGeoNameId,
     int CityGeoNameId,
     bool ProvideMedicalServices,
-    Guid? SpecializationId,
-    string? LicenseNumber,
-    int? YearsOfExperience
+    Guid? SpecializationId
 ) : IRequest<Result>;
 
 public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Result>
@@ -115,8 +113,6 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             {
                 StaffId = staff.Id,
                 SpecializationId = request.SpecializationId,
-                LicenseNumber = request.LicenseNumber,
-                YearsOfExperience = request.YearsOfExperience,
                 CreatedAt = DateTime.UtcNow
             };
 

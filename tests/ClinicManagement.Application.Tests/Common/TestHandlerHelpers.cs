@@ -166,8 +166,6 @@ public static class TestHandlerHelpers
         {
             StaffId = staffId ?? Guid.NewGuid(),
             SpecializationId = specializationId ?? Guid.NewGuid(),
-            LicenseNumber = licenseNumber,
-            YearsOfExperience = yearsOfExperience,
             CreatedAt = DateTime.UtcNow
         };
     }

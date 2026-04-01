@@ -74,6 +74,13 @@ public static class DependencyInjection
                 policy.RequireAuthenticatedUser();
                 policy.RequireClaim("ClinicId");
             });
+
+            options.AddPolicy("RequireClinicOwner", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("ClinicId");
+                policy.RequireRole(UserRoles.ClinicOwner);
+            });
         });
     }
 

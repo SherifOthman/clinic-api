@@ -2,10 +2,9 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using StaffEntity = ClinicManagement.Domain.Entities.Staff;
 
 namespace ClinicManagement.Application.Staff.Queries;
 
@@ -15,97 +14,95 @@ public record GetStaffListQuery(string? Role = null, int PageNumber = 1, int Pag
 public record StaffDto(
     Guid Id,
     string FullName,
-    string? Gender,
-    string Role,
+    string Gender,
     DateTime JoinDate,
     string? ProfileImageUrl,
+    IEnumerable<StaffRoleDto> Roles,
     DoctorInfoDto? DoctorInfo
 );
 
+public record StaffRoleDto(string Name);
+
 public record DoctorInfoDto(
     Guid DoctorProfileId,
-    int? YearsOfExperience,
-    string? LicenseNumber,
-    string? Bio,
-    IEnumerable<SpecializationDto> Specializations
-);
-
-public record SpecializationDto(
-    Guid Id,
     string NameEn,
     string NameAr,
-    bool IsPrimary
+    string? DescriptionEn,
+    string? DescriptionAr
 );
 
 public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<PaginatedResult<StaffDto>>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<User> _userManager;
 
-    public GetStaffListHandler(
-        IApplicationDbContext context,
-        ICurrentUserService currentUserService,
-        UserManager<User> userManager)
+    public GetStaffListHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
         _currentUserService = currentUserService;
-        _userManager = userManager;
     }
 
-    public async Task<Result<PaginatedResult<StaffDto>>> Handle(GetStaffListQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResult<StaffDto>>> Handle(
+        GetStaffListQuery request,
+        CancellationToken cancellationToken)
     {
         var clinicId = _currentUserService.GetRequiredClinicId();
 
-        var staffList = await _context.Staff
+        var baseQuery = _context.Staff
+            .AsNoTracking()
             .Where(s => s.ClinicId == clinicId)
             .Include(s => s.User)
             .Include(s => s.DoctorProfile)
-                .ThenInclude(dp => dp!.DoctorSpecializations)
-                    .ThenInclude(ds => ds.Specialization)
-            .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync(cancellationToken);
+                .ThenInclude(dp => dp!.Specialization);
 
-        var result = new List<(Domain.Entities.Staff Staff, string Role)>();
-
-        foreach (var staff in staffList)
+        // Role filter: find userIds that have the requested role
+        IQueryable<StaffEntity> filteredQuery = baseQuery;
+        if (!string.IsNullOrWhiteSpace(request.Role))
         {
-            if (staff.User == null) continue;
+            var roleName = request.Role;
+            var usersWithRole = _context.UserRoles
+                .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+                .Where(x => x.Name == roleName)
+                .Select(x => x.UserId);
 
-            var roles = await _userManager.GetRolesAsync(staff.User);
-            var role = roles.FirstOrDefault() ?? "Unknown";
-
-            if (!string.IsNullOrEmpty(request.Role) && role != request.Role)
-                continue;
-
-            result.Add((staff, role));
+            filteredQuery = baseQuery.Where(s => usersWithRole.Contains(s.UserId));
         }
 
-        var totalCount = result.Count;
+        var totalCount = await filteredQuery.CountAsync(cancellationToken);
 
-        var items = result
+        var staffList = await filteredQuery
+            .OrderByDescending(s => s.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(x => new StaffDto(
-                x.Staff.Id,
-                x.Staff.User.FullName,
-                x.Staff.User.IsMale ? (x.Staff.User.IsMale ? "Male" : "Female") : null,
-                x.Role,
-                x.Staff.CreatedAt,
-                x.Staff.User.ProfileImageUrl,
-                x.Staff.DoctorProfile == null ? null : new DoctorInfoDto(
-                    x.Staff.DoctorProfile.Id,
-                    x.Staff.DoctorProfile.YearsOfExperience,
-                    x.Staff.DoctorProfile.LicenseNumber,
-                    x.Staff.DoctorProfile.Bio,
-                    x.Staff.DoctorProfile.DoctorSpecializations.Select(ds => new SpecializationDto(
-                        ds.Specialization.Id,
-                        ds.Specialization.NameEn,
-                        ds.Specialization.NameAr,
-                        ds.IsPrimary
-                    ))
-                )
-            ));
+            .ToListAsync(cancellationToken);
+
+        // Load roles for the fetched users in one query
+        var userIds = staffList.Select(s => s.UserId).ToList();
+
+        var userRoles = await _context.UserRoles
+            .Where(ur => userIds.Contains(ur.UserId))
+            .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+            .ToListAsync(cancellationToken);
+
+        var rolesByUser = userRoles
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(x => new StaffRoleDto(x.Name!)).ToList());
+
+        var items = staffList.Select(s => new StaffDto(
+            s.Id,
+            s.User.FullName,
+            s.User.IsMale ? "Male" : "Female",
+            s.CreatedAt,
+            s.User.ProfileImageUrl,
+            rolesByUser.TryGetValue(s.UserId, out var roles) ? roles : [],
+            s.DoctorProfile == null ? null : new DoctorInfoDto(
+                s.DoctorProfile.Id,
+                s.DoctorProfile.Specialization?.NameEn ?? string.Empty,
+                s.DoctorProfile.Specialization?.NameAr ?? string.Empty,
+                s.DoctorProfile.Specialization?.DescriptionEn,
+                s.DoctorProfile.Specialization?.DescriptionAr
+            )
+        ));
 
         return Result<PaginatedResult<StaffDto>>.Success(
             PaginatedResult<StaffDto>.Create(items, totalCount, request.PageNumber, request.PageSize)

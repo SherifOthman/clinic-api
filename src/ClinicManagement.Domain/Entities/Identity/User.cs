@@ -7,6 +7,7 @@ public class User : IdentityUser<Guid>
     public User()
     {
         Id = Guid.NewGuid();
+        Roles = new List<Role>();
     }
 
     public string FirstName { get; set; } = string.Empty;
@@ -17,6 +18,8 @@ public class User : IdentityUser<Guid>
     // Security enhancements (US-7)
     public DateTime? LastLoginAt { get; set; }
     public DateTime? LastPasswordChangeAt { get; set; }
+
+    public List<Role> Roles { get; set; }
 
     public string FullName => $"{FirstName} {LastName}".Trim();
 }

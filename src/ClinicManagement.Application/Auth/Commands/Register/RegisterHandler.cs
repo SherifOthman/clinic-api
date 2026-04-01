@@ -49,7 +49,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             FirstName = request.FirstName,
             LastName = request.LastName,
             PhoneNumber = request.PhoneNumber,
-            IsMale =  request.IsMale,
+            IsMale =  request.Gender == "male",
             EmailConfirmed = false
         };
 

@@ -10,7 +10,7 @@ public record RegisterRequest(
     string LastName,
     string UserName,
     string Email,
-    bool IsMale,
+    string Gender,
     string Password,
     string PhoneNumber
 );

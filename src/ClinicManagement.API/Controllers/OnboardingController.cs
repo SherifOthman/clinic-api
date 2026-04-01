@@ -28,9 +28,7 @@ public class OnboardingController : BaseApiController
             request.StateGeoNameId,
             request.CityGeoNameId,
             request.ProvideMedicalServices,
-            request.SpecializationId,
-            request.LicenseNumber,
-            request.YearsOfExperience
+            request.SpecializationId
         );
         
         var result = await Sender.Send(command);

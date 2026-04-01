@@ -69,9 +69,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: true,
-            SpecializationId: _testSpecialization.Id,
-            LicenseNumber: "LIC-12345",
-            YearsOfExperience: 10
+            SpecializationId: _testSpecialization.Id
         );
 
         // Act
@@ -113,8 +111,6 @@ public class CompleteOnboardingHandlerTests : IDisposable
         doctorProfile.Should().NotBeNull();
         doctorProfile!.StaffId.Should().Be(staff.Id);
         doctorProfile.SpecializationId.Should().Be(_testSpecialization.Id);
-        doctorProfile.LicenseNumber.Should().Be("LIC-12345");
-        doctorProfile.YearsOfExperience.Should().Be(10);
         doctorProfile.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
     }
 
@@ -131,9 +127,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: true,
-            SpecializationId: _testSpecialization.Id,
-            LicenseNumber: null,
-            YearsOfExperience: null
+            SpecializationId: _testSpecialization.Id
         );
 
         // Act
@@ -160,8 +154,6 @@ public class CompleteOnboardingHandlerTests : IDisposable
         doctorProfile.Should().NotBeNull();
         doctorProfile!.StaffId.Should().Be(staff.Id);
         doctorProfile.SpecializationId.Should().Be(_testSpecialization.Id);
-        doctorProfile.LicenseNumber.Should().BeNull();
-        doctorProfile.YearsOfExperience.Should().BeNull();
     }
 
     [Fact]
@@ -177,9 +169,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: false,
-            SpecializationId: null,
-            LicenseNumber: null,
-            YearsOfExperience: null
+            SpecializationId: null
         );
 
         // Act
@@ -232,9 +222,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: false,
-            SpecializationId: null,
-            LicenseNumber: null,
-            YearsOfExperience: null
+            SpecializationId: null
         );
 
         // Act
@@ -269,9 +257,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: false,
-            SpecializationId: null,
-            LicenseNumber: null,
-            YearsOfExperience: null
+            SpecializationId: null
         );
 
         // Act
@@ -301,9 +287,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: false,
-            SpecializationId: null,
-            LicenseNumber: null,
-            YearsOfExperience: null
+            SpecializationId: null
         );
 
         // Act
@@ -336,9 +320,7 @@ public class CompleteOnboardingHandlerTests : IDisposable
             StateGeoNameId: 2,
             CityGeoNameId: 3,
             ProvideMedicalServices: false,
-            SpecializationId: null,
-            LicenseNumber: null,
-            YearsOfExperience: null
+            SpecializationId: null
         );
 
         // Act

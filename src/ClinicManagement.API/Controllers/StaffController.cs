@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize(Policy = "RequireClinic")]
+[Authorize(Policy = "RequireClinicOwner")]
 [Route("api/staff")]
 public class StaffController(IMediator mediator) : BaseApiController
 {

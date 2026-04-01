@@ -117,21 +117,9 @@ public class ClinicOwnerSeedService
                     {
                         var doctorProfile = new DoctorProfile
                         {
-                            StaffId = staff.Id,
-                            YearsOfExperience = 5
-                        };
+                            StaffId = staff.Id,                        };
 
                         _context.DoctorProfiles.Add(doctorProfile);
-
-                        var doctorSpecialization = new DoctorSpecialization
-                        {
-                            DoctorProfileId = doctorProfile.Id,
-                            SpecializationId = generalPractice.Id,
-                            IsPrimary = true,
-                            YearsOfExperience = 5
-                        };
-
-                        _context.DoctorSpecializations.Add(doctorSpecialization);
                     }
                 }
             }

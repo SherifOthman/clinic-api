@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -8,13 +9,14 @@ public interface IApplicationDbContext
 {
     // Identity
     DbSet<User> Users { get; }
+    DbSet<Role> Roles { get; }
+    DbSet<IdentityUserRole<Guid>> UserRoles { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<StaffInvitation> StaffInvitations { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<EmailQueue> EmailQueue { get; }
 
     // Reference Data
-    DbSet<Role> Roles { get; }
     DbSet<Specialization> Specializations { get; }
     DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     DbSet<ChronicDisease> ChronicDiseases { get; }
@@ -32,7 +34,6 @@ public interface IApplicationDbContext
     // Staff
     DbSet<Domain.Entities.Staff> Staff { get; }
     DbSet<DoctorProfile> DoctorProfiles { get; }
-    DbSet<DoctorSpecialization> DoctorSpecializations { get; }
 
     // Patient
     DbSet<Patient> Patients { get; }
