@@ -34,5 +34,10 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
         RuleFor(x => x.PhoneNumber)
             .NotEmpty()
             .MustBeValidPhoneNumber();
+
+        RuleFor(x => x.Gender)
+            .NotEmpty()
+            .Must(g => g == "Male" || g == "Female")
+            .WithMessage("Gender must be either Male or Female");
     }
 }
