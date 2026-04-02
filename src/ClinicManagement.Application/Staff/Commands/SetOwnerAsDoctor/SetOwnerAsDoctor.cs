@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ClinicManagement.Application.Staff.Commands;
 
 public record SetOwnerAsDoctor(
-    Guid? SpecializationId,
-    string? LicenseNumber,
-    int? YearsOfExperience
+    Guid SpecializationId,
+    string LicenseNumber,
+    int YearsOfExperience
 ) : IRequest<Result>;
 
 public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctor, Result>
@@ -59,9 +59,10 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctor, Result>
         }
 
         // Check if user already has a staff record
+        // Global clinic filter already scopes this to the current clinic
         var existingStaff = await _context.Staff
             .Include(s => s.DoctorProfile)
-            .FirstOrDefaultAsync(s => s.UserId == userId && s.ClinicId == clinic.Id, cancellationToken);
+            .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
 
         if (existingStaff != null && existingStaff.DoctorProfile != null)
         {
@@ -89,10 +90,9 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctor, Result>
             };
 
             _context.Staff.Add(existingStaff);
-            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        // Create doctor profile
+        // Create doctor profile — StaffId is already available since Id is code-generated
         var doctorProfile = new DoctorProfile
         {
             StaffId = existingStaff.Id,

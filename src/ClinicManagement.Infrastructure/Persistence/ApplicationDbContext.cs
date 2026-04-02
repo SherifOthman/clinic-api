@@ -99,10 +99,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         // Apply entity configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // Named clinic filter (EF Core 10).
-        // Scopes all tenant entities to the current clinic automatically.
-        // EF Core re-evaluates _currentUserService.ClinicId on every query.
-        // Bypass with: query.IgnoreQueryFilters([QueryFilterNames.Clinic])
         modelBuilder.Entity<Staff>()
             .HasQueryFilter(QueryFilterNames.Clinic, s => s.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
 

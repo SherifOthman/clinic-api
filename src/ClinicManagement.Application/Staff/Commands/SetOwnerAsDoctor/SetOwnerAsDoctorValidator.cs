@@ -8,7 +8,6 @@ public class SetOwnerAsDoctorValidator : AbstractValidator<SetOwnerAsDoctor>
     {
         RuleFor(x => x.YearsOfExperience)
             .GreaterThanOrEqualTo(0)
-            .When(x => x.YearsOfExperience.HasValue)
             .WithMessage("Years of experience must be a positive number");
 
         RuleFor(x => x.LicenseNumber)
