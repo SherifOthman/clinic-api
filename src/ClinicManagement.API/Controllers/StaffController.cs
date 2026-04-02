@@ -99,11 +99,14 @@ public class StaffController(IMediator mediator) : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetStaffList(
         [FromQuery] string? role,
+        [FromQuery] bool? isActive,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetStaffListQuery(role, pageNumber, pageSize);
+        var query = new GetStaffListQuery(role, isActive, sortBy, sortDirection, pageNumber, pageSize);
         var result = await mediator.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve staff");
     }
@@ -117,15 +120,29 @@ public class StaffController(IMediator mediator) : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SetOwnerAsDoctor([FromBody] SetOwnerAsDoctorRequest request, CancellationToken cancellationToken)
     {
-        var command = new SetOwnerAsDoctor(
-            request.SpecializationId,
-            request.LicenseNumber,
-            request.YearsOfExperience
-        );
+        var command = new SetOwnerAsDoctorCommand(request.SpecializationId);
         var result = await mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
             return HandleResult(result, "Failed to set owner as doctor");
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Activate or deactivate a staff member
+    /// </summary>
+    [HttpPatch("{id:guid}/active-status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetActiveStatus(Guid id, [FromBody] SetStaffActiveStatusRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SetStaffActiveStatusCommand(id, request.IsActive);
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+            return HandleResult(result, "Failed to update staff status");
 
         return NoContent();
     }

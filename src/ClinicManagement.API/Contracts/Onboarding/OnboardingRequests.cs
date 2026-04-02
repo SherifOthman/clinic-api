@@ -9,7 +9,5 @@ public record CompleteOnboardingRequest(
     int StateGeoNameId,
     int CityGeoNameId,
     bool ProvideMedicalServices,
-    Guid? SpecializationId,
-    string? LicenseNumber,
-    int? YearsOfExperience
+    Guid? SpecializationId
 );

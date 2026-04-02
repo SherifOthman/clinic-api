@@ -8,7 +8,13 @@ using StaffEntity = ClinicManagement.Domain.Entities.Staff;
 
 namespace ClinicManagement.Application.Staff.Queries;
 
-public record GetStaffListQuery(string? Role = null, int PageNumber = 1, int PageSize = 10)
+public record GetStaffListQuery(
+    string? Role = null,
+    bool? IsActive = null,
+    string? SortBy = null,
+    string? SortDirection = null,
+    int PageNumber = 1,
+    int PageSize = 10)
     : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<StaffDto>>>;
 
 public record StaffDto(
@@ -17,6 +23,7 @@ public record StaffDto(
     string Gender,
     DateTime JoinDate,
     string? ProfileImageUrl,
+    bool IsActive,
     IEnumerable<StaffRoleDto> Roles,
     DoctorInfoDto? DoctorInfo
 );
@@ -63,13 +70,23 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
                 .Where(x => x.Name == roleName)
                 .Select(x => x.UserId);
 
-            filteredQuery = baseQuery.Where(s => usersWithRole.Contains(s.UserId));
+            filteredQuery = filteredQuery.Where(s => usersWithRole.Contains(s.UserId));
         }
+
+        if (request.IsActive.HasValue)
+            filteredQuery = filteredQuery.Where(s => s.IsActive == request.IsActive.Value);
+
+        // Sorting
+        var descending = string.Equals(request.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+        filteredQuery = request.SortBy?.ToLower() switch
+        {
+            "joindate" => descending ? filteredQuery.OrderByDescending(s => s.CreatedAt) : filteredQuery.OrderBy(s => s.CreatedAt),
+            _ => filteredQuery.OrderByDescending(s => s.CreatedAt),
+        };
 
         var totalCount = await filteredQuery.CountAsync(cancellationToken);
 
         var staffList = await filteredQuery
-            .OrderByDescending(s => s.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
@@ -92,6 +109,7 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
             s.User.IsMale ? "Male" : "Female",
             s.CreatedAt,
             s.User.ProfileImageUrl,
+            s.IsActive,
             rolesByUser.TryGetValue(s.UserId, out var roles) ? roles : [],
             s.DoctorProfile == null ? null : new DoctorInfoDto(
                 s.DoctorProfile.Id,

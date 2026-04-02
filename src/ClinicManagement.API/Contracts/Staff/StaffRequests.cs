@@ -15,7 +15,7 @@ public record AcceptInvitationWithRegistrationRequest(
 );
 
 public record SetOwnerAsDoctorRequest(
-    Guid SpecializationId,
-    string LicenseNumber,
-    int YearsOfExperience
+    Guid SpecializationId
 );
+
+public record SetStaffActiveStatusRequest(bool IsActive);
