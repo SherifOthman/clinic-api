@@ -27,11 +27,10 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         UpdatePatientCommand request,
         CancellationToken cancellationToken)
     {
-        var clinicId = _currentUser.GetRequiredClinicId();
-
+        // ClinicId filter applied automatically via global named filter
         var patient = await _context.Patients
             .Include(p => p.Phones)
-            .FirstOrDefaultAsync(p => p.Id == request.Id && p.ClinicId == clinicId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == request.Id && !p.IsDeleted, cancellationToken);
 
         if (patient is null)
         {

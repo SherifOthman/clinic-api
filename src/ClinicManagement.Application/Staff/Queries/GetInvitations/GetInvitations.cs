@@ -31,21 +31,19 @@ public record InvitationDto(
 public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result<PaginatedResult<InvitationDto>>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUserService;
 
-    public GetInvitationsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetInvitationsHandler(IApplicationDbContext context)
     {
         _context = context;
-        _currentUserService = currentUserService;
     }
 
     public async Task<Result<PaginatedResult<InvitationDto>>> Handle(GetInvitationsQuery request, CancellationToken cancellationToken)
     {
-        var clinicId = _currentUserService.GetRequiredClinicId();
         var now = DateTime.UtcNow;
 
+        // ClinicId filter applied automatically via global named filter
         var query = _context.StaffInvitations
-            .Where(si => si.ClinicId == clinicId && !si.IsDeleted)
+            .Where(si => !si.IsDeleted)
             .Include(si => si.CreatedByUser)
             .Include(si => si.AcceptedByUser)
             .Include(si => si.Specialization)

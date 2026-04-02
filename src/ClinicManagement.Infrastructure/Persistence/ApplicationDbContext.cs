@@ -1,4 +1,5 @@
-using ClinicManagement.Application.Abstractions.Data;
+﻿using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -8,12 +9,17 @@ namespace ClinicManagement.Infrastructure.Persistence;
 
 public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplicationDbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    private readonly ICurrentUserService? _currentUserService;
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        ICurrentUserService? currentUserService = null)
         : base(options)
     {
+        _currentUserService = currentUserService;
     }
 
-    // Identity (Users and Roles are inherited from IdentityDbContext)
+    // Identity
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<IdentityUserRole<Guid>> UserRoles => Set<IdentityUserRole<Guid>>();
@@ -67,7 +73,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     public DbSet<MedicalVisitMeasurement> MedicalVisitMeasurements => Set<MedicalVisitMeasurement>();
     public DbSet<DoctorMeasurementAttribute> DoctorMeasurementAttributes => Set<DoctorMeasurementAttribute>();
     public DbSet<SpecializationMeasurementAttribute> SpecializationMeasurementAttributes => Set<SpecializationMeasurementAttribute>();
-
     public DbSet<Medicine> Medicines => Set<Medicine>();
     public DbSet<MedicineDispensing> MedicineDispensings => Set<MedicineDispensing>();
     public DbSet<MedicalService> MedicalServices => Set<MedicalService>();
@@ -82,7 +87,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     {
         base.OnModelCreating(modelBuilder);
 
-        // Rename Identity tables to match our naming convention
+        // Rename Identity tables
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<Role>().ToTable("Roles");
         modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
@@ -91,7 +96,32 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
         modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
 
-        // Apply all entity configurations from assembly
+        // Apply entity configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Named clinic filter (EF Core 10).
+        // Scopes all tenant entities to the current clinic automatically.
+        // EF Core re-evaluates _currentUserService.ClinicId on every query.
+        // Bypass with: query.IgnoreQueryFilters([QueryFilterNames.Clinic])
+        modelBuilder.Entity<Staff>()
+            .HasQueryFilter(QueryFilterNames.Clinic, s => s.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+
+        modelBuilder.Entity<StaffInvitation>()
+            .HasQueryFilter(QueryFilterNames.Clinic, si => si.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+
+        modelBuilder.Entity<ClinicBranch>()
+            .HasQueryFilter(QueryFilterNames.Clinic, b => b.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+
+        modelBuilder.Entity<Patient>()
+            .HasQueryFilter(QueryFilterNames.Clinic, p => p.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+
+        modelBuilder.Entity<Invoice>()
+            .HasQueryFilter(QueryFilterNames.Clinic, i => i.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+
+        modelBuilder.Entity<LabTest>()
+            .HasQueryFilter(QueryFilterNames.Clinic, l => l.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+
+        modelBuilder.Entity<RadiologyTest>()
+            .HasQueryFilter(QueryFilterNames.Clinic, r => r.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
     }
 }

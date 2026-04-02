@@ -28,11 +28,10 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         GetPatientsQuery request,
         CancellationToken cancellationToken)
     {
-        var clinicId = _currentUser.GetRequiredClinicId();
-
+        // ClinicId filter applied automatically via global named filter
         var query = _context.Patients
             .Include(p => p.Phones)
-            .Where(p => p.ClinicId == clinicId && !p.IsDeleted);
+            .Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

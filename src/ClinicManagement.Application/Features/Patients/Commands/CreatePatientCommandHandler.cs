@@ -29,9 +29,9 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
     {
         var clinicId = _currentUser.GetRequiredClinicId();
 
-        // Generate patient code
+        // ClinicId filter applied automatically via global named filter for reads.
+        // Still needed here to assign ClinicId when creating the new patient.
         var patientCount = await _context.Patients
-            .Where(p => p.ClinicId == clinicId)
             .CountAsync(cancellationToken);
         var patientCode = $"P{(patientCount + 1):D6}";
 

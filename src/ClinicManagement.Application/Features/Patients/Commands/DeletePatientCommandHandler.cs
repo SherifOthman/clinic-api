@@ -24,10 +24,9 @@ public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand,
         DeletePatientCommand request,
         CancellationToken cancellationToken)
     {
-        var clinicId = _currentUser.GetRequiredClinicId();
-
+        // ClinicId filter applied automatically via global named filter
         var patient = await _context.Patients
-            .FirstOrDefaultAsync(p => p.Id == request.Id && p.ClinicId == clinicId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == request.Id && !p.IsDeleted, cancellationToken);
 
         if (patient == null)
         {
