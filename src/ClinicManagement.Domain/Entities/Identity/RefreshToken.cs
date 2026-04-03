@@ -15,9 +15,6 @@ public class RefreshToken : BaseEntity
     public string? RevokedByIp { get; private set; }
     public string? ReplacedByToken { get; private set; }
     
-    // Navigation properties
-    public User User { get; set; } = null!;
-    
     public bool IsExpired(DateTime currentTime) => currentTime >= ExpiryTime;
     public bool IsActive(DateTime currentTime) => !IsRevoked && !IsExpired(currentTime);
 

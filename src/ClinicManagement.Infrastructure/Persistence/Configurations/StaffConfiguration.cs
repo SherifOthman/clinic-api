@@ -12,14 +12,16 @@ public class StaffConfiguration : IEntityTypeConfiguration<Staff>
             .WithMany()
             .HasForeignKey(s => s.UserId)
             .OnDelete(DeleteBehavior.Restrict);
-        
-        builder.HasOne(s => s.Clinic)
-            .WithMany(c => c.Staff)
+
+        // Clinic is the tenant owner — no nav property on Staff side
+        builder.HasOne<Clinic>()
+            .WithMany()
             .HasForeignKey(s => s.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
+        // DoctorProfile back-reference removed — configure via DoctorProfile side only
         builder.HasOne(s => s.DoctorProfile)
-            .WithOne(dp => dp.Staff)
+            .WithOne()
             .HasForeignKey<DoctorProfile>(dp => dp.StaffId)
             .OnDelete(DeleteBehavior.Cascade);
     }

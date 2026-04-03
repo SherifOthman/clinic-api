@@ -10,6 +10,5 @@ public class Staff : TenantEntity
 
     // Navigation properties
     public User User { get; set; } = null!;
-    public Clinic Clinic { get; set; } = null!;
     public DoctorProfile? DoctorProfile { get; set; }
 }

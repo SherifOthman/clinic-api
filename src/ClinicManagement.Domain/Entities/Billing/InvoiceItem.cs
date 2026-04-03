@@ -29,6 +29,8 @@ public class InvoiceItem : BaseEntity
     
 
     public decimal LineTotal => Quantity * UnitPrice;
+
+    // Navigation properties — loaded when rendering invoice line item details
     public MedicalService? MedicalService { get; set; }
     public Medicine? Medicine { get; set; }
     public MedicalSupply? MedicalSupply { get; set; }

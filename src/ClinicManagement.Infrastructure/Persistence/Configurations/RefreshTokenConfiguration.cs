@@ -14,8 +14,9 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Property(rt => rt.ReplacedByToken).HasMaxLength(500);
         
         builder.HasIndex(rt => rt.Token).IsUnique();
-        
-        builder.HasOne(rt => rt.User)
+
+        // No nav property on RefreshToken — FK only
+        builder.HasOne<User>()
             .WithMany()
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);

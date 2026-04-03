@@ -12,7 +12,7 @@ public class StaffInvitation : TenantEntity
     public string Role { get; private set; } = null!;
     public Guid? SpecializationId { get; private set; }
     public string InvitationToken { get; private set; } = null!;
-    public DateTime ExpiresAt { get; private set; }
+    public DateTime ExpiresAt { get;  set; }
     public bool IsAccepted { get; private set; }
     public bool IsCanceled { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
@@ -22,7 +22,6 @@ public class StaffInvitation : TenantEntity
     public bool IsDeleted { get; private set; }
     
     // Navigation properties
-    public Clinic Clinic { get; set; } = null!;
     public Specialization? Specialization { get; set; }
     public User? AcceptedByUser { get; set; }
     public User CreatedByUser { get; set; } = null!;

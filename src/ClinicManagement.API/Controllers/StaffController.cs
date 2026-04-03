@@ -36,13 +36,34 @@ public class StaffController(IMediator mediator) : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetInvitations(
         [FromQuery] InvitationStatus? status,
+        [FromQuery] string? role,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetInvitationsQuery(status, pageNumber, pageSize);
+        var query = new GetInvitationsQuery(status, role, sortBy, sortDirection, pageNumber, pageSize);
         var result = await mediator.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve invitations");
+    }
+
+    /// <summary>
+    /// Resend a pending or expired invitation
+    /// </summary>
+    [HttpPost("invitations/{id:guid}/resend")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResendInvitation(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new ResendInvitationCommand(id);
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+            return HandleResult(result, "Failed to resend invitation");
+
+        return NoContent();
     }
 
     /// <summary>

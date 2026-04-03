@@ -10,18 +10,19 @@ public class ClinicBranchConfiguration : IEntityTypeConfiguration<ClinicBranch>
     {
         builder.Property(cb => cb.Name).HasMaxLength(200).IsRequired();
         builder.Property(cb => cb.AddressLine).HasMaxLength(500).IsRequired();
-        
-        builder.HasOne(cb => cb.Clinic)
-            .WithMany(c => c.Branches)
+
+        // Clinic is the tenant owner — no nav property on ClinicBranch side
+        builder.HasOne<Clinic>()
+            .WithMany()
             .HasForeignKey(cb => cb.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany(cb => cb.PhoneNumbers)
+
+        builder.HasMany<ClinicBranchPhoneNumber>()
             .WithOne()
             .HasForeignKey(pn => pn.ClinicBranchId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany(cb => cb.AppointmentPrices)
+
+        builder.HasMany<ClinicBranchAppointmentPrice>()
             .WithOne()
             .HasForeignKey(ap => ap.ClinicBranchId)
             .OnDelete(DeleteBehavior.Cascade);

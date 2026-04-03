@@ -50,58 +50,72 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
     }
 
     public async Task<Result<PaginatedResult<StaffDto>>> Handle(
-        GetStaffListQuery request,
-        CancellationToken cancellationToken)
+    GetStaffListQuery request,
+    CancellationToken cancellationToken)
     {
-        // ClinicId filter applied automatically via global named filter
-        var baseQuery = _context.Staff
+        var query = _context.Staff
             .AsNoTracking()
             .Include(s => s.User)
             .Include(s => s.DoctorProfile)
-                .ThenInclude(dp => dp!.Specialization);
+                .ThenInclude(dp => dp!.Specialization)
+            .AsQueryable();
 
-        // Role filter via UserRoles join (EF-translatable)
-        IQueryable<StaffEntity> filteredQuery = baseQuery;
+        // 🔹 Filter: IsActive
+        if (request.IsActive.HasValue)
+            query = query.Where(s => s.IsActive == request.IsActive.Value);
+
+        // 🔹 Filter: Role (JOIN-based)
         if (!string.IsNullOrWhiteSpace(request.Role))
         {
-            var roleName = request.Role;
-            var usersWithRole = _context.UserRoles
-                .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
-                .Where(x => x.Name == roleName)
-                .Select(x => x.UserId);
-
-            filteredQuery = filteredQuery.Where(s => usersWithRole.Contains(s.UserId));
+            query = query.Where(s =>
+                _context.UserRoles
+                    .Join(_context.Roles,
+                        ur => ur.RoleId,
+                        r => r.Id,
+                        (ur, r) => new { ur.UserId, r.Name })
+                    .Any(x => x.UserId == s.UserId && x.Name == request.Role));
         }
 
-        if (request.IsActive.HasValue)
-            filteredQuery = filteredQuery.Where(s => s.IsActive == request.IsActive.Value);
-
-        // Sorting
+        // 🔹 Sorting
         var descending = string.Equals(request.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
-        filteredQuery = request.SortBy?.ToLower() switch
+
+        query = request.SortBy?.ToLower() switch
         {
-            "joindate" => descending ? filteredQuery.OrderByDescending(s => s.CreatedAt) : filteredQuery.OrderBy(s => s.CreatedAt),
-            _ => filteredQuery.OrderByDescending(s => s.CreatedAt),
+            "name" => descending
+                ? query.OrderByDescending(s => s.User.FullName)
+                : query.OrderBy(s => s.User.FullName),
+
+            "joindate" => descending
+                ? query.OrderByDescending(s => s.CreatedAt)
+                : query.OrderBy(s => s.CreatedAt),
+
+            _ => query.OrderByDescending(s => s.CreatedAt),
         };
 
-        var totalCount = await filteredQuery.CountAsync(cancellationToken);
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        var staffList = await filteredQuery
+        var staffList = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        // Load roles for fetched users in one query
+        // 🔹 Roles query (single batch)
         var userIds = staffList.Select(s => s.UserId).ToList();
 
-        var userRoles = await _context.UserRoles
+        var roles = await _context.UserRoles
             .Where(ur => userIds.Contains(ur.UserId))
-            .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+            .Join(_context.Roles,
+                ur => ur.RoleId,
+                r => r.Id,
+                (ur, r) => new { ur.UserId, r.Name })
             .ToListAsync(cancellationToken);
 
-        var rolesByUser = userRoles
+        var rolesByUser = roles
             .GroupBy(x => x.UserId)
-            .ToDictionary(g => g.Key, g => g.Select(x => new StaffRoleDto(x.Name!)).ToList());
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => new StaffRoleDto(x.Name!)).ToList()
+            );
 
         var items = staffList.Select(s => new StaffDto(
             s.Id,
@@ -110,11 +124,11 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
             s.CreatedAt,
             s.User.ProfileImageUrl,
             s.IsActive,
-            rolesByUser.TryGetValue(s.UserId, out var roles) ? roles : [],
+            rolesByUser.TryGetValue(s.UserId, out var r) ? r : [],
             s.DoctorProfile == null ? null : new DoctorInfoDto(
                 s.DoctorProfile.Id,
-                s.DoctorProfile.Specialization?.NameEn ?? string.Empty,
-                s.DoctorProfile.Specialization?.NameAr ?? string.Empty,
+                s.DoctorProfile.Specialization?.NameEn ?? "",
+                s.DoctorProfile.Specialization?.NameAr ?? "",
                 s.DoctorProfile.Specialization?.DescriptionEn,
                 s.DoctorProfile.Specialization?.DescriptionAr
             )

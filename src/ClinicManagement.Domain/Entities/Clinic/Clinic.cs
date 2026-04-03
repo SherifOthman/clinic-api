@@ -20,8 +20,4 @@ public class Clinic : BaseEntity
     // Navigation properties
     public User Owner { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
-    public ICollection<ClinicBranch> Branches { get; set; } = new List<ClinicBranch>();
-    public ICollection<Staff> Staff { get; set; } = new List<Staff>();
-    public ICollection<Patient> Patients { get; set; } = new List<Patient>();
-    public ICollection<ClinicSubscription> Subscriptions { get; set; } = new List<ClinicSubscription>();
 }

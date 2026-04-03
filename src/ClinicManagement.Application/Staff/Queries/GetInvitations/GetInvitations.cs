@@ -11,6 +11,9 @@ public enum InvitationStatus { Pending, Accepted, Canceled, Expired }
 
 public record GetInvitationsQuery(
     InvitationStatus? Status = null,
+    string? Role = null,
+    string? SortBy = null,
+    string? SortDirection = null,
     int PageNumber = 1,
     int PageSize = 10
 ) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<InvitationDto>>>;
@@ -61,10 +64,21 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
             };
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Role))
+            query = query.Where(si => si.Role == request.Role);
+
         var totalCount = await query.CountAsync(cancellationToken);
 
+        // Sorting
+        var descending = string.Equals(request.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+        query = request.SortBy?.ToLower() switch
+        {
+            "email"     => descending ? query.OrderByDescending(si => si.Email) : query.OrderBy(si => si.Email),
+            "invitedat" => descending ? query.OrderByDescending(si => si.CreatedAt) : query.OrderBy(si => si.CreatedAt),
+            _           => query.OrderByDescending(si => si.CreatedAt),
+        };
+
         var invitations = await query
-            .OrderByDescending(si => si.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);

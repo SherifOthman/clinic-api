@@ -13,22 +13,23 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(p => p.EmergencyContactName).HasMaxLength(200);
         builder.Property(p => p.EmergencyContactPhone).HasMaxLength(20);
         builder.Property(p => p.EmergencyContactRelation).HasMaxLength(50);
-        
-        builder.HasOne(p => p.Clinic)
-            .WithMany(c => c.Patients)
+
+        // No nav property to Clinic — tenant FK only
+        builder.HasOne<Clinic>()
+            .WithMany()
             .HasForeignKey(p => p.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasMany(p => p.Phones)
             .WithOne()
             .HasForeignKey(pp => pp.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasMany(p => p.Allergies)
             .WithOne()
             .HasForeignKey(pa => pa.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasMany(p => p.ChronicDiseases)
             .WithOne()
             .HasForeignKey(pcd => pcd.PatientId)
