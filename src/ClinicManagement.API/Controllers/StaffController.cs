@@ -49,6 +49,18 @@ public class StaffController(IMediator mediator) : BaseApiController
     }
 
     /// <summary>
+    /// Get full detail for a single invitation
+    /// </summary>
+    [HttpGet("invitations/{id:guid}")]
+    [ProducesResponseType(typeof(InvitationDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetInvitationDetail(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetInvitationDetailQuery(id), cancellationToken);
+        return HandleResult(result, "Failed to retrieve invitation detail");
+    }
+
+    /// <summary>
     /// Resend a pending or expired invitation
     /// </summary>
     [HttpPost("invitations/{id:guid}/resend")]
@@ -130,6 +142,18 @@ public class StaffController(IMediator mediator) : BaseApiController
         var query = new GetStaffListQuery(role, isActive, sortBy, sortDirection, pageNumber, pageSize);
         var result = await mediator.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve staff");
+    }
+
+    /// <summary>
+    /// Get full detail for a single staff member
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(StaffDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetStaffDetail(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetStaffDetailQuery(id), cancellationToken);
+        return HandleResult(result, "Failed to retrieve staff detail");
     }
 
     /// <summary>

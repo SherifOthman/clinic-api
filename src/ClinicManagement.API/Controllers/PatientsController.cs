@@ -26,17 +26,22 @@ public class PatientsController : BaseApiController
         [FromQuery] bool? isMale = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(
-            searchTerm,
-            pageNumber,
-            pageSize,
-            sortBy,
-            sortDirection,
-            isMale);
-
+        var query = new GetPatientsQuery(searchTerm, pageNumber, pageSize, sortBy, sortDirection, isMale);
         var result = await Sender.Send(query, cancellationToken);
-
         return HandleResult(result, "Failed to retrieve patients");
+    }
+
+    /// <summary>
+    /// Get full detail for a single patient
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
+    [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPatientDetail(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await Sender.Send(new GetPatientDetailQuery(id), cancellationToken);
+        return HandleResult(result, "Failed to retrieve patient detail");
     }
 
     /// <summary>

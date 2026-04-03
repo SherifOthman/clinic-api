@@ -10,33 +10,35 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
     {
         builder.Property(c => c.Name).HasMaxLength(200).IsRequired();
         builder.Property(c => c.BillingEmail).HasMaxLength(256);
-        
+
+        // Nav properties kept — Owner and SubscriptionPlan are traversed in handlers
         builder.HasOne(c => c.Owner)
             .WithMany()
             .HasForeignKey(c => c.OwnerUserId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         builder.HasOne(c => c.SubscriptionPlan)
             .WithMany()
             .HasForeignKey(c => c.SubscriptionPlanId)
             .OnDelete(DeleteBehavior.Restrict);
-        
-        builder.HasMany(c => c.Branches)
-            .WithOne(cb => cb.Clinic)
+
+        // Collection nav properties removed from Clinic — configure FK only from child side
+        builder.HasMany<ClinicBranch>()
+            .WithOne()
             .HasForeignKey(cb => cb.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany(c => c.Staff)
-            .WithOne(s => s.Clinic)
+
+        builder.HasMany<Staff>()
+            .WithOne()
             .HasForeignKey(s => s.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany(c => c.Patients)
-            .WithOne(p => p.Clinic)
+
+        builder.HasMany<Patient>()
+            .WithOne()
             .HasForeignKey(p => p.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany(c => c.Subscriptions)
+
+        builder.HasMany<ClinicSubscription>()
             .WithOne()
             .HasForeignKey(cs => cs.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);

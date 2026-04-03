@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Data;
-using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using MediatR;
@@ -26,9 +25,7 @@ public record InvitationDto(
     InvitationStatus Status,
     DateTime InvitedAt,
     DateTime ExpiresAt,
-    string InvitedBy,
-    DateTime? AcceptedAt,
-    string? AcceptedBy
+    string InvitedBy
 );
 
 public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result<PaginatedResult<InvitationDto>>>
@@ -48,7 +45,6 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
         var query = _context.StaffInvitations
             .Where(si => !si.IsDeleted)
             .Include(si => si.CreatedByUser)
-            .Include(si => si.AcceptedByUser)
             .Include(si => si.Specialization)
             .AsQueryable();
 
@@ -98,9 +94,7 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
                 status,
                 si.CreatedAt,
                 si.ExpiresAt,
-                si.CreatedByUser.FullName,
-                si.AcceptedAt,
-                si.AcceptedByUser?.FullName
+                si.CreatedByUser.FullName
             );
         });
 

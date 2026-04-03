@@ -8,6 +8,7 @@ public class StaffMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
+        // InvitationDto is the flat list DTO — no AcceptedAt/AcceptedBy
         config.NewConfig<StaffInvitation, InvitationDto>()
             .MapWith(src => new InvitationDto(
                 src.Id,
@@ -20,9 +21,7 @@ public class StaffMappingConfig : IRegister
                     : InvitationStatus.Pending,
                 src.CreatedAt,
                 src.ExpiresAt,
-                src.CreatedByUser != null ? src.CreatedByUser.FullName : "Unknown",
-                src.AcceptedAt,
-                src.AcceptedByUser != null ? src.AcceptedByUser.FullName : null
+                src.CreatedByUser != null ? src.CreatedByUser.FullName : "Unknown"
             ));
     }
 }

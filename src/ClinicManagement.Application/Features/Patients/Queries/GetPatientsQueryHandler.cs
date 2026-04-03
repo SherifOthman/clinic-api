@@ -28,17 +28,21 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         GetPatientsQuery request,
         CancellationToken cancellationToken)
     {
-        // ClinicId filter applied automatically via global named filter
+        // No Include — PrimaryPhone is denormalized on Patient, phones only needed for detail view
         var query = _context.Patients
-            .Include(p => p.Phones)
             .Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
+            var term = request.SearchTerm;
+            var matchingPatientIds = _context.PatientPhones
+                .Where(ph => ph.PhoneNumber.Contains(term))
+                .Select(ph => ph.PatientId);
+
             query = query.Where(p =>
-                p.FullName.Contains(request.SearchTerm) ||
-                p.PatientCode.Contains(request.SearchTerm) ||
-                p.Phones.Any(ph => ph.PhoneNumber.Contains(request.SearchTerm)));
+                p.FullName.Contains(term) ||
+                p.PatientCode.Contains(term) ||
+                matchingPatientIds.Contains(p.Id));
         }
 
         if (request.IsMale.HasValue)
