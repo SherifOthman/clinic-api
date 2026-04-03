@@ -1,8 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
-using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using Mapster;
-using MapsterMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,26 +9,15 @@ namespace ClinicManagement.Application.Features.Patients.Queries;
 public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<PaginatedPatientsResponse>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUser;
-    private readonly IMapper _mapper;
 
-    public GetPatientsQueryHandler(
-        IApplicationDbContext context,
-        ICurrentUserService currentUser,
-        IMapper mapper)
-    {
-        _context = context;
-        _currentUser = currentUser;
-        _mapper = mapper;
-    }
+    public GetPatientsQueryHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<Result<PaginatedPatientsResponse>> Handle(
-        GetPatientsQuery request,
-        CancellationToken cancellationToken)
+        GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        // No Include — PrimaryPhone is denormalized on Patient, phones only needed for detail view
-        var query = _context.Patients
-            .Where(p => !p.IsDeleted);
+        // No Include — lightweight list query, counts only
+        var query = _context.Patients.Where(p => !p.IsDeleted);
+        var now = DateTime.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -46,19 +33,36 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         }
 
         if (request.IsMale.HasValue)
-        {
             query = query.Where(p => p.IsMale == request.IsMale.Value);
+
+        // Age filtering
+        if (request.MinAge.HasValue)
+        {
+            var maxDateOfBirth = now.AddYears(-request.MinAge.Value);
+            query = query.Where(p => p.DateOfBirth <= maxDateOfBirth);
+        }
+
+        if (request.MaxAge.HasValue)
+        {
+            var minDateOfBirth = now.AddYears(-request.MaxAge.Value - 1).AddDays(1);
+            query = query.Where(p => p.DateOfBirth >= minDateOfBirth);
         }
 
         query = request.SortBy?.ToLower() switch
         {
-            "name" => request.SortDirection == "desc"
-                ? query.OrderByDescending(p => p.FullName)
-                : query.OrderBy(p => p.FullName),
+            "name"      => request.SortDirection == "desc"
+                            ? query.OrderByDescending(p => p.FullName)
+                            : query.OrderBy(p => p.FullName),
+            "age"       => request.SortDirection == "desc"
+                            ? query.OrderBy(p => p.DateOfBirth)
+                            : query.OrderByDescending(p => p.DateOfBirth),
+            "patientcode" => request.SortDirection == "desc"
+                            ? query.OrderByDescending(p => p.PatientCode)
+                            : query.OrderBy(p => p.PatientCode),
             "createdat" => request.SortDirection == "desc"
-                ? query.OrderByDescending(p => p.CreatedAt)
-                : query.OrderBy(p => p.CreatedAt),
-            _ => query.OrderByDescending(p => p.CreatedAt)
+                            ? query.OrderByDescending(p => p.CreatedAt)
+                            : query.OrderBy(p => p.CreatedAt),
+            _           => query.OrderByDescending(p => p.CreatedAt),
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -66,18 +70,32 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         var patients = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .ProjectToType<PatientDto>()
+            .Select(p => new PatientDto
+            {
+                Id = p.Id.ToString(),
+                PatientCode = p.PatientCode,
+                FullName = p.FullName,
+                DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd"),
+                IsMale = p.IsMale,
+                Age = p.GetAge(now),
+                BloodType = p.BloodType.HasValue ? p.BloodType.Value.ToString() : null,
+                PrimaryPhone = _context.PatientPhones
+                    .Where(ph => ph.PatientId == p.Id && ph.IsPrimary && !ph.IsDeleted)
+                    .Select(ph => ph.PhoneNumber)
+                    .FirstOrDefault(),
+                PhoneCount = _context.PatientPhones.Count(ph => ph.PatientId == p.Id && !ph.IsDeleted),
+                ChronicDiseaseCount = _context.PatientChronicDiseases.Count(cd => cd.PatientId == p.Id && !cd.IsDeleted),
+                CreatedAt = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+            })
             .ToListAsync(cancellationToken);
 
-        var response = new PaginatedPatientsResponse
+        return Result<PaginatedPatientsResponse>.Success(new PaginatedPatientsResponse
         {
-            Items = patients,
+            Items      = patients,
             TotalCount = totalCount,
             PageNumber = request.PageNumber,
-            PageSize = request.PageSize,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize)
-        };
-
-        return Result<PaginatedPatientsResponse>.Success(response);
+            PageSize   = request.PageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
+        });
     }
 }

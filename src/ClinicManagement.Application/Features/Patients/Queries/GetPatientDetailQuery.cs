@@ -17,6 +17,7 @@ public record PatientDetailDto
     public bool IsMale { get; init; }
     public int Age { get; init; }
     public string? BloodType { get; init; }
+    public string? KnownAllergies { get; init; }
     public string? EmergencyContactName { get; init; }
     public string? EmergencyContactPhone { get; init; }
     public string? EmergencyContactRelation { get; init; }
@@ -65,6 +66,7 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             IsMale                 = patient.IsMale,
             Age                    = patient.GetAge(now),
             BloodType              = patient.BloodType?.ToString(),
+            KnownAllergies         = patient.KnownAllergies,
             EmergencyContactName   = patient.EmergencyContactName,
             EmergencyContactPhone  = patient.EmergencyContactPhone,
             EmergencyContactRelation = patient.EmergencyContactRelation,

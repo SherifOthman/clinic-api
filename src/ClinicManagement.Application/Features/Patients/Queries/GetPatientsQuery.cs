@@ -9,9 +9,12 @@ public record GetPatientsQuery(
     int PageSize,
     string? SortBy,
     string SortDirection,
-    bool? IsMale
+    bool? IsMale,
+    int? MinAge,
+    int? MaxAge
 ) : IRequest<Result<PaginatedPatientsResponse>>;
 
+// List DTO — minimal fields, no nested collections for performance
 public record PatientDto
 {
     public string Id { get; init; } = null!;
@@ -21,8 +24,9 @@ public record PatientDto
     public bool IsMale { get; init; }
     public int Age { get; init; }
     public string? BloodType { get; init; }
-    public List<string> PhoneNumbers { get; init; } = new();
     public string? PrimaryPhone { get; init; }
+    public int PhoneCount { get; init; }
+    public int ChronicDiseaseCount { get; init; }
     public string CreatedAt { get; init; } = null!;
 }
 

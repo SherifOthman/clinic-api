@@ -24,9 +24,11 @@ public class PatientsController : BaseApiController
         [FromQuery] string? sortBy = null,
         [FromQuery] string sortDirection = "asc",
         [FromQuery] bool? isMale = null,
+        [FromQuery] int? minAge = null,
+        [FromQuery] int? maxAge = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(searchTerm, pageNumber, pageSize, sortBy, sortDirection, isMale);
+        var query = new GetPatientsQuery(searchTerm, pageNumber, pageSize, sortBy, sortDirection, isMale, minAge, maxAge);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }
