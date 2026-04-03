@@ -44,7 +44,6 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
         // ClinicId filter applied automatically via global named filter
         var query = _context.StaffInvitations
             .Where(si => !si.IsDeleted)
-            .Include(si => si.CreatedByUser)
             .Include(si => si.Specialization)
             .AsQueryable();
 
@@ -79,6 +78,13 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
+        // Load inviter names in one batch — no nav property needed
+        var creatorIds = invitations.Select(si => si.CreatedByUserId).Distinct().ToList();
+        var creatorNames = await _context.Users
+            .Where(u => creatorIds.Contains(u.Id))
+            .Select(u => new { u.Id, FullName = u.FirstName + " " + u.LastName })
+            .ToDictionaryAsync(u => u.Id, u => u.FullName.Trim(), cancellationToken);
+
         var items = invitations.Select(si =>
         {
             var status = si.IsAccepted ? InvitationStatus.Accepted
@@ -94,7 +100,7 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
                 status,
                 si.CreatedAt,
                 si.ExpiresAt,
-                si.CreatedByUser.FullName
+                creatorNames.TryGetValue(si.CreatedByUserId, out var name) ? name : "Unknown"
             );
         });
 

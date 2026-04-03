@@ -42,6 +42,7 @@ public record ResendEmailVerificationRequest(
 public record UpdateProfileRequest(
     string FirstName,
     string LastName,
+    string UserName,
     string PhoneNumber
 );
 

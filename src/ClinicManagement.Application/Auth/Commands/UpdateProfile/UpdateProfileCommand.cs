@@ -6,5 +6,6 @@ namespace ClinicManagement.Application.Auth.Commands.UpdateProfile;
 public record UpdateProfileCommand(
     string FirstName,
     string LastName,
+    string userName,
     string? PhoneNumber
 ) : IRequest<Result>;

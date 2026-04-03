@@ -20,9 +20,9 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     }
 
     // Identity
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Role> Roles => Set<Role>();
-    public DbSet<IdentityUserRole<Guid>> UserRoles => Set<IdentityUserRole<Guid>>();
+    //public DbSet<User> Users => Set<User>();
+    //public DbSet<Role> Roles => Set<Role>();
+    //public DbSet<IdentityUserRole<Guid>> UserRoles => Set<IdentityUserRole<Guid>>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
     public DbSet<Notification> Notifications => Set<Notification>();

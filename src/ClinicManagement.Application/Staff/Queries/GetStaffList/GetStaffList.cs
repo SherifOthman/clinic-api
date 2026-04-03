@@ -15,7 +15,6 @@ public record GetStaffListQuery(
     int PageSize = 10)
     : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<StaffDto>>>;
 
-// Flat DTO for the table — no doctor profile or specialization details
 public record StaffDto(
     Guid Id,
     string FullName,
@@ -23,8 +22,7 @@ public record StaffDto(
     DateTime JoinDate,
     string? ProfileImageUrl,
     bool IsActive,
-    IEnumerable<StaffRoleDto> Roles,
-    bool IsDoctor
+    IEnumerable<StaffRoleDto> Roles
 );
 
 public record StaffRoleDto(string Name);
@@ -38,7 +36,6 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
     public async Task<Result<PaginatedResult<StaffDto>>> Handle(
         GetStaffListQuery request, CancellationToken cancellationToken)
     {
-        // Include User — single join, nav property exists
         var query = _context.Staff
             .AsNoTracking()
             .Include(s => s.User)
@@ -47,7 +44,6 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
         if (request.IsActive.HasValue)
             query = query.Where(s => s.IsActive == request.IsActive.Value);
 
-        // Role filter — no nav property on Staff for roles, use query syntax
         if (!string.IsNullOrWhiteSpace(request.Role))
         {
             var usersWithRole =
@@ -81,7 +77,6 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
 
         var userIds = page.Select(s => s.UserId).ToList();
 
-        // Load roles for all users in one batch — no nav property, use query syntax
         var userRoles = await (
             from ur in _context.UserRoles
             join r  in _context.Roles on ur.RoleId equals r.Id
@@ -89,9 +84,9 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
             select new { ur.UserId, r.Name }
         ).ToListAsync(cancellationToken);
 
-        var rolesByUser   = userRoles.GroupBy(x => x.UserId)
-                                     .ToDictionary(g => g.Key, g => g.Select(x => new StaffRoleDto(x.Name!)).ToList());
-        var doctorUserIds = userRoles.Where(x => x.Name == "Doctor").Select(x => x.UserId).ToHashSet();
+        var rolesByUser = userRoles
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(x => new StaffRoleDto(x.Name!)).ToList());
 
         var items = page.Select(s => new StaffDto(
             s.Id,
@@ -100,8 +95,7 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
             s.CreatedAt,
             s.User.ProfileImageUrl,
             s.IsActive,
-            rolesByUser.TryGetValue(s.UserId, out var roles) ? roles : [],
-            doctorUserIds.Contains(s.UserId)
+            rolesByUser.TryGetValue(s.UserId, out var roles) ? roles : []
         ));
 
         return Result<PaginatedResult<StaffDto>>.Success(
