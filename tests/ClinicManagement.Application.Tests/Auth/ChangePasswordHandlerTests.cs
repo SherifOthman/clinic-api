@@ -1,5 +1,5 @@
-﻿using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Auth.Commands.ChangePassword;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;

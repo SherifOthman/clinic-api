@@ -13,10 +13,11 @@ public class PatientMappingConfig : IRegister
             .Map(dest => dest.DateOfBirth, src => src.DateOfBirth.ToString("yyyy-MM-dd"))
             .Map(dest => dest.Age, src => DateTime.UtcNow.Year - src.DateOfBirth.Year)
             .Map(dest => dest.BloodType, src => src.BloodType.HasValue ? src.BloodType.Value.ToString() : null)
-            .Map(dest => dest.PhoneNumbers, src => src.Phones.Select(ph => ph.PhoneNumber).ToList())
-            .Map(dest => dest.PrimaryPhone, src => 
-                src.Phones.Where(ph => ph.IsPrimary).Select(ph => ph.PhoneNumber).FirstOrDefault() 
+            .Map(dest => dest.PrimaryPhone, src =>
+                src.Phones.Where(ph => ph.IsPrimary).Select(ph => ph.PhoneNumber).FirstOrDefault()
                 ?? src.Phones.OrderBy(ph => ph.CreatedAt).Select(ph => ph.PhoneNumber).FirstOrDefault())
-            .Map(dest => dest.CreatedAt, src => src.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss"));
+            .Map(dest => dest.CreatedAt, src => src.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss"))
+            .Ignore(dest => dest.PhoneCount)
+            .Ignore(dest => dest.ChronicDiseaseCount);
     }
 }

@@ -1,5 +1,5 @@
-﻿using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Auth.Commands.ConfirmEmail;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;

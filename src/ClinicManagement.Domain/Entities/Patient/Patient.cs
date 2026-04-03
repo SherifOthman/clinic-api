@@ -11,6 +11,7 @@ public class Patient : AuditableTenantEntity
     public int? CityGeoNameId { get; set; }
     public DateTime DateOfBirth { get; set; }
     public BloodType? BloodType { get; set; }
+    public string? KnownAllergies { get; set; }
     public string? EmergencyContactName { get; set; }
     public string? EmergencyContactPhone { get; set; }
     public string? EmergencyContactRelation { get; set; }

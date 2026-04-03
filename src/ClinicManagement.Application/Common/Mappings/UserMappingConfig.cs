@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Auth.Queries;
+using ClinicManagement.Application.Features.Auth.Queries;
 using ClinicManagement.Domain.Entities;
 using Mapster;
 

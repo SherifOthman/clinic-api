@@ -1,5 +1,5 @@
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Onboarding.Commands;
+using ClinicManagement.Application.Features.Onboarding.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;

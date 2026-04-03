@@ -1,8 +1,8 @@
 using ClinicManagement.API.Contracts.Staff;
 using ClinicManagement.API.Models;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Application.Staff.Commands;
-using ClinicManagement.Application.Staff.Queries;
+using ClinicManagement.Application.Features.Staff.Commands;
+using ClinicManagement.Application.Features.Staff.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

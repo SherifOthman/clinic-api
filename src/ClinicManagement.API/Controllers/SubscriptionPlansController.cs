@@ -1,4 +1,4 @@
-using ClinicManagement.Application.SubscriptionPlans.Queries;
+using ClinicManagement.Application.Features.SubscriptionPlans.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Specializations.Queries;
+using ClinicManagement.Application.Features.Specializations.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,0 +1,65 @@
+using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Common.Options;
+using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Entities;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
+
+public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Result>
+{
+    private readonly IApplicationDbContext _context;
+    private readonly UserManager<User> _userManager;
+    private readonly IEmailService _emailService;
+    private readonly SmtpOptions _smtpOptions;
+    private readonly ILogger<ForgotPasswordHandler> _logger;
+
+    public ForgotPasswordHandler(
+        IApplicationDbContext context,
+        UserManager<User> userManager,
+        IEmailService emailService,
+        IOptions<SmtpOptions> smtpOptions,
+        ILogger<ForgotPasswordHandler> logger)
+    {
+        _context = context;
+        _userManager = userManager;
+        _emailService = emailService;
+        _smtpOptions = smtpOptions.Value;
+        _logger = logger;
+    }
+
+    public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+
+        if (user == null)
+        {
+            _logger.LogInformation("Password reset requested for non-existent email: {Email}", request.Email);
+            return Result.Success();
+        }
+
+        // Use Identity's built-in password reset token
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        var displayName = $"{user.FirstName} {user.LastName}".Trim();
+        var resetLink = $"{_smtpOptions.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
+
+        try
+        {
+            await _emailService.SendPasswordResetEmailAsync(user.Email!, displayName, resetLink, cancellationToken);
+            _logger.LogInformation("Password reset email sent to: {Email}", user.Email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send password reset email to: {Email}", user.Email);
+        }
+
+        return Result.Success();
+    }
+}

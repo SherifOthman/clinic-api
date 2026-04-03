@@ -1,5 +1,5 @@
-﻿using ClinicManagement.Application.Abstractions.Email;
-using ClinicManagement.Application.Auth.Commands.ForgotPassword;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;

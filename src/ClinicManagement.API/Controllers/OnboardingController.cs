@@ -1,6 +1,6 @@
 using ClinicManagement.API.Contracts.Onboarding;
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.Onboarding.Commands;
+using ClinicManagement.Application.Features.Onboarding.Commands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

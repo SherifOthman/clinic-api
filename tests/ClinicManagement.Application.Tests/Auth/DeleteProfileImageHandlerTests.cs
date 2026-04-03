@@ -1,6 +1,6 @@
-﻿using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
-using ClinicManagement.Application.Auth.Commands;
+using ClinicManagement.Application.Features.Auth.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Infrastructure.Persistence;
