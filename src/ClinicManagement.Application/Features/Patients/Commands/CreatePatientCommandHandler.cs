@@ -36,7 +36,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         {
             patientCode = GeneratePatientCode();
         }
-        while (await _context.Patients.AnyAsync(p => p.PatientCode == patientCode, cancellationToken));
+        while (await _context.Patients.AnyAsync(p => p.PatientCode == patientCode && p.ClinicId == clinicId, cancellationToken));
 
         // Parse blood type
         BloodType? bloodType = null;
