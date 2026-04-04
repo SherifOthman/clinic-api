@@ -15,6 +15,7 @@ public interface IApplicationDbContext
     DbSet<StaffInvitation> StaffInvitations { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<EmailQueue> EmailQueue { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 
     // Reference Data
     DbSet<Specialization> Specializations { get; }

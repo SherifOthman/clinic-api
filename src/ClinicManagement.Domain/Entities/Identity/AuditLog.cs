@@ -1,0 +1,48 @@
+using ClinicManagement.Domain.Common;
+
+namespace ClinicManagement.Domain.Entities;
+
+/// <summary>
+/// Immutable audit log entry. Never updated or soft-deleted — only appended.
+/// Captures every Create/Update/Delete across all auditable entities.
+/// SuperAdmin uses this to debug issues across all clinics.
+/// </summary>
+public class AuditLog : BaseEntity
+{
+    /// <summary>UTC timestamp of the action.</summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>The clinic this action belongs to. Null for system-level actions (SuperAdmin).</summary>
+    public Guid? ClinicId { get; set; }
+
+    /// <summary>The user who performed the action. Null for system/seed operations.</summary>
+    public Guid? UserId { get; set; }
+
+    /// <summary>Full name of the user at the time of the action (denormalized for history).</summary>
+    public string? UserName { get; set; }
+
+    /// <summary>Role of the user at the time (e.g. Doctor, Receptionist).</summary>
+    public string? UserRole { get; set; }
+
+    /// <summary>The entity type name (e.g. "Patient", "Staff").</summary>
+    public string EntityType { get; set; } = null!;
+
+    /// <summary>The primary key of the affected entity.</summary>
+    public string EntityId { get; set; } = null!;
+
+    /// <summary>Create | Update | Delete</summary>
+    public AuditAction Action { get; set; }
+
+    /// <summary>IP address of the request.</summary>
+    public string? IpAddress { get; set; }
+
+    /// <summary>JSON of changed fields: { "FieldName": { "Old": "...", "New": "..." } }</summary>
+    public string? Changes { get; set; }
+}
+
+public enum AuditAction
+{
+    Create = 1,
+    Update = 2,
+    Delete = 3,
+}

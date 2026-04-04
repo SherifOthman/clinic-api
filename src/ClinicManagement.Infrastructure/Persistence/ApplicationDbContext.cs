@@ -6,6 +6,7 @@ using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace ClinicManagement.Infrastructure.Persistence;
 
@@ -82,25 +83,107 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<Payment> Payments => Set<Payment>();
 
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var userId = _currentUserService?.UserId;
+        var ipAddress = _currentUserService?.IpAddress;
+        var userRole = _currentUserService?.Roles.FirstOrDefault();
+        var now = DateTime.UtcNow;
 
+        // Capture changes BEFORE saving so we can read old values
+        var auditEntries = BuildAuditEntries(userId, ipAddress, userRole, now);
+
+        // Stamp audit fields
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.CreatedAt = DateTime.UtcNow;
+                entry.Entity.CreatedAt = now;
                 entry.Entity.CreatedBy = userId;
             }
             else if (entry.State == EntityState.Modified)
             {
-                entry.Entity.UpdatedAt = DateTime.UtcNow;
+                entry.Entity.UpdatedAt = now;
                 entry.Entity.UpdatedBy = userId;
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // Persist audit logs after save (so EntityId is available for Added entries)
+        if (auditEntries.Count > 0)
+        {
+            AuditLogs.AddRange(auditEntries);
+            await base.SaveChangesAsync(cancellationToken);
+        }
+
+        return result;
+    }
+
+    private List<AuditLog> BuildAuditEntries(Guid? userId, string? ipAddress, string? userRole, DateTime now)
+    {
+        var entries = new List<AuditLog>();
+
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+        {
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+                continue;
+
+            // Skip AuditLog itself to avoid infinite recursion
+            if (entry.Entity is AuditLog)
+                continue;
+
+            var action = entry.State switch
+            {
+                EntityState.Added    => AuditAction.Create,
+                EntityState.Modified => AuditAction.Update,
+                EntityState.Deleted  => AuditAction.Delete,
+                _                    => AuditAction.Update,
+            };
+
+            // Build changes JSON for updates
+            string? changesJson = null;
+            if (action == AuditAction.Update)
+            {
+                var changes = new Dictionary<string, object>();
+                foreach (var prop in entry.Properties)
+                {
+                    if (!prop.IsModified) continue;
+                    // Skip internal audit fields
+                    if (prop.Metadata.Name is "UpdatedAt" or "UpdatedBy") continue;
+
+                    changes[prop.Metadata.Name] = new
+                    {
+                        Old = prop.OriginalValue,
+                        New = prop.CurrentValue,
+                    };
+                }
+                if (changes.Count > 0)
+                    changesJson = System.Text.Json.JsonSerializer.Serialize(changes);
+            }
+
+            // Get ClinicId if entity is tenant-scoped
+            Guid? clinicId = null;
+            if (entry.Entity is ITenantEntity tenantEntity)
+                clinicId = tenantEntity.ClinicId;
+
+            entries.Add(new AuditLog
+            {
+                Timestamp  = now,
+                ClinicId   = clinicId,
+                UserId     = userId,
+                UserRole   = userRole,
+                EntityType = entry.Entity.GetType().Name,
+                EntityId   = entry.Entity.Id.ToString(),
+                Action     = action,
+                IpAddress  = ipAddress,
+                Changes    = changesJson,
+            });
+        }
+
+        return entries;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)    {
