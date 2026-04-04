@@ -55,8 +55,8 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
     {
         var patient = await _context.Patients
             .AsNoTracking()
-            .Include(p => p.Phones)
-            .Include(p => p.ChronicDiseases)
+            .Include(p => p.Phones.Where(ph => !ph.IsDeleted))
+            .Include(p => p.ChronicDiseases.Where(cd => !cd.IsDeleted))
             .FirstOrDefaultAsync(p => p.Id == request.PatientId, cancellationToken);
 
         if (patient == null)
@@ -96,10 +96,10 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             EmergencyContactName     = patient.EmergencyContactName,
             EmergencyContactPhone    = patient.EmergencyContactPhone,
             EmergencyContactRelation = patient.EmergencyContactRelation,
-            PhoneNumbers = patient.Phones
+            PhoneNumbers = (patient.Phones ?? [])
                 .Select(p => new PatientPhoneDto(p.PhoneNumber, p.IsPrimary))
                 .ToList(),
-            ChronicDiseases = patient.ChronicDiseases
+            ChronicDiseases = (patient.ChronicDiseases ?? [])
                 .Where(cd => diseaseMap.ContainsKey(cd.ChronicDiseaseId))
                 .Select(cd => new PatientChronicDiseaseDto(
                     cd.ChronicDiseaseId.ToString(),
