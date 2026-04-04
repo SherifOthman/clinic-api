@@ -1,6 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common;
-using Mapster;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +9,14 @@ namespace ClinicManagement.Application.Features.Patients.Queries;
 public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<PaginatedPatientsResponse>>
 {
     private readonly IApplicationDbContext _context;
+
+    private static readonly Dictionary<BloodType, string> BloodTypeDisplay = new()
+    {
+        { BloodType.APositive,  "A+"  }, { BloodType.ANegative,  "A-"  },
+        { BloodType.BPositive,  "B+"  }, { BloodType.BNegative,  "B-"  },
+        { BloodType.ABPositive, "AB+" }, { BloodType.ABNegative, "AB-" },
+        { BloodType.OPositive,  "O+"  }, { BloodType.ONegative,  "O-"  },
+    };
 
     public GetPatientsQueryHandler(IApplicationDbContext context) => _context = context;
 
@@ -62,7 +70,7 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                 DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd"),
                 IsMale = p.IsMale,
                 Age = p.GetAge(now),
-                BloodType = p.BloodType.HasValue ? p.BloodType.Value.ToString() : null,
+                BloodType = p.BloodType.HasValue ? BloodTypeDisplay.GetValueOrDefault(p.BloodType.Value) : null,
                 PrimaryPhone = _context.PatientPhones
                     .Where(ph => ph.PatientId == p.Id && ph.IsPrimary)
                     .Select(ph => ph.PhoneNumber)

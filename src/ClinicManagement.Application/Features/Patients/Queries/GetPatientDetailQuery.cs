@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ public record PatientDetailDto
     public bool IsMale { get; init; }
     public int Age { get; init; }
     public string? BloodType { get; init; }
+    public int? CityGeoNameId { get; init; }
     public string? KnownAllergies { get; init; }
     public string? EmergencyContactName { get; init; }
     public string? EmergencyContactPhone { get; init; }
@@ -36,11 +38,23 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
 {
     private readonly IApplicationDbContext _context;
 
+    // Maps enum values to display strings
+    private static readonly Dictionary<BloodType, string> BloodTypeDisplay = new()
+    {
+        { BloodType.APositive,  "A+"  },
+        { BloodType.ANegative,  "A-"  },
+        { BloodType.BPositive,  "B+"  },
+        { BloodType.BNegative,  "B-"  },
+        { BloodType.ABPositive, "AB+" },
+        { BloodType.ABNegative, "AB-" },
+        { BloodType.OPositive,  "O+"  },
+        { BloodType.ONegative,  "O-"  },
+    };
+
     public GetPatientDetailHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<Result<PatientDetailDto>> Handle(GetPatientDetailQuery request, CancellationToken cancellationToken)
     {
-        // Nav properties exist — Include is the right choice
         var patient = await _context.Patients
             .AsNoTracking()
             .Include(p => p.Phones)
@@ -50,7 +64,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
         if (patient == null)
             return Result.Failure<PatientDetailDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        // Chronic disease names
         var diseaseIds = patient.ChronicDiseases.Select(cd => cd.ChronicDiseaseId).ToList();
         var diseaseNames = await _context.ChronicDiseases
             .Where(cd => diseaseIds.Contains(cd.Id))
@@ -59,7 +72,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
 
         var diseaseMap = diseaseNames.ToDictionary(d => d.Id);
 
-        // Resolve audit user names in one batch
         var userIds = new[] { patient.CreatedBy, patient.UpdatedBy }
             .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
 
@@ -72,16 +84,19 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
 
         return Result.Success(new PatientDetailDto
         {
-            Id                     = patient.Id.ToString(),
-            PatientCode            = patient.PatientCode,
-            FullName               = patient.FullName,
-            DateOfBirth            = patient.DateOfBirth.ToString("yyyy-MM-dd"),
-            IsMale                 = patient.IsMale,
-            Age                    = patient.GetAge(now),
-            BloodType              = patient.BloodType?.ToString(),
-            KnownAllergies         = patient.KnownAllergies,
-            EmergencyContactName   = patient.EmergencyContactName,
-            EmergencyContactPhone  = patient.EmergencyContactPhone,
+            Id                       = patient.Id.ToString(),
+            PatientCode              = patient.PatientCode,
+            FullName                 = patient.FullName,
+            DateOfBirth              = patient.DateOfBirth.ToString("yyyy-MM-dd"),
+            IsMale                   = patient.IsMale,
+            Age                      = patient.GetAge(now),
+            BloodType                = patient.BloodType.HasValue
+                                        ? BloodTypeDisplay.GetValueOrDefault(patient.BloodType.Value)
+                                        : null,
+            CityGeoNameId            = patient.CityGeoNameId,
+            KnownAllergies           = patient.KnownAllergies,
+            EmergencyContactName     = patient.EmergencyContactName,
+            EmergencyContactPhone    = patient.EmergencyContactPhone,
             EmergencyContactRelation = patient.EmergencyContactRelation,
             PhoneNumbers = patient.Phones
                 .Select(p => new PatientPhoneDto(p.PhoneNumber, p.IsPrimary))
@@ -93,10 +108,10 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
                     diseaseMap[cd.ChronicDiseaseId].NameEn,
                     diseaseMap[cd.ChronicDiseaseId].NameAr))
                 .ToList(),
-            CreatedAt  = patient.CreatedAt.ToString("O"),
-            UpdatedAt  = patient.UpdatedAt?.ToString("O"),
-            CreatedBy  = patient.CreatedBy.HasValue && userNames.TryGetValue(patient.CreatedBy.Value, out var createdName) ? createdName : null,
-            UpdatedBy  = patient.UpdatedBy.HasValue && userNames.TryGetValue(patient.UpdatedBy.Value, out var updatedName) ? updatedName : null,
+            CreatedAt = patient.CreatedAt.ToString("O"),
+            UpdatedAt = patient.UpdatedAt?.ToString("O"),
+            CreatedBy = patient.CreatedBy.HasValue && userNames.TryGetValue(patient.CreatedBy.Value, out var createdName) ? createdName : null,
+            UpdatedBy = patient.UpdatedBy.HasValue && userNames.TryGetValue(patient.UpdatedBy.Value, out var updatedName) ? updatedName : null,
         });
     }
 }

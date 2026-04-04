@@ -9,7 +9,6 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
     public void Configure(EntityTypeBuilder<Patient> builder)
     {
         builder.Property(p => p.PatientCode).HasMaxLength(50).IsRequired();
-        builder.HasIndex(p => p.PatientCode).IsUnique(); // global unique for patient portal lookup
         builder.Property(p => p.FullName).HasMaxLength(200).IsRequired();
         builder.Property(p => p.EmergencyContactName).HasMaxLength(200);
         builder.Property(p => p.EmergencyContactPhone).HasMaxLength(20);
@@ -35,5 +34,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .WithOne()
             .HasForeignKey(pcd => pcd.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
+            
+        builder.HasIndex(p => p.PatientCode).IsUnique(); // global unique for patient portal lookup
     }
 }
