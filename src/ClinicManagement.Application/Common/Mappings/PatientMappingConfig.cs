@@ -15,7 +15,7 @@ public class PatientMappingConfig : IRegister
             .Map(dest => dest.BloodType, src => src.BloodType.HasValue ? src.BloodType.Value.ToString() : null)
             .Map(dest => dest.PrimaryPhone, src =>
                 src.Phones.Where(ph => ph.IsPrimary).Select(ph => ph.PhoneNumber).FirstOrDefault()
-                ?? src.Phones.OrderBy(ph => ph.CreatedAt).Select(ph => ph.PhoneNumber).FirstOrDefault())
+                ?? src.Phones.Select(ph => ph.PhoneNumber).FirstOrDefault())
             .Map(dest => dest.CreatedAt, src => src.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss"))
             .Ignore(dest => dest.PhoneCount)
             .Ignore(dest => dest.ChronicDiseaseCount);

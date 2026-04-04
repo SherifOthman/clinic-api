@@ -55,8 +55,8 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
     {
         var patient = await _context.Patients
             .AsNoTracking()
-            .Include(p => p.Phones.Where(ph => !ph.IsDeleted))
-            .Include(p => p.ChronicDiseases.Where(cd => !cd.IsDeleted))
+            .Include(p => p.Phones)
+            .Include(p => p.ChronicDiseases)
             .FirstOrDefaultAsync(p => p.Id == request.PatientId, cancellationToken);
 
         if (patient == null)

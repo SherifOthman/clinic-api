@@ -80,8 +80,8 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                     .Where(ph => ph.PatientId == p.Id && ph.IsPrimary)
                     .Select(ph => ph.PhoneNumber)
                     .FirstOrDefault(),
-                PhoneCount = _context.PatientPhones.Count(ph => ph.PatientId == p.Id && !ph.IsDeleted),
-                ChronicDiseaseCount = _context.PatientChronicDiseases.Count(cd => cd.PatientId == p.Id && !cd.IsDeleted),
+                PhoneCount = _context.PatientPhones.Count(ph => ph.PatientId == p.Id),
+                ChronicDiseaseCount = _context.PatientChronicDiseases.Count(cd => cd.PatientId == p.Id),
                 CreatedAt = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
             })
             .ToListAsync(cancellationToken);

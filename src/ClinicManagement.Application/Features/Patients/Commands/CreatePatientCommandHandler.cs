@@ -75,7 +75,6 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
                 PatientId = patient.Id,
                 PhoneNumber = phone.PhoneNumber,
                 IsPrimary = phone.IsPrimary,
-                CreatedAt = DateTime.UtcNow
             };
             _context.PatientPhones.Add(patientPhone);
         }
