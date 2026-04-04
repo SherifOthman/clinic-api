@@ -11,7 +11,7 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public record InviteStaffCommand(string Role, string Email, Guid? SpecializationId = null) : IRequest<Result<InviteStaffResponseDto>>;
 
-public record InviteStaffResponseDto(Guid InvitationId, string Token, DateTime ExpiresAt);
+public record InviteStaffResponseDto(Guid InvitationId, string Token, string ExpiresAt);
 
 public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<InviteStaffResponseDto>>
 {
@@ -80,7 +80,7 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var response = new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt);
+        var response = new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt.ToString("O"));
         return Result.Success(response);
     }
 }

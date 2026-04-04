@@ -9,7 +9,7 @@ public class Clinic : BaseEntity
     public Guid SubscriptionPlanId { get; set; }
     public bool OnboardingCompleted { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsDeleted { get; set; }
     
     public DateTime? SubscriptionStartDate { get; set; }

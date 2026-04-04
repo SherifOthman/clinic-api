@@ -18,7 +18,7 @@ public class StaffInvitation : TenantEntity
     public DateTime? AcceptedAt { get; private set; }
     public Guid? AcceptedByUserId { get; private set; }
     public Guid CreatedByUserId { get; private set; }
-    public DateTime CreatedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsDeleted { get; private set; }
     
     // Navigation properties

@@ -19,8 +19,8 @@ public class StaffMappingConfig : IRegister
                     : src.IsCanceled ? InvitationStatus.Canceled
                     : src.ExpiresAt <= DateTime.UtcNow ? InvitationStatus.Expired
                     : InvitationStatus.Pending,
-                src.CreatedAt,
-                src.ExpiresAt,
+                src.CreatedAt.ToString("O"),
+                src.ExpiresAt.ToString("O"),
                 src.CreatedByUser != null ? src.CreatedByUser.FullName : "Unknown"
             ));
     }

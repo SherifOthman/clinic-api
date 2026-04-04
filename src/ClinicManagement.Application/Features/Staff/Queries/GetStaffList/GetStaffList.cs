@@ -19,7 +19,7 @@ public record StaffDto(
     Guid Id,
     string FullName,
     string Gender,
-    DateTime JoinDate,
+    string JoinDate,
     string? ProfileImageUrl,
     bool IsActive,
     IEnumerable<StaffRoleDto> Roles
@@ -92,7 +92,7 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
             s.Id,
             s.User.FullName,
             s.User.IsMale ? "Male" : "Female",
-            s.CreatedAt,
+            s.CreatedAt.ToString("O"),
             s.User.ProfileImageUrl,
             s.IsActive,
             rolesByUser.TryGetValue(s.UserId, out var roles) ? roles : []

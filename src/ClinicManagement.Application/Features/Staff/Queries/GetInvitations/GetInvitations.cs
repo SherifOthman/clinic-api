@@ -23,8 +23,8 @@ public record InvitationDto(
     string Role,
     string? SpecializationName,
     InvitationStatus Status,
-    DateTime InvitedAt,
-    DateTime ExpiresAt,
+    string InvitedAt,
+    string ExpiresAt,
     string InvitedBy
 );
 
@@ -98,8 +98,8 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
                 si.Role,
                 si.Specialization?.NameEn,
                 status,
-                si.CreatedAt,
-                si.ExpiresAt,
+                si.CreatedAt.ToString("O"),
+                si.ExpiresAt.ToString("O"),
                 creatorNames.TryGetValue(si.CreatedByUserId, out var name) ? name : "Unknown"
             );
         });

@@ -14,10 +14,10 @@ public record InvitationDetailDto(
     string Role,
     string? SpecializationName,
     InvitationStatus Status,
-    DateTime InvitedAt,
-    DateTime ExpiresAt,
+    string InvitedAt,
+    string ExpiresAt,
     string InvitedBy,
-    DateTime? AcceptedAt,
+    string? AcceptedAt,
     string? AcceptedBy
 );
 
@@ -55,10 +55,10 @@ public class GetInvitationDetailHandler : IRequestHandler<GetInvitationDetailQue
             si.Role,
             si.Specialization?.NameEn,
             status,
-            si.CreatedAt,
-            si.ExpiresAt,
+            si.CreatedAt.ToString("O"),
+            si.ExpiresAt.ToString("O"),
             si.CreatedByUser.FullName,
-            si.AcceptedAt,
+            si.AcceptedAt?.ToString("O"),
             si.AcceptedByUser?.FullName
         );
 

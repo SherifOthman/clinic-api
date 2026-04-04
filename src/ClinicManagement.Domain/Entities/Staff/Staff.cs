@@ -6,7 +6,7 @@ public class Staff : TenantEntity
 {
     public Guid UserId { get; init; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     // Navigation properties
     public User User { get; set; } = null!;
