@@ -138,6 +138,10 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
             if (entry.Entity is AuditLog)
                 continue;
 
+            // Skip RefreshToken — internal security infrastructure, not meaningful business audit data
+            if (entry.Entity is RefreshToken)
+                continue;
+
             var action = entry.State switch
             {
                 EntityState.Added    => AuditAction.Create,

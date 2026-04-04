@@ -50,7 +50,7 @@ public class PatientsController : BaseApiController
     /// Create a new patient
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
+    [Authorize(Roles = "ClinicOwner,Receptionist")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePatient(
@@ -80,7 +80,7 @@ public class PatientsController : BaseApiController
     /// Update an existing patient
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
+    [Authorize(Roles = "ClinicOwner,Receptionist")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
@@ -109,7 +109,7 @@ public class PatientsController : BaseApiController
     /// Delete a patient (soft delete)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "ClinicOwner,Doctor")]
+    [Authorize(Roles = "ClinicOwner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
