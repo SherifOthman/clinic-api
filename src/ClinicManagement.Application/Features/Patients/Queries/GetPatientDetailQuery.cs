@@ -24,6 +24,7 @@ public record PatientDetailDto
     public List<PatientPhoneDto> PhoneNumbers { get; init; } = [];
     public List<PatientChronicDiseaseDto> ChronicDiseases { get; init; } = [];
     public string CreatedAt { get; init; } = null!;
+    public string? UpdatedAt { get; init; }
 }
 
 public record PatientPhoneDto(string PhoneNumber, bool IsPrimary);
@@ -81,6 +82,7 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
                     diseaseMap[cd.ChronicDiseaseId].NameAr))
                 .ToList(),
             CreatedAt = patient.CreatedAt.ToString("O"),
+            UpdatedAt = patient.UpdatedAt?.ToString("O"),
         });
     }
 }
