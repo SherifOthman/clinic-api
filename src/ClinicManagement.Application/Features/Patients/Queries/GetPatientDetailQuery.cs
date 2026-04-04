@@ -38,44 +38,58 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
 {
     private readonly IApplicationDbContext _context;
 
-    // Maps enum values to display strings
-    private static readonly Dictionary<BloodType, string> BloodTypeDisplay = new()
+    public GetPatientDetailHandler(IApplicationDbContext context) => _context = context;
+
+    private static string? ToBloodTypeDisplay(BloodType? bt) => bt switch
     {
-        { BloodType.APositive,  "A+"  },
-        { BloodType.ANegative,  "A-"  },
-        { BloodType.BPositive,  "B+"  },
-        { BloodType.BNegative,  "B-"  },
-        { BloodType.ABPositive, "AB+" },
-        { BloodType.ABNegative, "AB-" },
-        { BloodType.OPositive,  "O+"  },
-        { BloodType.ONegative,  "O-"  },
+        BloodType.APositive  => "A+",
+        BloodType.ANegative  => "A-",
+        BloodType.BPositive  => "B+",
+        BloodType.BNegative  => "B-",
+        BloodType.ABPositive => "AB+",
+        BloodType.ABNegative => "AB-",
+        BloodType.OPositive  => "O+",
+        BloodType.ONegative  => "O-",
+        _                    => null,
     };
 
     public async Task<Result<PatientDetailDto>> Handle(GetPatientDetailQuery request, CancellationToken cancellationToken)
     {
+        // Load patient with navigation properties
         var patient = await _context.Patients
             .AsNoTracking()
             .Include(p => p.Phones)
             .Include(p => p.ChronicDiseases)
             .FirstOrDefaultAsync(p => p.Id == request.PatientId, cancellationToken);
-        if (patient == null)
+
+        if (patient is null)
             return Result.Failure<PatientDetailDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        var diseaseIds = patient.ChronicDiseases.Select(cd => cd.ChronicDiseaseId).ToList();
-        var diseaseNames = await _context.ChronicDiseases
-            .Where(cd => diseaseIds.Contains(cd.Id))
-            .Select(cd => new { cd.Id, cd.NameEn, cd.NameAr })
-            .ToListAsync(cancellationToken);
+        // Resolve chronic disease names
+        var phones = patient.Phones?.ToList() ?? [];
+        var patientDiseases = patient.ChronicDiseases?.ToList() ?? [];
+        var diseaseIds = patientDiseases.Select(cd => cd.ChronicDiseaseId).ToList();
 
-        var diseaseMap = diseaseNames.ToDictionary(d => d.Id);
+        var diseaseMap = diseaseIds.Count > 0
+            ? await _context.ChronicDiseases
+                .Where(cd => diseaseIds.Contains(cd.Id))
+                .Select(cd => new { cd.Id, cd.NameEn, cd.NameAr })
+                .ToDictionaryAsync(d => d.Id, cancellationToken)
+            : [];
 
+        // Resolve audit user names
         var userIds = new[] { patient.CreatedBy, patient.UpdatedBy }
-            .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
 
-        var userNames = await _context.Users
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.FirstName, u.LastName })
-            .ToDictionaryAsync(u => u.Id, u => $"{u.FirstName} {u.LastName}".Trim(), cancellationToken);
+        var userNames = userIds.Count > 0
+            ? await _context.Users
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new { u.Id, Name = u.FirstName + " " + u.LastName })
+                .ToDictionaryAsync(u => u.Id, u => u.Name.Trim(), cancellationToken)
+            : [];
 
         var now = DateTime.UtcNow;
 
@@ -87,28 +101,26 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             DateOfBirth              = patient.DateOfBirth.ToString("yyyy-MM-dd"),
             IsMale                   = patient.IsMale,
             Age                      = patient.GetAge(now),
-            BloodType                = patient.BloodType.HasValue
-                                        ? BloodTypeDisplay.GetValueOrDefault(patient.BloodType.Value)
-                                        : null,
+            BloodType                = ToBloodTypeDisplay(patient.BloodType),
             CityGeoNameId            = patient.CityGeoNameId,
             KnownAllergies           = patient.KnownAllergies,
             EmergencyContactName     = patient.EmergencyContactName,
             EmergencyContactPhone    = patient.EmergencyContactPhone,
             EmergencyContactRelation = patient.EmergencyContactRelation,
-            PhoneNumbers = (patient.Phones ?? [])
-                .Select(p => new PatientPhoneDto(p.PhoneNumber, p.IsPrimary))
-                .ToList(),
-            ChronicDiseases = (patient.ChronicDiseases ?? [])
-                .Where(cd => diseaseMap.ContainsKey(cd.ChronicDiseaseId))
-                .Select(cd => new PatientChronicDiseaseDto(
-                    cd.ChronicDiseaseId.ToString(),
-                    diseaseMap[cd.ChronicDiseaseId].NameEn,
-                    diseaseMap[cd.ChronicDiseaseId].NameAr))
-                .ToList(),
+            PhoneNumbers             = phones
+                                        .Select(p => new PatientPhoneDto(p.PhoneNumber, p.IsPrimary))
+                                        .ToList(),
+            ChronicDiseases          = patientDiseases
+                                        .Where(cd => diseaseMap.ContainsKey(cd.ChronicDiseaseId))
+                                        .Select(cd => new PatientChronicDiseaseDto(
+                                            cd.ChronicDiseaseId.ToString(),
+                                            diseaseMap[cd.ChronicDiseaseId].NameEn,
+                                            diseaseMap[cd.ChronicDiseaseId].NameAr))
+                                        .ToList(),
             CreatedAt = patient.CreatedAt.ToString("O"),
             UpdatedAt = patient.UpdatedAt?.ToString("O"),
-            CreatedBy = patient.CreatedBy.HasValue && userNames.TryGetValue(patient.CreatedBy.Value, out var createdName) ? createdName : null,
-            UpdatedBy = patient.UpdatedBy.HasValue && userNames.TryGetValue(patient.UpdatedBy.Value, out var updatedName) ? updatedName : null,
+            CreatedBy = patient.CreatedBy.HasValue && userNames.TryGetValue(patient.CreatedBy.Value, out var cn) ? cn : null,
+            UpdatedBy = patient.UpdatedBy.HasValue && userNames.TryGetValue(patient.UpdatedBy.Value, out var un) ? un : null,
         });
     }
 }
