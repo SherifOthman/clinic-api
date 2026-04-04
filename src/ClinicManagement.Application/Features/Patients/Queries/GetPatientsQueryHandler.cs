@@ -10,15 +10,20 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
 {
     private readonly IApplicationDbContext _context;
 
-    private static readonly Dictionary<BloodType, string> BloodTypeDisplay = new()
-    {
-        { BloodType.APositive,  "A+"  }, { BloodType.ANegative,  "A-"  },
-        { BloodType.BPositive,  "B+"  }, { BloodType.BNegative,  "B-"  },
-        { BloodType.ABPositive, "AB+" }, { BloodType.ABNegative, "AB-" },
-        { BloodType.OPositive,  "O+"  }, { BloodType.ONegative,  "O-"  },
-    };
-
     public GetPatientsQueryHandler(IApplicationDbContext context) => _context = context;
+
+    private static string? ToDisplayString(BloodType? bt) => bt switch
+    {
+        BloodType.APositive  => "A+",
+        BloodType.ANegative  => "A-",
+        BloodType.BPositive  => "B+",
+        BloodType.BNegative  => "B-",
+        BloodType.ABPositive => "AB+",
+        BloodType.ABNegative => "AB-",
+        BloodType.OPositive  => "O+",
+        BloodType.ONegative  => "O-",
+        _                    => null,
+    };
 
     public async Task<Result<PaginatedPatientsResponse>> Handle(
         GetPatientsQuery request, CancellationToken cancellationToken)
@@ -59,18 +64,18 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var patients = await query
+        var rawPatients = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(p => new PatientDto
+            .Select(p => new
             {
                 Id = p.Id.ToString(),
-                PatientCode = p.PatientCode,
-                FullName = p.FullName,
+                p.PatientCode,
+                p.FullName,
                 DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd"),
-                IsMale = p.IsMale,
+                p.IsMale,
                 Age = p.GetAge(now),
-                BloodType = p.BloodType.HasValue ? BloodTypeDisplay.GetValueOrDefault(p.BloodType.Value) : null,
+                p.BloodType,
                 PrimaryPhone = _context.PatientPhones
                     .Where(ph => ph.PatientId == p.Id && ph.IsPrimary)
                     .Select(ph => ph.PhoneNumber)
@@ -80,6 +85,22 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                 CreatedAt = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
             })
             .ToListAsync(cancellationToken);
+
+        // Map blood type enum to display string in memory (not in SQL)
+        var patients = rawPatients.Select(p => new PatientDto
+        {
+            Id = p.Id,
+            PatientCode = p.PatientCode,
+            FullName = p.FullName,
+            DateOfBirth = p.DateOfBirth,
+            IsMale = p.IsMale,
+            Age = p.Age,
+            BloodType = ToDisplayString(p.BloodType),
+            PrimaryPhone = p.PrimaryPhone,
+            PhoneCount = p.PhoneCount,
+            ChronicDiseaseCount = p.ChronicDiseaseCount,
+            CreatedAt = p.CreatedAt,
+        }).ToList();
 
         return Result<PaginatedPatientsResponse>.Success(new PaginatedPatientsResponse
         {

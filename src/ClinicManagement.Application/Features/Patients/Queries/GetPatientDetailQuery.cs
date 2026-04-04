@@ -51,8 +51,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
         { BloodType.ONegative,  "O-"  },
     };
 
-    public GetPatientDetailHandler(IApplicationDbContext context) => _context = context;
-
     public async Task<Result<PatientDetailDto>> Handle(GetPatientDetailQuery request, CancellationToken cancellationToken)
     {
         var patient = await _context.Patients
