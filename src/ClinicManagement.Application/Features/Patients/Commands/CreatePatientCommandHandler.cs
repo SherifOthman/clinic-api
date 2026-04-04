@@ -96,16 +96,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
     private static string GeneratePatientCode()
     {
-        const string letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to avoid confusion
-        const string digits  = "0123456789";
-        Span<char> code = stackalloc char[7];
-        code[0] = 'P';
-        code[1] = letters[Random.Shared.Next(letters.Length)];
-        code[2] = letters[Random.Shared.Next(letters.Length)];
-        code[3] = letters[Random.Shared.Next(letters.Length)];
-        code[4] = digits[Random.Shared.Next(digits.Length)];
-        code[5] = digits[Random.Shared.Next(digits.Length)];
-        code[6] = digits[Random.Shared.Next(digits.Length)];
-        return new string(code);
+        // 6 random digits — 1,000,000 combinations, unpredictable, easy to say/write
+        return Random.Shared.Next(100000, 999999).ToString();
     }
 }
