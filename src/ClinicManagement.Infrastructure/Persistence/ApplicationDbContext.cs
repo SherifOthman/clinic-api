@@ -211,6 +211,26 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         // Apply entity configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
+        // Ensure all DateTime properties are read back as UTC
+        // EF Core returns DateTime with Kind=Unspecified by default — this fixes timezone display on the frontend
+        var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+            v => v,
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+        var utcNullableConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>(
+            v => v,
+            v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime))
+                    property.SetValueConverter(utcConverter);
+                else if (property.ClrType == typeof(DateTime?))
+                    property.SetValueConverter(utcNullableConverter);
+            }
+        }
+
         // Apply tenant filter to all ITenantEntity types automatically
         // Apply soft-delete filter to all AuditableEntity types automatically
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
