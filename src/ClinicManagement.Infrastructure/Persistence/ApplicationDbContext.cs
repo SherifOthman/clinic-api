@@ -91,10 +91,11 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         var ipAddress = _currentUserService?.IpAddress;
         var userRole = _currentUserService?.Roles.FirstOrDefault();
         var userName = _currentUserService?.FullName;
+        var userLogin = _currentUserService?.UserLogin;
         var now = DateTime.UtcNow;
 
         // Capture changes BEFORE saving so we can read old values
-        var auditEntries = BuildAuditEntries(userId, userName, ipAddress, userRole, now);
+        var auditEntries = BuildAuditEntries(userId, userName, userLogin, ipAddress, userRole, now);
 
         // Stamp audit fields
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
@@ -123,7 +124,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         return result;
     }
 
-    private List<AuditLog> BuildAuditEntries(Guid? userId, string? userName, string? ipAddress, string? userRole, DateTime now)
+    private List<AuditLog> BuildAuditEntries(Guid? userId, string? userName, string? userLogin, string? ipAddress, string? userRole, DateTime now)
     {
         var entries = new List<AuditLog>();
 
@@ -176,6 +177,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 ClinicId   = clinicId,
                 UserId     = userId,
                 UserName   = userName,
+                UserLogin  = userLogin,
                 UserRole   = userRole,
                 EntityType = entry.Entity.GetType().Name,
                 EntityId   = entry.Entity.Id.ToString(),
