@@ -43,7 +43,6 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
 
         // ClinicId filter applied automatically via global named filter
         var query = _context.StaffInvitations
-            .Where(si => !si.IsDeleted)
             .Include(si => si.Specialization)
             .AsQueryable();
 

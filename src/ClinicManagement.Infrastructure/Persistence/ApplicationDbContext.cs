@@ -99,15 +99,25 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         // Apply tenant filter to all ITenantEntity types automatically
+        // Apply soft-delete filter to all AuditableEntity types automatically
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
-            {
-                var method = typeof(ApplicationDbContext)
-                    .GetMethod(nameof(ApplyTenantFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                    .MakeGenericMethod(entityType.ClrType);
+            var clrType = entityType.ClrType;
 
-                method.Invoke(this, [modelBuilder]);
+            if (typeof(ITenantEntity).IsAssignableFrom(clrType))
+            {
+                typeof(ApplicationDbContext)
+                    .GetMethod(nameof(ApplyTenantFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(this, [modelBuilder]);
+            }
+
+            if (typeof(AuditableEntity).IsAssignableFrom(clrType))
+            {
+                typeof(ApplicationDbContext)
+                    .GetMethod(nameof(ApplySoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(this, [modelBuilder]);
             }
         }
     }
@@ -119,5 +129,12 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
             .HasQueryFilter(
                 QueryFilterNames.Tenant,
                 e => e.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+    }
+
+    private static void ApplySoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : AuditableEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(QueryFilterNames.SoftDelete, e => !e.IsDeleted);
     }
 }

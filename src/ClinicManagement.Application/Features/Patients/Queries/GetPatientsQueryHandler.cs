@@ -16,7 +16,7 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         GetPatientsQuery request, CancellationToken cancellationToken)
     {
         // No Include — lightweight list query, counts only
-        var query = _context.Patients.Where(p => !p.IsDeleted);
+        var query = _context.Patients.AsQueryable();
         var now = DateTime.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -80,7 +80,7 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                 Age = p.GetAge(now),
                 BloodType = p.BloodType.HasValue ? p.BloodType.Value.ToString() : null,
                 PrimaryPhone = _context.PatientPhones
-                    .Where(ph => ph.PatientId == p.Id && ph.IsPrimary && !ph.IsDeleted)
+                    .Where(ph => ph.PatientId == p.Id && ph.IsPrimary)
                     .Select(ph => ph.PhoneNumber)
                     .FirstOrDefault(),
                 PhoneCount = _context.PatientPhones.Count(ph => ph.PatientId == p.Id && !ph.IsDeleted),
