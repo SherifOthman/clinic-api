@@ -11,7 +11,6 @@ namespace ClinicManagement.Application.Features.Auth.Queries;
 public record GetMeQuery(Guid UserId) : IRequest<GetMeDto?>;
 
 public record GetMeDto(
-    Guid Id,
     string UserName,
     string FirstName,
     string LastName,
