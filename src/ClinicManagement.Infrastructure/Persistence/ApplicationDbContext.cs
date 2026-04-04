@@ -115,9 +115,9 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
             if (typeof(AuditableEntity).IsAssignableFrom(clrType))
             {
                 typeof(ApplicationDbContext)
-                    .GetMethod(nameof(ApplySoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .GetMethod(nameof(ApplySoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
                     .MakeGenericMethod(clrType)
-                    .Invoke(this, [modelBuilder]);
+                    .Invoke(null, [modelBuilder]);
             }
         }
     }
