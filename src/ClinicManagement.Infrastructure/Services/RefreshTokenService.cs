@@ -89,41 +89,32 @@ public class RefreshTokenService : IRefreshTokenService
     public async Task RevokeAllUserRefreshTokensAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
         var now = _dateTimeProvider.UtcNow;
-        var activeTokens = await _context.RefreshTokens
-            .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryTime > now)
-            .ToListAsync(cancellationToken);
-            
         var revokeIp = ipAddress ?? _currentUserService.IpAddress;
 
-        foreach (var token in activeTokens)
-        {
-            token.Revoke(revokeIp, now);
-        }
+        var count = await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryTime > now)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(rt => rt.IsRevoked, true)
+                .SetProperty(rt => rt.RevokedAt, now)
+                .SetProperty(rt => rt.RevokedByIp, revokeIp),
+                cancellationToken);
 
-        if (activeTokens.Any())
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Revoked {Count} refresh tokens for user {UserId}", activeTokens.Count, userId);
-        }
+        if (count > 0)
+            _logger.LogInformation("Revoked {Count} refresh tokens for user {UserId}", count, userId);
     }
 
     public async Task<int> CleanupExpiredTokensAsync(CancellationToken cancellationToken = default)
     {
         var now = _dateTimeProvider.UtcNow;
-        var expiredTokens = await _context.RefreshTokens
+
+        var count = await _context.RefreshTokens
             .Where(rt => rt.IsRevoked || rt.ExpiryTime <= now)
-            .ToListAsync(cancellationToken);
+            .ExecuteDeleteAsync(cancellationToken);
 
-        if (expiredTokens.Any())
-        {
-            _context.RefreshTokens.RemoveRange(expiredTokens);
-            await _context.SaveChangesAsync(cancellationToken);
-            
-            _logger.LogInformation("Cleaned up {Count} expired/revoked refresh tokens", expiredTokens.Count);
-            return expiredTokens.Count;
-        }
+        if (count > 0)
+            _logger.LogInformation("Cleaned up {Count} expired/revoked refresh tokens", count);
 
-        return 0;
+        return count;
     }
 }
 
