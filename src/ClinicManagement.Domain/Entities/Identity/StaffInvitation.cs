@@ -82,6 +82,7 @@ public class StaffInvitation : TenantEntity
             IsAccepted = false,
             IsCanceled = false,
             CreatedByUserId = createdByUserId,
+            CreatedAt = now,
             IsDeleted = false
         };
     }
