@@ -35,19 +35,6 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
         if (request.IsMale.HasValue)
             query = query.Where(p => p.IsMale == request.IsMale.Value);
 
-        // Age filtering
-        if (request.MinAge.HasValue)
-        {
-            var maxDateOfBirth = now.AddYears(-request.MinAge.Value);
-            query = query.Where(p => p.DateOfBirth <= maxDateOfBirth);
-        }
-
-        if (request.MaxAge.HasValue)
-        {
-            var minDateOfBirth = now.AddYears(-request.MaxAge.Value - 1).AddDays(1);
-            query = query.Where(p => p.DateOfBirth >= minDateOfBirth);
-        }
-
         query = request.SortBy?.ToLower() switch
         {
             "name"      => request.SortDirection == "desc"
@@ -56,9 +43,6 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             "age"       => request.SortDirection == "desc"
                             ? query.OrderBy(p => p.DateOfBirth)
                             : query.OrderByDescending(p => p.DateOfBirth),
-            "patientcode" => request.SortDirection == "desc"
-                            ? query.OrderByDescending(p => p.PatientCode)
-                            : query.OrderBy(p => p.PatientCode),
             "createdat" => request.SortDirection == "desc"
                             ? query.OrderByDescending(p => p.CreatedAt)
                             : query.OrderBy(p => p.CreatedAt),

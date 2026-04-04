@@ -9,9 +9,7 @@ public record GetPatientsQuery(
     int PageSize,
     string? SortBy,
     string SortDirection,
-    bool? IsMale,
-    int? MinAge,
-    int? MaxAge
+    bool? IsMale
 ) : IRequest<Result<PaginatedPatientsResponse>>;
 
 // List DTO — minimal fields, no nested collections for performance
