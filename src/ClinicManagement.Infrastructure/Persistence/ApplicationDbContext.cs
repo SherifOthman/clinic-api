@@ -82,8 +82,28 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<Payment> Payments => Set<Payment>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        var userId = _currentUserService?.UserId;
+
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = DateTime.UtcNow;
+                entry.Entity.CreatedBy = userId;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+                entry.Entity.UpdatedBy = userId;
+            }
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)    {
         base.OnModelCreating(modelBuilder);
 
         // Rename Identity tables

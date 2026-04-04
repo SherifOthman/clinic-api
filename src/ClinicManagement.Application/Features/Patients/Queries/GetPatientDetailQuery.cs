@@ -25,6 +25,8 @@ public record PatientDetailDto
     public List<PatientChronicDiseaseDto> ChronicDiseases { get; init; } = [];
     public string CreatedAt { get; init; } = null!;
     public string? UpdatedAt { get; init; }
+    public string? CreatedBy { get; init; }
+    public string? UpdatedBy { get; init; }
 }
 
 public record PatientPhoneDto(string PhoneNumber, bool IsPrimary);
@@ -48,7 +50,7 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
         if (patient == null)
             return Result.Failure<PatientDetailDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        // Chronic disease names — separate lookup, no nav property from PatientChronicDisease to ChronicDisease
+        // Chronic disease names
         var diseaseIds = patient.ChronicDiseases.Select(cd => cd.ChronicDiseaseId).ToList();
         var diseaseNames = await _context.ChronicDiseases
             .Where(cd => diseaseIds.Contains(cd.Id))
@@ -56,6 +58,16 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             .ToListAsync(cancellationToken);
 
         var diseaseMap = diseaseNames.ToDictionary(d => d.Id);
+
+        // Resolve audit user names in one batch
+        var userIds = new[] { patient.CreatedBy, patient.UpdatedBy }
+            .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+
+        var userNames = await _context.Users
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.FirstName, u.LastName })
+            .ToDictionaryAsync(u => u.Id, u => $"{u.FirstName} {u.LastName}".Trim(), cancellationToken);
+
         var now = DateTime.UtcNow;
 
         return Result.Success(new PatientDetailDto
@@ -81,8 +93,10 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
                     diseaseMap[cd.ChronicDiseaseId].NameEn,
                     diseaseMap[cd.ChronicDiseaseId].NameAr))
                 .ToList(),
-            CreatedAt = patient.CreatedAt.ToString("O"),
-            UpdatedAt = patient.UpdatedAt?.ToString("O"),
+            CreatedAt  = patient.CreatedAt.ToString("O"),
+            UpdatedAt  = patient.UpdatedAt?.ToString("O"),
+            CreatedBy  = patient.CreatedBy.HasValue && userNames.TryGetValue(patient.CreatedBy.Value, out var createdName) ? createdName : null,
+            UpdatedBy  = patient.UpdatedBy.HasValue && userNames.TryGetValue(patient.UpdatedBy.Value, out var updatedName) ? updatedName : null,
         });
     }
 }
