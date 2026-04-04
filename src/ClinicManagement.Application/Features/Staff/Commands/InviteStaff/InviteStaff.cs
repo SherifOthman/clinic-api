@@ -34,10 +34,10 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
         var currentUserId = _currentUserService.GetRequiredUserId();
         var clinicId = _currentUserService.GetRequiredClinicId();
 
-        if (request.Role != "Doctor" && request.Role != "Receptionist")
+        if (request.Role != UserRoles.Doctor && request.Role != UserRoles.Receptionist)
             return Result.Failure<InviteStaffResponseDto>(ErrorCodes.VALIDATION_ERROR, "Role must be either Doctor or Receptionist");
 
-        if (request.Role == "Doctor" && request.SpecializationId.HasValue)
+        if (request.Role == UserRoles.Doctor && request.SpecializationId.HasValue)
         {
             var specializationExists = await _context.Specializations
                 .AnyAsync(s => s.Id == request.SpecializationId.Value, cancellationToken);

@@ -46,6 +46,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
         var roles = await _userManager.GetRolesAsync(user);
 
         var hasClinic = await _context.Clinics
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .AnyAsync(c => c.OwnerUserId == user.Id, cancellationToken);
 
         var dto = user.Adapt<GetMeDto>();

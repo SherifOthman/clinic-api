@@ -67,12 +67,14 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<R
             if (roles.Contains(Roles.ClinicOwner))
             {
                 var clinic = await _context.Clinics
+                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
                     .FirstOrDefaultAsync(c => c.OwnerUserId == user.Id, cancellationToken);
                 clinicId = clinic?.Id;
             }
             else
             {
                 var staff = await _context.Staff
+                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
                     .FirstOrDefaultAsync(s => s.UserId == user.Id, cancellationToken);
                 clinicId = staff?.ClinicId;
             }

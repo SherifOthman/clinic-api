@@ -33,7 +33,8 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
     public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
     {
         var invitation = await _context.StaffInvitations
-            .FirstOrDefaultAsync(si => si.InvitationToken == request.Token, cancellationToken);
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .FirstOrDefaultAsync(si => si.InvitationToken == request.Token && !si.IsDeleted, cancellationToken);
 
         if (invitation == null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
@@ -83,7 +84,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
         _context.Staff.Add(staff);
 
-        if (invitation.Role == "Doctor")
+        if (invitation.Role == UserRoles.Doctor)
         {
             var doctorProfile = new DoctorProfile
             {
