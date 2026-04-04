@@ -64,12 +64,12 @@ public class CookieService
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
     {
         var isProduction = _cookieSettings.IsProduction;
-        
+
         return new CookieOptions
         {
-            HttpOnly = true, // Prevents JavaScript access (XSS protection)
-            Secure = false, // Allow HTTP in development
-            SameSite = SameSiteMode.Lax, // Lax for same-site requests
+            HttpOnly = true,
+            Secure = isProduction,                                          // HTTPS only in production
+            SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax, // None required for cross-site (Vercel → API)
             Expires = DateTimeOffset.UtcNow.Add(expiry),
             Path = "/",
             IsEssential = true
