@@ -7,6 +7,11 @@ using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Persistence.Seeders;
 
+/// <summary>
+/// Seeds the demo ClinicOwner user and their clinic data.
+/// The owner is also registered as a Doctor.
+/// Credentials: owner@clinic.com / ClinicOwner123!
+/// </summary>
 public class ClinicOwnerSeedService
 {
     private readonly IApplicationDbContext _context;
@@ -23,115 +28,113 @@ public class ClinicOwnerSeedService
         _logger = logger;
     }
 
-    public async Task SeedClinicOwnerDataAsync()
+    public async Task SeedAsync()
     {
-        try
+        const string email = "owner@clinic.com";
+
+        var owner = await _userManager.FindByEmailAsync(email);
+        if (owner == null)
         {
-            var ownerUser = await _userManager.FindByEmailAsync("owner@clinic.com");
-
-            if (ownerUser == null)
+            owner = new User
             {
-                _logger.LogInformation("Clinic Owner user not found, skipping clinic seed");
+                UserName = "owner",
+                Email = email,
+                FirstName = "John",
+                LastName = "Smith",
+                PhoneNumber = "+1234567890",
+                EmailConfirmed = true,
+                IsMale = true,
+            };
+
+            var result = await _userManager.CreateAsync(owner, "ClinicOwner123!");
+            if (!result.Succeeded)
+            {
+                _logger.LogError("Failed to create ClinicOwner: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
                 return;
             }
 
-            var existingClinic = await _context.Clinics
-                .FirstOrDefaultAsync(c => c.OwnerUserId == ownerUser.Id);
-
-            if (existingClinic != null)
-            {
-                _logger.LogInformation("Demo clinic already exists");
-                return;
-            }
-
-            var basicPlan = await _context.SubscriptionPlans
-                .FirstOrDefaultAsync(p => p.Name == "Basic");
-
-            if (basicPlan == null)
-            {
-                _logger.LogError("Basic Plan not found");
-                return;
-            }
-
-            var userRoles = await _userManager.GetRolesAsync(ownerUser);
-            var isDoctorRole = userRoles.Contains(UserRoles.Doctor);
-            var isReceptionistRole = userRoles.Contains(UserRoles.Receptionist);
-
-            var clinic = new Clinic
-            {
-                Name = "Demo Medical Clinic",
-                OwnerUserId = ownerUser.Id,
-                SubscriptionPlanId = basicPlan.Id,
-                OnboardingCompleted = true,
-                IsActive = true,
-                SubscriptionStartDate = DateTime.UtcNow,
-                SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
-                TrialEndDate = DateTime.UtcNow.AddDays(14)
-            };
-
-            _context.Clinics.Add(clinic);
-
-            var mainBranch = new ClinicBranch
-            {
-                ClinicId = clinic.Id,
-                Name = "Main Branch",
-                AddressLine = "123 Medical Street, Downtown",
-                CountryGeoNameId = 6252001, // United States
-                StateGeoNameId = 5332921, // California
-                CityGeoNameId = 5368361, // Los Angeles
-                IsMainBranch = true,
-                IsActive = true
-            };
-
-            _context.ClinicBranches.Add(mainBranch);
-
-            var subscription = new ClinicSubscription
-            {
-                ClinicId = clinic.Id,
-                SubscriptionPlanId = basicPlan.Id,
-                Status = SubscriptionStatus.Trial,
-                StartDate = DateTime.UtcNow,
-                TrialEndDate = DateTime.UtcNow.AddDays(14),
-                AutoRenew = true
-            };
-
-            _context.ClinicSubscriptions.Add(subscription);
-
-            if (isDoctorRole || isReceptionistRole)
-            {
-                var staff = new Staff
-                {
-                    UserId = ownerUser.Id,
-                    ClinicId = clinic.Id,
-                    IsActive = true
-                };
-
-                _context.Staff.Add(staff);
-
-                if (isDoctorRole)
-                {
-                    var generalPractice = await _context.Specializations
-                        .FirstOrDefaultAsync(s => s.NameEn == "General Practice");
-
-                    if (generalPractice != null)
-                    {
-                        var doctorProfile = new DoctorProfile
-                        {
-                            StaffId = staff.Id,                        };
-
-                        _context.DoctorProfiles.Add(doctorProfile);
-                    }
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Created demo clinic with main branch for owner@clinic.com");
+            await _userManager.AddToRoleAsync(owner, "ClinicOwner");
+            await _userManager.AddToRoleAsync(owner, "Doctor");
+            _logger.LogInformation("ClinicOwner user seeded: {Email}", email);
         }
-        catch (Exception ex)
+
+        // Skip if clinic already exists
+        var existingClinic = await _context.Clinics
+            .IgnoreQueryFilters([Domain.Common.Constants.QueryFilterNames.Tenant])
+            .FirstOrDefaultAsync(c => c.OwnerUserId == owner.Id);
+
+        if (existingClinic != null)
         {
-            _logger.LogError(ex, "Error seeding clinic owner data");
-            throw;
+            _logger.LogInformation("Demo clinic already exists, skipping");
+            return;
         }
+
+        var basicPlan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Name == "Basic");
+        if (basicPlan == null)
+        {
+            _logger.LogError("Basic subscription plan not found — run SubscriptionPlanSeedService first");
+            return;
+        }
+
+        var generalPractice = await _context.Specializations.FirstOrDefaultAsync(s => s.NameEn == "General Practice");
+
+        // Clinic
+        var clinic = new Clinic
+        {
+            Name = "Demo Medical Clinic",
+            OwnerUserId = owner.Id,
+            SubscriptionPlanId = basicPlan.Id,
+            OnboardingCompleted = true,
+            IsActive = true,
+            SubscriptionStartDate = DateTime.UtcNow,
+            SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+            TrialEndDate = DateTime.UtcNow.AddDays(14),
+        };
+        _context.Clinics.Add(clinic);
+
+        // Branch
+        var branch = new ClinicBranch
+        {
+            ClinicId = clinic.Id,
+            Name = "Main Branch",
+            AddressLine = "123 Medical Street, Downtown",
+            CountryGeoNameId = 6252001, // United States
+            StateGeoNameId = 5332921,   // California
+            CityGeoNameId = 5368361,    // Los Angeles
+            IsMainBranch = true,
+            IsActive = true,
+        };
+        _context.ClinicBranches.Add(branch);
+
+        // Subscription
+        var subscription = new ClinicSubscription
+        {
+            ClinicId = clinic.Id,
+            SubscriptionPlanId = basicPlan.Id,
+            Status = SubscriptionStatus.Trial,
+            StartDate = DateTime.UtcNow,
+            TrialEndDate = DateTime.UtcNow.AddDays(14),
+            AutoRenew = true,
+        };
+        _context.ClinicSubscriptions.Add(subscription);
+
+        // Staff record for owner (also a Doctor)
+        var staff = new Staff
+        {
+            UserId = owner.Id,
+            ClinicId = clinic.Id,
+            IsActive = true,
+        };
+        _context.Staff.Add(staff);
+
+        var doctorProfile = new DoctorProfile
+        {
+            StaffId = staff.Id,
+            SpecializationId = generalPractice?.Id,
+        };
+        _context.DoctorProfiles.Add(doctorProfile);
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Demo clinic seeded for owner@clinic.com (ClinicId: {ClinicId})", clinic.Id);
     }
 }

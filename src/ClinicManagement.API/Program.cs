@@ -56,12 +56,20 @@ try
                 Log.Information("Subscription plans seeded successfully");
 
                 var superAdminSeed = services.GetRequiredService<SuperAdminSeedService>();
-                await superAdminSeed.SeedSuperAdminAsync();
-                Log.Information("SuperAdmin user seeded successfully");
+                await superAdminSeed.SeedAsync();
+                Log.Information("SuperAdmin seeded");
 
                 var clinicOwnerSeed = services.GetRequiredService<ClinicOwnerSeedService>();
-                await clinicOwnerSeed.SeedClinicOwnerDataAsync();
-                Log.Information("Clinic Owner demo data seeded successfully");
+                await clinicOwnerSeed.SeedAsync();
+                Log.Information("ClinicOwner demo data seeded");
+
+                var doctorSeed = services.GetRequiredService<DoctorSeedService>();
+                await doctorSeed.SeedAsync();
+                Log.Information("Doctor demo user seeded");
+
+                var receptionistSeed = services.GetRequiredService<ReceptionistSeedService>();
+                await receptionistSeed.SeedAsync();
+                Log.Information("Receptionist demo user seeded");
             }
             catch (Exception ex)
             {
