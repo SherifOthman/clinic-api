@@ -1,10 +1,9 @@
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Exceptions;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class StaffInvitation : TenantEntity
+public class StaffInvitation : AuditableTenantEntity
 {
     private const int DefaultExpirationDays = 7;
 
@@ -12,49 +11,41 @@ public class StaffInvitation : TenantEntity
     public string Role { get; private set; } = null!;
     public Guid? SpecializationId { get; private set; }
     public string InvitationToken { get; private set; } = null!;
-    public DateTime ExpiresAt { get;  set; }
+    public DateTime ExpiresAt { get; set; }
     public bool IsAccepted { get; private set; }
     public bool IsCanceled { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
     public Guid? AcceptedByUserId { get; private set; }
     public Guid CreatedByUserId { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public bool IsDeleted { get; private set; }
-    
+
     // Navigation properties
     public Specialization? Specialization { get; set; }
     public User? AcceptedByUser { get; set; }
     public User CreatedByUser { get; set; } = null!;
 
     public bool IsExpired(DateTime currentTime) => currentTime >= ExpiresAt;
-    
     public bool IsValid(DateTime currentTime) => !IsAccepted && !IsCanceled && !IsExpired(currentTime);
-    
     public bool CanBeCanceled(DateTime currentTime) => !IsAccepted && !IsCanceled && !IsExpired(currentTime);
 
     public Result Accept(Guid userId, DateTime acceptedAt)
     {
         if (IsAccepted)
             return Result.Failure(ErrorCodes.INVITATION_ALREADY_ACCEPTED, "Invitation has already been accepted");
-        
         if (IsCanceled)
             return Result.Failure(ErrorCodes.INVITATION_CANCELED, "Cannot accept a canceled invitation");
-        
         if (IsExpired(acceptedAt))
             return Result.Failure(ErrorCodes.INVITATION_EXPIRED, "Cannot accept an expired invitation");
 
         IsAccepted = true;
         AcceptedAt = acceptedAt;
         AcceptedByUserId = userId;
-        
         return Result.Success();
     }
 
     public Result Cancel()
     {
         if (IsAccepted)
-            return Result.Failure(ErrorCodes.INVITATION_ALREADY_ACCEPTED, "Cannot cancel an invitation that has already been accepted");
-        
+            return Result.Failure(ErrorCodes.INVITATION_ALREADY_ACCEPTED, "Cannot cancel an accepted invitation");
         if (IsCanceled)
             return Result.Failure(ErrorCodes.INVITATION_ALREADY_CANCELED, "Invitation is already canceled");
 
@@ -67,7 +58,6 @@ public class StaffInvitation : TenantEntity
         string email,
         string role,
         Guid createdByUserId,
-        DateTime now,
         Guid? specializationId = null,
         int expirationDays = DefaultExpirationDays)
     {
@@ -78,12 +68,8 @@ public class StaffInvitation : TenantEntity
             Role = role,
             SpecializationId = specializationId,
             InvitationToken = Guid.NewGuid().ToString("N"),
-            ExpiresAt = now.AddDays(expirationDays),
-            IsAccepted = false,
-            IsCanceled = false,
+            ExpiresAt = DateTime.UtcNow.AddDays(expirationDays),
             CreatedByUserId = createdByUserId,
-            CreatedAt = now,
-            IsDeleted = false
         };
     }
 }

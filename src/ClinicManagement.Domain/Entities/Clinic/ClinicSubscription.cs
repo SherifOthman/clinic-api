@@ -3,9 +3,8 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class ClinicSubscription : BaseEntity
+public class ClinicSubscription : AuditableTenantEntity
 {
-    public Guid ClinicId { get; set; }
     public Guid SubscriptionPlanId { get; set; }
     public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Trial;
     public DateTime StartDate { get; set; }
@@ -15,6 +14,4 @@ public class ClinicSubscription : BaseEntity
     public string? CancellationReason { get; set; }
     public DateTime? CancelledAt { get; set; }
     public Guid? CancelledBy { get; set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; set; }
 }

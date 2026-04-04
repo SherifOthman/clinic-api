@@ -4,18 +4,14 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// Tracks daily/monthly usage metrics against plan limits.
-/// Used for enforcing subscription limits and identifying upsell opportunities.
 /// </summary>
-public class ClinicUsageMetrics : BaseEntity
+public class ClinicUsageMetrics : AuditableTenantEntity
 {
-    public Guid ClinicId { get; set; }
     public DateTime MetricDate { get; set; }
-    public int ActiveStaffCount { get; set; } = 0;
-    public int NewPatientsCount { get; set; } = 0;
-    public int TotalPatientsCount { get; set; } = 0;
-    public int AppointmentsCount { get; set; } = 0;
-    public int InvoicesCount { get; set; } = 0;
-    public decimal StorageUsedGB { get; set; } = 0;
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; set; }
+    public int ActiveStaffCount { get; set; }
+    public int NewPatientsCount { get; set; }
+    public int TotalPatientsCount { get; set; }
+    public int AppointmentsCount { get; set; }
+    public int InvoicesCount { get; set; }
+    public decimal StorageUsedGB { get; set; }
 }

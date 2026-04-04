@@ -4,10 +4,9 @@ using ClinicManagement.Domain.Enums;
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// User notification system.
-/// Stores notifications per user with read/unread status.
+/// User notification with read/unread status.
 /// </summary>
-public class Notification : BaseEntity
+public class Notification : AuditableEntity
 {
     public Guid UserId { get; set; }
     public NotificationType Type { get; set; } = NotificationType.Info;
@@ -16,6 +15,5 @@ public class Notification : BaseEntity
     public string? ActionUrl { get; set; }
     public bool IsRead { get; set; } = false;
     public DateTime? ReadAt { get; set; }
-    public DateTime CreatedAt { get; private set; }
     public DateTime? ExpiresAt { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿
+
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Tests.Builders;
 using FluentAssertions;
@@ -29,8 +29,7 @@ public class StaffInvitationTests
             clinicId,
             email,
             role,
-            createdByUserId,
-            now);
+            createdByUserId);
 
         // Assert
         invitation.ClinicId.Should().Be(clinicId);
@@ -88,7 +87,6 @@ public class StaffInvitationTests
                     "doctor@test.com",
                     "Doctor",
                     Guid.NewGuid(),
-                    DateTime.UtcNow,
                     null,
                     -1);
                 break;
@@ -185,8 +183,7 @@ public class StaffInvitationTests
             Guid.NewGuid(),
             "doctor@test.com",
             "Doctor",
-            Guid.NewGuid(),
-            now);
+            Guid.NewGuid());
 
         // Act
         var result = invitation.IsValid(now);
@@ -223,7 +220,6 @@ public class StaffInvitationTests
                     "doctor@test.com",
                     "Doctor",
                     Guid.NewGuid(),
-                    now,
                     null,
                     -1);
                 break;

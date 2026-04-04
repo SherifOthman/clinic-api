@@ -5,9 +5,8 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// Tracks subscription payment history.
-/// Records payment attempts, status, and transaction details.
 /// </summary>
-public class SubscriptionPayment : BaseEntity
+public class SubscriptionPayment : AuditableEntity
 {
     public Guid SubscriptionId { get; set; }
     public decimal Amount { get; set; }
@@ -20,6 +19,4 @@ public class SubscriptionPayment : BaseEntity
     public string? FailureReason { get; set; }
     public DateTime? RefundedAt { get; set; }
     public decimal? RefundAmount { get; set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; set; }
 }

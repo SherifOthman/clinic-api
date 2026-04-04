@@ -1,4 +1,4 @@
-﻿using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
@@ -42,7 +42,6 @@ public class StaffInvitationBuilder
             _email,
             _role,
             _createdByUserId,
-            DateTime.UtcNow,
             _specializationId,
             _expirationDays);
     }

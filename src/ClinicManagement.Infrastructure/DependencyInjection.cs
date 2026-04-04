@@ -3,7 +3,6 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
-using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;
 using ClinicManagement.Infrastructure.Persistence.Seeders;
@@ -48,7 +47,6 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
         
-        services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<RoleSeedService>();
         services.AddScoped<SpecializationSeedService>();
         services.AddScoped<ChronicDiseaseSeedService>();

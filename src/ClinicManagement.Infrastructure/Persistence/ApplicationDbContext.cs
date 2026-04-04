@@ -1,5 +1,7 @@
 ﻿using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -20,9 +22,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     }
 
     // Identity
-    //public DbSet<User> Users => Set<User>();
-    //public DbSet<Role> Roles => Set<Role>();
-    //public DbSet<IdentityUserRole<Guid>> UserRoles => Set<IdentityUserRole<Guid>>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -99,25 +98,26 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         // Apply entity configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        modelBuilder.Entity<Staff>()
-            .HasQueryFilter(QueryFilterNames.Clinic, s => s.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+        // Apply tenant filter to all ITenantEntity types automatically
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                var method = typeof(ApplicationDbContext)
+                    .GetMethod(nameof(ApplyTenantFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .MakeGenericMethod(entityType.ClrType);
 
-        modelBuilder.Entity<StaffInvitation>()
-            .HasQueryFilter(QueryFilterNames.Clinic, si => si.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+                method.Invoke(this, [modelBuilder]);
+            }
+        }
+    }
 
-        modelBuilder.Entity<ClinicBranch>()
-            .HasQueryFilter(QueryFilterNames.Clinic, b => b.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
-
-        modelBuilder.Entity<Patient>()
-            .HasQueryFilter(QueryFilterNames.Clinic, p => p.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
-
-        modelBuilder.Entity<Invoice>()
-            .HasQueryFilter(QueryFilterNames.Clinic, i => i.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
-
-        modelBuilder.Entity<LabTest>()
-            .HasQueryFilter(QueryFilterNames.Clinic, l => l.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
-
-        modelBuilder.Entity<RadiologyTest>()
-            .HasQueryFilter(QueryFilterNames.Clinic, r => r.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+    private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ITenantEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(
+                QueryFilterNames.Tenant,
+                e => e.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
     }
 }

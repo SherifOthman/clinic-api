@@ -3,18 +3,17 @@ using System.Security.Cryptography;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class RefreshToken : BaseEntity
+public class RefreshToken : AuditableEntity
 {
     public string Token { get; private set; } = string.Empty;
     public Guid UserId { get; private set; }
     public DateTime ExpiryTime { get; private set; }
     public bool IsRevoked { get; private set; } = false;
-    public DateTime CreatedAt { get; private set; }
     public string? CreatedByIp { get; private set; }
     public DateTime? RevokedAt { get; private set; }
     public string? RevokedByIp { get; private set; }
     public string? ReplacedByToken { get; private set; }
-    
+
     public bool IsExpired(DateTime currentTime) => currentTime >= ExpiryTime;
     public bool IsActive(DateTime currentTime) => !IsRevoked && !IsExpired(currentTime);
 
@@ -26,22 +25,18 @@ public class RefreshToken : BaseEntity
         ReplacedByToken = replacedByToken;
     }
 
-    public static RefreshToken Create(
-        Guid userId,
-        DateTime expiryTime,
-        string? ipAddress = null)
+    public static RefreshToken Create(Guid userId, DateTime expiryTime, string? ipAddress = null)
     {
-        var randomBytes = new byte[64];
+        var bytes = new byte[64];
         using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
-        var token = Convert.ToBase64String(randomBytes);
+        rng.GetBytes(bytes);
 
         return new RefreshToken
         {
-            Token = token,
+            Token = Convert.ToBase64String(bytes),
             UserId = userId,
             ExpiryTime = expiryTime,
-            CreatedByIp = ipAddress
+            CreatedByIp = ipAddress,
         };
     }
 }

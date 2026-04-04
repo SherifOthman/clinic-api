@@ -1,8 +1,8 @@
 namespace ClinicManagement.Domain.Common;
 
 /// <summary>
-/// Base entity for tenant-scoped entities with audit tracking.
-/// Includes ClinicId for multi-tenancy and CreatedAt/IsDeleted for auditing.
+/// Tenant-scoped entity with full audit trail.
+/// Use for entities that belong to a clinic and need CreatedAt/UpdatedAt/IsDeleted.
 /// </summary>
 public abstract class AuditableTenantEntity : AuditableEntity, ITenantEntity
 {

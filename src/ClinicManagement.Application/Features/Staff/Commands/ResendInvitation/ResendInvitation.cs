@@ -15,18 +15,15 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
-    private readonly IClock _clock;
 
     public ResendInvitationHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IEmailService emailService,
-        IClock clock)
+        IEmailService emailService)
     {
         _context = context;
         _currentUserService = currentUserService;
         _emailService = emailService;
-        _clock = clock;
     }
 
     public async Task<Result> Handle(ResendInvitationCommand request, CancellationToken cancellationToken)
@@ -47,8 +44,7 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
         if (invitation.IsAccepted || invitation.IsCanceled)
             return Result.Failure(ErrorCodes.OPERATION_NOT_ALLOWED, "Cannot resend an accepted or cancelled invitation");
 
-        // Extend expiry by 7 days from now
-        invitation.ExpiresAt = _clock.UtcNow.AddDays(7);
+        invitation.ExpiresAt = DateTime.UtcNow.AddDays(7);
 
         var inviter = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
@@ -58,18 +54,15 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
             .FirstOrDefaultAsync(c => c.Id == clinicId, cancellationToken);
         var clinicName = clinic?.Name ?? "Clinic";
 
-        var invitationLink = $"/accept-invitation/{invitation.InvitationToken}";
-
         await _emailService.SendStaffInvitationEmailAsync(
             invitation.Email,
             clinicName,
             invitation.Role,
             invitedBy,
-            invitationLink,
+            $"/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
-
         return Result.Success();
     }
 }

@@ -18,18 +18,15 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
-    private readonly IClock _clock;
 
     public InviteStaffHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IEmailService emailService,
-        IClock clock)
+        IEmailService emailService)
     {
         _context = context;
         _currentUserService = currentUserService;
         _emailService = emailService;
-        _clock = clock;
     }
 
     public async Task<Result<InviteStaffResponseDto>> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
@@ -54,7 +51,6 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             request.Email,
             request.Role,
             currentUserId,
-            _clock.UtcNow,
             request.SpecializationId
         );
 
