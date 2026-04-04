@@ -29,11 +29,14 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
     {
         var clinicId = _currentUser.GetRequiredClinicId();
 
-        // ClinicId filter applied automatically via global named filter for reads.
-        // Still needed here to assign ClinicId when creating the new patient.
-        var patientCount = await _context.Patients
-            .CountAsync(cancellationToken);
-        var patientCode = $"P{(patientCount + 1):D6}";
+        // Generate unpredictable patient code: P + 3 letters + 3 digits (e.g. PXKM847)
+        // Retry on collision (extremely rare)
+        string patientCode;
+        do
+        {
+            patientCode = GeneratePatientCode();
+        }
+        while (await _context.Patients.AnyAsync(p => p.PatientCode == patientCode, cancellationToken));
 
         // Parse blood type
         BloodType? bloodType = null;
@@ -89,5 +92,20 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
         var dto = patient.Adapt<PatientDto>();
         return Result<PatientDto>.Success(dto);
+    }
+
+    private static string GeneratePatientCode()
+    {
+        const string letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to avoid confusion
+        const string digits  = "0123456789";
+        Span<char> code = stackalloc char[7];
+        code[0] = 'P';
+        code[1] = letters[Random.Shared.Next(letters.Length)];
+        code[2] = letters[Random.Shared.Next(letters.Length)];
+        code[3] = letters[Random.Shared.Next(letters.Length)];
+        code[4] = digits[Random.Shared.Next(digits.Length)];
+        code[5] = digits[Random.Shared.Next(digits.Length)];
+        code[6] = digits[Random.Shared.Next(digits.Length)];
+        return new string(code);
     }
 }
