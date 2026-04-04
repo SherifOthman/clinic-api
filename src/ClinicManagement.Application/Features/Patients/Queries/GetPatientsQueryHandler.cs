@@ -72,9 +72,8 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                 Id = p.Id.ToString(),
                 p.PatientCode,
                 p.FullName,
-                DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd"),
+                p.DateOfBirth,
                 p.IsMale,
-                Age = p.GetAge(now),
                 p.BloodType,
                 PrimaryPhone = _context.PatientPhones
                     .Where(ph => ph.PatientId == p.Id && ph.IsPrimary)
@@ -82,24 +81,24 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                     .FirstOrDefault(),
                 PhoneCount = _context.PatientPhones.Count(ph => ph.PatientId == p.Id),
                 ChronicDiseaseCount = _context.PatientChronicDiseases.Count(cd => cd.PatientId == p.Id),
-                CreatedAt = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                p.CreatedAt,
             })
             .ToListAsync(cancellationToken);
 
-        // Map blood type enum to display string in memory (not in SQL)
+        // Map in memory — age calculation and blood type display string
         var patients = rawPatients.Select(p => new PatientDto
         {
             Id = p.Id,
             PatientCode = p.PatientCode,
             FullName = p.FullName,
-            DateOfBirth = p.DateOfBirth,
+            DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd"),
             IsMale = p.IsMale,
-            Age = p.Age,
+            Age = now.Year - p.DateOfBirth.Year - (now.DayOfYear < p.DateOfBirth.DayOfYear ? 1 : 0),
             BloodType = ToDisplayString(p.BloodType),
             PrimaryPhone = p.PrimaryPhone,
             PhoneCount = p.PhoneCount,
             ChronicDiseaseCount = p.ChronicDiseaseCount,
-            CreatedAt = p.CreatedAt,
+            CreatedAt = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
         }).ToList();
 
         return Result<PaginatedPatientsResponse>.Success(new PaginatedPatientsResponse
