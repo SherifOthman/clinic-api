@@ -36,6 +36,8 @@ public class CurrentUserService : ICurrentUserService
 
     public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
 
+    public string? FullName => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+
     public string IpAddress
     {
         get
