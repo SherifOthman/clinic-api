@@ -36,7 +36,10 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         {
             patientCode = GeneratePatientCode();
         }
-        while (await _context.Patients.AnyAsync(p => p.PatientCode == patientCode && p.ClinicId == clinicId, cancellationToken));
+        // Global uniqueness — patient code is a system-wide identifier (patient portal, cross-clinic)
+        while (await _context.Patients
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.PatientCode == patientCode, cancellationToken));
 
         // Parse blood type
         BloodType? bloodType = null;
@@ -96,7 +99,8 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
     private static string GeneratePatientCode()
     {
-        // 6 random digits — 1,000,000 combinations, unpredictable, easy to say/write
-        return Random.Shared.Next(100000, 999999).ToString();
+        // 8 random digits — 90 million combinations, globally unique across all clinics
+        // Short enough to read/type, unpredictable, works for patient portal
+        return Random.Shared.Next(10000000, 99999999).ToString();
     }
 }
