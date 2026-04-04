@@ -21,11 +21,14 @@ public class AuditLog : BaseEntity
     /// <summary>Full name of the user at the time of the action (denormalized for history).</summary>
     public string? UserName { get; set; }
 
-    /// <summary>Login username (e.g. "doctor", "owner") — denormalized for history.</summary>
-    public string? UserLogin { get; set; }
+    /// <summary>Email of the user — globally unique identifier across all clinics.</summary>
+    public string? UserEmail { get; set; }
 
     /// <summary>Role of the user at the time (e.g. Doctor, Receptionist).</summary>
     public string? UserRole { get; set; }
+
+    /// <summary>Browser/device info — critical for security debugging.</summary>
+    public string? UserAgent { get; set; }
 
     /// <summary>The entity type name (e.g. "Patient", "Staff").</summary>
     public string EntityType { get; set; } = null!;

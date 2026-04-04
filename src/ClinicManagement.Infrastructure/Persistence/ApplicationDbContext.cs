@@ -91,11 +91,12 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         var ipAddress = _currentUserService?.IpAddress;
         var userRole = _currentUserService?.Roles.FirstOrDefault();
         var userName = _currentUserService?.FullName;
-        var userLogin = _currentUserService?.UserLogin;
+        var userEmail = _currentUserService?.UserEmail;
+        var userAgent = _currentUserService?.UserAgent;
         var now = DateTime.UtcNow;
 
         // Capture changes BEFORE saving so we can read old values
-        var auditEntries = BuildAuditEntries(userId, userName, userLogin, ipAddress, userRole, now);
+        var auditEntries = BuildAuditEntries(userId, userName, userEmail, userAgent, ipAddress, userRole, now);
 
         // Stamp audit fields
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
@@ -124,7 +125,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         return result;
     }
 
-    private List<AuditLog> BuildAuditEntries(Guid? userId, string? userName, string? userLogin, string? ipAddress, string? userRole, DateTime now)
+    private List<AuditLog> BuildAuditEntries(Guid? userId, string? userName, string? userEmail, string? userAgent, string? ipAddress, string? userRole, DateTime now)
     {
         var entries = new List<AuditLog>();
 
@@ -177,8 +178,9 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 ClinicId   = clinicId,
                 UserId     = userId,
                 UserName   = userName,
-                UserLogin  = userLogin,
+                UserEmail  = userEmail,
                 UserRole   = userRole,
+                UserAgent  = userAgent,
                 EntityType = entry.Entity.GetType().Name,
                 EntityId   = entry.Entity.Id.ToString(),
                 Action     = action,
