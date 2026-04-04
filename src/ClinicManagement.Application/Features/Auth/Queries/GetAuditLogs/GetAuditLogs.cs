@@ -22,6 +22,7 @@ public record AuditLogDto(
     Guid Id,
     string Timestamp,
     Guid? ClinicId,
+    string? ClinicName,
     Guid? UserId,
     string? UserName,
     string? UserRole,
@@ -73,24 +74,39 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var rawItems = await query
             .OrderByDescending(a => a.Timestamp)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(a => new AuditLogDto(
-                a.Id,
-                a.Timestamp.ToString("O"),
-                a.ClinicId,
-                a.UserId,
-                a.UserName,
-                a.UserRole,
-                a.EntityType,
-                a.EntityId,
-                a.Action.ToString(),
-                a.IpAddress,
-                a.Changes
-            ))
             .ToListAsync(cancellationToken);
+
+        // Resolve clinic names in one batch
+        var clinicIds = rawItems
+            .Where(a => a.ClinicId.HasValue)
+            .Select(a => a.ClinicId!.Value)
+            .Distinct()
+            .ToList();
+
+        var clinicNames = await _context.Clinics
+            .IgnoreQueryFilters([Domain.Common.Constants.QueryFilterNames.Tenant])
+            .Where(c => clinicIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.Name })
+            .ToDictionaryAsync(c => c.Id, c => c.Name, cancellationToken);
+
+        var items = rawItems.Select(a => new AuditLogDto(
+            a.Id,
+            a.Timestamp.ToString("O"),
+            a.ClinicId,
+            a.ClinicId.HasValue && clinicNames.TryGetValue(a.ClinicId.Value, out var name) ? name : null,
+            a.UserId,
+            a.UserName,
+            a.UserRole,
+            a.EntityType,
+            a.EntityId,
+            a.Action.ToString(),
+            a.IpAddress,
+            a.Changes
+        )).ToList();
 
         return Result.Success(new AuditLogsResponse(
             items,
