@@ -45,6 +45,37 @@ public static class ErrorCodes
 
     // Appointments
     public const string APPOINTMENT_CONFLICT = "APPOINTMENT_CONFLICT";
+    public const string APPOINTMENT_PAST_DATE = "APPOINTMENT_PAST_DATE";
+    public const string APPOINTMENT_OUTSIDE_HOURS = "APPOINTMENT_OUTSIDE_HOURS";
+    public const string APPOINTMENT_ALREADY_CONFIRMED = "APPOINTMENT_ALREADY_CONFIRMED";
+    public const string APPOINTMENT_ALREADY_COMPLETED = "APPOINTMENT_ALREADY_COMPLETED";
+    public const string APPOINTMENT_ALREADY_CANCELLED = "APPOINTMENT_ALREADY_CANCELLED";
+    public const string CANNOT_CANCEL_APPOINTMENT = "CANNOT_CANCEL_APPOINTMENT";
+    public const string CANNOT_CONFIRM_APPOINTMENT = "CANNOT_CONFIRM_APPOINTMENT";
+
+    // Billing
+    public const string INVOICE_NOT_FOUND = "INVOICE_NOT_FOUND";
+    public const string INVOICE_ALREADY_PAID = "INVOICE_ALREADY_PAID";
+    public const string INVOICE_ALREADY_CANCELLED = "INVOICE_ALREADY_CANCELLED";
+    public const string INVOICE_NOT_PAYABLE = "INVOICE_NOT_PAYABLE";
+    public const string PAYMENT_EXCEEDS_BALANCE = "PAYMENT_EXCEEDS_BALANCE";
+    public const string INVALID_PAYMENT_AMOUNT = "INVALID_PAYMENT_AMOUNT";
+    public const string INVALID_DISCOUNT = "INVALID_DISCOUNT";
+    public const string DISCOUNT_EXCEEDS_TOTAL = "DISCOUNT_EXCEEDS_TOTAL";
+
+    // Inventory / Medicines
+    public const string MEDICINE_NOT_FOUND = "MEDICINE_NOT_FOUND";
+    public const string MEDICINE_EXPIRED = "MEDICINE_EXPIRED";
+    public const string MEDICINE_DISCONTINUED = "MEDICINE_DISCONTINUED";
+    public const string MEDICINE_OUT_OF_STOCK = "MEDICINE_OUT_OF_STOCK";
+    public const string INSUFFICIENT_STOCK = "INSUFFICIENT_STOCK";
+    public const string INVALID_STOCK_QUANTITY = "INVALID_STOCK_QUANTITY";
+    public const string NEGATIVE_STOCK = "NEGATIVE_STOCK";
+
+    // Medical / Prescriptions
+    public const string PATIENT_HAS_ALLERGY = "PATIENT_HAS_ALLERGY";
+    public const string CRITICAL_ALLERGY_WARNING = "CRITICAL_ALLERGY_WARNING";
+    public const string MEDICATION_INTERACTION = "MEDICATION_INTERACTION";
 
     // Onboarding
     public const string ALREADY_ONBOARDED = "ALREADY_ONBOARDED";
