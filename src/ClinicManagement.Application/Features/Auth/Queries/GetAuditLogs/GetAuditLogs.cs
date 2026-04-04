@@ -20,7 +20,7 @@ public record GetAuditLogsQuery(
 
 public record AuditLogDto(
     Guid Id,
-    string Timestamp,
+    DateTime Timestamp,
     Guid? ClinicId,
     string? ClinicName,
     Guid? UserId,
@@ -97,7 +97,7 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
 
         var items = rawItems.Select(a => new AuditLogDto(
             a.Id,
-            a.Timestamp.ToString("O"),
+            a.Timestamp,
             a.ClinicId,
             a.ClinicId.HasValue && clinicNames.TryGetValue(a.ClinicId.Value, out var name) ? name : null,
             a.UserId,
