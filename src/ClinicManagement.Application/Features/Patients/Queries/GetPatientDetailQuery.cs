@@ -58,7 +58,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             .Include(p => p.Phones)
             .Include(p => p.ChronicDiseases)
             .FirstOrDefaultAsync(p => p.Id == request.PatientId, cancellationToken);
-
         if (patient == null)
             return Result.Failure<PatientDetailDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 

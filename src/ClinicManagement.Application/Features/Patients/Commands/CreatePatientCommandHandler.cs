@@ -41,12 +41,22 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
             .IgnoreQueryFilters()
             .AnyAsync(p => p.PatientCode == patientCode, cancellationToken));
 
-        // Parse blood type
+        // Parse blood type — frontend sends display string (A+, B-, etc.)
         BloodType? bloodType = null;
-        if (!string.IsNullOrEmpty(request.BloodType) && 
-            Enum.TryParse<BloodType>(request.BloodType, out var parsedBloodType))
+        if (!string.IsNullOrEmpty(request.BloodType))
         {
-            bloodType = parsedBloodType;
+            bloodType = request.BloodType switch
+            {
+                "A+"  => BloodType.APositive,
+                "A-"  => BloodType.ANegative,
+                "B+"  => BloodType.BPositive,
+                "B-"  => BloodType.BNegative,
+                "AB+" => BloodType.ABPositive,
+                "AB-" => BloodType.ABNegative,
+                "O+"  => BloodType.OPositive,
+                "O-"  => BloodType.ONegative,
+                _     => null,
+            };
         }
 
         // Create patient

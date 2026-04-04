@@ -38,10 +38,20 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         }
 
         BloodType? bloodType = null;
-        if (!string.IsNullOrEmpty(request.BloodType) && 
-            Enum.TryParse<BloodType>(request.BloodType, out var parsedBloodType))
+        if (!string.IsNullOrEmpty(request.BloodType))
         {
-            bloodType = parsedBloodType;
+            bloodType = request.BloodType switch
+            {
+                "A+"  => BloodType.APositive,
+                "A-"  => BloodType.ANegative,
+                "B+"  => BloodType.BPositive,
+                "B-"  => BloodType.BNegative,
+                "AB+" => BloodType.ABPositive,
+                "AB-" => BloodType.ABNegative,
+                "O+"  => BloodType.OPositive,
+                "O-"  => BloodType.ONegative,
+                _     => null,
+            };
         }
 
         patient.FullName = request.FullName;
@@ -52,7 +62,6 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         patient.EmergencyContactName = request.EmergencyContactName;
         patient.EmergencyContactPhone = request.EmergencyContactPhone;
         patient.EmergencyContactRelation = request.EmergencyContactRelation;
-
         await _context.SaveChangesAsync(cancellationToken);
 
         var dto = patient.Adapt<PatientDto>();
