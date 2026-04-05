@@ -34,16 +34,10 @@ public class PatientSeedService
             return;
         }
 
-        // Skip if patients already seeded
-        var existing = await _context.Patients
+        // Skip if already seeded (check by first seed code)
+        var alreadySeeded = await _context.Patients
             .IgnoreQueryFilters([Domain.Common.Constants.QueryFilterNames.Tenant, Domain.Common.Constants.QueryFilterNames.SoftDelete])
-            .CountAsync(p => p.ClinicId == clinic.Id);
-
-        if (existing >= 5)
-        {
-            _logger.LogInformation("Patients already seeded, skipping");
-            return;
-        }
+            .AnyAsync(p => p.PatientCode == "10000001");
 
         var now = DateTime.UtcNow;
 
