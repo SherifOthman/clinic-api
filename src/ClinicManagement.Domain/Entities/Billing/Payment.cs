@@ -3,7 +3,7 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Payment : AuditableEntity
+public class Payment : AuditableEntity, INoAuditLog
 {
     public Guid InvoiceId { get; set; }
     public decimal Amount { get; set; }

@@ -7,8 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
-/// Removes audit log entries older than 1 month.
+/// Removes audit log entries older than 12 months.
 /// Runs daily at midnight to keep the table lean.
+/// Retention period: 12 months (suitable for clinic compliance requirements).
 /// </summary>
 public class AuditLogCleanupService : BackgroundService
 {
@@ -55,7 +56,7 @@ public class AuditLogCleanupService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
-        var cutoff = DateTime.UtcNow.AddMonths(-1);
+        var cutoff = DateTime.UtcNow.AddMonths(-12); // 12 months retention
 
         var deleted = await context.AuditLogs
             .Where(a => a.Timestamp < cutoff)

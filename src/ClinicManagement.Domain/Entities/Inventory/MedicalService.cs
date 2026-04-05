@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class MedicalService : AuditableEntity
+public class MedicalService : AuditableEntity, INoAuditLog
 {
     public Guid ClinicBranchId { get; set; } // Linked to branch, not clinic
     public decimal DefaultPrice { get; set; }

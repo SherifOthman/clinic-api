@@ -3,7 +3,7 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Appointment : AuditableEntity
+public class Appointment : AuditableEntity, INoAuditLog
 {
     public string AppointmentNumber { get; set; } = null!;
     public Guid ClinicBranchId { get; set; }
