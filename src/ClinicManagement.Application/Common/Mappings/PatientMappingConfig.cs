@@ -20,7 +20,6 @@ public class PatientMappingConfig : IRegister
         config.NewConfig<Patient, PatientDto>()
             .Map(dest => dest.Id, src => src.Id.ToString())
             .Map(dest => dest.DateOfBirth, src => src.DateOfBirth.ToString("yyyy-MM-dd"))
-            .Map(dest => dest.Age, src => DateTime.UtcNow.Year - src.DateOfBirth.Year)
             .Map(dest => dest.BloodType, src => src.BloodType.HasValue ? ToBloodTypeDisplay(src.BloodType.Value) : null)
             .Map(dest => dest.PrimaryPhone, src =>
                 src.Phones.Where(ph => ph.IsPrimary).Select(ph => ph.PhoneNumber).FirstOrDefault()

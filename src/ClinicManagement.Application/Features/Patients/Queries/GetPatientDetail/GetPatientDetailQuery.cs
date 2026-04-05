@@ -16,7 +16,6 @@ public record PatientDetailDto
     public string FullName { get; init; } = null!;
     public string DateOfBirth { get; init; } = null!;
     public bool IsMale { get; init; }
-    public int Age { get; init; }
     public string? BloodType { get; init; }
     public int? CountryGeoNameId { get; init; }
     public int? StateGeoNameId { get; init; }
@@ -89,8 +88,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
                 .ToDictionaryAsync(u => u.Id, u => u.Name.Trim(), cancellationToken)
             : [];
 
-        var now = DateTime.UtcNow;
-
         return Result.Success(new PatientDetailDto
         {
             Id                       = patient.Id.ToString(),
@@ -98,7 +95,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             FullName                 = patient.FullName,
             DateOfBirth              = patient.DateOfBirth.ToString("yyyy-MM-dd"),
             IsMale                   = patient.IsMale,
-            Age                      = patient.GetAge(now),
             BloodType                = ToBloodTypeDisplay(patient.BloodType),
             CountryGeoNameId         = patient.CountryGeoNameId,
             StateGeoNameId           = patient.StateGeoNameId,

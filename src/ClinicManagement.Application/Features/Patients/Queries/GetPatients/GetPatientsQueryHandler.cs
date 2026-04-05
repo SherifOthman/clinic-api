@@ -30,7 +30,6 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
     {
         // No Include — lightweight list query, counts only
         var query = _context.Patients.AsQueryable();
-        var now = DateTime.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -85,7 +84,7 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             })
             .ToListAsync(cancellationToken);
 
-        // Map in memory — age calculation and blood type display string
+        // Map in memory — blood type display string
         var patients = rawPatients.Select(p => new PatientDto
         {
             Id = p.Id,
@@ -93,7 +92,6 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             FullName = p.FullName,
             DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd"),
             IsMale = p.IsMale,
-            Age = now.Year - p.DateOfBirth.Year - (now.DayOfYear < p.DateOfBirth.DayOfYear ? 1 : 0),
             BloodType = ToDisplayString(p.BloodType),
             PrimaryPhone = p.PrimaryPhone,
             PhoneCount = p.PhoneCount,

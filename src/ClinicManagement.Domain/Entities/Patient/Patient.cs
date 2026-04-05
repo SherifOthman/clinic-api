@@ -17,7 +17,4 @@ public class Patient : AuditableTenantEntity
     // Navigation properties
     public ICollection<PatientPhone> Phones { get; set; } = new List<PatientPhone>();
     public ICollection<PatientChronicDisease> ChronicDiseases { get; set; } = new List<PatientChronicDisease>();
-
-    public int GetAge(DateTime now) => now.Year - DateOfBirth.Year -
-        (now.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
 }

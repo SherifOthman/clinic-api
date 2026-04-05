@@ -20,7 +20,6 @@ public record PatientDto
     public string FullName { get; init; } = null!;
     public string DateOfBirth { get; init; } = null!;
     public bool IsMale { get; init; }
-    public int Age { get; init; }
     public string? BloodType { get; init; }
     public string? PrimaryPhone { get; init; }
     public int PhoneCount { get; init; }
