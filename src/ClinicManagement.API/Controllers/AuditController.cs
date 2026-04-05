@@ -30,11 +30,12 @@ public class AuditController : BaseApiController
         [FromQuery] AuditAction? action = null,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
+        [FromQuery] string? userSearch = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetAuditLogsQuery(clinicId, userId, entityType, entityId, action, from, to, pageNumber, pageSize);
+        var query = new GetAuditLogsQuery(clinicId, userId, entityType, entityId, action, from, to, userSearch, pageNumber, pageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve audit logs");
     }
