@@ -30,6 +30,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         // ClinicId filter applied automatically via global named filter
         var patient = await _context.Patients
             .Include(p => p.Phones)
+            .Include(p => p.ChronicDiseases)
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
         if (patient is null)
@@ -64,6 +65,23 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         patient.EmergencyContactName = request.EmergencyContactName;
         patient.EmergencyContactPhone = request.EmergencyContactPhone;
         patient.EmergencyContactRelation = request.EmergencyContactRelation;
+
+        // Update chronic diseases if provided
+        if (request.ChronicDiseaseIds != null)
+        {
+            // Remove all existing, add new ones
+            var existing = patient.ChronicDiseases?.ToList() ?? [];
+            foreach (var cd in existing)
+                _context.PatientChronicDiseases.Remove(cd);
+
+            foreach (var diseaseId in request.ChronicDiseaseIds)
+                _context.PatientChronicDiseases.Add(new PatientChronicDisease
+                {
+                    PatientId = patient.Id,
+                    ChronicDiseaseId = diseaseId,
+                });
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         var dto = patient.Adapt<PatientDto>();

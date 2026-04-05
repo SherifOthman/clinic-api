@@ -100,7 +100,8 @@ public class PatientsController : BaseApiController
             request.BloodType,
             request.EmergencyContactName,
             request.EmergencyContactPhone,
-            request.EmergencyContactRelation);
+            request.EmergencyContactRelation,
+            request.ChronicDiseaseIds);
 
         var result = await Sender.Send(command, cancellationToken);
 
@@ -152,4 +153,5 @@ public record UpdatePatientRequest(
     string? BloodType,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
-    string? EmergencyContactRelation);
+    string? EmergencyContactRelation,
+    List<Guid>? ChronicDiseaseIds = null);

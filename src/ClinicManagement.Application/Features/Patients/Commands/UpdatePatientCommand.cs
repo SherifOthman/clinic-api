@@ -15,5 +15,6 @@ public record UpdatePatientCommand(
     string? BloodType,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
-    string? EmergencyContactRelation
+    string? EmergencyContactRelation,
+    List<Guid>? ChronicDiseaseIds = null
 ) : IRequest<Result<PatientDto>>;
