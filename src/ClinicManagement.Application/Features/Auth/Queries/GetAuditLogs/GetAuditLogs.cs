@@ -14,6 +14,7 @@ public record GetAuditLogsQuery(
     AuditAction? Action = null,
     DateTime? From = null,
     DateTime? To = null,
+    string? UserSearch = null,
     int PageNumber = 1,
     int PageSize = 50
 ) : IRequest<Result<AuditLogsResponse>>;
@@ -67,6 +68,11 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
 
         if (request.Action.HasValue)
             query = query.Where(a => a.Action == request.Action.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.UserSearch))
+            query = query.Where(a =>
+                (a.UserName != null && a.UserName.Contains(request.UserSearch)) ||
+                (a.UserEmail != null && a.UserEmail.Contains(request.UserSearch)));
 
         if (request.From.HasValue)
             query = query.Where(a => a.Timestamp >= request.From.Value);

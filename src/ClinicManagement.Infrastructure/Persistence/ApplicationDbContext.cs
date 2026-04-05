@@ -150,7 +150,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 _                    => AuditAction.Update,
             };
 
-            // Build changes JSON for updates
+            // Build changes JSON
             string? changesJson = null;
             if (action == AuditAction.Update)
             {
@@ -158,7 +158,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 foreach (var prop in entry.Properties)
                 {
                     if (!prop.IsModified) continue;
-                    // Skip internal audit fields
                     if (prop.Metadata.Name is "UpdatedAt" or "UpdatedBy") continue;
 
                     changes[prop.Metadata.Name] = new
@@ -169,6 +168,32 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 }
                 if (changes.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(changes);
+            }
+            else if (action == AuditAction.Create)
+            {
+                // Capture initial values for Create — skip nulls and audit stamps
+                var snapshot = new Dictionary<string, object?>();
+                foreach (var prop in entry.Properties)
+                {
+                    if (prop.Metadata.Name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
+                    if (prop.CurrentValue is null) continue;
+                    snapshot[prop.Metadata.Name] = prop.CurrentValue;
+                }
+                if (snapshot.Count > 0)
+                    changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
+            }
+            else if (action == AuditAction.Delete)
+            {
+                // Capture last known values for Delete
+                var snapshot = new Dictionary<string, object?>();
+                foreach (var prop in entry.Properties)
+                {
+                    if (prop.Metadata.Name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
+                    if (prop.OriginalValue is null) continue;
+                    snapshot[prop.Metadata.Name] = prop.OriginalValue;
+                }
+                if (snapshot.Count > 0)
+                    changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
             }
 
             // Get ClinicId if entity is tenant-scoped
