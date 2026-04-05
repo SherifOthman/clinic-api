@@ -121,6 +121,21 @@ public class PatientsController : BaseApiController
             ? NoContent()
             : HandleResult(result, "Failed to delete patient");
     }
+
+    /// <summary>
+    /// Restore a soft-deleted patient
+    /// </summary>
+    [HttpPost("{id}/restore")]
+    [Authorize(Roles = "ClinicOwner")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestorePatient(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await Sender.Send(new RestorePatientCommand(id), cancellationToken);
+        return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to restore patient");
+    }
 }
 
 public record CreatePatientRequest(

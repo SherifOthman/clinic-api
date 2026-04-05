@@ -133,13 +133,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
             if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
                 continue;
 
-            // Skip AuditLog itself to avoid infinite recursion
-            if (entry.Entity is AuditLog)
-                continue;
-
-            // Skip RefreshToken — internal security infrastructure, not meaningful business audit data
-            if (entry.Entity is RefreshToken)
-                continue;
+            if (entry.Entity is AuditLog) continue;
+            if (entry.Entity is RefreshToken) continue;
 
             var action = entry.State switch
             {
@@ -149,7 +144,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 _                    => AuditAction.Update,
             };
 
-            // Build changes JSON
             string? changesJson = null;
             if (action == AuditAction.Update)
             {
@@ -158,11 +152,10 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 {
                     if (!prop.IsModified) continue;
                     if (prop.Metadata.Name is "UpdatedAt" or "UpdatedBy") continue;
-
                     changes[prop.Metadata.Name] = new
                     {
-                        Old = prop.OriginalValue,
-                        New = prop.CurrentValue,
+                        Old = HumanizeValue(prop.Metadata.Name, prop.OriginalValue),
+                        New = HumanizeValue(prop.Metadata.Name, prop.CurrentValue),
                     };
                 }
                 if (changes.Count > 0)
@@ -170,32 +163,29 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
             }
             else if (action == AuditAction.Create)
             {
-                // Capture initial values for Create — skip nulls and audit stamps
                 var snapshot = new Dictionary<string, object?>();
                 foreach (var prop in entry.Properties)
                 {
                     if (prop.Metadata.Name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
                     if (prop.CurrentValue is null) continue;
-                    snapshot[prop.Metadata.Name] = prop.CurrentValue;
+                    snapshot[prop.Metadata.Name] = HumanizeValue(prop.Metadata.Name, prop.CurrentValue);
                 }
                 if (snapshot.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
             }
             else if (action == AuditAction.Delete)
             {
-                // Capture last known values for Delete
                 var snapshot = new Dictionary<string, object?>();
                 foreach (var prop in entry.Properties)
                 {
                     if (prop.Metadata.Name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
                     if (prop.OriginalValue is null) continue;
-                    snapshot[prop.Metadata.Name] = prop.OriginalValue;
+                    snapshot[prop.Metadata.Name] = HumanizeValue(prop.Metadata.Name, prop.OriginalValue);
                 }
                 if (snapshot.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
             }
 
-            // Get ClinicId if entity is tenant-scoped
             Guid? clinicId = null;
             if (entry.Entity is ITenantEntity tenantEntity)
                 clinicId = tenantEntity.ClinicId;
@@ -221,9 +211,33 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         return entries;
     }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)    {
-        base.OnModelCreating(modelBuilder);
+    /// <summary>Converts raw EF values to human-readable strings for audit logs.</summary>
+    private static object? HumanizeValue(string fieldName, object? value)
+    {
+        if (value is null) return null;
 
+        // Boolean fields — map to meaningful labels
+        return fieldName switch
+        {
+            "IsMale"    => value is bool b ? (b ? "Male" : "Female") : value,
+            "IsActive"  => value is bool a ? (a ? "Active" : "Inactive") : value,
+            "IsDeleted" => value is bool d ? (d ? "Deleted" : "Active") : value,
+            "IsRevoked" => value is bool r ? (r ? "Revoked" : "Active") : value,
+            "BloodType" => value is int bt ? bt switch
+            {
+                1 => "A+", 2 => "A-", 3 => "B+", 4 => "B-",
+                5 => "AB+", 6 => "AB-", 7 => "O+", 8 => "O-",
+                _ => value
+            } : value,
+            // Skip internal IDs — not useful for humans
+            "ClinicId" or "UserId" or "PatientId" or "StaffId" or "CreatedBy" or "UpdatedBy" => null,
+            _ => value
+        };
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
         // Rename Identity tables
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<Role>().ToTable("Roles");

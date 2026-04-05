@@ -36,6 +36,22 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
                 (a.Username != null && a.Username.Contains(request.UserSearch)) ||
                 (a.UserEmail != null && a.UserEmail.Contains(request.UserSearch)));
 
+        // Search by clinic name or ID
+        if (!string.IsNullOrWhiteSpace(request.ClinicSearch))
+        {
+            if (Guid.TryParse(request.ClinicSearch, out var clinicGuid))
+                query = query.Where(a => a.ClinicId == clinicGuid);
+            else
+            {
+                var matchingClinicIds = await _context.Clinics
+                    .IgnoreQueryFilters([Domain.Common.Constants.QueryFilterNames.Tenant])
+                    .Where(c => c.Name.Contains(request.ClinicSearch))
+                    .Select(c => c.Id)
+                    .ToListAsync(cancellationToken);
+                query = query.Where(a => a.ClinicId.HasValue && matchingClinicIds.Contains(a.ClinicId.Value));
+            }
+        }
+
         if (request.From.HasValue)
             query = query.Where(a => a.Timestamp >= request.From.Value);
 
