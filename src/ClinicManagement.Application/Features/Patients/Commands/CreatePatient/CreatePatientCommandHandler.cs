@@ -101,32 +101,6 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Enrich the audit log entry with phones and chronic diseases
-        // (they are BaseEntity, not AuditableEntity, so not auto-tracked)
-        var auditEntry = await _context.AuditLogs
-            .OrderByDescending(a => a.Timestamp)
-            .FirstOrDefaultAsync(a => a.EntityId == patient.Id.ToString() && a.Action == AuditAction.Create, cancellationToken);
-
-        if (auditEntry != null && auditEntry.Changes != null)
-        {
-            var changes = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(auditEntry.Changes) ?? new();
-
-            if (request.PhoneNumbers.Any())
-                changes["Phone Numbers"] = string.Join(", ", request.PhoneNumbers.Select(p => p.PhoneNumber));
-
-            if (request.ChronicDiseaseIds.Any())
-            {
-                var diseaseNames = await _context.ChronicDiseases
-                    .Where(d => request.ChronicDiseaseIds.Contains(d.Id))
-                    .Select(d => d.NameEn)
-                    .ToListAsync(cancellationToken);
-                changes["Chronic Diseases"] = string.Join(", ", diseaseNames);
-            }
-
-            auditEntry.Changes = System.Text.Json.JsonSerializer.Serialize(changes);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-
         var dto = patient.Adapt<PatientDto>();
         return Result<PatientDto>.Success(dto);
     }

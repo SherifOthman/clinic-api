@@ -141,6 +141,31 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
 
             if (entry.Entity is AuditLog) continue;
             if (entry.Entity is RefreshToken) continue;
+            // PatientPhone and PatientChronicDisease are AuditableEntity for timestamp tracking,
+            // but they don't generate their own audit rows — they're included in the Patient snapshot.
+            if (entry.Entity is PatientPhone) continue;
+            if (entry.Entity is PatientChronicDisease) continue;
+
+            // For Patient entities, enrich snapshot with phones and diseases from navigation properties
+            Dictionary<string, object?>? patientExtras = null;
+            if (entry.Entity is Patient patient)
+            {
+                patientExtras = new();
+                if (patient.Phones?.Any() == true)
+                    patientExtras["Phone Numbers"] = string.Join(", ", patient.Phones.Select(p => p.PhoneNumber));
+                if (patient.ChronicDiseases?.Any() == true)
+                {
+                    // Resolve disease names from tracked ChronicDisease entities in context
+                    var diseaseIds = patient.ChronicDiseases.Select(cd => cd.ChronicDiseaseId).ToList();
+                    var diseaseNames = ChangeTracker.Entries<ChronicDisease>()
+                        .Where(e => diseaseIds.Contains(e.Entity.Id))
+                        .Select(e => e.Entity.NameEn)
+                        .ToList();
+                    // Fall back to IDs if not tracked
+                    if (diseaseNames.Count > 0)
+                        patientExtras["Chronic Diseases"] = string.Join(", ", diseaseNames);
+                }
+            }
 
             // Detect soft-delete / soft-restore via IsDeleted flag change
             AuditAction action;
@@ -197,16 +222,28 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 }
                 if (changes.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(changes);
+                // Append patient extras (phones, diseases) if available
+                if (patientExtras != null && changesJson != null)
+                {
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(changesJson) ?? new();
+                    foreach (var kv in patientExtras) dict[kv.Key] = kv.Value;
+                    changesJson = System.Text.Json.JsonSerializer.Serialize(dict);
+                }
             }
             else if (action == AuditAction.Create)
             {
                 var snapshot = BuildSnapshot(entry.Properties, skipFields, useOriginal: false);
+                // Append patient extras (phones, diseases) if available
+                if (patientExtras != null)
+                    foreach (var kv in patientExtras) snapshot[kv.Key] = kv.Value;
                 if (snapshot.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
             }
             else if (action == AuditAction.Delete || action == AuditAction.Restore)
             {
                 var snapshot = BuildSnapshot(entry.Properties, skipFields, useOriginal: entry.State == EntityState.Deleted);
+                if (patientExtras != null)
+                    foreach (var kv in patientExtras) snapshot[kv.Key] = kv.Value;
                 if (snapshot.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
             }
