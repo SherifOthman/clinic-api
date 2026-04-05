@@ -6,17 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize(Policy = "RequireClinic")]
 [Route("api/patients")]
 public class PatientsController : BaseApiController
 {
-    /// <summary>
-    /// Get paginated list of patients
-    /// </summary>
     [HttpGet]
+    [Authorize(Policy = "RequireClinic")]
     [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
     [ProducesResponseType(typeof(PaginatedPatientsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetPatients(
         [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
@@ -31,10 +27,8 @@ public class PatientsController : BaseApiController
         return HandleResult(result, "Failed to retrieve patients");
     }
 
-    /// <summary>
-    /// Get full detail for a single patient
-    /// </summary>
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "RequireClinic")]
     [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
@@ -44,10 +38,8 @@ public class PatientsController : BaseApiController
         return HandleResult(result, "Failed to retrieve patient detail");
     }
 
-    /// <summary>
-    /// Create a new patient
-    /// </summary>
     [HttpPost]
+    [Authorize(Policy = "RequireClinic")]
     [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -73,10 +65,8 @@ public class PatientsController : BaseApiController
             : HandleResult(result, "Failed to create patient");
     }
 
-    /// <summary>
-    /// Update an existing patient
-    /// </summary>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequireClinic")]
     [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -97,41 +87,26 @@ public class PatientsController : BaseApiController
             request.BloodType,
             request.ChronicDiseaseIds);
 
-        var result = await Sender.Send(command, cancellationToken);
-
-        return HandleResult(result, "Failed to update patient");
+        return HandleResult(await Sender.Send(command, cancellationToken), "Failed to update patient");
     }
 
-    /// <summary>
-    /// Delete a patient (soft delete)
-    /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequireClinic")]
     [Authorize(Roles = "ClinicOwner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeletePatient(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DeletePatient([FromRoute] Guid id, CancellationToken cancellationToken = default)
     {
-        var command = new DeletePatientCommand(id);
-        var result = await Sender.Send(command, cancellationToken);
-
-        return result.IsSuccess
-            ? NoContent()
-            : HandleResult(result, "Failed to delete patient");
+        var result = await Sender.Send(new DeletePatientCommand(id), cancellationToken);
+        return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to delete patient");
     }
 
-    /// <summary>
-    /// Restore a soft-deleted patient
-    /// </summary>
+    /// <summary>Restore a soft-deleted patient. SuperAdmin only.</summary>
     [HttpPost("{id}/restore")]
-    [Authorize(Roles = "ClinicOwner")]
+    [Authorize(Policy = "SuperAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RestorePatient(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> RestorePatient([FromRoute] Guid id, CancellationToken cancellationToken = default)
     {
         var result = await Sender.Send(new RestorePatientCommand(id), cancellationToken);
         return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to restore patient");
@@ -158,25 +133,3 @@ public record UpdatePatientRequest(
     int? CityGeoNameId,
     string? BloodType,
     List<Guid>? ChronicDiseaseIds = null);
-
-/// <summary>
-/// Patient admin operations — accessible by SuperAdmin without a clinic context.
-/// </summary>
-[Route("api/patients")]
-[Authorize(Policy = "SuperAdmin")]
-public class PatientsAdminController : BaseApiController
-{
-    /// <summary>
-    /// Restore a soft-deleted patient. SuperAdmin only — bypasses clinic tenant filter.
-    /// </summary>
-    [HttpPost("{id}/restore")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RestorePatient(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await Sender.Send(new RestorePatientCommand(id), cancellationToken);
-        return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to restore patient");
-    }
-}
