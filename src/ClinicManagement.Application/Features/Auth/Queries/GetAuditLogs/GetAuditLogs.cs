@@ -26,6 +26,7 @@ public record AuditLogDto(
     string? ClinicName,
     Guid? UserId,
     string? UserName,
+    string? UserUsername,
     string? UserEmail,
     string? UserRole,
     string? UserAgent,
@@ -72,7 +73,8 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
         if (!string.IsNullOrWhiteSpace(request.UserSearch))
             query = query.Where(a =>
                 (a.UserName != null && a.UserName.Contains(request.UserSearch)) ||
-                (a.UserEmail != null && a.UserEmail.Contains(request.UserSearch)));
+                (a.UserEmail != null && a.UserEmail.Contains(request.UserSearch)) ||
+                (a.UserUsername != null && a.UserUsername.Contains(request.UserSearch)));
 
         if (request.From.HasValue)
             query = query.Where(a => a.Timestamp >= request.From.Value);
@@ -108,6 +110,7 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
             a.ClinicId.HasValue && clinicNames.TryGetValue(a.ClinicId.Value, out var name) ? name : null,
             a.UserId,
             a.UserName,
+            a.UserUsername,
             a.UserEmail,
             a.UserRole,
             a.UserAgent,

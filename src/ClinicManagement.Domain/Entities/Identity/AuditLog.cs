@@ -21,6 +21,9 @@ public class AuditLog : BaseEntity
     /// <summary>Full name of the user at the time of the action (denormalized for history).</summary>
     public string? UserName { get; set; }
 
+    /// <summary>Login username — stable identifier for searching.</summary>
+    public string? UserUsername { get; set; }
+
     /// <summary>Email of the user — globally unique identifier across all clinics.</summary>
     public string? UserEmail { get; set; }
 
