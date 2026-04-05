@@ -71,9 +71,6 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
             StateGeoNameId = request.StateGeoNameId,
             CityGeoNameId = request.CityGeoNameId,
             BloodType = bloodType,
-            EmergencyContactName = request.EmergencyContactName,
-            EmergencyContactPhone = request.EmergencyContactPhone,
-            EmergencyContactRelation = request.EmergencyContactRelation,
             CreatedAt = DateTime.UtcNow
         };
 

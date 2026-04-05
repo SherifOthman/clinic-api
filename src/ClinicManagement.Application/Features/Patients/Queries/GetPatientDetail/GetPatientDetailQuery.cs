@@ -21,10 +21,6 @@ public record PatientDetailDto
     public int? CountryGeoNameId { get; init; }
     public int? StateGeoNameId { get; init; }
     public int? CityGeoNameId { get; init; }
-    public string? KnownAllergies { get; init; }
-    public string? EmergencyContactName { get; init; }
-    public string? EmergencyContactPhone { get; init; }
-    public string? EmergencyContactRelation { get; init; }
     public List<PatientPhoneDto> PhoneNumbers { get; init; } = [];
     public List<PatientChronicDiseaseDto> ChronicDiseases { get; init; } = [];
     public string CreatedAt { get; init; } = null!;
@@ -107,10 +103,6 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             CountryGeoNameId         = patient.CountryGeoNameId,
             StateGeoNameId           = patient.StateGeoNameId,
             CityGeoNameId            = patient.CityGeoNameId,
-            KnownAllergies           = patient.KnownAllergies,
-            EmergencyContactName     = patient.EmergencyContactName,
-            EmergencyContactPhone    = patient.EmergencyContactPhone,
-            EmergencyContactRelation = patient.EmergencyContactRelation,
             PhoneNumbers             = phones
                                         .Select(p => new PatientPhoneDto(p.PhoneNumber, p.IsPrimary))
                                         .ToList(),

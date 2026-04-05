@@ -12,9 +12,6 @@ public record CreatePatientCommand(
     int? StateGeoNameId,
     int? CityGeoNameId,
     string? BloodType,
-    string? EmergencyContactName,
-    string? EmergencyContactPhone,
-    string? EmergencyContactRelation,
     List<PhoneNumberDto> PhoneNumbers,
     List<Guid> ChronicDiseaseIds
 ) : IRequest<Result<PatientDto>>;

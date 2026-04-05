@@ -63,9 +63,6 @@ public class PatientsController : BaseApiController
             request.StateGeoNameId,
             request.CityGeoNameId,
             request.BloodType,
-            request.EmergencyContactName,
-            request.EmergencyContactPhone,
-            request.EmergencyContactRelation,
             request.PhoneNumbers,
             request.ChronicDiseaseIds);
 
@@ -98,9 +95,6 @@ public class PatientsController : BaseApiController
             request.StateGeoNameId,
             request.CityGeoNameId,
             request.BloodType,
-            request.EmergencyContactName,
-            request.EmergencyContactPhone,
-            request.EmergencyContactRelation,
             request.ChronicDiseaseIds);
 
         var result = await Sender.Send(command, cancellationToken);
@@ -137,9 +131,6 @@ public record CreatePatientRequest(
     int? StateGeoNameId,
     int? CityGeoNameId,
     string? BloodType,
-    string? EmergencyContactName,
-    string? EmergencyContactPhone,
-    string? EmergencyContactRelation,
     List<PhoneNumberDto> PhoneNumbers,
     List<Guid> ChronicDiseaseIds);
 
@@ -151,7 +142,4 @@ public record UpdatePatientRequest(
     int? StateGeoNameId,
     int? CityGeoNameId,
     string? BloodType,
-    string? EmergencyContactName,
-    string? EmergencyContactPhone,
-    string? EmergencyContactRelation,
     List<Guid>? ChronicDiseaseIds = null);

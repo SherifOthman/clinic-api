@@ -39,7 +39,6 @@ public interface IApplicationDbContext
     // Patient
     DbSet<Patient> Patients { get; }
     DbSet<PatientPhone> PatientPhones { get; }
-    DbSet<PatientAllergy> PatientAllergies { get; }
     DbSet<PatientChronicDisease> PatientChronicDiseases { get; }
 
     // Appointment

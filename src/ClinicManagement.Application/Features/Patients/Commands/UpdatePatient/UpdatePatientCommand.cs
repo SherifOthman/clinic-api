@@ -13,8 +13,5 @@ public record UpdatePatientCommand(
     int? StateGeoNameId,
     int? CityGeoNameId,
     string? BloodType,
-    string? EmergencyContactName,
-    string? EmergencyContactPhone,
-    string? EmergencyContactRelation,
     List<Guid>? ChronicDiseaseIds = null
 ) : IRequest<Result<PatientDto>>;

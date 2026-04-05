@@ -50,7 +50,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
     // Patient
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<PatientPhone> PatientPhones => Set<PatientPhone>();
-    public DbSet<PatientAllergy> PatientAllergies => Set<PatientAllergy>();
     public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
 
     // Appointment

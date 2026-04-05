@@ -63,9 +63,6 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         patient.StateGeoNameId = request.StateGeoNameId;
         patient.CityGeoNameId = request.CityGeoNameId;
         patient.BloodType = bloodType;
-        patient.EmergencyContactName = request.EmergencyContactName;
-        patient.EmergencyContactPhone = request.EmergencyContactPhone;
-        patient.EmergencyContactRelation = request.EmergencyContactRelation;
 
         // Update chronic diseases if provided
         if (request.ChronicDiseaseIds != null)
