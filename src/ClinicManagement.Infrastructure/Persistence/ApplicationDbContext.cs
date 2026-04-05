@@ -90,14 +90,13 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         var userId = _currentUserService?.UserId;
         var ipAddress = _currentUserService?.IpAddress;
         var userRole = _currentUserService?.Roles.FirstOrDefault();
-        var userName = _currentUserService?.FullName;
-        var userUsername = _currentUserService?.Username;
+        var fullName = _currentUserService?.FullName;
+        var username = _currentUserService?.Username;
         var userEmail = _currentUserService?.UserEmail;
         var userAgent = _currentUserService?.UserAgent;
         var now = DateTime.UtcNow;
 
-        // Capture changes BEFORE saving so we can read old values
-        var auditEntries = BuildAuditEntries(userId, userName, userUsername, userEmail, userAgent, ipAddress, userRole, now);
+        var auditEntries = BuildAuditEntries(userId, fullName, username, userEmail, userAgent, ipAddress, userRole, now);
 
         // Stamp audit fields
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
@@ -126,7 +125,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         return result;
     }
 
-    private List<AuditLog> BuildAuditEntries(Guid? userId, string? userName, string? userUsername, string? userEmail, string? userAgent, string? ipAddress, string? userRole, DateTime now)
+    private List<AuditLog> BuildAuditEntries(Guid? userId, string? fullName, string? username, string? userEmail, string? userAgent, string? ipAddress, string? userRole, DateTime now)
     {
         var entries = new List<AuditLog>();
 
@@ -207,8 +206,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 Timestamp  = now,
                 ClinicId   = clinicId,
                 UserId     = userId,
-                UserName   = userName,
-                UserUsername = userUsername,
+                FullName   = fullName,
+                Username   = username,
                 UserEmail  = userEmail,
                 UserRole   = userRole,
                 UserAgent  = userAgent,

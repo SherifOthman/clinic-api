@@ -18,11 +18,11 @@ public class AuditLog : BaseEntity
     /// <summary>The user who performed the action. Null for system/seed operations.</summary>
     public Guid? UserId { get; set; }
 
-    /// <summary>Full name of the user at the time of the action (denormalized for history).</summary>
-    public string? UserName { get; set; }
+    /// <summary>Full display name of the user at the time of the action.</summary>
+    public string? FullName { get; set; }
 
     /// <summary>Login username — stable identifier for searching.</summary>
-    public string? UserUsername { get; set; }
+    public string? Username { get; set; }
 
     /// <summary>Email of the user — globally unique identifier across all clinics.</summary>
     public string? UserEmail { get; set; }
