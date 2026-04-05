@@ -15,7 +15,7 @@ public record GetAuditLogsQuery(
     string? UserSearch = null,
     string? ClinicSearch = null,
     int PageNumber = 1,
-    int PageSize = 50
+    int PageSize = 10
 ) : IRequest<Result<AuditLogsResponse>>;
 
 public record AuditLogDto(

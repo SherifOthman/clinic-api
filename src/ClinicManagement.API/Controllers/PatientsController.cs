@@ -48,7 +48,7 @@ public class PatientsController : BaseApiController
     /// Create a new patient
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "ClinicOwner,Receptionist")]
+    [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePatient(
@@ -77,7 +77,7 @@ public class PatientsController : BaseApiController
     /// Update an existing patient
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "ClinicOwner,Receptionist")]
+    [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]

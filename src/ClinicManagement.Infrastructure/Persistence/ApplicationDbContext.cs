@@ -136,13 +136,36 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
             if (entry.Entity is AuditLog) continue;
             if (entry.Entity is RefreshToken) continue;
 
-            var action = entry.State switch
+            // Detect soft-delete / soft-restore via IsDeleted flag change
+            AuditAction action;
+            if (entry.State == EntityState.Added)
             {
-                EntityState.Added    => AuditAction.Create,
-                EntityState.Modified => AuditAction.Update,
-                EntityState.Deleted  => AuditAction.Delete,
-                _                    => AuditAction.Update,
-            };
+                action = AuditAction.Create;
+            }
+            else if (entry.State == EntityState.Deleted)
+            {
+                action = AuditAction.Delete;
+            }
+            else
+            {
+                // Modified — check if IsDeleted changed
+                var isDeletedProp = entry.Properties.FirstOrDefault(p => p.Metadata.Name == "IsDeleted");
+                if (isDeletedProp is { IsModified: true })
+                {
+                    var wasDeleted = isDeletedProp.OriginalValue is true;
+                    var isNowDeleted = isDeletedProp.CurrentValue is true;
+                    action = (wasDeleted, isNowDeleted) switch
+                    {
+                        (false, true)  => AuditAction.Delete,   // soft-delete
+                        (true,  false) => AuditAction.Restore,  // soft-restore
+                        _              => AuditAction.Update,
+                    };
+                }
+                else
+                {
+                    action = AuditAction.Update;
+                }
+            }
 
             string? changesJson = null;
             if (action == AuditAction.Update)
@@ -151,7 +174,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 foreach (var prop in entry.Properties)
                 {
                     if (!prop.IsModified) continue;
-                    if (prop.Metadata.Name is "UpdatedAt" or "UpdatedBy") continue;
+                    if (prop.Metadata.Name is "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
                     changes[prop.Metadata.Name] = new
                     {
                         Old = HumanizeValue(prop.Metadata.Name, prop.OriginalValue),
@@ -168,19 +191,24 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
                 {
                     if (prop.Metadata.Name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
                     if (prop.CurrentValue is null) continue;
-                    snapshot[prop.Metadata.Name] = HumanizeValue(prop.Metadata.Name, prop.CurrentValue);
+                    var humanized = HumanizeValue(prop.Metadata.Name, prop.CurrentValue);
+                    if (humanized is null) continue;
+                    snapshot[prop.Metadata.Name] = humanized;
                 }
                 if (snapshot.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
             }
-            else if (action == AuditAction.Delete)
+            else if (action == AuditAction.Delete || action == AuditAction.Restore)
             {
                 var snapshot = new Dictionary<string, object?>();
                 foreach (var prop in entry.Properties)
                 {
                     if (prop.Metadata.Name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" or "IsDeleted") continue;
-                    if (prop.OriginalValue is null) continue;
-                    snapshot[prop.Metadata.Name] = HumanizeValue(prop.Metadata.Name, prop.OriginalValue);
+                    var val = entry.State == EntityState.Deleted ? prop.OriginalValue : prop.CurrentValue;
+                    if (val is null) continue;
+                    var humanized = HumanizeValue(prop.Metadata.Name, val);
+                    if (humanized is null) continue;
+                    snapshot[prop.Metadata.Name] = humanized;
                 }
                 if (snapshot.Count > 0)
                     changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);

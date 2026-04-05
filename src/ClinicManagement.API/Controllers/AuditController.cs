@@ -33,7 +33,7 @@ public class AuditController : BaseApiController
         [FromQuery] string? userSearch = null,
         [FromQuery] string? clinicSearch = null,
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 50,
+        [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var query = new GetAuditLogsQuery(clinicId, userId, entityType, entityId, action, from, to, userSearch, clinicSearch, pageNumber, pageSize);
