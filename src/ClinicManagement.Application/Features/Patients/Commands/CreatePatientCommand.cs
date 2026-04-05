@@ -8,6 +8,8 @@ public record CreatePatientCommand(
     string FullName,
     string DateOfBirth,
     string Gender,
+    int? CountryGeoNameId,
+    int? StateGeoNameId,
     int? CityGeoNameId,
     string? BloodType,
     string? EmergencyContactName,

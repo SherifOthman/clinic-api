@@ -18,6 +18,8 @@ public record PatientDetailDto
     public bool IsMale { get; init; }
     public int Age { get; init; }
     public string? BloodType { get; init; }
+    public int? CountryGeoNameId { get; init; }
+    public int? StateGeoNameId { get; init; }
     public int? CityGeoNameId { get; init; }
     public string? KnownAllergies { get; init; }
     public string? EmergencyContactName { get; init; }
@@ -102,6 +104,8 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             IsMale                   = patient.IsMale,
             Age                      = patient.GetAge(now),
             BloodType                = ToBloodTypeDisplay(patient.BloodType),
+            CountryGeoNameId         = patient.CountryGeoNameId,
+            StateGeoNameId           = patient.StateGeoNameId,
             CityGeoNameId            = patient.CityGeoNameId,
             KnownAllergies           = patient.KnownAllergies,
             EmergencyContactName     = patient.EmergencyContactName,

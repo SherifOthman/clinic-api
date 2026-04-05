@@ -8,6 +8,8 @@ public class Patient : AuditableTenantEntity
     public string PatientCode { get; set; } = null!;
     public string FullName { get; set; } = null!;
     public bool IsMale { get; set; }
+    public int? CountryGeoNameId { get; set; }
+    public int? StateGeoNameId { get; set; }
     public int? CityGeoNameId { get; set; }
     public DateTime DateOfBirth { get; set; }
     public BloodType? BloodType { get; set; }

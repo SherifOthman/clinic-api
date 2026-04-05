@@ -57,6 +57,8 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         patient.FullName = request.FullName;
         patient.DateOfBirth = DateTime.Parse(request.DateOfBirth);
         patient.IsMale = request.Gender == "Male";
+        patient.CountryGeoNameId = request.CountryGeoNameId;
+        patient.StateGeoNameId = request.StateGeoNameId;
         patient.CityGeoNameId = request.CityGeoNameId;
         patient.BloodType = bloodType;
         patient.EmergencyContactName = request.EmergencyContactName;
