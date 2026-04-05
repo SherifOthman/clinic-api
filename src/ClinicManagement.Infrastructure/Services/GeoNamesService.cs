@@ -85,6 +85,10 @@ public partial class GeoNamesService
                 _logger.LogInformation("Fetched {Count} states for country {CountryGeonameId} (bilingual) - cached for 24 hours", 
                     states.Count, countryGeonameId);
 
+                // Also cache each state individually for audit log resolution
+                foreach (var s in states)
+                    _cache.Set($"_geoname_{s.GeonameId}", s.Name.En, CacheDuration);
+
                 return states;
             }
             catch (Exception ex)
@@ -131,6 +135,10 @@ public partial class GeoNamesService
 
                 _logger.LogInformation("Fetched {Count} cities for state {StateGeonameId} (bilingual) - cached for 24 hours", 
                     cities.Count, stateGeonameId);
+
+                // Also cache each city individually for audit log resolution
+                foreach (var c in cities)
+                    _cache.Set($"_geoname_{c.GeonameId}", c.Name.En, CacheDuration);
 
                 return cities;
             }
