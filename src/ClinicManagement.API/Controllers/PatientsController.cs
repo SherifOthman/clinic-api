@@ -158,3 +158,25 @@ public record UpdatePatientRequest(
     int? CityGeoNameId,
     string? BloodType,
     List<Guid>? ChronicDiseaseIds = null);
+
+/// <summary>
+/// Patient admin operations — accessible by SuperAdmin without a clinic context.
+/// </summary>
+[Route("api/patients")]
+[Authorize(Policy = "SuperAdmin")]
+public class PatientsAdminController : BaseApiController
+{
+    /// <summary>
+    /// Restore a soft-deleted patient. SuperAdmin only — bypasses clinic tenant filter.
+    /// </summary>
+    [HttpPost("{id}/restore")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestorePatient(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await Sender.Send(new RestorePatientCommand(id), cancellationToken);
+        return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to restore patient");
+    }
+}

@@ -81,6 +81,12 @@ public static class DependencyInjection
                 policy.RequireClaim("ClinicId");
                 policy.RequireRole(UserRoles.ClinicOwner);
             });
+
+            options.AddPolicy("SuperAdmin", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(UserRoles.SuperAdmin);
+            });
         });
     }
 
