@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common.Constants;
-using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -49,11 +48,17 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .AnyAsync(c => c.OwnerUserId == user.Id, cancellationToken);
 
-        var dto = user.Adapt<GetMeDto>();
-        return dto with 
-        { 
-            Roles = roles.ToList(), 
-            OnboardingCompleted = hasClinic 
-        };
+        var dto = new GetMeDto(
+            UserName:            user.UserName!,
+            FirstName:           user.FirstName,
+            LastName:            user.LastName,
+            Email:               user.Email!,
+            PhoneNumber:         user.PhoneNumber ?? string.Empty,
+            ProfileImageUrl:     user.ProfileImageUrl,
+            Roles:               roles.ToList(),
+            EmailConfirmed:      user.EmailConfirmed,
+            OnboardingCompleted: hasClinic
+        );
+        return dto;
     }
 }

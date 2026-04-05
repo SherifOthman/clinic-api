@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Data;
-using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -35,8 +34,10 @@ public class GetAllSpecializationsHandler : IRequestHandler<GetAllSpecialization
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             var specializations = await _context.Specializations
+                .OrderBy(s => s.NameEn)
+                .Select(s => new SpecializationDto(s.Id, s.NameEn, s.NameAr, s.DescriptionEn, s.DescriptionAr))
                 .ToListAsync(cancellationToken);
-            return specializations.Adapt<IEnumerable<SpecializationDto>>();
+            return specializations;
         }) ?? Enumerable.Empty<SpecializationDto>();
     }
 }
