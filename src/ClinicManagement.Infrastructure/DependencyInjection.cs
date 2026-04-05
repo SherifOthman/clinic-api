@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<ClinicOwnerSeedService>();
         services.AddScoped<DoctorSeedService>();
         services.AddScoped<ReceptionistSeedService>();
+        services.AddScoped<PatientSeedService>();
         
         services.AddScoped<DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

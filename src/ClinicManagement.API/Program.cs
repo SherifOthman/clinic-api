@@ -70,6 +70,10 @@ try
                 var receptionistSeed = services.GetRequiredService<ReceptionistSeedService>();
                 await receptionistSeed.SeedAsync();
                 Log.Information("Receptionist demo user seeded");
+
+                var patientSeed = services.GetRequiredService<PatientSeedService>();
+                await patientSeed.SeedAsync();
+                Log.Information("Demo patients seeded");
             }
             catch (Exception ex)
             {
