@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// Tracks daily/monthly usage metrics against plan limits.
 /// </summary>
-public class ClinicUsageMetrics : AuditableTenantEntity
+public class ClinicUsageMetrics : AuditableTenantEntity, INoAuditLog
 {
     public DateTime MetricDate { get; set; }
     public int ActiveStaffCount { get; set; }

@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// Pricing configuration for appointment types per clinic branch
 /// </summary>
-public class ClinicBranchAppointmentPrice : AuditableEntity
+public class ClinicBranchAppointmentPrice : AuditableEntity, INoAuditLog
 {
     public Guid ClinicBranchId { get; set; }
     

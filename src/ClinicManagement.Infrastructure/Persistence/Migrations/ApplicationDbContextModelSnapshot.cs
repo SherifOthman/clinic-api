@@ -73,7 +73,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Appointments");
+                    b.ToTable("Appointments", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.AppointmentType", b =>
@@ -107,7 +107,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AppointmentTypes");
+                    b.ToTable("AppointmentTypes", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.AuditLog", b =>
@@ -200,7 +200,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChronicDiseases");
+                    b.ToTable("ChronicDiseases", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Clinic", b =>
@@ -260,7 +260,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SubscriptionPlanId");
 
-                    b.ToTable("Clinics");
+                    b.ToTable("Clinics", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranch", b =>
@@ -316,7 +316,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClinicId");
 
-                    b.ToTable("ClinicBranches");
+                    b.ToTable("ClinicBranches", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranchAppointmentPrice", b =>
@@ -360,7 +360,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClinicBranchId");
 
-                    b.ToTable("ClinicBranchAppointmentPrices");
+                    b.ToTable("ClinicBranchAppointmentPrices", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranchPhoneNumber", b =>
@@ -379,7 +379,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClinicBranchId");
 
-                    b.ToTable("ClinicBranchPhoneNumbers");
+                    b.ToTable("ClinicBranchPhoneNumbers", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicSubscription", b =>
@@ -437,7 +437,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClinicId");
 
-                    b.ToTable("ClinicSubscriptions");
+                    b.ToTable("ClinicSubscriptions", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicUsageMetrics", b =>
@@ -488,7 +488,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ClinicUsageMetrics");
+                    b.ToTable("ClinicUsageMetrics", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorMeasurementAttribute", b =>
@@ -511,7 +511,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DoctorMeasurementAttributes");
+                    b.ToTable("DoctorMeasurementAttributes", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorProfile", b =>
@@ -548,7 +548,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("StaffId")
                         .IsUnique();
 
-                    b.ToTable("DoctorProfiles");
+                    b.ToTable("DoctorProfiles", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorWorkingDay", b =>
@@ -579,7 +579,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("DoctorWorkingDays");
+                    b.ToTable("DoctorWorkingDays", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.EmailQueue", b =>
@@ -648,7 +648,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EmailQueue");
+                    b.ToTable("EmailQueue", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Invoice", b =>
@@ -699,7 +699,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invoices");
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.InvoiceItem", b =>
@@ -753,7 +753,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("RadiologyOrderId");
 
-                    b.ToTable("InvoiceItems");
+                    b.ToTable("InvoiceItems", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.LabTest", b =>
@@ -777,7 +777,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LabTests");
+                    b.ToTable("LabTests", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.LabTestOrder", b =>
@@ -839,7 +839,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LabTestOrders");
+                    b.ToTable("LabTestOrders", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MeasurementAttribute", b =>
@@ -859,7 +859,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MeasurementAttributes");
+                    b.ToTable("MeasurementAttributes", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalFile", b =>
@@ -886,7 +886,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalFiles");
+                    b.ToTable("MedicalFiles", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalService", b =>
@@ -922,7 +922,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalServices");
+                    b.ToTable("MedicalServices", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalSupply", b =>
@@ -965,7 +965,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalSupplies");
+                    b.ToTable("MedicalSupplies", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalVisit", b =>
@@ -1006,7 +1006,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalVisits");
+                    b.ToTable("MedicalVisits", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalVisitLabTest", b =>
@@ -1026,7 +1026,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalVisitLabTests");
+                    b.ToTable("MedicalVisitLabTests", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalVisitMeasurement", b =>
@@ -1062,7 +1062,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalVisitMeasurements");
+                    b.ToTable("MedicalVisitMeasurements", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicalVisitRadiology", b =>
@@ -1082,7 +1082,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicalVisitRadiologies");
+                    b.ToTable("MedicalVisitRadiologies", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Medicine", b =>
@@ -1145,7 +1145,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Medicines");
+                    b.ToTable("Medicines", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.MedicineDispensing", b =>
@@ -1184,7 +1184,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MedicineDispensings");
+                    b.ToTable("MedicineDispensings", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Notification", b =>
@@ -1236,7 +1236,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Patient", b =>
@@ -1298,7 +1298,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("PatientCode")
                         .IsUnique();
 
-                    b.ToTable("Patients");
+                    b.ToTable("Patients", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientChronicDisease", b =>
@@ -1310,29 +1310,14 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ChronicDiseaseId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<Guid>("PatientId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("PatientChronicDiseases");
+                    b.ToTable("PatientChronicDiseases", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientMedicalFile", b =>
@@ -1367,7 +1352,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PatientMedicalFiles");
+                    b.ToTable("PatientMedicalFiles", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientPhone", b =>
@@ -1375,15 +1360,6 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("bit");
@@ -1396,17 +1372,11 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("PatientPhones");
+                    b.ToTable("PatientPhones", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Payment", b =>
@@ -1454,7 +1424,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Prescription", b =>
@@ -1487,7 +1457,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Prescriptions");
+                    b.ToTable("Prescriptions", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PrescriptionItem", b =>
@@ -1513,7 +1483,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PrescriptionItems");
+                    b.ToTable("PrescriptionItems", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.RadiologyOrder", b =>
@@ -1578,7 +1548,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RadiologyOrders");
+                    b.ToTable("RadiologyOrders", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.RadiologyTest", b =>
@@ -1602,7 +1572,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RadiologyTests");
+                    b.ToTable("RadiologyTests", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.RefreshToken", b =>
@@ -1663,7 +1633,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Role", b =>
@@ -1748,7 +1718,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Specializations");
+                    b.ToTable("Specializations", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.SpecializationMeasurementAttribute", b =>
@@ -1771,7 +1741,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SpecializationMeasurementAttributes");
+                    b.ToTable("SpecializationMeasurementAttributes", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Staff", b =>
@@ -1810,7 +1780,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Staff");
+                    b.ToTable("Staff", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.StaffInvitation", b =>
@@ -1886,7 +1856,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SpecializationId");
 
-                    b.ToTable("StaffInvitations");
+                    b.ToTable("StaffInvitations", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.SubscriptionPayment", b =>
@@ -1948,7 +1918,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPayments");
+                    b.ToTable("SubscriptionPayments", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.SubscriptionPlan", b =>
@@ -2054,7 +2024,7 @@ namespace ClinicManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPlans");
+                    b.ToTable("SubscriptionPlans", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.User", b =>

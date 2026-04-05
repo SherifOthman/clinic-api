@@ -6,7 +6,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// User notification with read/unread status.
 /// </summary>
-public class Notification : AuditableEntity
+public class Notification : AuditableEntity, INoAuditLog
 {
     public Guid UserId { get; set; }
     public NotificationType Type { get; set; } = NotificationType.Info;

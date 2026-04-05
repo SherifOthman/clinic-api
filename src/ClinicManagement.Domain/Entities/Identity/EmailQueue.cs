@@ -6,7 +6,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// Email delivery queue with retry logic.
 /// </summary>
-public class EmailQueue : AuditableEntity
+public class EmailQueue : AuditableEntity, INoAuditLog
 {
     public string ToEmail { get; set; } = null!;
     public string? ToName { get; set; }
