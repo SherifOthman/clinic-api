@@ -72,6 +72,7 @@ public static class DependencyInjection
         services.AddHttpClient<GeoNamesService>();
         
         services.AddHostedService<RefreshTokenCleanupService>();
+        services.AddHostedService<AuditLogCleanupService>();
         services.AddHostedService<UsageMetricsAggregationJob>();
         services.AddHostedService<EmailQueueProcessorJob>();
         services.AddHostedService<SubscriptionExpiryNotificationJob>();
