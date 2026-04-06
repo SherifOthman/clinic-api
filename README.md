@@ -1,12 +1,37 @@
 # Clinic Management API
 
-Multi-tenant SaaS backend for clinic operations built with .NET 10 and Clean Architecture.
+A multi-tenant SaaS backend for managing medical clinics. Each clinic operates in complete isolation — patients, staff, and data are scoped to the clinic that owns them.
 
 **Live Demo**: http://clinic-api.runasp.net/scalar/v1  
 **Dashboard**: https://clinic-dashboard-ecru.vercel.app  
 **Website**: https://clinic-website-lime.vercel.app
 
 **Repositories**: [API](https://github.com/SherifOthman/clinic-api) • [Dashboard](https://github.com/SherifOthman/clinic-dashboard) • [Website](https://github.com/SherifOthman/clinic-website)
+
+---
+
+## What the app does
+
+A clinic owner registers, sets up their clinic (name, branch, subscription plan, specialization), and invites doctors and receptionists via email. Once onboarded, the clinic can manage patients — registering them with their demographics, phone numbers, blood type, and chronic diseases — and track all changes through a full audit trail.
+
+### Implemented ✅
+
+- **Auth** — Register, login (email or username), email confirmation, password reset, profile management, profile image upload, token refresh, logout. Supports both web (HTTP-only cookie) and mobile (response body) clients.
+- **Onboarding** — Clinic setup wizard: clinic name, branch details, location (country/state/city via GeoNames), subscription plan selection, specialization.
+- **Patients** — Create, read, update, soft-delete, and restore patients. Each patient has phone numbers, chronic diseases, blood type, date of birth, and location. Patient codes are globally unique 8-digit identifiers.
+- **Staff** — Invite staff by email (Doctor or Receptionist), resend/cancel invitations, accept invitation with registration, activate/deactivate staff members, register clinic owner as a doctor.
+- **Audit Logs** — Full cross-clinic audit trail for SuperAdmin. Every create/update/delete is captured with field-level diffs, user info, IP address, and browser. Security events (login, logout, failed attempts, lockouts) are also logged.
+- **Reference data** — Chronic diseases list, medical specializations, subscription plans, location lookup (countries, states, cities).
+
+### Domain modeled but not yet implemented ⏳
+
+The following modules have entities and database tables but no API endpoints or business logic yet:
+
+- **Appointments** — Scheduling, confirmation, cancellation
+- **Medical visits** — Visit records, prescriptions, lab tests, radiology orders, measurements
+- **Billing** — Invoices, payments, discounts
+- **Inventory** — Medicines, medical supplies, medical services, dispensing
+- **Notifications** — In-app notification system
 
 ---
 
@@ -31,78 +56,11 @@ Infrastructure → EF Core, ASP.NET Identity, services, background jobs, seeders
 
 **No repository pattern** — handlers access `IApplicationDbContext` directly. Keeps things simple without the abstraction overhead.
 
----
+**Multi-tenancy** — every tenant-scoped entity implements `ITenantEntity` with a `ClinicId`. Global EF Core query filters applied automatically. `ICurrentUserService` extracts `ClinicId` from JWT claims.
 
-## Key Features
+**Audit logging** — `AuditEntryBuilder` captures field-level diffs for every `AuditableEntity`. Security events go through `ISecurityAuditWriter`. 12-month retention enforced by a background cleanup job.
 
-### Authentication
-
-- Hybrid token strategy: web clients get refresh tokens in HTTP-only cookies, mobile gets them in the response body
-- Access tokens (60 min) + refresh tokens (30 days) with rotation
-- Email confirmation and password reset workflows
-- Role-based authorization: `ClinicOwner`, `Doctor`, `Receptionist`, `SuperAdmin`
-
-### Multi-Tenancy
-
-- Every tenant-scoped entity implements `ITenantEntity` with a `ClinicId`
-- Global EF Core query filters applied automatically via reflection in `OnModelCreating`
-- `ICurrentUserService` extracts `ClinicId` from JWT claims
-
-### Audit Logging
-
-- `AuditEntryBuilder` captures every Create/Update/Delete across all `AuditableEntity` types
-- Soft-delete and restore detected via `IsDeleted` flag changes
-- Field-level diffs serialized as `{ "Field": { "Old": "...", "New": "..." } }`
-- Security events (login, logout, failed attempts, lockouts) written via `ISecurityAuditWriter`
-
-### Error Handling
-
-- `Result<T>` pattern — no exceptions for flow control
-- `GlobalExceptionMiddleware` returns RFC 7807 Problem Details
-- Standardized `ErrorCodes` constants map directly to frontend i18n keys
-
-### Background Jobs
-
-- `RefreshTokenCleanupService` — daily cleanup of expired/revoked tokens
-- `AuditLogCleanupService` — 12-month retention policy
-- `EmailQueueProcessorJob` — async email delivery
-- `SubscriptionExpiryNotificationJob` — expiry alerts
-- `UsageMetricsAggregationJob` — clinic usage tracking
-
-### Seeding
-
-- Demo users (SuperAdmin, ClinicOwner, Doctor, Receptionist) with credentials configurable via `SeedOptions` in `appsettings.json` — no hardcoded passwords in code
-
----
-
-## Project Structure
-
-```
-src/
-├── ClinicManagement.Domain/
-│   ├── Entities/            # 43 entities across 9 modules
-│   ├── Enums/               # BloodType, AuditAction, etc. + BloodTypeExtensions
-│   └── Common/              # Result<T>, BaseEntity, AuditableEntity, ITenantEntity
-├── ClinicManagement.Application/
-│   ├── Features/
-│   │   ├── Auth/            # 12 commands, 3 queries
-│   │   ├── Audit/           # GetAuditLogs query
-│   │   ├── Patients/        # 4 commands, 2 queries
-│   │   ├── Staff/           # 6 commands, 5 queries
-│   │   └── Onboarding/      # CompleteOnboarding command
-│   ├── Abstractions/        # IApplicationDbContext, ICurrentUserService, ISecurityAuditWriter, etc.
-│   └── Behaviors/           # Logging, Validation, Performance
-├── ClinicManagement.Infrastructure/
-│   ├── Persistence/
-│   │   ├── ApplicationDbContext.cs
-│   │   ├── AuditEntryBuilder.cs
-│   │   ├── Configurations/
-│   │   └── Seeders/         # SeedOptions + 5 seed services
-│   └── Services/            # 16 services + 5 background jobs
-└── ClinicManagement.API/
-    ├── Controllers/         # 9 controllers, BaseApiController with HandleResult/HandleNoContent
-    └── Middleware/          # GlobalExceptionMiddleware
-```
+**Error handling** — `Result<T>` pattern, no exceptions for flow control. `GlobalExceptionMiddleware` returns RFC 7807 Problem Details. `ErrorCodes` constants map directly to frontend i18n keys.
 
 ---
 
