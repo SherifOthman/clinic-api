@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +29,10 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
     public async Task<Result<PaginatedPatientsResponse>> Handle(
         GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        // No Include — lightweight list query, counts only
-        var query = _context.Patients.AsQueryable();
+        // SuperAdmin bypasses the tenant filter to see all clinics
+        var query = request.IsSuperAdmin
+            ? _context.Patients.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsQueryable()
+            : _context.Patients.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -46,6 +49,10 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
 
         if (request.IsMale.HasValue)
             query = query.Where(p => p.IsMale == request.IsMale.Value);
+
+        // SuperAdmin can filter by a specific clinic
+        if (request.IsSuperAdmin && request.ClinicId.HasValue)
+            query = query.Where(p => p.ClinicId == request.ClinicId.Value);
 
         query = request.SortBy?.ToLower() switch
         {
@@ -74,8 +81,8 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
                 p.DateOfBirth,
                 p.IsMale,
                 p.BloodType,
+                p.ClinicId,
                 PrimaryPhone = _context.PatientPhones
-                    .Where(ph => ph.PatientId == p.Id && ph.IsPrimary)
                     .Select(ph => ph.PhoneNumber)
                     .FirstOrDefault(),
                 PhoneCount = _context.PatientPhones.Count(ph => ph.PatientId == p.Id),
@@ -84,7 +91,23 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             })
             .ToListAsync(cancellationToken);
 
-        // Map in memory — blood type display string
+        // Resolve clinic names in one query for SuperAdmin
+        Dictionary<Guid, string> clinicNames = new();
+        if (request.IsSuperAdmin)
+        {
+            var clinicIds = rawPatients
+                .Select(p => p.ClinicId)
+                .Distinct()
+                .ToList();
+
+            if (clinicIds.Count > 0)
+                clinicNames = await _context.Clinics
+                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
+                    .Where(c => clinicIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.Name })
+                    .ToDictionaryAsync(c => c.Id, c => c.Name, cancellationToken);
+        }
+
         var patients = rawPatients.Select(p => new PatientDto
         {
             Id = p.Id,
@@ -97,6 +120,7 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             PhoneCount = p.PhoneCount,
             ChronicDiseaseCount = p.ChronicDiseaseCount,
             CreatedAt = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+            ClinicName = clinicNames.TryGetValue(p.ClinicId, out var clinicName) ? clinicName : null,
         }).ToList();
 
         return Result<PaginatedPatientsResponse>.Success(new PaginatedPatientsResponse

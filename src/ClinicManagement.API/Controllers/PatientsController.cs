@@ -28,6 +28,25 @@ public class PatientsController : BaseApiController
         return HandleResult(result, "Failed to retrieve patients");
     }
 
+    /// <summary>SuperAdmin: view all patients across all clinics, optionally filtered by clinic.</summary>
+    [HttpGet("all")]
+    [Authorize(Policy = "SuperAdmin")]
+    [ProducesResponseType(typeof(PaginatedPatientsResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllPatients(
+        [FromQuery] string? searchTerm,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string sortDirection = "asc",
+        [FromQuery] bool? isMale = null,
+        [FromQuery] Guid? clinicId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetPatientsQuery(searchTerm, pageNumber, pageSize, sortBy, sortDirection, isMale, clinicId, IsSuperAdmin: true);
+        var result = await Sender.Send(query, cancellationToken);
+        return HandleResult(result, "Failed to retrieve patients");
+    }
+
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "RequireClinic")]
     [Authorize(Roles = "ClinicOwner,Doctor,Receptionist")]

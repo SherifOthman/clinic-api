@@ -9,7 +9,9 @@ public record GetPatientsQuery(
     int PageSize,
     string? SortBy,
     string SortDirection,
-    bool? IsMale
+    bool? IsMale,
+    Guid? ClinicId = null,   // SuperAdmin only — filter by specific clinic
+    bool IsSuperAdmin = false // when true, bypasses tenant filter
 ) : IRequest<Result<PaginatedPatientsResponse>>;
 
 // List DTO — minimal fields, no nested collections for performance
@@ -25,6 +27,7 @@ public record PatientDto
     public int PhoneCount { get; init; }
     public int ChronicDiseaseCount { get; init; }
     public string CreatedAt { get; init; } = null!;
+    public string? ClinicName { get; init; }  // populated for SuperAdmin view
 }
 
 public record PaginatedPatientsResponse
