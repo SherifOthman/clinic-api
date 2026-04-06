@@ -4,6 +4,7 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISecurityAuditWriter _auditWriter;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
@@ -26,6 +28,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
         ICurrentUserService currentUserService,
+        ISecurityAuditWriter auditWriter,
         ILogger<LoginHandler> logger)
     {
         _context = context;
@@ -33,6 +36,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
         _tokenService = tokenService;
         _refreshTokenService = refreshTokenService;
         _currentUserService = currentUserService;
+        _auditWriter = auditWriter;
         _logger = logger;
     }
 
@@ -46,7 +50,8 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
         if (user == null)
         {
             _logger.LogWarning("Failed login attempt for {EmailOrUsername} - user not found", request.EmailOrUsername);
-            await WriteSecurityAudit(null, null, null, "LoginFailed", $"User not found: {request.EmailOrUsername}", ip, cancellationToken);
+            await _auditWriter.WriteAsync(null, null, null, null, null, null,
+                "LoginFailed", $"User not found: {request.EmailOrUsername}", cancellationToken);
             return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
 
@@ -58,7 +63,9 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
                 : 30;
 
             _logger.LogWarning("Login attempt for locked account {UserId}", user.Id);
-            await WriteSecurityAudit(user, null, null, "LoginBlocked", $"Account locked, {remainingMinutes} min remaining", ip, cancellationToken);
+            await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+                user.UserName, user.Email, null, null,
+                "LoginBlocked", $"Account locked, {remainingMinutes} min remaining", cancellationToken);
             return Result.Failure<LoginResponseDto>(ErrorCodes.ACCOUNT_LOCKED,
                 $"Account is locked due to multiple failed login attempts. Please try again in {remainingMinutes} minute(s).");
         }
@@ -71,12 +78,16 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
             if (await _userManager.IsLockedOutAsync(user))
             {
                 _logger.LogWarning("Account {UserId} locked after multiple failed login attempts", user.Id);
-                await WriteSecurityAudit(user, null, null, "AccountLocked", "Locked after too many failed attempts", ip, cancellationToken);
+                await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+                    user.UserName, user.Email, null, null,
+                    "AccountLocked", "Locked after too many failed attempts", cancellationToken);
                 return Result.Failure<LoginResponseDto>(ErrorCodes.ACCOUNT_LOCKED,
                     "Account is locked due to multiple failed login attempts. Please try again in 30 minutes.");
             }
 
-            await WriteSecurityAudit(user, null, null, "LoginFailed", "Invalid password", ip, cancellationToken);
+            await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+                user.UserName, user.Email, null, null,
+                "LoginFailed", "Invalid password", cancellationToken);
             return Result.Failure<LoginResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
 
@@ -105,38 +116,13 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<LoginResponseDt
         var accessToken = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
-        await WriteSecurityAudit(user, clinicId, string.Join(",", roles), "LoginSuccess", null, ip, cancellationToken);
+        await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+            user.UserName, user.Email, string.Join(",", roles), clinicId,
+            "LoginSuccess", cancellationToken: cancellationToken);
 
         _logger.LogInformation("User {UserId} logged in ({ClientType}) with roles [{Roles}]",
             user.Id, request.IsMobile ? "mobile" : "web", string.Join(", ", roles));
 
         return Result.Success(new LoginResponseDto(accessToken, refreshToken.Token));
-    }
-
-    private async Task WriteSecurityAudit(
-        Domain.Entities.User? user,
-        Guid? clinicId,
-        string? role,
-        string action,
-        string? details,
-        string? ip,
-        CancellationToken ct)
-    {
-        _context.AuditLogs.Add(new AuditLog
-        {
-            Timestamp  = DateTime.UtcNow,
-            ClinicId   = clinicId,
-            UserId     = user?.Id,
-            FullName   = user != null ? $"{user.FirstName} {user.LastName}".Trim() : null,
-            Username   = user?.UserName,            UserEmail  = user?.Email,
-            UserRole   = role,
-            UserAgent  = _currentUserService.UserAgent,
-            EntityType = "Auth",
-            EntityId   = user?.Id.ToString() ?? "unknown",
-            Action     = AuditAction.Security,
-            IpAddress  = ip,
-            Changes    = details != null ? $"{{\"event\":\"{action}\",\"detail\":\"{details}\"}}" : $"{{\"event\":\"{action}\"}}",
-        });
-        await _context.SaveChangesAsync(ct);
     }
 }

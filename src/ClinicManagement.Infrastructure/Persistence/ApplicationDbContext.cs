@@ -9,14 +9,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using System.Text.Json;
 
 namespace ClinicManagement.Infrastructure.Persistence;
 
 public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplicationDbContext
 {
     private readonly ICurrentUserService? _currentUserService;
-    private readonly IMemoryCache? _cache;
+    private readonly AuditEntryBuilder _auditEntryBuilder;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
@@ -25,7 +24,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         : base(options)
     {
         _currentUserService = currentUserService;
-        _cache = cache;
+        _auditEntryBuilder = new AuditEntryBuilder(cache);
     }
 
     // Identity
@@ -92,16 +91,18 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var userId = _currentUserService?.UserId;
+        var userId    = _currentUserService?.UserId;
         var ipAddress = _currentUserService?.IpAddress;
-        var userRole = _currentUserService?.Roles.FirstOrDefault();
-        var fullName = _currentUserService?.FullName;
-        var username = _currentUserService?.Username;
+        var userRole  = _currentUserService?.Roles.FirstOrDefault();
+        var fullName  = _currentUserService?.FullName;
+        var username  = _currentUserService?.Username;
         var userEmail = _currentUserService?.UserEmail;
         var userAgent = _currentUserService?.UserAgent;
-        var now = DateTime.UtcNow;
+        var now       = DateTime.UtcNow;
 
-        var auditEntries = BuildAuditEntries(userId, fullName, username, userEmail, userAgent, ipAddress, userRole, now);
+        var auditEntries = _auditEntryBuilder.Build(
+            ChangeTracker.Entries<AuditableEntity>(),
+            userId, fullName, username, userEmail, userAgent, ipAddress, userRole, now);
 
         // Stamp audit fields
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
@@ -128,267 +129,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         }
 
         return result;
-    }
-
-    private List<AuditLog> BuildAuditEntries(Guid? userId, string? fullName, string? username, string? userEmail, string? userAgent, string? ipAddress, string? userRole, DateTime now)
-    {
-        var entries = new List<AuditLog>();
-
-        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
-        {
-            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
-                continue;
-
-            if (entry.Entity is AuditLog) continue;
-            if (entry.Entity is RefreshToken) continue;
-            // Skip entities marked as INoAuditLog — they extend AuditableEntity for
-            // timestamp/soft-delete tracking only, not for standalone audit rows.
-            if (entry.Entity is INoAuditLog) continue;
-
-            // Detect soft-delete / soft-restore via IsDeleted flag change
-            AuditAction action;
-            if (entry.State == EntityState.Added)
-            {
-                action = AuditAction.Create;
-            }
-            else if (entry.State == EntityState.Deleted)
-            {
-                action = AuditAction.Delete;
-            }
-            else
-            {
-                // Modified — check if IsDeleted changed
-                var isDeletedProp = entry.Properties.FirstOrDefault(p => p.Metadata.Name == "IsDeleted");
-                if (isDeletedProp is { IsModified: true })
-                {
-                    var wasDeleted = isDeletedProp.OriginalValue is true;
-                    var isNowDeleted = isDeletedProp.CurrentValue is true;
-                    action = (wasDeleted, isNowDeleted) switch
-                    {
-                        (false, true)  => AuditAction.Delete,   // soft-delete
-                        (true,  false) => AuditAction.Restore,  // soft-restore
-                        _              => AuditAction.Update,
-                    };
-                }
-                else
-                {
-                    action = AuditAction.Update;
-                }
-            }
-
-            // Fields to always skip in audit output
-            var skipFields = new HashSet<string>
-            {
-                "Id", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy", "IsDeleted",
-                "ClinicId", "UserId", "PatientId", "StaffId", "DoctorProfileId",
-                "AppointmentId", "InvoiceId", "MedicalVisitId"
-            };
-
-            string? changesJson = null;
-            if (action == AuditAction.Update)
-            {
-                var changes = new Dictionary<string, object>();
-                foreach (var prop in entry.Properties)
-                {
-                    if (!prop.IsModified) continue;
-                    if (skipFields.Contains(prop.Metadata.Name)) continue;
-                    var old = HumanizeValue(prop.Metadata.Name, prop.OriginalValue);
-                    var @new = HumanizeValue(prop.Metadata.Name, prop.CurrentValue);
-                    if (old is null && @new is null) continue;
-                    var label = GetFieldLabel(prop.Metadata.Name);
-                    changes[label] = new { Old = old, New = @new };
-                }
-                if (changes.Count > 0)
-                    changesJson = System.Text.Json.JsonSerializer.Serialize(changes);
-            }
-            else if (action == AuditAction.Create)
-            {
-                var snapshot = BuildSnapshot(entry.Properties, skipFields, useOriginal: false);
-                if (snapshot.Count > 0)
-                    changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
-            }
-            else if (action == AuditAction.Delete || action == AuditAction.Restore)
-            {
-                var snapshot = BuildSnapshot(entry.Properties, skipFields, useOriginal: entry.State == EntityState.Deleted);
-                if (snapshot.Count > 0)
-                    changesJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
-            }
-
-            Guid? clinicId = null;
-            if (entry.Entity is ITenantEntity tenantEntity)
-                clinicId = tenantEntity.ClinicId;
-
-            entries.Add(new AuditLog
-            {
-                Timestamp  = now,
-                ClinicId   = clinicId,
-                UserId     = userId,
-                FullName   = fullName,
-                Username   = username,
-                UserEmail  = userEmail,
-                UserRole   = userRole,
-                UserAgent  = userAgent,
-                EntityType = entry.Entity.GetType().Name,
-                EntityId   = entry.Entity.Id.ToString(),
-                Action     = action,
-                IpAddress  = ipAddress,
-                Changes    = changesJson,
-            });
-        }
-
-        return entries;
-    }
-
-    private Dictionary<string, object?> BuildSnapshot(
-        IEnumerable<Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry> properties,
-        HashSet<string> skipFields,
-        bool useOriginal)
-    {
-        // Collect raw values first, then group location fields
-        var raw = new Dictionary<string, object?>();
-        foreach (var prop in properties)
-        {
-            if (skipFields.Contains(prop.Metadata.Name)) continue;
-            var val = useOriginal ? prop.OriginalValue : prop.CurrentValue;
-            if (val is null) continue;
-            var humanized = HumanizeValue(prop.Metadata.Name, val);
-            if (humanized is null) continue;
-            raw[prop.Metadata.Name] = humanized;
-        }
-
-        // Build ordered output — group location fields together
-        var result = new Dictionary<string, object?>();
-        var locationFields = new[] { "CountryGeoNameId", "StateGeoNameId", "CityGeoNameId" };
-
-        // Add non-location fields first (in a logical order)
-        var fieldOrder = new[] { "FullName", "IsMale", "DateOfBirth", "BloodType", "PatientCode",
-                                  "Name", "Email", "PhoneNumber", "Role", "IsActive", "IsRevoked", "ExpiryTime", "EVENT" };
-
-        foreach (var field in fieldOrder)
-        {
-            if (raw.TryGetValue(field, out var v))
-                result[GetFieldLabel(field)] = v;
-        }
-
-        // Add location as a grouped entry
-        var locationParts = new List<string>();
-        if (raw.TryGetValue("CountryGeoNameId", out var country) && country is string cn) locationParts.Add(cn);
-        if (raw.TryGetValue("StateGeoNameId", out var state) && state is string sn) locationParts.Add(sn);
-        if (raw.TryGetValue("CityGeoNameId", out var city) && city is string ct) locationParts.Add(ct);
-        if (locationParts.Count > 0)
-            result["Location"] = string.Join(" › ", locationParts);
-
-        // Add remaining fields not in the ordered list and not location
-        foreach (var (key, val) in raw)
-        {
-            if (fieldOrder.Contains(key)) continue;
-            if (locationFields.Contains(key)) continue;
-            result[GetFieldLabel(key)] = val;
-        }
-
-        return result;
-    }
-
-    /// <summary>Maps C# property names to human-readable labels.</summary>
-    private static string GetFieldLabel(string fieldName) => fieldName switch
-    {
-        "FullName"           => "Full Name",
-        "IsMale"             => "Gender",
-        "DateOfBirth"        => "Date of Birth",
-        "BloodType"          => "Blood Type",
-        "PatientCode"        => "Patient Code",
-        "CountryGeoNameId"   => "Country",
-        "StateGeoNameId"     => "State",
-        "CityGeoNameId"      => "City",
-        "IsActive"           => "Status",
-        "IsRevoked"          => "Token Status",
-        "ExpiryTime"         => "Expiry",
-        "PhoneNumber"        => "Phone",
-        "Role"               => "Role",
-        "Name"               => "Name",
-        "Email"              => "Email",
-        "EVENT"              => "Event",
-        _                    => System.Text.RegularExpressions.Regex.Replace(fieldName, "([A-Z])", " $1").Trim()
-    };
-
-    /// <summary>Converts raw EF values to human-readable strings for audit logs.</summary>
-    private object? HumanizeValue(string fieldName, object? value)
-    {
-        if (value is null) return null;
-
-        return fieldName switch
-        {
-            "IsMale"    => value is bool b ? (b ? "Male" : "Female") : value,
-            "IsActive"  => value is bool a ? (a ? "Active" : "Inactive") : value,
-            "IsDeleted" => value is bool d ? (d ? "Deleted" : "Active") : value,
-            "IsRevoked" => value is bool r ? (r ? "Revoked" : "Active") : value,
-
-            "BloodType" => value switch
-            {
-                BloodType bt => bt switch
-                {
-                    BloodType.APositive  => "A+",  BloodType.ANegative  => "A-",
-                    BloodType.BPositive  => "B+",  BloodType.BNegative  => "B-",
-                    BloodType.ABPositive => "AB+", BloodType.ABNegative => "AB-",
-                    BloodType.OPositive  => "O+",  BloodType.ONegative  => "O-",
-                    _ => bt.ToString()
-                },
-                int i => i switch
-                {
-                    1 => "A+", 2 => "A-", 3 => "B+", 4 => "B-",
-                    5 => "AB+", 6 => "AB-", 7 => "O+", 8 => "O-",
-                    _ => value
-                },
-                _ => value
-            },
-
-            "DateOfBirth" => value is DateTime dt
-                ? dt.ToString("yyyy-MM-dd")
-                : value,
-
-            // Resolve GeoName IDs to names from cache
-            "CountryGeoNameId" => ResolveLocationName("countries", value),
-            "StateGeoNameId"   => ResolveLocationName(null, value),
-            "CityGeoNameId"    => ResolveLocationName(null, value),
-
-            // Skip internal IDs
-            "ClinicId" or "UserId" or "PatientId" or "StaffId" or
-            "CreatedBy" or "UpdatedBy" or "Id" => null,
-
-            _ => value
-        };
-    }
-
-    /// <summary>
-    /// Resolves a GeoName ID to its English name using the in-memory cache.
-    /// Falls back to the raw ID string if not cached yet.
-    /// </summary>
-    private object? ResolveLocationName(string? countryCacheKey, object? value)
-    {
-        if (value is null) return null;
-        if (_cache is null) return value;
-
-        int geoId;
-        if (value is int i) geoId = i;
-        else if (value is long l) geoId = (int)l;
-        else return value;
-
-        // Try countries cache
-        if (countryCacheKey != null && _cache.TryGetValue(countryCacheKey, out List<GeoNamesCountry>? countries) && countries != null)
-        {
-            var match = countries.FirstOrDefault(c => c.GeonameId == geoId);
-            if (match != null) return match.Name.En;
-        }
-
-        // Try all state/city caches — scan cached entries by known key patterns
-        // States are cached as "states_{countryId}", cities as "cities_{stateId}"
-        // We don't know the parent ID here, so we try a direct lookup by geoId
-        if (_cache.TryGetValue($"_geoname_{geoId}", out string? cachedName) && cachedName != null)
-            return cachedName;
-
-        // Scan states caches — GeoNamesService caches by parent ID, not by child ID
-        // As a fallback, return the ID as a string so it's at least visible
-        return $"#{geoId}";
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -430,13 +170,15 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
         }
     }
 
+    private Guid CurrentClinicId => _currentUserService?.ClinicId ?? Guid.Empty;
+
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ITenantEntity
     {
         modelBuilder.Entity<TEntity>()
             .HasQueryFilter(
                 QueryFilterNames.Tenant,
-                e => e.ClinicId == (_currentUserService!.ClinicId ?? Guid.Empty));
+                e => _currentUserService == null || e.ClinicId == CurrentClinicId);
     }
 
     private static void ApplySoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)

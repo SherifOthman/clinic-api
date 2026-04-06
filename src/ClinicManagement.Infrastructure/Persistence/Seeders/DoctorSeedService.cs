@@ -3,32 +3,36 @@ using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Persistence.Seeders;
 
 /// <summary>
 /// Seeds a demo Doctor user and links them to the demo clinic.
-/// Credentials: doctor@clinic.com / Doctor123!
+/// Credentials are configured via SeedOptions (appsettings / user secrets).
 /// </summary>
 public class DoctorSeedService
 {
     private readonly IApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<DoctorSeedService> _logger;
+    private readonly SeedOptions _options;
 
     public DoctorSeedService(
         IApplicationDbContext context,
         UserManager<User> userManager,
-        ILogger<DoctorSeedService> logger)
+        ILogger<DoctorSeedService> logger,
+        IOptions<SeedOptions> options)
     {
         _context = context;
         _userManager = userManager;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task SeedAsync()
     {
-        const string email = "doctor@clinic.com";
+        var email = _options.Doctor.Email;
 
         var doctor = await _userManager.FindByEmailAsync(email);
         if (doctor == null)
@@ -44,7 +48,7 @@ public class DoctorSeedService
                 IsMale = false,
             };
 
-            var result = await _userManager.CreateAsync(doctor, "Doctor123!");
+            var result = await _userManager.CreateAsync(doctor, _options.Doctor.Password);
             if (!result.Succeeded)
             {
                 _logger.LogError("Failed to create Doctor: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
@@ -56,7 +60,7 @@ public class DoctorSeedService
         }
 
         // Find the demo clinic
-        var ownerUser = await _userManager.FindByEmailAsync("owner@clinic.com");
+        var ownerUser = await _userManager.FindByEmailAsync(_options.ClinicOwner.Email);
         if (ownerUser == null) return;
 
         var clinic = await _context.Clinics

@@ -1,6 +1,7 @@
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.Features.Auth.Queries;
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Features.Audit.Queries;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,7 @@ public class AuditController : BaseApiController
     /// Filter by clinic, user, entity type, action, or date range.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(AuditLogsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<AuditLogDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAuditLogs(

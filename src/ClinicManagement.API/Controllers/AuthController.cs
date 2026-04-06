@@ -22,11 +22,13 @@ public class AuthController : BaseApiController
 {
     private readonly CookieService _cookieService;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(CookieService cookieService, ICurrentUserService currentUser)
+    public AuthController(CookieService cookieService, ICurrentUserService currentUser, ILogger<AuthController> logger)
     {
         _cookieService = cookieService;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     /// <summary>
@@ -52,13 +54,12 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Login Failed");
 
-        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
-        logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}", 
+        _logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}", 
             request.EmailOrUsername, isMobile, result.Value!.RefreshToken != null);
 
         if (!isMobile && result.Value!.RefreshToken != null)
         {
-            logger.LogInformation("Setting refresh token cookie for web client");
+            _logger.LogInformation("Setting refresh token cookie for web client");
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
@@ -128,13 +129,12 @@ public class AuthController : BaseApiController
             ? request?.RefreshToken
             : _cookieService.GetRefreshTokenFromCookie();
 
-        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
-        logger.LogInformation("RefreshToken called: isMobile={IsMobile}, HasRefreshToken={HasToken}", 
+        _logger.LogInformation("RefreshToken called: isMobile={IsMobile}, HasRefreshToken={HasToken}", 
             isMobile, !string.IsNullOrEmpty(refreshToken));
 
         if (string.IsNullOrEmpty(refreshToken))
         {
-            logger.LogWarning("RefreshToken failed: No refresh token provided");
+            _logger.LogWarning("RefreshToken failed: No refresh token provided");
             return Unauthorized();
         }
 
@@ -143,14 +143,14 @@ public class AuthController : BaseApiController
 
         if (result.IsFailure)
         {
-            logger.LogWarning("RefreshToken failed: {Error}", result.ErrorMessage);
+            _logger.LogWarning("RefreshToken failed: {Error}", result.ErrorMessage);
             if (!isMobile) _cookieService.ClearRefreshTokenCookie();
             return Unauthorized();
         }
 
         if (!isMobile && result.Value!.RefreshToken != null)
         {
-            logger.LogInformation("Setting new refresh token cookie");
+            _logger.LogInformation("Setting new refresh token cookie");
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
         }
 
@@ -171,11 +171,7 @@ public class AuthController : BaseApiController
     {
         var command = new ConfirmEmailCommand(request.Email, request.Token);
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Email Confirmation Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Email Confirmation Failed");
     }
 
     /// <summary>
@@ -203,11 +199,7 @@ public class AuthController : BaseApiController
     {
         var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Password Reset Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Password Reset Failed");
     }
 
     /// <summary>
@@ -221,11 +213,7 @@ public class AuthController : BaseApiController
     {
         var command = new ChangePasswordCommand(request.CurrentPassword, request.NewPassword);
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Password Change Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Password Change Failed");
     }
 
     /// <summary>
@@ -291,11 +279,7 @@ public class AuthController : BaseApiController
     {
         var command = new ResendEmailVerificationCommand(request.Email);
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Resend Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Resend Failed");
     }
 
     /// <summary>
@@ -307,13 +291,9 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken ct)
     {
-        var command = new UpdateProfileCommand(request.FirstName, request.LastName,request.UserName, request.PhoneNumber);
+        var command = new UpdateProfileCommand(request.FirstName, request.LastName, request.UserName, request.PhoneNumber);
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Update Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Update Failed");
     }
 
     /// <summary>
@@ -327,11 +307,7 @@ public class AuthController : BaseApiController
     {
         var command = new UploadProfileImageCommand(file);
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Upload Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Upload Failed");
     }
 
     /// <summary>
@@ -345,10 +321,6 @@ public class AuthController : BaseApiController
     {
         var command = new DeleteProfileImageCommand();
         var result = await Sender.Send(command, ct);
-
-        if (result.IsFailure)
-            return HandleResult(result, "Delete Failed");
-
-        return NoContent();
+        return HandleNoContent(result, "Delete Failed");
     }
 }

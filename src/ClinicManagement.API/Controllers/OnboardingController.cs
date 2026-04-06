@@ -17,7 +17,7 @@ public class OnboardingController : BaseApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingRequest request)
+    public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingRequest request, CancellationToken cancellationToken)
     {
         var command = new CompleteOnboarding(
             request.ClinicName,
@@ -31,7 +31,7 @@ public class OnboardingController : BaseApiController
             request.SpecializationId
         );
         
-        var result = await Sender.Send(command);
+        var result = await Sender.Send(command, cancellationToken);
         return HandleResult(result, "Onboarding Failed");
     }
 }

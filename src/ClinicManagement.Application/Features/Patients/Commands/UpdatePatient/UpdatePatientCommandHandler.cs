@@ -8,6 +8,7 @@ using ClinicManagement.Domain.Enums;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using static ClinicManagement.Domain.Enums.BloodTypeExtensions;
 
 namespace ClinicManagement.Application.Features.Patients.Commands;
 
@@ -39,22 +40,7 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
             return Result.Failure<PatientDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
         }
 
-        BloodType? bloodType = null;
-        if (!string.IsNullOrEmpty(request.BloodType))
-        {
-            bloodType = request.BloodType switch
-            {
-                "A+"  => BloodType.APositive,
-                "A-"  => BloodType.ANegative,
-                "B+"  => BloodType.BPositive,
-                "B-"  => BloodType.BNegative,
-                "AB+" => BloodType.ABPositive,
-                "AB-" => BloodType.ABNegative,
-                "O+"  => BloodType.OPositive,
-                "O-"  => BloodType.ONegative,
-                _     => null,
-            };
-        }
+        var bloodType = ParseBloodType(request.BloodType);
 
         patient.FullName = request.FullName;
         patient.DateOfBirth = DateTime.Parse(request.DateOfBirth);

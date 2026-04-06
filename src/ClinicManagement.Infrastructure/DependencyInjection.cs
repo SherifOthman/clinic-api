@@ -2,8 +2,7 @@ using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Application.Abstractions.Storage;using ClinicManagement.Domain.Entities;
 using ClinicManagement.Infrastructure.Persistence;
 using ClinicManagement.Infrastructure.Persistence.Seeders;
 using ClinicManagement.Infrastructure.Services;
@@ -19,6 +18,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
+
+        services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.Section));
         
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         
@@ -60,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
+        services.AddScoped<ISecurityAuditWriter, SecurityAuditWriter>();
 
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();

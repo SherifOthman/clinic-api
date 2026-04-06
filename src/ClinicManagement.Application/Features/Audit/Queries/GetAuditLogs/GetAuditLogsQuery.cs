@@ -1,8 +1,9 @@
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Auth.Queries;
+namespace ClinicManagement.Application.Features.Audit.Queries;
 
 public record GetAuditLogsQuery(
     Guid? ClinicId = null,
@@ -16,7 +17,7 @@ public record GetAuditLogsQuery(
     string? ClinicSearch = null,
     int PageNumber = 1,
     int PageSize = 10
-) : IRequest<Result<AuditLogsResponse>>;
+) : IRequest<Result<PaginatedResult<AuditLogDto>>>;
 
 public record AuditLogDto(
     Guid Id,
@@ -34,12 +35,4 @@ public record AuditLogDto(
     string Action,
     string? IpAddress,
     string? Changes
-);
-
-public record AuditLogsResponse(
-    List<AuditLogDto> Items,
-    int TotalCount,
-    int PageNumber,
-    int PageSize,
-    int TotalPages
 );

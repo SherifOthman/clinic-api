@@ -4,33 +4,36 @@ using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Persistence.Seeders;
 
 /// <summary>
 /// Seeds the demo ClinicOwner user and their clinic data.
-/// The owner is also registered as a Doctor.
-/// Credentials: owner@clinic.com / ClinicOwner123!
+/// Credentials are configured via SeedOptions (appsettings / user secrets).
 /// </summary>
 public class ClinicOwnerSeedService
 {
     private readonly IApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<ClinicOwnerSeedService> _logger;
+    private readonly SeedOptions _options;
 
     public ClinicOwnerSeedService(
         IApplicationDbContext context,
         UserManager<User> userManager,
-        ILogger<ClinicOwnerSeedService> logger)
+        ILogger<ClinicOwnerSeedService> logger,
+        IOptions<SeedOptions> options)
     {
         _context = context;
         _userManager = userManager;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task SeedAsync()
     {
-        const string email = "owner@clinic.com";
+        var email = _options.ClinicOwner.Email;
 
         var owner = await _userManager.FindByEmailAsync(email);
         if (owner == null)
@@ -46,7 +49,7 @@ public class ClinicOwnerSeedService
                 IsMale = true,
             };
 
-            var result = await _userManager.CreateAsync(owner, "ClinicOwner123!");
+            var result = await _userManager.CreateAsync(owner, _options.ClinicOwner.Password);
             if (!result.Succeeded)
             {
                 _logger.LogError("Failed to create ClinicOwner: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));

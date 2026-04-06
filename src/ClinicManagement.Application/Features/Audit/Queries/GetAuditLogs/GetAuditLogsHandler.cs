@@ -1,17 +1,21 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClinicManagement.Application.Features.Auth.Queries;
+namespace ClinicManagement.Application.Features.Audit.Queries;
 
-public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<AuditLogsResponse>>
+public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<PaginatedResult<AuditLogDto>>>
 {
     private readonly IApplicationDbContext _context;
 
     public GetAuditLogsHandler(IApplicationDbContext context) => _context = context;
 
-    public async Task<Result<AuditLogsResponse>> Handle(GetAuditLogsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResult<AuditLogDto>>> Handle(
+        GetAuditLogsQuery request,
+        CancellationToken cancellationToken)
     {
         var query = _context.AuditLogs.AsQueryable();
 
@@ -32,22 +36,24 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
 
         if (!string.IsNullOrWhiteSpace(request.UserSearch))
             query = query.Where(a =>
-                (a.FullName != null && a.FullName.Contains(request.UserSearch)) ||
-                (a.Username != null && a.Username.Contains(request.UserSearch)) ||
+                (a.FullName  != null && a.FullName.Contains(request.UserSearch))  ||
+                (a.Username  != null && a.Username.Contains(request.UserSearch))  ||
                 (a.UserEmail != null && a.UserEmail.Contains(request.UserSearch)));
 
-        // Search by clinic name or ID
         if (!string.IsNullOrWhiteSpace(request.ClinicSearch))
         {
             if (Guid.TryParse(request.ClinicSearch, out var clinicGuid))
+            {
                 query = query.Where(a => a.ClinicId == clinicGuid);
+            }
             else
             {
                 var matchingClinicIds = await _context.Clinics
-                    .IgnoreQueryFilters([Domain.Common.Constants.QueryFilterNames.Tenant])
+                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
                     .Where(c => c.Name.Contains(request.ClinicSearch))
                     .Select(c => c.Id)
                     .ToListAsync(cancellationToken);
+
                 query = query.Where(a => a.ClinicId.HasValue && matchingClinicIds.Contains(a.ClinicId.Value));
             }
         }
@@ -66,28 +72,39 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Aud
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
+        // Resolve clinic names in a single query
         var clinicIds = rawItems
             .Where(a => a.ClinicId.HasValue)
             .Select(a => a.ClinicId!.Value)
             .Distinct()
             .ToList();
 
-        var clinicNames = await _context.Clinics
-            .IgnoreQueryFilters([Domain.Common.Constants.QueryFilterNames.Tenant])
-            .Where(c => clinicIds.Contains(c.Id))
-            .Select(c => new { c.Id, c.Name })
-            .ToDictionaryAsync(c => c.Id, c => c.Name, cancellationToken);
+        var clinicNames = clinicIds.Count > 0
+            ? await _context.Clinics
+                .IgnoreQueryFilters([QueryFilterNames.Tenant])
+                .Where(c => clinicIds.Contains(c.Id))
+                .Select(c => new { c.Id, c.Name })
+                .ToDictionaryAsync(c => c.Id, c => c.Name, cancellationToken)
+            : new Dictionary<Guid, string>();
 
         var items = rawItems.Select(a => new AuditLogDto(
-            a.Id, a.Timestamp, a.ClinicId,
-            a.ClinicId.HasValue && clinicNames.TryGetValue(a.ClinicId.Value, out var name) ? name : null,
-            a.UserId, a.FullName, a.Username, a.UserEmail, a.UserRole, a.UserAgent,
-            a.EntityType, a.EntityId, a.Action.ToString(), a.IpAddress, a.Changes
+            a.Id,
+            a.Timestamp,
+            a.ClinicId,
+            a.ClinicId.HasValue && clinicNames.TryGetValue(a.ClinicId.Value, out var clinicName) ? clinicName : null,
+            a.UserId,
+            a.FullName,
+            a.Username,
+            a.UserEmail,
+            a.UserRole,
+            a.UserAgent,
+            a.EntityType,
+            a.EntityId,
+            a.Action.ToString(),
+            a.IpAddress,
+            a.Changes
         )).ToList();
 
-        return Result.Success(new AuditLogsResponse(
-            items, totalCount, request.PageNumber, request.PageSize,
-            (int)Math.Ceiling(totalCount / (double)request.PageSize)
-        ));
+        return Result.Success(PaginatedResult<AuditLogDto>.Create(items, totalCount, request.PageNumber, request.PageSize));
     }
 }

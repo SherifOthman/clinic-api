@@ -22,7 +22,7 @@ public class RestorePatientCommandHandler : IRequestHandler<RestorePatientComman
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
         if (!patient.IsDeleted)
-            return Result.Failure("PATIENT_NOT_DELETED", "Patient is not deleted");
+            return Result.Failure(ErrorCodes.PATIENT_NOT_DELETED, "Patient is not deleted");
 
         patient.IsDeleted = false;
         patient.UpdatedAt = DateTime.UtcNow;

@@ -3,7 +3,6 @@ using ClinicManagement.API.Models;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Features.Staff.Queries;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +10,7 @@ namespace ClinicManagement.API.Controllers;
 
 [Authorize(Policy = "RequireClinicOwner")]
 [Route("api/staff")]
-public class StaffController(IMediator mediator) : BaseApiController
+public class StaffController : BaseApiController
 {
     /// <summary>
     /// Invite a new staff member to the clinic
@@ -23,7 +22,7 @@ public class StaffController(IMediator mediator) : BaseApiController
     public async Task<IActionResult> InviteStaff([FromBody] InviteStaffRequest request, CancellationToken cancellationToken)
     {
         var command = new InviteStaffCommand(request.Role, request.Email, request.SpecializationId);
-        var result = await mediator.Send(command, cancellationToken);
+        var result = await Sender.Send(command, cancellationToken);
         
         return !result.IsSuccess ? HandleResult(result, "Failed to send invitation") : Ok(result.Value);
     }
@@ -44,7 +43,7 @@ public class StaffController(IMediator mediator) : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var query = new GetInvitationsQuery(status, role, sortBy, sortDirection, pageNumber, pageSize);
-        var result = await mediator.Send(query, cancellationToken);
+        var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve invitations");
     }
 
@@ -56,7 +55,7 @@ public class StaffController(IMediator mediator) : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetInvitationDetail(Guid id, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetInvitationDetailQuery(id), cancellationToken);
+        var result = await Sender.Send(new GetInvitationDetailQuery(id), cancellationToken);
         return HandleResult(result, "Failed to retrieve invitation detail");
     }
 
@@ -70,12 +69,8 @@ public class StaffController(IMediator mediator) : BaseApiController
     public async Task<IActionResult> ResendInvitation(Guid id, CancellationToken cancellationToken)
     {
         var command = new ResendInvitationCommand(id);
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (!result.IsSuccess)
-            return HandleResult(result, "Failed to resend invitation");
-
-        return NoContent();
+        var result = await Sender.Send(command, cancellationToken);
+        return HandleNoContent(result, "Failed to resend invitation");
     }
 
     /// <summary>
@@ -98,12 +93,8 @@ public class StaffController(IMediator mediator) : BaseApiController
             request.Password,
             request.PhoneNumber
         );
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (!result.IsSuccess)
-            return HandleResult(result, "Invitation Failed");
-
-        return NoContent();
+        var result = await Sender.Send(command, cancellationToken);
+        return result.IsSuccess ? NoContent() : HandleResult(result, "Invitation Failed");
     }
 
     /// <summary>
@@ -116,12 +107,8 @@ public class StaffController(IMediator mediator) : BaseApiController
     public async Task<IActionResult> CancelInvitation(Guid id, CancellationToken cancellationToken)
     {
         var command = new CancelInvitationCommand(id);
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (!result.IsSuccess)
-            return HandleResult(result, "Failed to cancel invitation");
-
-        return NoContent();
+        var result = await Sender.Send(command, cancellationToken);
+        return HandleNoContent(result, "Failed to cancel invitation");
     }
 
     /// <summary>
@@ -140,7 +127,7 @@ public class StaffController(IMediator mediator) : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var query = new GetStaffListQuery(role, isActive, sortBy, sortDirection, pageNumber, pageSize);
-        var result = await mediator.Send(query, cancellationToken);
+        var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve staff");
     }
 
@@ -152,7 +139,7 @@ public class StaffController(IMediator mediator) : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStaffDetail(Guid id, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetStaffDetailQuery(id), cancellationToken);
+        var result = await Sender.Send(new GetStaffDetailQuery(id), cancellationToken);
         return HandleResult(result, "Failed to retrieve staff detail");
     }
 
@@ -166,12 +153,8 @@ public class StaffController(IMediator mediator) : BaseApiController
     public async Task<IActionResult> SetOwnerAsDoctor([FromBody] SetOwnerAsDoctorRequest request, CancellationToken cancellationToken)
     {
         var command = new SetOwnerAsDoctorCommand(request.SpecializationId);
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (!result.IsSuccess)
-            return HandleResult(result, "Failed to set owner as doctor");
-
-        return NoContent();
+        var result = await Sender.Send(command, cancellationToken);
+        return HandleNoContent(result, "Failed to set owner as doctor");
     }
 
     /// <summary>
@@ -184,11 +167,7 @@ public class StaffController(IMediator mediator) : BaseApiController
     public async Task<IActionResult> SetActiveStatus(Guid id, [FromBody] SetStaffActiveStatusRequest request, CancellationToken cancellationToken)
     {
         var command = new SetStaffActiveStatusCommand(id, request.IsActive);
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (!result.IsSuccess)
-            return HandleResult(result, "Failed to update staff status");
-
-        return NoContent();
+        var result = await Sender.Send(command, cancellationToken);
+        return HandleNoContent(result, "Failed to update staff status");
     }
 }

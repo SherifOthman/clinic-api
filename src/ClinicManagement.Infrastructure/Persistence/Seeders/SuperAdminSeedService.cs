@@ -1,28 +1,34 @@
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Persistence.Seeders;
 
 /// <summary>
 /// Seeds the SuperAdmin system user.
 /// SuperAdmin is not tied to any clinic — manages the whole platform.
-/// Credentials: superadmin@clinic.com / SuperAdmin123!
+/// Credentials are configured via SeedOptions (appsettings / user secrets).
 /// </summary>
 public class SuperAdminSeedService
 {
     private readonly UserManager<User> _userManager;
     private readonly ILogger<SuperAdminSeedService> _logger;
+    private readonly SeedOptions _options;
 
-    public SuperAdminSeedService(UserManager<User> userManager, ILogger<SuperAdminSeedService> logger)
+    public SuperAdminSeedService(
+        UserManager<User> userManager,
+        ILogger<SuperAdminSeedService> logger,
+        IOptions<SeedOptions> options)
     {
         _userManager = userManager;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task SeedAsync()
     {
-        const string email = "superadmin@clinic.com";
+        var email = _options.SuperAdmin.Email;
 
         if (await _userManager.FindByEmailAsync(email) != null)
         {
@@ -41,7 +47,7 @@ public class SuperAdminSeedService
             IsMale = true,
         };
 
-        var result = await _userManager.CreateAsync(user, "SuperAdmin123!");
+        var result = await _userManager.CreateAsync(user, _options.SuperAdmin.Password);
         if (!result.Succeeded)
         {
             _logger.LogError("Failed to create SuperAdmin: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));

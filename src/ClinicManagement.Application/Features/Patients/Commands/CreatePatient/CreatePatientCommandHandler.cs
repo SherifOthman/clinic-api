@@ -7,6 +7,7 @@ using ClinicManagement.Domain.Enums;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using static ClinicManagement.Domain.Enums.BloodTypeExtensions;
 
 namespace ClinicManagement.Application.Features.Patients.Commands;
 
@@ -29,37 +30,10 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
     {
         var clinicId = _currentUser.GetRequiredClinicId();
 
-        // Generate unpredictable patient code: P + 3 letters + 3 digits (e.g. PXKM847)
-        // Retry on collision (extremely rare)
-        string patientCode;
-        do
-        {
-            patientCode = GeneratePatientCode();
-        }
-        // Global uniqueness — patient code is a system-wide identifier (patient portal, cross-clinic)
-        while (await _context.Patients
-            .IgnoreQueryFilters()
-            .AnyAsync(p => p.PatientCode == patientCode, cancellationToken));
+        var patientCode = await GenerateUniquePatientCodeAsync(cancellationToken);
 
         // Parse blood type — frontend sends display string (A+, B-, etc.)
-        BloodType? bloodType = null;
-        if (!string.IsNullOrEmpty(request.BloodType))
-        {
-            bloodType = request.BloodType switch
-            {
-                "A+"  => BloodType.APositive,
-                "A-"  => BloodType.ANegative,
-                "B+"  => BloodType.BPositive,
-                "B-"  => BloodType.BNegative,
-                "AB+" => BloodType.ABPositive,
-                "AB-" => BloodType.ABNegative,
-                "O+"  => BloodType.OPositive,
-                "O-"  => BloodType.ONegative,
-                _     => null,
-            };
-        }
-
-        // Create patient
+        var bloodType = ParseBloodType(request.BloodType);        // Create patient
         var patient = new Patient
         {
             ClinicId = clinicId,
@@ -105,7 +79,24 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         return Result<PatientDto>.Success(dto);
     }
 
-    private static string GeneratePatientCode()
+
+    private async Task<string> GenerateUniquePatientCodeAsync(CancellationToken ct)
+    {
+        // Retry on collision (extremely rare)
+        string patientCode;
+        do
+        {
+            patientCode = GeneratePatientCode();
+        }
+        // Global uniqueness — patient code is a system-wide identifier (patient portal, cross-clinic)
+        while (await _context.Patients
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.PatientCode == patientCode, ct));
+
+        return patientCode;
+    }
+
+    internal static string GeneratePatientCode()
     {
         // 8 random digits — 90 million combinations, globally unique across all clinics
         // Short enough to read/type, unpredictable, works for patient portal

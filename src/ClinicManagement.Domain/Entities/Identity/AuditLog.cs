@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
@@ -39,7 +40,7 @@ public class AuditLog : BaseEntity
     /// <summary>The primary key of the affected entity.</summary>
     public string EntityId { get; set; } = null!;
 
-    /// <summary>Create | Update | Delete</summary>
+    /// <summary>Create | Update | Delete | Security | Restore</summary>
     public AuditAction Action { get; set; }
 
     /// <summary>IP address of the request.</summary>
@@ -47,13 +48,4 @@ public class AuditLog : BaseEntity
 
     /// <summary>JSON of changed fields: { "FieldName": { "Old": "...", "New": "..." } }</summary>
     public string? Changes { get; set; }
-}
-
-public enum AuditAction
-{
-    Create   = 1,
-    Update   = 2,
-    Delete   = 3,
-    Security = 4,  // Login, Logout, FailedLogin, AccountLocked
-    Restore  = 5,
 }

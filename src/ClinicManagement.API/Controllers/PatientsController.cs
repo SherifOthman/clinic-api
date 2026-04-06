@@ -1,3 +1,4 @@
+using ClinicManagement.API.Contracts.Patients;
 using ClinicManagement.API.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
@@ -113,23 +114,3 @@ public class PatientsController : BaseApiController
     }
 }
 
-public record CreatePatientRequest(
-    string FullName,
-    string DateOfBirth,
-    string Gender,
-    int? CountryGeoNameId,
-    int? StateGeoNameId,
-    int? CityGeoNameId,
-    string? BloodType,
-    List<PhoneNumberDto> PhoneNumbers,
-    List<Guid> ChronicDiseaseIds);
-
-public record UpdatePatientRequest(
-    string FullName,
-    string DateOfBirth,
-    string Gender,
-    int? CountryGeoNameId,
-    int? StateGeoNameId,
-    int? CityGeoNameId,
-    string? BloodType,
-    List<Guid>? ChronicDiseaseIds = null);

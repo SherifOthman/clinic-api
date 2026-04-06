@@ -86,6 +86,12 @@ public static class ErrorCodes
     public const string INVITATION_CANCELED = "INVITATION_CANCELED";
     public const string INVITATION_EXPIRED = "INVITATION_EXPIRED";
 
+    // Patients
+    public const string PATIENT_NOT_DELETED = "PATIENT_NOT_DELETED";
+
+    // File Upload
+    public const string UPLOAD_FAILED = "UPLOAD_FAILED";
+
     // General
     public const string OPERATION_NOT_ALLOWED = "OPERATION_NOT_ALLOWED";
     public const string OPERATION_FAILED = "OPERATION_FAILED";

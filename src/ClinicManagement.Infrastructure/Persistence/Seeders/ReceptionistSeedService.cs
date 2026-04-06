@@ -3,32 +3,36 @@ using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Persistence.Seeders;
 
 /// <summary>
 /// Seeds a demo Receptionist user and links them to the demo clinic.
-/// Credentials: receptionist@clinic.com / Receptionist123!
+/// Credentials are configured via SeedOptions (appsettings / user secrets).
 /// </summary>
 public class ReceptionistSeedService
 {
     private readonly IApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<ReceptionistSeedService> _logger;
+    private readonly SeedOptions _options;
 
     public ReceptionistSeedService(
         IApplicationDbContext context,
         UserManager<User> userManager,
-        ILogger<ReceptionistSeedService> logger)
+        ILogger<ReceptionistSeedService> logger,
+        IOptions<SeedOptions> options)
     {
         _context = context;
         _userManager = userManager;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task SeedAsync()
     {
-        const string email = "receptionist@clinic.com";
+        var email = _options.Receptionist.Email;
 
         var receptionist = await _userManager.FindByEmailAsync(email);
         if (receptionist == null)
@@ -44,7 +48,7 @@ public class ReceptionistSeedService
                 IsMale = false,
             };
 
-            var result = await _userManager.CreateAsync(receptionist, "Receptionist123!");
+            var result = await _userManager.CreateAsync(receptionist, _options.Receptionist.Password);
             if (!result.Succeeded)
             {
                 _logger.LogError("Failed to create Receptionist: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
@@ -56,7 +60,7 @@ public class ReceptionistSeedService
         }
 
         // Find the demo clinic
-        var ownerUser = await _userManager.FindByEmailAsync("owner@clinic.com");
+        var ownerUser = await _userManager.FindByEmailAsync(_options.ClinicOwner.Email);
         if (ownerUser == null) return;
 
         var clinic = await _context.Clinics

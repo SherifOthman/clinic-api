@@ -64,7 +64,7 @@ public class UploadProfileImageHandler : IRequestHandler<UploadProfileImageComma
             if (uploadResult.IsFailure)
             {
                 _logger.LogWarning("Invalid file for profile image upload: {UserId} - {ErrorCode}", user.Id, uploadResult.ErrorCode);
-                return Result.Failure(uploadResult.ErrorCode ?? "UPLOAD_FAILED", uploadResult.ErrorMessage ?? "File upload failed");
+                return Result.Failure(uploadResult.ErrorCode ?? ErrorCodes.UPLOAD_FAILED, uploadResult.ErrorMessage ?? "File upload failed");
             }
 
             user.ProfileImageUrl = uploadResult.Value;

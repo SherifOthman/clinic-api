@@ -45,4 +45,22 @@ public abstract class BaseApiController : ControllerBase
             TraceId = HttpContext.TraceIdentifier
         });
     }
+
+    /// <summary>Returns 204 NoContent on success, or 400 BadRequest on failure.</summary>
+    protected IActionResult HandleNoContent(Result result, string title)
+    {
+        if (result.IsSuccess)
+            return NoContent();
+
+        return BadRequest(new ApiProblemDetails
+        {
+            Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            Title = title,
+            Status = StatusCodes.Status400BadRequest,
+            Detail = result.ErrorMessage,
+            Code = result.ErrorCode,
+            Errors = result.ValidationErrors,
+            TraceId = HttpContext.TraceIdentifier
+        });
+    }
 }
