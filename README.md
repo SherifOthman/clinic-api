@@ -1,6 +1,8 @@
 # Clinic Management API
 
-A multi-tenant SaaS backend for managing medical clinics. Each clinic operates in complete isolation — patients, staff, and data are scoped to the clinic that owns them.
+A production-ready REST API powering a multi-tenant SaaS platform for medical clinics. Built to demonstrate real-world backend engineering — not a tutorial project.
+
+Multiple clinics run on the same platform with complete data isolation. A clinic owner signs up, sets up their clinic, and their team (doctors, receptionists) gets access through an email invitation flow. The system tracks every action taken — who changed what, when, and from where.
 
 **Live Demo**: http://clinic-api.runasp.net/scalar/v1  
 **Dashboard**: https://clinic-dashboard-ecru.vercel.app  
@@ -12,7 +14,9 @@ A multi-tenant SaaS backend for managing medical clinics. Each clinic operates i
 
 ## What the app does
 
-A clinic owner registers, sets up their clinic (name, branch, subscription plan, specialization), and invites doctors and receptionists via email. Once onboarded, the clinic can manage patients — registering them with their demographics, phone numbers, blood type, and chronic diseases — and track all changes through a full audit trail.
+Think of it as the backend for a clinic management platform — like a lightweight Vezeeta or Doctoralia, but self-hosted and white-labeled for individual clinics.
+
+Each clinic is fully isolated. A clinic owner registers, sets up their clinic, and invites their team. Doctors and receptionists get access through a secure email invitation. Patients are registered and their full medical profile is tracked over time. Every action in the system — who created a record, who changed a field, who logged in from where — is captured in an immutable audit trail.
 
 ### Implemented ✅
 
