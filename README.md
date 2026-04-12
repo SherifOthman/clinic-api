@@ -121,7 +121,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | ------------------------------------------------ | --- | --------------------------------------------- |
 | Onboarding wizard (name, branch, location, plan) | ✅  |                                               |
 | View / create / edit / toggle branches           | ✅  | Bilingual location                            |
-| Branch phone numbers                             | 🗂️  | Entity exists                                 |
+| Branch phone numbers                             | ✅  |                                               |
 | Branch appointment pricing                       | 🗂️  | Entity exists                                 |
 | Clinic subscription management                   | 🗂️  | `ClinicSubscription` modeled                  |
 | Subscription payment history                     | 🗂️  | `SubscriptionPayment` modeled                 |
@@ -142,16 +142,16 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 ### Staff Management
 
-| Feature                                 | API | Notes                                            |
-| --------------------------------------- | --- | ------------------------------------------------ |
-| View staff list                         | ✅  | Role and status filters                          |
-| Invite by email (Doctor / Receptionist) | ✅  | 7-day expiry token                               |
-| Resend / cancel invitation              | ✅  |                                                  |
-| Accept invitation (register + join)     | ✅  |                                                  |
-| Activate / deactivate staff             | ✅  |                                                  |
-| Register owner as doctor                | ✅  |                                                  |
-| Doctor specialization                   | ✅  | Set during invitation                            |
-| Doctor working schedule                 | 🔧  | `GET/PUT /staff/{id}/working-days` exists, no UI |
+| Feature                                 | API | Notes                   |
+| --------------------------------------- | --- | ----------------------- |
+| View staff list                         | ✅  | Role and status filters |
+| Invite by email (Doctor / Receptionist) | ✅  | 7-day expiry token      |
+| Resend / cancel invitation              | ✅  |                         |
+| Accept invitation (register + join)     | ✅  |                         |
+| Activate / deactivate staff             | ✅  |                         |
+| Register owner as doctor                | ✅  |                         |
+| Doctor specialization                   | ✅  | Set during invitation   |
+| Doctor working schedule                 | ✅  |                         |
 
 ### Appointments
 
@@ -221,7 +221,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 ```bash
 # Apply migrations
-dotnet ef database update --project src/ClinicManagement.Infrastructure --startup-project src/ClinicManagement.API
+dotnet ef database update --project src/ClinicManagement.Persistence --startup-project src/ClinicManagement.API
 
 # Run
 dotnet run --project src/ClinicManagement.API
