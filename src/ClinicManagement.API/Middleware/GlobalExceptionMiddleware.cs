@@ -1,6 +1,5 @@
 using ClinicManagement.API.Models;
-using ClinicManagement.Domain.Common.Constants;
-using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace ClinicManagement.API.Middleware;
@@ -24,8 +23,7 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred: {ExceptionType} - {Message}", 
-                ex.GetType().Name, ex.Message);
+            _logger.LogError(ex, "Unhandled exception: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -34,20 +32,78 @@ public class GlobalExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        var (statusCode, code) = exception switch
+        var problemDetails = exception switch
         {
-            ValidationException => (400, MessageCodes.Exception.VALIDATION_ERROR),
-            UnauthorizedAccessException => (403, MessageCodes.Exception.UNAUTHORIZED_ACCESS),
-            KeyNotFoundException => (404, MessageCodes.Exception.NOT_FOUND),
-            InvalidOperationException => (400, MessageCodes.Exception.OPERATION_NOT_ALLOWED),
-            ArgumentException => (400, MessageCodes.Exception.INVALID_ARGUMENT),
-            _ => (500, MessageCodes.Exception.INTERNAL_ERROR)
+            FluentValidation.ValidationException validationEx => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = "One or more validation errors occurred.",
+                Status = 400,
+                Detail = "One or more validation errors occurred",
+                Errors = validationEx.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()),
+                TraceId = context.TraceIdentifier
+            },
+
+            UnauthorizedAccessException => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                Title = "Forbidden",
+                Status = 403,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+
+            KeyNotFoundException => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                Title = "Not Found",
+                Status = 404,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+
+            InvalidOperationException => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = "Bad Request",
+                Status = 400,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+
+            ArgumentException => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = "Bad Request",
+                Status = 400,
+                Detail = exception.Message,
+                TraceId = context.TraceIdentifier
+            },
+
+            DbUpdateException dbEx => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                Title = "Database Error",
+                Status = 500,
+                Detail = dbEx.InnerException?.Message ?? dbEx.Message,
+                TraceId = context.TraceIdentifier
+            },
+
+            _ => new ApiProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                Title = "Internal Server Error",
+                Status = 500,
+                Detail = "An unexpected error occurred. Please try again later.",
+                TraceId = context.TraceIdentifier
+            }
         };
 
-        context.Response.StatusCode = statusCode;
+        context.Response.StatusCode = problemDetails.Status;
 
-        var response = new ApiError(code);
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        var jsonResponse = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });

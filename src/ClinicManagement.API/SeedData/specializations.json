@@ -1,0 +1,122 @@
+[
+  {
+    "nameEn": "General Practice",
+    "nameAr": "طب عام",
+    "descriptionEn": "General medical practice",
+    "descriptionAr": "ممارسة طبية عامة"
+  },
+  {
+    "nameEn": "Pediatrics",
+    "nameAr": "طب الأطفال",
+    "descriptionEn": "Medical care for children",
+    "descriptionAr": "الرعاية الطبية للأطفال"
+  },
+  {
+    "nameEn": "Cardiology",
+    "nameAr": "أمراض القلب",
+    "descriptionEn": "Heart and cardiovascular system",
+    "descriptionAr": "القلب والجهاز القلبي الوعائي"
+  },
+  {
+    "nameEn": "Dermatology",
+    "nameAr": "الأمراض الجلدية",
+    "descriptionEn": "Skin conditions and diseases",
+    "descriptionAr": "الأمراض والحالات الجلدية"
+  },
+  {
+    "nameEn": "Orthopedics",
+    "nameAr": "جراحة العظام",
+    "descriptionEn": "Bones, joints, and muscles",
+    "descriptionAr": "العظام والمفاصل والعضلات"
+  },
+  {
+    "nameEn": "Gynecology",
+    "nameAr": "أمراض النساء",
+    "descriptionEn": "Women's reproductive health",
+    "descriptionAr": "صحة المرأة الإنجابية"
+  },
+  {
+    "nameEn": "Ophthalmology",
+    "nameAr": "طب العيون",
+    "descriptionEn": "Eye care and vision",
+    "descriptionAr": "العناية بالعيون والبصر"
+  },
+  {
+    "nameEn": "Dentistry",
+    "nameAr": "طب الأسنان",
+    "descriptionEn": "Oral health and dental care",
+    "descriptionAr": "صحة الفم والعناية بالأسنان"
+  },
+  {
+    "nameEn": "Psychiatry",
+    "nameAr": "الطب النفسي",
+    "descriptionEn": "Mental health",
+    "descriptionAr": "الصحة النفسية"
+  },
+  {
+    "nameEn": "Neurology",
+    "nameAr": "طب الأعصاب",
+    "descriptionEn": "Nervous system disorders",
+    "descriptionAr": "اضطرابات الجهاز العصبي"
+  },
+  {
+    "nameEn": "ENT",
+    "nameAr": "أنف وأذن وحنجرة",
+    "descriptionEn": "Ear, Nose, and Throat",
+    "descriptionAr": "الأذن والأنف والحنجرة"
+  },
+  {
+    "nameEn": "Urology",
+    "nameAr": "المسالك البولية",
+    "descriptionEn": "Urinary tract and male reproductive system",
+    "descriptionAr": "الجهاز البولي والجهاز التناسلي الذكري"
+  },
+  {
+    "nameEn": "Endocrinology",
+    "nameAr": "الغدد الصماء",
+    "descriptionEn": "Hormones and metabolism",
+    "descriptionAr": "الهرمونات والتمثيل الغذائي"
+  },
+  {
+    "nameEn": "Gastroenterology",
+    "nameAr": "الجهاز الهضمي",
+    "descriptionEn": "Digestive system",
+    "descriptionAr": "الجهاز الهضمي"
+  },
+  {
+    "nameEn": "Pulmonology",
+    "nameAr": "أمراض الرئة",
+    "descriptionEn": "Respiratory system",
+    "descriptionAr": "الجهاز التنفسي"
+  },
+  {
+    "nameEn": "Oncology",
+    "nameAr": "علم الأورام",
+    "descriptionEn": "Cancer diagnosis and treatment",
+    "descriptionAr": "تشخيص السرطان وعلاجه"
+  },
+  {
+    "nameEn": "Nephrology",
+    "nameAr": "أمراض الكلى",
+    "descriptionEn": "Kidney diseases",
+    "descriptionAr": "أمراض الكلى"
+  },
+  {
+    "nameEn": "Rheumatology",
+    "nameAr": "أمراض الروماتيزم",
+    "descriptionEn": "Joints, muscles, and autoimmune diseases",
+    "descriptionAr": "أمراض المفاصل والعضلات والمناعة الذاتية"
+  },
+  {
+    "nameEn": "Hematology",
+    "nameAr": "أمراض الدم",
+    "descriptionEn": "Blood disorders",
+    "descriptionAr": "اضطرابات الدم"
+  },
+  {
+    "nameEn": "Infectious Disease",
+    "nameAr": "الأمراض المعدية",
+    "descriptionEn": "Infections caused by bacteria, viruses, and fungi",
+    "descriptionAr": "الالتهابات الناجمة عن البكتيريا والفيروسات والفطريات"
+  }
+]

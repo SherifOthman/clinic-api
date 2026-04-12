@@ -1,23 +1,26 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Options;
-using ClinicManagement.Infrastructure.Common.Interfaces;
+using ClinicManagement.Application.Common.Options;
+using ClinicManagement.Infrastructure.Options;
+using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class SmtpEmailSender : IEmailSender
+public class SmtpEmailSender
 {
-    private readonly SmtpOptions _options;
-    private readonly IEmailSmtpClient _smtpClient;
+    private readonly SmtpOptions _smtpOptions;
+    private readonly AppOptions  _appOptions;
     private readonly ILogger<SmtpEmailSender> _logger;
 
-    public SmtpEmailSender(IOptions<SmtpOptions> options, IEmailSmtpClient smtpClient, ILogger<SmtpEmailSender> logger)
+    public SmtpEmailSender(
+        IOptions<SmtpOptions> smtpOptions,
+        IOptions<AppOptions> appOptions,
+        ILogger<SmtpEmailSender> logger)
     {
-        _options = options.Value;
-        _smtpClient = smtpClient;
-        _logger = logger;
+        _smtpOptions = smtpOptions.Value;
+        _appOptions  = appOptions.Value;
+        _logger      = logger;
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage, CancellationToken cancellationToken = default)
@@ -26,24 +29,21 @@ public class SmtpEmailSender : IEmailSender
         {
             _logger.LogInformation("Sending email to {Email} with subject: {Subject}", toEmail, subject);
 
-            htmlMessage = htmlMessage.Replace("{{FRONTEND_URL}}", _options.FrontendUrl);
+            // Replace frontend URL placeholder in email templates
+            htmlMessage = htmlMessage.Replace("{{FRONTEND_URL}}", _appOptions.FrontendUrl);
 
             var email = new MimeMessage();
-            email.From.Add(new MailboxAddress(_options.FromName, _options.FromEmail));
+            email.From.Add(new MailboxAddress(_smtpOptions.FromName, _smtpOptions.FromEmail));
             email.To.Add(MailboxAddress.Parse(toEmail));
             email.Subject = subject;
-            
-            var bodyBuilder = new BodyBuilder
-            {
-                HtmlBody = htmlMessage
-            };
-            email.Body = bodyBuilder.ToMessageBody();
+            email.Body    = new BodyBuilder { HtmlBody = htmlMessage }.ToMessageBody();
 
-            await _smtpClient.ConnectAsync(_options.Host, _options.Port,
+            using var smtpClient = new SmtpClient();
+            await smtpClient.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port,
                 MailKit.Security.SecureSocketOptions.StartTls, cancellationToken);
-            await _smtpClient.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
-            await _smtpClient.SendAsync(email, cancellationToken);
-            await _smtpClient.DisconnectAsync(true, cancellationToken);
+            await smtpClient.AuthenticateAsync(_smtpOptions.UserName, _smtpOptions.Password, cancellationToken);
+            await smtpClient.SendAsync(email, cancellationToken);
+            await smtpClient.DisconnectAsync(true, cancellationToken);
 
             _logger.LogInformation("Email sent successfully to {Email}", toEmail);
         }

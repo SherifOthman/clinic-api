@@ -1,30 +1,35 @@
+using ClinicManagement.API.Contracts.Onboarding;
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Features.Onboarding.Commands.CompleteOnboarding;
-using MediatR;
+using ClinicManagement.Application.Features.Onboarding.Commands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
-[Route("api/[controller]")]
 [Authorize]
+[Route("api/onboarding")]
 public class OnboardingController : BaseApiController
 {
-    private readonly IMediator _mediator;
-
-    public OnboardingController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpPost("complete")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CompleteOnboarding(CompleteOnboardingDto dto, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CompleteOnboarding(
+        [FromBody] CompleteOnboardingRequest request, CancellationToken cancellationToken)
     {
-        var command = new CompleteOnboardingCommand(dto);
-        var result = await _mediator.Send(command, cancellationToken);
-        return HandleResult(result);
+        var command = new CompleteOnboarding(
+            request.ClinicName,
+            request.SubscriptionPlanId,
+            request.BranchName,
+            request.AddressLine,
+            request.CityNameEn,
+            request.CityNameAr,
+            request.StateNameEn,
+            request.StateNameAr,
+            request.ProvideMedicalServices,
+            request.SpecializationId);
+
+        var result = await Sender.Send(command, cancellationToken);
+        return HandleResult(result, "Onboarding Failed");
     }
 }

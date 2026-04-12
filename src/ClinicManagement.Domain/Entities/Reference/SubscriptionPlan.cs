@@ -9,9 +9,9 @@ namespace ClinicManagement.Domain.Entities;
 public class SubscriptionPlan : BaseEntity
 {
     public string Name { get; set; } = null!;
-    public string? NameAr { get; set; }
+    public string NameAr { get; set; } = null!;
     public string Description { get; set; } = null!;
-    public string? DescriptionAr { get; set; }
+    public string DescriptionAr { get; set; } = null!;
     
     // Pricing
     public decimal MonthlyFee { get; set; }
@@ -46,69 +46,36 @@ public class SubscriptionPlan : BaseEntity
     // Display order for UI
     public int DisplayOrder { get; set; }
     
-    // NOTE: No navigation property to Clinics to avoid shadow property creation
-    // Relationship is defined in ClinicConfiguration
+    public int Version { get; set; } = 1;
+    public DateOnly EffectiveDate { get; set; }
+    public DateOnly? ExpiryDate { get; set; }
     
-    /// <summary>
-    /// Calculates the yearly discount percentage
-    /// </summary>
+    // Business logic - calculated properties
+    
     public decimal YearlyDiscountPercentage => MonthlyFee > 0 ? Math.Round((1 - (YearlyFee / (MonthlyFee * 12))) * 100, 2) : 0;
-    
-    /// <summary>
-    /// Checks if the plan supports multiple branches
-    /// </summary>
+
     public bool SupportsMultipleBranches => MaxBranches > 1;
     
-    /// <summary>
-    /// Checks if the plan is a free plan
-    /// </summary>
     public bool IsFree => MonthlyFee == 0 && YearlyFee == 0;
     
-    /// <summary>
-    /// Checks if a clinic can add more branches based on this plan
-    /// </summary>
-    /// <param name="currentBranchCount">Current number of branches</param>
-    /// <returns>True if more branches can be added</returns>
     public bool CanAddMoreBranches(int currentBranchCount)
     {
         return currentBranchCount < MaxBranches;
     }
-    
-    /// <summary>
-    /// Checks if a clinic can add more staff based on this plan
-    /// </summary>
-    /// <param name="currentStaffCount">Current number of staff</param>
-    /// <returns>True if more staff can be added</returns>
+
     public bool CanAddMoreStaff(int currentStaffCount)
     {
         return currentStaffCount < MaxStaff;
     }
-    
-    /// <summary>
-    /// Checks if the plan has reached the monthly patient limit
-    /// </summary>
-    /// <param name="currentMonthPatients">Current month patient count</param>
-    /// <returns>True if limit is reached</returns>
     public bool HasReachedPatientLimit(int currentMonthPatients)
     {
         return currentMonthPatients >= MaxPatientsPerMonth;
     }
-    
-    /// <summary>
-    /// Checks if the plan has reached the monthly appointment limit
-    /// </summary>
-    /// <param name="currentMonthAppointments">Current month appointment count</param>
-    /// <returns>True if limit is reached</returns>
     public bool HasReachedAppointmentLimit(int currentMonthAppointments)
     {
         return currentMonthAppointments >= MaxAppointmentsPerMonth;
     }
     
-    /// <summary>
-    /// Checks if the plan has reached the monthly invoice limit
-    /// </summary>
-    /// <param name="currentMonthInvoices">Current month invoice count</param>
-    /// <returns>True if limit is reached</returns>
     public bool HasReachedInvoiceLimit(int currentMonthInvoices)
     {
         return currentMonthInvoices >= MaxInvoicesPerMonth;

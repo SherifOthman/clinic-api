@@ -1,58 +1,66 @@
-using ClinicManagement.API.Extensions;
 using ClinicManagement.API.Models;
-using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Domain.Common;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
 [ApiController]
 [Produces("application/json")]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-[ProducesResponseType(StatusCodes.Status403Forbidden)]
-[ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
 public abstract class BaseApiController : ControllerBase
 {
-    /// <summary>
-    /// Handles a Result<T> and returns appropriate HTTP response
-    /// </summary>
-    protected IActionResult HandleResult<T>(Result<T> result)
-    {
-        if (result.Success)
-            return Ok(result.Value);
+    private ISender? _sender;
+    protected ISender Sender => _sender ??= HttpContext.RequestServices.GetRequiredService<ISender>();
 
-        return BadRequest(result.ToApiError());
-    }
-
-    /// <summary>
-    /// Handles a Result (no value) and returns appropriate HTTP response
-    /// </summary>
-    protected IActionResult HandleResult(Result result)
+    protected IActionResult HandleResult(Result result, string title)
     {
-        if (result.Success)
+        if (result.IsSuccess)
             return Ok();
 
-        return BadRequest(result.ToApiError());
+        return BadRequest(new ApiProblemDetails
+        {
+            Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            Title = title,
+            Status = StatusCodes.Status400BadRequest,
+            Detail = result.ErrorMessage,
+            Code = result.ErrorCode,
+            Errors = result.ValidationErrors,
+            TraceId = HttpContext.TraceIdentifier
+        });
     }
 
-    /// <summary>
-    /// Handles a Result<T> for create operations and returns 201 Created
-    /// </summary>
-    protected IActionResult HandleCreateResult<T>(Result<T> result, string actionName, object? routeValues = null)
+    protected IActionResult HandleResult<T>(Result<T> result, string title)
     {
-        if (result.Success)
-            return CreatedAtAction(actionName, routeValues, result.Value);
+        if (result.IsSuccess)
+            return Ok(result.Value);
 
-        return BadRequest(result.ToApiError());
+        return BadRequest(new ApiProblemDetails
+        {
+            Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            Title = title,
+            Status = StatusCodes.Status400BadRequest,
+            Detail = result.ErrorMessage,
+            Code = result.ErrorCode,
+            Errors = result.ValidationErrors,
+            TraceId = HttpContext.TraceIdentifier
+        });
     }
 
-    /// <summary>
-    /// Handles a Result for delete operations and returns 204 No Content
-    /// </summary>
-    protected IActionResult HandleDeleteResult(Result result)
+    /// <summary>Returns 204 NoContent on success, or 400 BadRequest on failure.</summary>
+    protected IActionResult HandleNoContent(Result result, string title)
     {
-        if (result.Success)
+        if (result.IsSuccess)
             return NoContent();
 
-        return BadRequest(result.ToApiError());
+        return BadRequest(new ApiProblemDetails
+        {
+            Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            Title = title,
+            Status = StatusCodes.Status400BadRequest,
+            Detail = result.ErrorMessage,
+            Code = result.ErrorCode,
+            Errors = result.ValidationErrors,
+            TraceId = HttpContext.TraceIdentifier
+        });
     }
 }

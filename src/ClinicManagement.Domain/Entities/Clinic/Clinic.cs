@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
@@ -7,16 +5,16 @@ namespace ClinicManagement.Domain.Entities;
 public class Clinic : AuditableEntity
 {
     public string Name { get; set; } = null!;
-    
-    /// <summary>
-    /// Owner user of this clinic (ClinicOwner role)
-    /// </summary>
-    public Guid OwnerUserId { get; set; }
-    public User OwnerUser { get; set; } = null!;
-    
+    public Guid OwnerUserId { get; init; }
     public Guid SubscriptionPlanId { get; set; }
+    public bool OnboardingCompleted { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset? SubscriptionStartDate { get; set; }
+    public DateTimeOffset? SubscriptionEndDate { get; set; }
+    public DateTimeOffset? TrialEndDate { get; set; }
+    public string? BillingEmail { get; set; }
+
+    // Navigation properties
+    public User Owner { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
-    
-    public ICollection<ClinicBranch> Branches { get; set; } = new List<ClinicBranch>();
-    public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }

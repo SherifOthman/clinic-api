@@ -1,252 +1,236 @@
-# 🏥 Clinic Management System API
+# Clinic Management API
 
-A production-ready healthcare management system built with **.NET 10** and **Clean Architecture**. This API powers multi-tenant clinic operations including patient management, appointments, billing, and inventory tracking.
+A production-ready multi-tenant SaaS backend for medical clinics, built with .NET 10 and Clean Architecture. This is not a tutorial project — it models a real business domain with proper separation of concerns, a full authentication system, background jobs, audit logging, and a bilingual data layer.
 
-**🚀 Live Demo**: https://clinic-api.runasp.net/swagger
+**Live API Docs**: http://clinic-api.runasp.net/scalar/v1  
+**Dashboard**: https://clinic-dashboard-ecru.vercel.app  
+**Website**: https://clinic-website-lime.vercel.app
 
-## 💡 What Makes This Project Stand Out
-
-This isn't just another CRUD API. It demonstrates:
-
-- **Real-world complexity**: Multi-tenant SaaS with subscription-based access control
-- **Clean Architecture**: Proper separation of concerns across 4 layers
-- **Domain-Driven Design**: Rich domain models with business logic in entities
-- **Modern .NET practices**: CQRS, MediatR, FluentValidation, EF Core
-- **Production features**: JWT auth, file uploads, email verification, background services
-- **Pragmatic decisions**: No unnecessary abstractions (avoided Repository/UoW with EF Core)
-
-## 🛠️ Tech Stack
-
-- **.NET 10** with C# 13
-- **Entity Framework Core** - Code-first with migrations
-- **SQL Server** - 40 entities, 3 migrations
-- **MediatR** - CQRS pattern (38 handlers)
-- **FluentValidation** - Input validation
-- **JWT + Refresh Tokens** - Secure authentication
-- **ASP.NET Core Identity** - User management
-- **Serilog** - Structured logging
-- **Mapster** - Object mapping
-
-## 🏗️ Architecture
-
-### Clean Architecture (4 Layers)
-
-```
-API Layer          → Minimal API endpoints (15 groups), middleware
-Application Layer  → CQRS handlers, DTOs, validation
-Domain Layer       → 40 entities with business logic
-Infrastructure     → EF Core, external services, Identity
-```
-
-### Key Design Patterns
-
-**Rich Domain Model**
-
-```csharp
-public class Appointment : AuditableEntity
-{
-    // Calculated properties (business logic)
-    public decimal RemainingAmount => FinalPrice - DiscountAmount - PaidAmount;
-    public bool IsFullyPaid => RemainingAmount <= 0;
-
-    // Business methods (state transitions)
-    public void ApplyDiscount(decimal amount)
-    {
-        if (amount > FinalPrice)
-            throw new InvalidDiscountException(...);
-        DiscountAmount = amount;
-    }
-}
-```
-
-**CQRS with MediatR**
-
-```csharp
-// Command + Handler in one file
-public record CreateAppointmentCommand(...) : IRequest<Result<AppointmentDto>>;
-
-public class CreateAppointmentCommandHandler : IRequestHandler<...>
-{
-    // Handler implementation
-}
-
-// Validator in separate file
-public class CreateAppointmentCommandValidator : AbstractValidator<...> { }
-```
-
-**No Repository Pattern**
-
-- EF Core's `DbContext` IS the Unit of Work
-- `DbSet<T>` IS the Repository
-- Direct usage avoids unnecessary abstraction
-
-## ✨ Features
-
-### Core Functionality
-
-- **Multi-tenant architecture** - Multiple clinics with isolated data
-- **Subscription management** - 4 plans (Starter, Basic, Professional, Enterprise)
-- **Patient management** - Demographics, medical history, chronic diseases
-- **Appointment system** - Scheduling, queue management, status tracking
-- **Billing & invoicing** - Invoice generation, payment processing, discounts
-- **Inventory management** - Medicines, supplies, stock tracking
-- **Medical records** - Vital signs, measurements, prescriptions
-
-### Technical Features
-
-- **JWT authentication** with refresh token rotation
-- **Email verification** and password reset
-- **File uploads** - Profile images with validation
-- **Role-based authorization** - SuperAdmin, ClinicOwner, Doctor, Receptionist
-- **Background services** - Refresh token cleanup
-- **Global exception handling** - Domain and global middleware
-- **Pagination** - Efficient data retrieval
-- **GeoNames integration** - Location services
-
-## 📊 Project Stats
-
-- **40 entities** across 6 domains (Identity, Clinic, Patient, Appointment, Inventory, Billing)
-- **15 endpoint groups** with 40+ endpoints
-- **38 CQRS handlers** (Commands + Queries)
-- **4 subscription plans** with feature-based access control
-- **10 specializations**, 10 chronic diseases, 10 vital signs, 8 appointment types
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- .NET 10 SDK
-- SQL Server (LocalDB or full instance)
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/SherifOthman/clinic-api.git
-cd clinic-api
-
-# Update connection string in appsettings.Development.json
-
-# Run migrations
-dotnet ef database update --project src/ClinicManagement.Infrastructure --startup-project src/ClinicManagement.API
-
-# Run the application
-dotnet run --project src/ClinicManagement.API
-
-# Access Swagger
-# https://localhost:7001/swagger
-```
-
-### Default Credentials
-
-**Super Admin**
-
-- Email: `superadmin@clinic.com`
-- Password: `SuperAdmin123!`
-
-## 📁 Project Structure
-
-```
-src/
-├── ClinicManagement.API/              # Presentation Layer
-│   ├── Endpoints/                     # 15 endpoint groups
-│   ├── Middleware/                    # Exception handling, JWT
-│   └── Program.cs
-│
-├── ClinicManagement.Application/      # Application Layer
-│   ├── Features/                      # CQRS handlers by feature
-│   │   ├── Auth/
-│   │   ├── Appointments/
-│   │   ├── Patients/
-│   │   └── ...
-│   ├── DTOs/
-│   └── Common/
-│       ├── Interfaces/
-│       ├── Behaviors/                 # MediatR pipeline
-│       └── Models/                    # Result, PagedResult
-│
-├── ClinicManagement.Domain/           # Domain Layer
-│   ├── Entities/                      # 40 entities with business logic
-│   │   ├── Appointment/
-│   │   ├── Patient/
-│   │   ├── Billing/
-│   │   └── ...
-│   └── Common/
-│       ├── Exceptions/                # Domain exceptions
-│       └── Enums/
-│
-└── ClinicManagement.Infrastructure/   # Infrastructure Layer
-    ├── Data/
-    │   ├── ApplicationDbContext.cs
-    │   ├── Configurations/            # EF entity configs
-    │   └── Migrations/
-    └── Services/                      # External services
-```
-
-## 🎯 Key Learnings & Decisions
-
-### What I Learned
-
-- Implementing Clean Architecture in a real-world scenario
-- CQRS pattern with MediatR for scalable command/query separation
-- Rich domain models vs anemic models
-- Multi-tenancy with data isolation
-- Subscription-based SaaS architecture
-- Domain-driven design principles
-
-### Pragmatic Decisions
-
-- **No Repository Pattern**: EF Core already provides this - avoiding over-engineering
-- **Command/Query + Handler in one file**: Better cohesion, easier navigation
-- **Validators in separate files**: Reusability and single responsibility
-- **Direct EF Core usage**: Simpler, more maintainable than abstraction layers
-
-## 🔒 Security Features
-
-- JWT token authentication with refresh tokens
-- Password hashing with ASP.NET Core Identity
-- Email verification workflow
-- Role-based authorization
-- Clinic data isolation (multi-tenancy)
-- Input validation with FluentValidation
-- SQL injection protection (EF Core parameterization)
-- CORS configuration
-- HTTPS enforcement
-
-## � API Documentation
-
-**Live Swagger**: https://clinic-api.runasp.net/swagger
-
-### Endpoint Groups
-
-- Authentication (register, login, password reset, profile management)
-- Onboarding (clinic setup, subscription plans)
-- Staff Invitations
-- Appointments & Appointment Types
-- Patients & Patient Chronic Diseases
-- Chronic Diseases
-- Specializations
-- Measurements (vital signs)
-- Medicines, Medical Supplies, Medical Services
-- Invoices & Payments
-- Locations (GeoNames integration)
-
-## 🧪 Testing Approach
-
-The application is designed for testability:
-
-- **Unit tests**: Domain entities and business logic
-- **Integration tests**: CQRS handlers with in-memory database
-- **API tests**: Endpoint testing with WebApplicationFactory
-
-## 📄 License
-
-MIT License
+**Repositories**: [API](https://github.com/SherifOthman/clinic-api) • [Dashboard](https://github.com/SherifOthman/clinic-dashboard) • [Website](https://github.com/SherifOthman/clinic-website)
 
 ---
 
-**Built by**: Sherif Othman  
-**Repository**: https://github.com/SherifOthman/clinic-api  
-**Live Demo**: https://clinic-api.runasp.net/swagger
+## The Problem It Solves
 
-_This project demonstrates production-ready .NET development with Clean Architecture, CQRS, and Domain-Driven Design principles._
+Small and mid-sized medical clinics need a way to manage their patients, staff, and operations — but off-the-shelf solutions are either too expensive, too generic, or don't support Arabic. This platform lets a clinic owner sign up, set up their clinic in minutes, invite their team, and start managing patients immediately. Multiple clinics run on the same platform with complete data isolation between them.
+
+---
+
+## What's Built
+
+### Authentication & Identity
+
+A complete auth system built on top of ASP.NET Identity. Users can register, confirm their email, log in with either email or username, reset their password, and manage their profile including a profile image. Token refresh is handled automatically. The system supports two client types via the `X-Client-Type` header: web clients get HTTP-only refresh token cookies (XSS-safe), mobile clients get tokens in the response body.
+
+### Multi-Tenant Clinic Management
+
+Every entity that belongs to a clinic implements `ITenantEntity` with a `ClinicId`. EF Core global query filters enforce tenant isolation automatically — a query from Clinic A can never return data from Clinic B. The `ICurrentUserService` extracts the `ClinicId` from JWT claims and injects it into every scoped operation. The `SuperAdmin` role bypasses these filters to see across all clinics.
+
+### Onboarding Flow
+
+New clinic owners go through a guided setup: clinic name, branch details, location (country/state/city via GeoNames), subscription plan selection, and medical specialization. The clinic is marked as active only after onboarding completes.
+
+### Patient Management
+
+Patients have a globally unique 8-digit code, full demographics, multiple phone numbers (validated with libphonenumber-csharp), blood type, date of birth, chronic diseases, and a bilingual location (country/state/city stored in both English and Arabic). Soft-delete is supported — deleted patients are retained in the database and can be restored by a SuperAdmin. Search results are ranked by relevance: exact code match first, then name match, then partial matches.
+
+### Staff & Invitations
+
+Clinic owners invite staff by email with a role (Doctor or Receptionist). The invitation has a 7-day expiry, can be resent or canceled, and contains a secure token. When the invitee clicks the link, they register and are automatically linked to the clinic. Doctors get a `DoctorProfile` with specialization. The clinic owner can also register themselves as a doctor.
+
+### Audit Trail
+
+Every create, update, and delete on any `AuditableEntity` is captured with field-level diffs — old value, new value, who made the change, when, from which IP, and which browser. Security events (login, logout, failed attempts, account lockouts) are logged separately. The SuperAdmin can query the full audit trail across all clinics. Logs older than 12 months are automatically purged by a background job.
+
+### Subscription Plans
+
+Plans define limits (max branches, max staff, max patients per month, storage) and feature flags (inventory management, reporting, API access, custom branding, priority support). The domain model includes billing logic like yearly discount calculation and limit checks.
+
+### Background Jobs
+
+Five hosted services run continuously in the background:
+
+- **EmailQueueProcessorJob** — processes up to 50 pending emails every 5 minutes with retry logic and priority ordering
+- **AuditLogCleanupService** — runs at midnight daily, deletes audit logs older than 12 months
+- **RefreshTokenCleanupService** — runs every 6 hours, removes expired and revoked tokens
+- **UsageMetricsAggregationJob** — aggregates clinic usage metrics hourly for billing and analytics
+- **SubscriptionExpiryNotificationJob** — sends expiry warnings to clinics approaching their subscription end date
+
+---
+
+## Architecture
+
+Clean Architecture with four layers. Dependencies point strictly inward — the Domain layer has zero external dependencies.
+
+```
+API            → Controllers, middleware, OpenAPI/Scalar docs
+Application    → CQRS handlers, FluentValidation, MediatR pipeline behaviors
+Domain         → Entities, enums, value objects, Result<T>, domain logic
+Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jobs
+```
+
+**CQRS with MediatR** — every operation is either a Command (write) or a Query (read), dispatched through MediatR. Three pipeline behaviors run on every request: `LoggingBehavior` logs the handler name and duration, `ValidationBehavior` runs all FluentValidation validators and returns structured errors before the handler executes, and `PerformanceBehavior` warns when a handler takes too long.
+
+**Result pattern** — handlers return `Result<T>` instead of throwing exceptions for expected failures. `GlobalExceptionMiddleware` catches anything unexpected and returns RFC 7807 Problem Details with a trace ID. Error codes are string constants that map directly to frontend i18n keys, so the frontend can display the right translated message without any mapping logic.
+
+**No generic repository** — handlers access `IApplicationDbContext` directly. The abstraction exists for testability, not to wrap every EF Core method in a redundant interface.
+
+---
+
+## Tech Stack
+
+| Layer            | Technology                       |
+| ---------------- | -------------------------------- |
+| Runtime          | .NET 10                          |
+| ORM              | Entity Framework Core            |
+| Identity         | ASP.NET Core Identity            |
+| Mediator         | MediatR                          |
+| Validation       | FluentValidation                 |
+| Mapping          | Mapster                          |
+| Auth             | JWT Bearer + HTTP-only cookies   |
+| Logging          | Serilog (console + rolling file) |
+| API Docs         | Scalar (OpenAPI)                 |
+| Email            | MailKit + SMTP queue             |
+| Phone validation | libphonenumber-csharp            |
+| Location data    | GeoNames API (cached 24h)        |
+| Database         | SQL Server                       |
+
+---
+
+## Feature Status
+
+> ✅ Done · 🔧 API done, no UI · 🗂️ Domain modeled, no API or UI · ❌ Not started
+
+### Authentication & User Management
+
+| Feature                                | API | Notes                       |
+| -------------------------------------- | --- | --------------------------- |
+| Register, email confirmation, resend   | ✅  | Token-based                 |
+| Login (email or username)              | ✅  |                             |
+| Logout                                 | ✅  | Clears cookie + token       |
+| Forgot / reset / change password       | ✅  |                             |
+| JWT + refresh token (auto-rotate)      | ✅  |                             |
+| HTTP-only cookie mode (web)            | ✅  | XSS-safe                    |
+| Response body token mode (mobile)      | ✅  | Via `X-Client-Type: mobile` |
+| Profile — name, username, phone, image | ✅  |                             |
+| In-app notifications                   | 🗂️  | Entity modeled, no API      |
+
+### Clinic & Branch Management
+
+| Feature                                          | API | Notes                                         |
+| ------------------------------------------------ | --- | --------------------------------------------- |
+| Onboarding wizard (name, branch, location, plan) | ✅  |                                               |
+| View / create / edit / toggle branches           | ✅  | Bilingual location                            |
+| Branch phone numbers                             | 🗂️  | Entity exists                                 |
+| Branch appointment pricing                       | 🗂️  | Entity exists                                 |
+| Clinic subscription management                   | 🗂️  | `ClinicSubscription` modeled                  |
+| Subscription payment history                     | 🗂️  | `SubscriptionPayment` modeled                 |
+| Usage metrics / limits tracking                  | 🔧  | Background job aggregates hourly, no endpoint |
+
+### Patient Management
+
+| Feature                                                  | API | Notes                           |
+| -------------------------------------------------------- | --- | ------------------------------- |
+| Paginated list — search, sort, filter by gender / region | ✅  | Search ranked by relevance      |
+| Create / edit / view / soft-delete / restore             | ✅  | Restore is SuperAdmin only      |
+| Unique 8-digit patient code                              | ✅  | Auto-generated                  |
+| Multiple phone numbers                                   | ✅  | International format validation |
+| Blood type, DOB, chronic diseases                        | ✅  |                                 |
+| Bilingual location (country / state / city)              | ✅  | GeoNames-backed, EN+AR stored   |
+| Medical visit history                                    | 🗂️  | `MedicalVisit` entity modeled   |
+| Medical files / documents                                | 🗂️  | `MedicalFile` entity modeled    |
+
+### Staff Management
+
+| Feature                                 | API | Notes                                            |
+| --------------------------------------- | --- | ------------------------------------------------ |
+| View staff list                         | ✅  | Role and status filters                          |
+| Invite by email (Doctor / Receptionist) | ✅  | 7-day expiry token                               |
+| Resend / cancel invitation              | ✅  |                                                  |
+| Accept invitation (register + join)     | ✅  |                                                  |
+| Activate / deactivate staff             | ✅  |                                                  |
+| Register owner as doctor                | ✅  |                                                  |
+| Doctor specialization                   | ✅  | Set during invitation                            |
+| Doctor working schedule                 | 🔧  | `GET/PUT /staff/{id}/working-days` exists, no UI |
+
+### Appointments
+
+| Feature                                                   | API | Notes                                  |
+| --------------------------------------------------------- | --- | -------------------------------------- |
+| Book appointment                                          | 🗂️  | Entity with status, queue number, type |
+| Appointment types (bilingual)                             | 🗂️  |                                        |
+| Status flow (Pending → Confirmed → Completed / Cancelled) | 🗂️  |                                        |
+| Queue management                                          | 🗂️  | `QueueNumber` on appointment           |
+| Calendar view                                             | ❌  |                                        |
+| Link appointment to invoice                               | 🗂️  | FK modeled                             |
+
+### Medical Visits
+
+| Feature                                    | API | Notes                                                              |
+| ------------------------------------------ | --- | ------------------------------------------------------------------ |
+| Create visit linked to appointment         | 🗂️  | With diagnosis field                                               |
+| Prescriptions                              | 🗂️  | Dosage, frequency, duration, instructions                          |
+| Lab test orders                            | 🗂️  | Full lifecycle: Ordered → InProgress → ResultsAvailable → Reviewed |
+| Radiology orders                           | 🗂️  | Same lifecycle, image + report file paths                          |
+| Vital measurements                         | 🗂️  | EAV model — each doctor configures their own fields                |
+| Upload medical files                       | 🗂️  | File type enum                                                     |
+| Lab / radiology test catalogs (per clinic) | 🗂️  |                                                                    |
+
+### Inventory
+
+| Feature                         | API | Notes                                      |
+| ------------------------------- | --- | ------------------------------------------ |
+| Medicine inventory (per branch) | 🗂️  | Boxes/strips, expiry, low-stock thresholds |
+| Medicine dispensing             | 🗂️  | Dispensed / Partial / Cancelled status     |
+| Medical supplies                | 🗂️  | Quantity + unit price                      |
+| Medical services catalog        | 🗂️  | Per-branch, surgical flag                  |
+| Low stock + expiry alerts       | 🗂️  | Domain logic exists, no API                |
+
+### Billing
+
+| Feature                                         | API | Notes                                               |
+| ----------------------------------------------- | --- | --------------------------------------------------- |
+| Create invoice                                  | 🗂️  | Linked to appointment or visit                      |
+| Line items                                      | 🗂️  | Services, medicines, supplies, lab tests, radiology |
+| Discounts and tax                               | 🗂️  |                                                     |
+| Status flow (Draft → Issued → Paid / Cancelled) | 🗂️  | `IsOverdue` domain method                           |
+| Payments (Cash, Card, etc.)                     | 🗂️  | Reference number supported                          |
+
+### Dashboard & Analytics
+
+| Feature                                                   | API | Notes                          |
+| --------------------------------------------------------- | --- | ------------------------------ |
+| Clinic stats (patients, staff, invitations, subscription) | ✅  |                                |
+| Recent patients widget                                    | ✅  | Last 5                         |
+| SuperAdmin cross-clinic stats                             | ✅  |                                |
+| Usage metrics                                             | 🔧  | Aggregated hourly, no endpoint |
+| Appointment / revenue reports                             | ❌  |                                |
+
+### Audit & Compliance
+
+| Feature                                                        | API | Notes                                    |
+| -------------------------------------------------------------- | --- | ---------------------------------------- |
+| Field-level change tracking                                    | ✅  | All `AuditableEntity` types              |
+| Security event logging                                         | ✅  | Login, logout, failed attempts, lockouts |
+| Audit log query (filter by entity, action, user, clinic, date) | ✅  | SuperAdmin only                          |
+| 12-month retention with auto-cleanup                           | ✅  | Background job                           |
+
+---
+
+## Getting Started
+
+```bash
+# Apply migrations
+dotnet ef database update --project src/ClinicManagement.Infrastructure --startup-project src/ClinicManagement.API
+
+# Run
+dotnet run --project src/ClinicManagement.API
+```
+
+Demo credentials are seeded automatically in Development. See `appsettings.Development.json` under the `Seed` section.
+
+---
+
+## License
+
+MIT

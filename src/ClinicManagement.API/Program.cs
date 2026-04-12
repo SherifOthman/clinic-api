@@ -1,14 +1,17 @@
 using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
+using ClinicManagement.Persistence;
+using ClinicManagement.Persistence.Seeders;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-// Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile("appsettings.json")
-        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+        ?? "Production"}.json", optional: true)
         .Build())
     .CreateLogger();
 
@@ -17,26 +20,32 @@ try
     Log.Information("Starting Clinic Management API");
 
     var builder = WebApplication.CreateBuilder(args);
-
-    // Add Serilog
     builder.Host.UseSerilog();
 
-    // Add application layers
-    builder.Services.AddApi(builder.Configuration);
-    builder.Services.AddApplication(builder.Configuration);
+    builder.Services.AddApplication();
+    builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddApi(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
 
-    // Initialize database and seed data
-    using (var scope = app.Services.CreateScope())
+    if (app.Environment.EnvironmentName != "Testing")
     {
+        using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;
         try
         {
-            var dbInitializer = services.GetRequiredService<ClinicManagement.Infrastructure.Services.IDatabaseInitializationService>();
-            dbInitializer.InitializeAsync().GetAwaiter().GetResult();
-            Log.Information("Database initialized and seeded successfully");
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            await context.Database.MigrateAsync();
+            Log.Information("Database migrated successfully");
+
+            await services.GetRequiredService<RoleSeedService>().SeedRolesAsync();
+            await services.GetRequiredService<SpecializationSeedService>().SeedSpecializationsAsync();
+            await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
+            await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
+            await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
+
+            Log.Information("Database seeded successfully");
         }
         catch (Exception ex)
         {
@@ -44,10 +53,7 @@ try
         }
     }
 
-    // Add Serilog request logging
     app.UseSerilogRequestLogging();
-
-    // Use app configurations (includes middleware, CORS, auth, etc.)
     app.UseAppConfigurations();
 
     Log.Information("Clinic Management API started successfully");
@@ -62,3 +68,5 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program { }

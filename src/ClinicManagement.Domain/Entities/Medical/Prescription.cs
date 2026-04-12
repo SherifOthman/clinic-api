@@ -4,11 +4,8 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Prescription : AuditableEntity
+public class Prescription : AuditableEntity, INoAuditLog
 {
+    public string PrescriptionNumber { get; set; } = null!;
     public Guid VisitId { get; set; }
-    public MedicalVisit Visit { get; set; } = null!;
-
-    public ICollection<PrescriptionItem> Items { get; set; } = new List<PrescriptionItem>();
-
 }

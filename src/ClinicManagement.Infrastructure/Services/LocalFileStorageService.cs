@@ -1,7 +1,11 @@
-using ClinicManagement.Application.Common.Interfaces;
-using ClinicManagement.Application.Options;
-using Microsoft.AspNetCore.Hosting;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
+using ClinicManagement.Infrastructure.Options;
+using ClinicManagement.Domain.Common;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -9,12 +13,12 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class LocalFileStorageService : IFileStorageService
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly IHostEnvironment _environment;
     private readonly ILogger<LocalFileStorageService> _logger;
     private readonly FileStorageOptions _options;
 
     public LocalFileStorageService(
-        IWebHostEnvironment environment, 
+        IHostEnvironment environment, 
         ILogger<LocalFileStorageService> logger,
         IOptions<FileStorageOptions> options)
     {
@@ -32,15 +36,9 @@ public class LocalFileStorageService : IFileStorageService
                 throw new ArgumentException("File is empty or null");
             }
 
-            // Validate file size
-            if (file.Length > _options.MaxFileSizeBytes)
-            {
-                throw new ArgumentException($"File size exceeds maximum allowed size of {_options.MaxFileSizeBytes} bytes");
-            }
-
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var uploadsPath = _options.UploadPath.Replace("wwwroot/", "").Replace("wwwroot\\", "");
-            var folderPath = Path.Combine(_environment.WebRootPath, uploadsPath, folder);
+            var webRootPath = _environment.ContentRootPath; // Use ContentRootPath instead of WebRootPath
+            var folderPath = Path.Combine(webRootPath, "wwwroot", _options.UploadPath, folder);
             
             if (!Directory.Exists(folderPath))
             {
@@ -65,32 +63,45 @@ public class LocalFileStorageService : IFileStorageService
         }
     }
 
-    public async Task<bool> DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
+    public async Task<Result<string>> UploadFileWithValidationAsync(
+        IFormFile file,
+        string fileType,
+        CancellationToken cancellationToken = default)
     {
-        try
+        if (!_options.FileTypes.TryGetValue(fileType, out var fileTypeSettings))
         {
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                return false;
-            }
-
-            var cleanPath = filePath.TrimStart('/');
-            var fullPath = Path.Combine(_environment.WebRootPath, cleanPath);
-
-            if (File.Exists(fullPath))
-            {
-                await Task.Run(() => File.Delete(fullPath), cancellationToken);
-                _logger.LogInformation("File deleted successfully: {FilePath}", filePath);
-                return true;
-            }
-
-            _logger.LogWarning("File not found for deletion: {FilePath}", filePath);
-            return false;
+            return Result.Failure<string>("FILE_TYPE_NOT_CONFIGURED", $"File type '{fileType}' is not configured");
         }
-        catch (Exception ex)
+
+        var validationResult = ValidateFile(file, fileTypeSettings.AllowedExtensions.ToArray(), fileTypeSettings.MaxFileSizeBytes);
+        if (validationResult.IsFailure)
         {
-            _logger.LogError(ex, "Error deleting file: {FilePath}", filePath);
-            return false;
+            return Result.Failure<string>(validationResult.ErrorCode ?? "VALIDATION_FAILED", validationResult.ErrorMessage ?? "File validation failed");
+        }
+
+        var filePath = await UploadFileAsync(file, fileTypeSettings.Folder, cancellationToken);
+        return Result.Success(filePath);
+    }
+
+    public async Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return;
+        }
+
+        var cleanPath = filePath.TrimStart('/');
+        var webRootPath = _environment.ContentRootPath;
+        var fullPath = Path.Combine(webRootPath, "wwwroot", cleanPath);
+
+        if (File.Exists(fullPath))
+        {
+            await Task.Run(() => File.Delete(fullPath), cancellationToken);
+            _logger.LogInformation("File deleted successfully: {FilePath}", filePath);
+        }
+        else
+        {
+            _logger.LogWarning("File not found for deletion: {FilePath}", filePath);
         }
     }
 
@@ -102,29 +113,31 @@ public class LocalFileStorageService : IFileStorageService
         }
 
         var cleanPath = relativePath.TrimStart('/');
-        return Path.Combine(_environment.WebRootPath, cleanPath);
+        var webRootPath = _environment.ContentRootPath;
+        return Path.Combine(webRootPath, "wwwroot", cleanPath);
     }
 
-    public bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)
+    public Result ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeInBytes)
     {
         if (file == null || file.Length == 0)
         {
-            return false;
+            return Result.Failure("FILE_REQUIRED", "File is required");
         }
 
         if (file.Length > maxSizeInBytes)
         {
-            _logger.LogWarning("File size exceeds limit: {Size} bytes", file.Length);
-            return false;
+            var maxSizeMB = maxSizeInBytes / (1024 * 1024);
+            return Result.Failure("FILE_TOO_LARGE", $"File size must not exceed {maxSizeMB}MB");
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
         {
-            _logger.LogWarning("File extension not allowed: {Extension}", extension);
-            return false;
+            var allowedTypes = string.Join(", ", allowedExtensions);
+            return Result.Failure("INVALID_FILE_TYPE", $"File must be one of the following types: {allowedTypes}");
         }
-
-        return true;
+        
+        return Result.Success();
     }
 }
+

@@ -1,0 +1,182 @@
+[
+  {
+    "nameEn": "Diabetes Type 1",
+    "nameAr": "السكري النوع الأول",
+    "descriptionEn": "Insulin-dependent diabetes mellitus",
+    "descriptionAr": "داء السكري المعتمد على الأنسولين"
+  },
+  {
+    "nameEn": "Diabetes Type 2",
+    "nameAr": "السكري النوع الثاني",
+    "descriptionEn": "Non-insulin-dependent diabetes mellitus",
+    "descriptionAr": "داء السكري غير المعتمد على الأنسولين"
+  },
+  {
+    "nameEn": "Hypertension",
+    "nameAr": "ارتفاع ضغط الدم",
+    "descriptionEn": "High blood pressure",
+    "descriptionAr": "ضغط الدم المرتفع"
+  },
+  {
+    "nameEn": "Asthma",
+    "nameAr": "الربو",
+    "descriptionEn": "Chronic respiratory condition",
+    "descriptionAr": "حالة تنفسية مزمنة"
+  },
+  {
+    "nameEn": "COPD",
+    "nameAr": "مرض الانسداد الرئوي المزمن",
+    "descriptionEn": "Chronic Obstructive Pulmonary Disease",
+    "descriptionAr": "مرض الانسداد الرئوي المزمن"
+  },
+  {
+    "nameEn": "Heart Disease",
+    "nameAr": "أمراض القلب",
+    "descriptionEn": "Cardiovascular disease",
+    "descriptionAr": "أمراض القلب والأوعية الدموية"
+  },
+  {
+    "nameEn": "Coronary Artery Disease",
+    "nameAr": "مرض الشريان التاجي",
+    "descriptionEn": "Narrowing of coronary arteries",
+    "descriptionAr": "تضيق الشرايين التاجية"
+  },
+  {
+    "nameEn": "Chronic Kidney Disease",
+    "nameAr": "مرض الكلى المزمن",
+    "descriptionEn": "Progressive loss of kidney function",
+    "descriptionAr": "فقدان تدريجي لوظائف الكلى"
+  },
+  {
+    "nameEn": "Arthritis",
+    "nameAr": "التهاب المفاصل",
+    "descriptionEn": "Joint inflammation and pain",
+    "descriptionAr": "التهاب وألم المفاصل"
+  },
+  {
+    "nameEn": "Rheumatoid Arthritis",
+    "nameAr": "التهاب المفاصل الروماتويدي",
+    "descriptionEn": "Autoimmune joint disease",
+    "descriptionAr": "مرض المفاصل المناعي الذاتي"
+  },
+  {
+    "nameEn": "Osteoporosis",
+    "nameAr": "هشاشة العظام",
+    "descriptionEn": "Bone density loss",
+    "descriptionAr": "فقدان كثافة العظام"
+  },
+  {
+    "nameEn": "Thyroid Disorder",
+    "nameAr": "اضطراب الغدة الدرقية",
+    "descriptionEn": "Thyroid gland dysfunction",
+    "descriptionAr": "خلل في الغدة الدرقية"
+  },
+  {
+    "nameEn": "Hypothyroidism",
+    "nameAr": "قصور الغدة الدرقية",
+    "descriptionEn": "Underactive thyroid",
+    "descriptionAr": "خمول الغدة الدرقية"
+  },
+  {
+    "nameEn": "Hyperthyroidism",
+    "nameAr": "فرط نشاط الغدة الدرقية",
+    "descriptionEn": "Overactive thyroid",
+    "descriptionAr": "فرط نشاط الغدة الدرقية"
+  },
+  {
+    "nameEn": "Epilepsy",
+    "nameAr": "الصرع",
+    "descriptionEn": "Neurological disorder causing seizures",
+    "descriptionAr": "اضطراب عصبي يسبب النوبات"
+  },
+  {
+    "nameEn": "Depression",
+    "nameAr": "الاكتئاب",
+    "descriptionEn": "Persistent mood disorder",
+    "descriptionAr": "اضطراب مزاجي مستمر"
+  },
+  {
+    "nameEn": "Anxiety Disorder",
+    "nameAr": "اضطراب القلق",
+    "descriptionEn": "Excessive worry and fear",
+    "descriptionAr": "القلق والخوف المفرط"
+  },
+  {
+    "nameEn": "Migraine",
+    "nameAr": "الصداع النصفي",
+    "descriptionEn": "Recurrent severe headaches",
+    "descriptionAr": "صداع شديد متكرر"
+  },
+  {
+    "nameEn": "Celiac Disease",
+    "nameAr": "مرض السيلياك",
+    "descriptionEn": "Gluten intolerance",
+    "descriptionAr": "عدم تحمل الغلوتين"
+  },
+  {
+    "nameEn": "Crohn's Disease",
+    "nameAr": "داء كرون",
+    "descriptionEn": "Inflammatory bowel disease",
+    "descriptionAr": "مرض التهاب الأمعاء"
+  },
+  {
+    "nameEn": "Ulcerative Colitis",
+    "nameAr": "التهاب القولون التقرحي",
+    "descriptionEn": "Inflammatory bowel disease",
+    "descriptionAr": "مرض التهاب الأمعاء"
+  },
+  {
+    "nameEn": "Psoriasis",
+    "nameAr": "الصدفية",
+    "descriptionEn": "Chronic skin condition",
+    "descriptionAr": "حالة جلدية مزمنة"
+  },
+  {
+    "nameEn": "Eczema",
+    "nameAr": "الأكزيما",
+    "descriptionEn": "Chronic skin inflammation",
+    "descriptionAr": "التهاب الجلد المزمن"
+  },
+  {
+    "nameEn": "Lupus",
+    "nameAr": "الذئبة الحمراء",
+    "descriptionEn": "Autoimmune disease",
+    "descriptionAr": "مرض المناعة الذاتية"
+  },
+  {
+    "nameEn": "Multiple Sclerosis",
+    "nameAr": "التصلب المتعدد",
+    "descriptionEn": "Neurological autoimmune disease",
+    "descriptionAr": "مرض عصبي مناعي ذاتي"
+  },
+  {
+    "nameEn": "Parkinson's Disease",
+    "nameAr": "مرض باركنسون",
+    "descriptionEn": "Progressive neurological disorder",
+    "descriptionAr": "اضطراب عصبي تقدمي"
+  },
+  {
+    "nameEn": "Alzheimer's Disease",
+    "nameAr": "مرض الزهايمر",
+    "descriptionEn": "Progressive memory loss",
+    "descriptionAr": "فقدان الذاكرة التقدمي"
+  },
+  {
+    "nameEn": "Hepatitis B",
+    "nameAr": "التهاب الكبد ب",
+    "descriptionEn": "Chronic liver infection",
+    "descriptionAr": "عدوى الكبد المزمنة"
+  },
+  {
+    "nameEn": "Hepatitis C",
+    "nameAr": "التهاب الكبد سي",
+    "descriptionEn": "Chronic liver infection",
+    "descriptionAr": "عدوى الكبد المزمنة"
+  },
+  {
+    "nameEn": "HIV/AIDS",
+    "nameAr": "فيروس نقص المناعة البشرية",
+    "descriptionEn": "Immune system disorder",
+    "descriptionAr": "اضطراب الجهاز المناعي"
+  }
+]

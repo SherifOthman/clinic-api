@@ -1,4 +1,7 @@
-using ClinicManagement.Application.Common.Interfaces;
+using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -32,6 +35,12 @@ public class CurrentUserService : ICurrentUserService
     }
 
     public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
+
+    public string? FullName => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+
+    public string? Username => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier) != null
+        ? _httpContextAccessor.HttpContext?.User?.Identity?.Name
+        : null;
 
     public string IpAddress
     {
@@ -92,3 +101,4 @@ public class CurrentUserService : ICurrentUserService
         return false;
     }
 }
+

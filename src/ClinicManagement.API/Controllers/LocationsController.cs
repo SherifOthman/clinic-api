@@ -1,57 +1,62 @@
-using ClinicManagement.Application.DTOs;
-using ClinicManagement.Application.Features.Locations.Queries.GetCities;
-using ClinicManagement.Application.Features.Locations.Queries.GetCountries;
-using ClinicManagement.Application.Features.Locations.Queries.GetStates;
-using MediatR;
+using ClinicManagement.API.Contracts.Locations;
+using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement.API.Controllers;
 
-[Route("api/[controller]")]
-[AllowAnonymous]
-public class LocationsController : BaseApiController
+/// <summary>
+/// Proxies GeoNames location data with per-language caching.
+/// Pass ?lang=en or ?lang=ar — defaults to "en".
+/// Each language is cached independently for 24h.
+/// </summary>
+[ApiController]
+[Route("api/locations")]
+[Produces("application/json")]
+public class LocationsController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly GeoNamesService _geoNames;
 
-    public LocationsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    public LocationsController(GeoNamesService geoNames) => _geoNames = geoNames;
 
-    /// <summary>
-    /// Get all countries
-    /// </summary>
     [HttpGet("countries")]
-    [ProducesResponseType(typeof(List<GeoNamesCountryDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCountries(CancellationToken cancellationToken)
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<CountryResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCountries(
+        [FromQuery] string lang = "en", CancellationToken ct = default)
     {
-        var query = new GetCountriesQuery();
-        var result = await _mediator.Send(query, cancellationToken);
-        return HandleResult(result);
+        var countries = await _geoNames.GetCountriesAsync(lang, ct);
+        var response  = countries
+            .Select(c => new CountryResponse(c.GeonameId, c.Name, c.CountryCode))
+            .ToList();
+        return Ok(response);
     }
 
-    /// <summary>
-    /// Get states by country
-    /// </summary>
-    [HttpGet("states")]
-    [ProducesResponseType(typeof(List<GeoNamesLocationDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetStates([FromQuery] int countryGeonameId, CancellationToken cancellationToken)
+    [HttpGet("countries/{countryGeonameId:int}/states")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<StateResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStates(
+        [FromRoute] int countryGeonameId,
+        [FromQuery] string lang = "en", CancellationToken ct = default)
     {
-        var query = new GetStatesQuery(countryGeonameId);
-        var result = await _mediator.Send(query, cancellationToken);
-        return HandleResult(result);
+        var states   = await _geoNames.GetStatesAsync(countryGeonameId, lang, ct);
+        var response = states
+            .Select(s => new StateResponse(s.GeonameId, s.Name))
+            .ToList();
+        return Ok(response);
     }
 
-    /// <summary>
-    /// Get cities by state
-    /// </summary>
-    [HttpGet("cities")]
-    [ProducesResponseType(typeof(List<GeoNamesLocationDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCities([FromQuery] int stateGeonameId, CancellationToken cancellationToken)
+    [HttpGet("states/{stateGeonameId:int}/cities")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<CityResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCities(
+        [FromRoute] int stateGeonameId,
+        [FromQuery] string lang = "en", CancellationToken ct = default)
     {
-        var query = new GetCitiesQuery(stateGeonameId);
-        var result = await _mediator.Send(query, cancellationToken);
-        return HandleResult(result);
+        var cities   = await _geoNames.GetCitiesAsync(stateGeonameId, lang, ct);
+        var response = cities
+            .Select(c => new CityResponse(c.GeonameId, c.Name))
+            .ToList();
+        return Ok(response);
     }
 }

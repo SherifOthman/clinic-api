@@ -1,28 +1,31 @@
-using System;
-
 namespace ClinicManagement.Domain.Common;
 
+/// <summary>
+/// Base entity with full audit trail: who created/updated and when.
+/// </summary>
 public abstract class AuditableEntity : BaseEntity
 {
-    public DateTime CreatedAt { get; set; }
-    public Guid? CreatedBy { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public Guid? UpdatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; } = false;
-    public DateTime? DeletedAt { get; set; }
-    public Guid? DeletedBy { get; set; }
 
-    public void SoftDelete(Guid? deletedBy = null)
+    /// <summary>UserId of the user who created this record.</summary>
+    public Guid? CreatedBy { get; set; }
+
+    /// <summary>UserId of the user who last updated this record.</summary>
+    public Guid? UpdatedBy { get; set; }
+
+    public void SoftDelete()
     {
         IsDeleted = true;
-        DeletedAt = DateTime.UtcNow;
-        DeletedBy = deletedBy;
+        Touch();
     }
 
     public void Restore()
     {
         IsDeleted = false;
-        DeletedAt = null;
-        DeletedBy = null;
+        Touch();
     }
+
+    public void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 }

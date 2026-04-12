@@ -1,0 +1,18 @@
+# Exclude build artifacts - the Docker build stage handles compilation
+**/bin/
+**/obj/
+
+# Exclude local dev files
+**/.vs/
+**/.vscode/
+*.user
+
+# Exclude logs (mounted as a volume anyway)
+**/Logs/
+
+# Exclude test projects - not needed in production image
+tests/
+
+# Exclude git history
+.git/
+.gitignore
