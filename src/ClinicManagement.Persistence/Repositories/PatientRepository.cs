@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Repositories;
-using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.QueryModels;
 using ClinicManagement.Application.Features.Patients.Queries;
@@ -16,14 +15,12 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     private readonly DbSet<PatientPhone>          _phones;
     private readonly DbSet<PatientChronicDisease> _chronicDiseases;
     private readonly DbSet<Clinic>                _clinics;
-    private readonly IPhoneNormalizer             _phoneNormalizer;
 
-    public PatientRepository(ApplicationDbContext context, IPhoneNormalizer phoneNormalizer) : base(context)
+    public PatientRepository(ApplicationDbContext context) : base(context)
     {
         _phones          = context.Set<PatientPhone>();
         _chronicDiseases = context.Set<PatientChronicDisease>();
         _clinics         = context.Set<Clinic>();
-        _phoneNormalizer = phoneNormalizer;
     }
 
     // ── Simple lookups ────────────────────────────────────────────────────────
@@ -60,6 +57,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     public async Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
         string? searchTerm,
+        string? nationalSearch,
         string? gender,
         string? sortBy,
         string? sortDirection,
@@ -78,11 +76,6 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            // Normalize the search term to get the national significant number.
-            // This lets "01098021259" match the stored national number "1098021259".
-            // Falls back to the raw term for E.164 input like "+2001098021259".
-            var nationalSearch = _phoneNormalizer.GetNationalNumber(searchTerm);
-
             query = query.Where(p =>
                 p.FullName.StartsWith(searchTerm) ||
                 p.PatientCode.StartsWith(searchTerm) ||

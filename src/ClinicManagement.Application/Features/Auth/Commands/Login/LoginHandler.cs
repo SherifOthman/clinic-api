@@ -92,10 +92,12 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         var roles = await _userManager.GetRolesAsync(user);
 
         Guid? clinicId = null;
+        string? countryCode = null;
         if (roles.Contains(Roles.ClinicOwner))
         {
             var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
-            clinicId = clinic?.Id;
+            clinicId    = clinic?.Id;
+            countryCode = clinic?.CountryCode;
         }
         else
         {
@@ -110,9 +112,15 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
                 return Result.Failure<TokenResponseDto>(ErrorCodes.STAFF_INACTIVE,
                     "Your account has been deactivated. Please contact your clinic owner.");
             }
+
+            if (clinicId.HasValue)
+            {
+                var clinic = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
+                countryCode = clinic?.CountryCode;
+            }
         }
 
-        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId);
+        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId, countryCode);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
         await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),

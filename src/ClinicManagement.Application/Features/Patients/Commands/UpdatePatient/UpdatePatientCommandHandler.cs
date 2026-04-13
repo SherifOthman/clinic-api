@@ -11,11 +11,13 @@ namespace ClinicManagement.Application.Features.Patients.Commands;
 public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand, Result>
 {
     private readonly IUnitOfWork _uow;
+    private readonly ICurrentUserService _currentUser;
     private readonly IPhoneNormalizer _phoneNormalizer;
 
-    public UpdatePatientCommandHandler(IUnitOfWork uow, IPhoneNormalizer phoneNormalizer)
+    public UpdatePatientCommandHandler(IUnitOfWork uow, ICurrentUserService currentUser, IPhoneNormalizer phoneNormalizer)
     {
         _uow             = uow;
+        _currentUser     = currentUser;
         _phoneNormalizer = phoneNormalizer;
     }
 
@@ -26,28 +28,31 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         if (patient is null)
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        patient.FullName         = request.FullName;
-        patient.DateOfBirth      = DateOnly.Parse(request.DateOfBirth);
-        patient.Gender           = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
-        patient.CityNameEn       = request.CityNameEn;
-        patient.CityNameAr       = request.CityNameAr;
-        patient.StateNameEn      = request.StateNameEn;
-        patient.StateNameAr      = request.StateNameAr;
-        patient.CountryNameEn    = request.CountryNameEn;
-        patient.CountryNameAr    = request.CountryNameAr;
-        patient.BloodType        = ParseBloodType(request.BloodType);
+        patient.FullName      = request.FullName;
+        patient.DateOfBirth   = DateOnly.Parse(request.DateOfBirth);
+        patient.Gender        = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
+        patient.CityNameEn    = request.CityNameEn;
+        patient.CityNameAr    = request.CityNameAr;
+        patient.StateNameEn   = request.StateNameEn;
+        patient.StateNameAr   = request.StateNameAr;
+        patient.CountryNameEn = request.CountryNameEn;
+        patient.CountryNameAr = request.CountryNameAr;
+        patient.BloodType     = ParseBloodType(request.BloodType);
 
         if (request.PhoneNumbers != null)
         {
             foreach (var phone in patient.Phones?.ToList() ?? [])
                 _uow.Patients.RemovePhone(phone);
 
+            // Read from JWT — no DB call
+            var countryCode = _currentUser.CountryCode;
+
             foreach (var phone in request.PhoneNumbers)
                 _uow.Patients.AddPhone(new PatientPhone
                 {
                     PatientId      = patient.Id,
                     PhoneNumber    = phone,
-                    NationalNumber = _phoneNormalizer.GetNationalNumber(phone) ?? phone,
+                    NationalNumber = _phoneNormalizer.GetNationalNumber(phone, countryCode) ?? phone,
                 });
         }
 

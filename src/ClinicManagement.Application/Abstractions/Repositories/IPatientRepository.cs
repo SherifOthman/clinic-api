@@ -21,6 +21,7 @@ public interface IPatientRepository : IRepository<Patient>
 
     Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
         string? searchTerm,
+        string? nationalSearch,
         string? gender,
         string? sortBy,
         string? sortDirection,

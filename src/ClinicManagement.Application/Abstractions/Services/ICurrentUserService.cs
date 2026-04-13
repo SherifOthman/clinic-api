@@ -4,6 +4,7 @@ public interface ICurrentUserService
 {
     Guid? UserId { get; }
     Guid? ClinicId { get; }
+    string? CountryCode { get; }
     string? FullName { get; }
     string? Username { get; }
     string? Email { get; }

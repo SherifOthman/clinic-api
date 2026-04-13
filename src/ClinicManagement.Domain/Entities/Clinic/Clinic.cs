@@ -14,6 +14,13 @@ public class Clinic : AuditableEntity
     public DateTimeOffset? TrialEndDate { get; set; }
     public string? BillingEmail { get; set; }
 
+    /// <summary>
+    /// ISO 3166-1 alpha-2 country code (e.g. "EG", "SA", "US").
+    /// Set during onboarding — used as the default region for phone number
+    /// normalization so local-format search works correctly.
+    /// </summary>
+    public string? CountryCode { get; set; }
+
     // Navigation properties
     public User Owner { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;

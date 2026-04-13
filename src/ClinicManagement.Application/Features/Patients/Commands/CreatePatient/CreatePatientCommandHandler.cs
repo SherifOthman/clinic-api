@@ -44,12 +44,14 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
         await _uow.Patients.AddAsync(patient);
 
+        var countryCode = _currentUser.CountryCode;
+
         foreach (var phone in request.PhoneNumbers)
             _uow.Patients.AddPhone(new PatientPhone
             {
                 PatientId      = patient.Id,
                 PhoneNumber    = phone,
-                NationalNumber = _phoneNormalizer.GetNationalNumber(phone) ?? phone,
+                NationalNumber = _phoneNormalizer.GetNationalNumber(phone, countryCode) ?? phone,
             });
 
         foreach (var diseaseId in request.ChronicDiseaseIds)

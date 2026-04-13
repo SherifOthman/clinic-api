@@ -33,4 +33,11 @@ public class ClinicRepository : Repository<Clinic>, IClinicRepository
         => await DbSet
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .CountAsync(ct);
+
+    public async Task<string?> GetCountryCodeAsync(Guid clinicId, CancellationToken ct = default)
+        => await DbSet
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .Where(c => c.Id == clinicId)
+            .Select(c => c.CountryCode)
+            .FirstOrDefaultAsync(ct);
 }

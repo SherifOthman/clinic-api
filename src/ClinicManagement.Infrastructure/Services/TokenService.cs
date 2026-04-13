@@ -27,7 +27,7 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null, string? countryCode = null)
     {
         var claims = new List<Claim>
         {
@@ -39,9 +39,10 @@ public class TokenService : ITokenService
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         if (clinicId.HasValue)
-        {
             claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));
-        }
+
+        if (!string.IsNullOrEmpty(countryCode))
+            claims.Add(new Claim("CountryCode", countryCode));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

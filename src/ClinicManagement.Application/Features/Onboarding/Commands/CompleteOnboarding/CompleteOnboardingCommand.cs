@@ -13,5 +13,6 @@ public record CompleteOnboarding(
     string? StateNameEn,
     string? StateNameAr,
     bool ProvideMedicalServices,
-    Guid? SpecializationId
+    Guid? SpecializationId,
+    string? CountryCode
 ) : IRequest<Result>;

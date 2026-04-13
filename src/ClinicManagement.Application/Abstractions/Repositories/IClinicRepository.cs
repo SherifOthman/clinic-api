@@ -15,4 +15,7 @@ public interface IClinicRepository : IRepository<Clinic>
     Task<List<Guid>> FindIdsByNameAsync(string nameSearch, CancellationToken ct = default);
 
     Task<int> CountIgnoreFiltersAsync(CancellationToken ct = default);
+
+    /// <summary>Returns the clinic's ISO country code (e.g. "EG") for phone normalization.</summary>
+    Task<string?> GetCountryCodeAsync(Guid clinicId, CancellationToken ct = default);
 }

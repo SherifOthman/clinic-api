@@ -41,11 +41,12 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 
         var clinic = new Clinic
         {
-            Name               = request.ClinicName,
-            OwnerUserId        = userId,
-            SubscriptionPlanId = request.SubscriptionPlanId,
+            Name                = request.ClinicName,
+            OwnerUserId         = userId,
+            SubscriptionPlanId  = request.SubscriptionPlanId,
             OnboardingCompleted = true,
-            IsActive           = true,
+            IsActive            = true,
+            CountryCode         = request.CountryCode,
         };
         await _uow.Clinics.AddAsync(clinic);
 

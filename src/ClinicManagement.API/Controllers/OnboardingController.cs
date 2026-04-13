@@ -27,7 +27,8 @@ public class OnboardingController : BaseApiController
             request.StateNameEn,
             request.StateNameAr,
             request.ProvideMedicalServices,
-            request.SpecializationId);
+            request.SpecializationId,
+            request.CountryCode);
 
         var result = await Sender.Send(command, cancellationToken);
         return HandleResult(result, "Onboarding Failed");

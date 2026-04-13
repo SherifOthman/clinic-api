@@ -61,18 +61,26 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             var roles = await _userManager.GetRolesAsync(user);
 
             Guid? clinicId = null;
+            string? countryCode = null;
             if (roles.Contains(Roles.ClinicOwner))
             {
-                var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
-                clinicId = clinic?.Id;
+                var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
+                clinicId    = clinic?.Id;
+                countryCode = clinic?.CountryCode;
             }
             else
             {
                 var staff = await _uow.Staff.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
                 clinicId  = staff?.ClinicId;
+
+                if (clinicId.HasValue)
+                {
+                    var clinic  = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
+                    countryCode = clinic?.CountryCode;
+                }
             }
 
-            var newAccessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId);
+            var newAccessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId, countryCode);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(userId, null, cancellationToken);
 
             await _refreshTokenService.RevokeRefreshTokenAsync(request.Token, null, newRefreshToken.Token, cancellationToken);
