@@ -58,17 +58,16 @@ public class PatientsController : BaseApiController
     {
         var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
 
-        // Fetch all three ID lists in parallel from the DB
-        var countryIdsTask = Sender.Send(new GetDistinctPatientCountryIdsQuery(isSuperAdmin), cancellationToken);
-        var stateIdsTask   = Sender.Send(new GetDistinctPatientStateIdsQuery(isSuperAdmin), cancellationToken);
-        var cityIdsTask    = Sender.Send(new GetDistinctPatientCityIdsQuery(isSuperAdmin), cancellationToken);
-        await Task.WhenAll(countryIdsTask, stateIdsTask, cityIdsTask);
+        // DB queries must be sequential — EF Core DbContext is not thread-safe
+        var countryResult = await Sender.Send(new GetDistinctPatientCountryIdsQuery(isSuperAdmin), cancellationToken);
+        var stateResult   = await Sender.Send(new GetDistinctPatientStateIdsQuery(isSuperAdmin), cancellationToken);
+        var cityResult    = await Sender.Send(new GetDistinctPatientCityIdsQuery(isSuperAdmin), cancellationToken);
 
-        var safeCountryIds = countryIdsTask.Result.IsSuccess ? countryIdsTask.Result.Value : [];
-        var safeStateIds   = stateIdsTask.Result.IsSuccess   ? stateIdsTask.Result.Value   : [];
-        var safeCityIds    = cityIdsTask.Result.IsSuccess     ? cityIdsTask.Result.Value    : [];
+        var safeCountryIds = countryResult.IsSuccess ? countryResult.Value : [];
+        var safeStateIds   = stateResult.IsSuccess   ? stateResult.Value   : [];
+        var safeCityIds    = cityResult.IsSuccess     ? cityResult.Value    : [];
 
-        // Resolve names server-side using cached GeoNames data — parallel
+        // GeoNames resolution is safe to parallelize — uses HttpClient + IMemoryCache
         var countriesTask = _geoNames.ResolveCountryNamesAsync(safeCountryIds, lang, cancellationToken);
         var statesTask    = _geoNames.ResolveStateNamesAsync(safeStateIds, safeCountryIds, lang, cancellationToken);
         var citiesTask    = _geoNames.ResolveCityNamesAsync(safeCityIds, safeStateIds, lang, cancellationToken);
