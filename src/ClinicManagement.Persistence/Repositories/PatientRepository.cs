@@ -221,15 +221,17 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Distinct()
             .ToListAsync(ct);
 
-        // Group rows that share the same EN or AR name so a state stored with
-        // only EN on one patient and only AR on another merges into one entry.
-        return rows
-            .GroupBy(r => r.StateNameEn ?? r.StateNameAr!)
-            .Select(g => new PatientStateDto(
-                NameEn: g.Select(r => r.StateNameEn).FirstOrDefault(n => n != null) ?? g.Key,
-                NameAr: g.Select(r => r.StateNameAr).FirstOrDefault(n => n != null) ?? g.Key))
+        // Merge rows that represent the same location stored with different language coverage.
+        // Strategy: build a lookup of AR→EN and EN→AR, then deduplicate.
+        var merged = rows
+            .Select(r => new PatientStateDto(
+                NameEn: r.StateNameEn ?? rows.FirstOrDefault(x => x.StateNameAr == r.StateNameAr && x.StateNameEn != null)?.StateNameEn ?? r.StateNameAr!,
+                NameAr: r.StateNameAr ?? rows.FirstOrDefault(x => x.StateNameEn == r.StateNameEn && x.StateNameAr != null)?.StateNameAr ?? r.StateNameEn!))
+            .DistinctBy(s => s.NameEn)
             .OrderBy(s => s.NameEn)
             .ToList();
+
+        return merged;
     }
 
     // ── Distinct cities ───────────────────────────────────────────────────────
@@ -246,13 +248,15 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Distinct()
             .ToListAsync(ct);
 
-        return rows
-            .GroupBy(r => r.CityNameEn ?? r.CityNameAr!)
-            .Select(g => new PatientStateDto(
-                NameEn: g.Select(r => r.CityNameEn).FirstOrDefault(n => n != null) ?? g.Key,
-                NameAr: g.Select(r => r.CityNameAr).FirstOrDefault(n => n != null) ?? g.Key))
+        var merged = rows
+            .Select(r => new PatientStateDto(
+                NameEn: r.CityNameEn ?? rows.FirstOrDefault(x => x.CityNameAr == r.CityNameAr && x.CityNameEn != null)?.CityNameEn ?? r.CityNameAr!,
+                NameAr: r.CityNameAr ?? rows.FirstOrDefault(x => x.CityNameEn == r.CityNameEn && x.CityNameAr != null)?.CityNameAr ?? r.CityNameEn!))
+            .DistinctBy(s => s.NameEn)
             .OrderBy(s => s.NameEn)
             .ToList();
+
+        return merged;
     }
 
     // ── Distinct countries ────────────────────────────────────────────────────
@@ -269,13 +273,15 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Distinct()
             .ToListAsync(ct);
 
-        return rows
-            .GroupBy(r => r.CountryNameEn ?? r.CountryNameAr!)
-            .Select(g => new PatientStateDto(
-                NameEn: g.Select(r => r.CountryNameEn).FirstOrDefault(n => n != null) ?? g.Key,
-                NameAr: g.Select(r => r.CountryNameAr).FirstOrDefault(n => n != null) ?? g.Key))
+        var merged = rows
+            .Select(r => new PatientStateDto(
+                NameEn: r.CountryNameEn ?? rows.FirstOrDefault(x => x.CountryNameAr == r.CountryNameAr && x.CountryNameEn != null)?.CountryNameEn ?? r.CountryNameAr!,
+                NameAr: r.CountryNameAr ?? rows.FirstOrDefault(x => x.CountryNameEn == r.CountryNameEn && x.CountryNameAr != null)?.CountryNameAr ?? r.CountryNameEn!))
+            .DistinctBy(s => s.NameEn)
             .OrderBy(s => s.NameEn)
             .ToList();
+
+        return merged;
     }
 
     // ── Child entity helpers ──────────────────────────────────────────────────
