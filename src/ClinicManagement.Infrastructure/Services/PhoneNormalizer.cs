@@ -6,11 +6,13 @@ namespace ClinicManagement.Infrastructure.Services;
 /// <summary>
 /// Uses libphonenumber-csharp to extract the national significant number.
 ///
-/// Why national significant number?
-///   E.164 "+2001098021259" starts with "+200" — StartsWith("010") fails.
-///   National number "1098021259" matches StartsWith("109") or StartsWith("1098").
-///   The trunk prefix ("0" in Egypt) is stripped by libphonenumber, giving a
-///   consistent digits-only value that works across all countries.
+/// Storage (on write): Parse the full valid E.164 number → GetNationalSignificantNumber()
+/// strips the trunk prefix correctly. e.g. "+2001098021259" → "1098021259"
+///
+/// Search (on read): For partial/incomplete input we cannot use Parse() because
+/// libphonenumber refuses to strip the trunk prefix from short numbers.
+/// Instead we strip the trunk prefix manually using the region's metadata,
+/// then use StartsWith on the NationalNumber column.
 /// </summary>
 public class PhoneNormalizer : IPhoneNormalizer
 {
@@ -28,17 +30,40 @@ public class PhoneNormalizer : IPhoneNormalizer
 
         try
         {
+            // For full valid numbers (E.164 or complete national) — use proper parse
             var region = cleaned.StartsWith("+") ? null : (defaultRegion ?? "EG");
+            var parsed = _util.Parse(cleaned, region);
 
-            // Use ParseHelper which does NOT validate — it just parses the structure.
-            // This allows partial/incomplete numbers like "010" to still yield
-            // a national significant number for prefix search.
-            var parsed = _util.ParseAndKeepRawInput(cleaned, region);
-            return _util.GetNationalSignificantNumber(parsed);
+            if (_util.IsValidNumber(parsed))
+                return _util.GetNationalSignificantNumber(parsed);
         }
-        catch
+        catch { /* fall through to manual strip */ }
+
+        // For partial/incomplete input (e.g. "010", "0109"):
+        // Manually strip the trunk prefix using libphonenumber's metadata.
+        // This is the standard approach for prefix search — libphonenumber
+        // won't strip trunk prefix from short numbers, so we do it ourselves.
+        return StripTrunkPrefix(cleaned, defaultRegion ?? "EG");
+    }
+
+    /// <summary>
+    /// Strips the national trunk prefix (e.g. "0" in Egypt, UK, Germany)
+    /// from a partial number using libphonenumber's region metadata.
+    /// Returns the input unchanged if no trunk prefix is found.
+    /// </summary>
+    private static string StripTrunkPrefix(string digits, string region)
+    {
+        try
         {
-            return null;
+            var metadata = _util.GetMetadataForRegion(region);
+            if (metadata == null) return digits;
+
+            var trunkPrefix = metadata.NationalPrefix;
+            if (!string.IsNullOrEmpty(trunkPrefix) && digits.StartsWith(trunkPrefix))
+                return digits[trunkPrefix.Length..];
         }
+        catch { /* ignore */ }
+
+        return digits;
     }
 }
