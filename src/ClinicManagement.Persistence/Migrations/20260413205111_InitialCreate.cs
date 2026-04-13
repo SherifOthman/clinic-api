@@ -103,6 +103,20 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GeoCountries",
+                columns: table => new
+                {
+                    GeonameId = table.Column<int>(type: "int", nullable: false),
+                    CountryCode = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: false),
+                    NameEn = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeoCountries", x => x.GeonameId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Invoice",
                 columns: table => new
                 {
@@ -448,6 +462,26 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GeoStates",
+                columns: table => new
+                {
+                    GeonameId = table.Column<int>(type: "int", nullable: false),
+                    CountryGeonameId = table.Column<int>(type: "int", nullable: false),
+                    NameEn = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeoStates", x => x.GeonameId);
+                    table.ForeignKey(
+                        name: "FK_GeoStates_GeoCountries_CountryGeonameId",
+                        column: x => x.CountryGeonameId,
+                        principalTable: "GeoCountries",
+                        principalColumn: "GeonameId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InvoiceItem",
                 columns: table => new
                 {
@@ -533,6 +567,7 @@ namespace ClinicManagement.Persistence.Migrations
                     SubscriptionEndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     TrialEndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     BillingEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CountryCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -672,16 +707,34 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GeoCities",
+                columns: table => new
+                {
+                    GeonameId = table.Column<int>(type: "int", nullable: false),
+                    StateGeonameId = table.Column<int>(type: "int", nullable: false),
+                    NameEn = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeoCities", x => x.GeonameId);
+                    table.ForeignKey(
+                        name: "FK_GeoCities_GeoStates_StateGeonameId",
+                        column: x => x.StateGeonameId,
+                        principalTable: "GeoStates",
+                        principalColumn: "GeonameId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ClinicBranch",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     AddressLine = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CityNameEn = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CityNameAr = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    StateNameEn = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    StateNameAr = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StateGeonameId = table.Column<int>(type: "int", nullable: true),
+                    CityGeonameId = table.Column<int>(type: "int", nullable: true),
                     IsMainBranch = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -748,12 +801,9 @@ namespace ClinicManagement.Persistence.Migrations
                     PatientCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Gender = table.Column<short>(type: "smallint", nullable: false),
-                    CityNameEn = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CityNameAr = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    StateNameEn = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    StateNameAr = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CountryNameEn = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CountryNameAr = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CountryGeonameId = table.Column<int>(type: "int", nullable: true),
+                    StateGeonameId = table.Column<int>(type: "int", nullable: true),
+                    CityGeonameId = table.Column<int>(type: "int", nullable: true),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
                     BloodType = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -934,7 +984,8 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
+                    PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    NationalNumber = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false, defaultValue: "")
                 },
                 constraints: table =>
                 {
@@ -1109,6 +1160,22 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: new[] { "Status", "ScheduledFor" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_GeoCities_StateGeonameId",
+                table: "GeoCities",
+                column: "StateGeonameId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeoCountries_CountryCode",
+                table: "GeoCountries",
+                column: "CountryCode",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeoStates_CountryGeonameId",
+                table: "GeoStates",
+                column: "CountryGeonameId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InvoiceItem_LabTestOrderId",
                 table: "InvoiceItem",
                 column: "LabTestOrderId");
@@ -1139,9 +1206,9 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "RadiologyOrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patient_CityNameEn_CityNameAr",
+                name: "IX_Patient_CityGeonameId",
                 table: "Patient",
-                columns: new[] { "CityNameEn", "CityNameAr" });
+                column: "CityGeonameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Patient_ClinicId_IsDeleted_CreatedAt",
@@ -1149,9 +1216,9 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: new[] { "ClinicId", "IsDeleted", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patient_CountryNameEn_CountryNameAr",
+                name: "IX_Patient_CountryGeonameId",
                 table: "Patient",
-                columns: new[] { "CountryNameEn", "CountryNameAr" });
+                column: "CountryGeonameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Patient_FullName",
@@ -1170,9 +1237,9 @@ namespace ClinicManagement.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patient_StateNameEn_StateNameAr",
+                name: "IX_Patient_StateGeonameId",
                 table: "Patient",
-                columns: new[] { "StateNameEn", "StateNameAr" });
+                column: "StateGeonameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PatientChronicDisease_ChronicDiseaseId",
@@ -1183,6 +1250,11 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "IX_PatientChronicDisease_PatientId",
                 table: "PatientChronicDisease",
                 column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PatientPhone_NationalNumber",
+                table: "PatientPhone",
+                column: "NationalNumber");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PatientPhone_PatientId",
@@ -1307,6 +1379,9 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "EmailQueue");
 
             migrationBuilder.DropTable(
+                name: "GeoCities");
+
+            migrationBuilder.DropTable(
                 name: "Invoice");
 
             migrationBuilder.DropTable(
@@ -1355,6 +1430,9 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "DoctorProfile");
 
             migrationBuilder.DropTable(
+                name: "GeoStates");
+
+            migrationBuilder.DropTable(
                 name: "LabTestOrder");
 
             migrationBuilder.DropTable(
@@ -1386,6 +1464,9 @@ namespace ClinicManagement.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Staff");
+
+            migrationBuilder.DropTable(
+                name: "GeoCountries");
 
             migrationBuilder.DropTable(
                 name: "Clinic");

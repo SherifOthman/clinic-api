@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260413072326_AddNationalNumberToPatientPhone")]
-    partial class AddNationalNumberToPatientPhone
+    [Migration("20260413205111_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -134,6 +134,9 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("CountryCode")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -197,11 +200,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("CityNameAr")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CityNameEn")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("CityGeonameId")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("ClinicId")
                         .HasColumnType("uniqueidentifier");
@@ -226,11 +226,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("StateNameAr")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StateNameEn")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("StateGeonameId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -564,6 +561,84 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("Status", "ScheduledFor");
 
                     b.ToTable("EmailQueue");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCity", b =>
+                {
+                    b.Property<int>("GeonameId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("StateGeonameId")
+                        .HasColumnType("int");
+
+                    b.HasKey("GeonameId");
+
+                    b.HasIndex("StateGeonameId");
+
+                    b.ToTable("GeoCities", (string)null);
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCountry", b =>
+                {
+                    b.Property<int>("GeonameId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("GeonameId");
+
+                    b.HasIndex("CountryCode")
+                        .IsUnique();
+
+                    b.ToTable("GeoCountries", (string)null);
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoState", b =>
+                {
+                    b.Property<int>("GeonameId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CountryGeonameId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("GeonameId");
+
+                    b.HasIndex("CountryGeonameId");
+
+                    b.ToTable("GeoStates", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Invoice", b =>
@@ -959,20 +1034,14 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<int?>("BloodType")
                         .HasColumnType("int");
 
-                    b.Property<string>("CityNameAr")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("CityNameEn")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("CityGeonameId")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("ClinicId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CountryNameAr")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("CountryNameEn")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("CountryGeonameId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -999,11 +1068,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("StateNameAr")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("StateNameEn")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("StateGeonameId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -1013,6 +1079,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CityGeonameId");
+
+                    b.HasIndex("CountryGeonameId");
+
                     b.HasIndex("FullName");
 
                     b.HasIndex("Gender");
@@ -1020,11 +1090,7 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("PatientCode")
                         .IsUnique();
 
-                    b.HasIndex("CityNameEn", "CityNameAr");
-
-                    b.HasIndex("CountryNameEn", "CountryNameAr");
-
-                    b.HasIndex("StateNameEn", "StateNameAr");
+                    b.HasIndex("StateGeonameId");
 
                     b.HasIndex("ClinicId", "IsDeleted", "CreatedAt");
 
@@ -1919,6 +1985,28 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Navigation("DoctorProfile");
                 });
 
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCity", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.GeoState", "State")
+                        .WithMany("Cities")
+                        .HasForeignKey("StateGeonameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("State");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoState", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.GeoCountry", "Country")
+                        .WithMany("States")
+                        .HasForeignKey("CountryGeonameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+                });
+
             modelBuilder.Entity("ClinicManagement.Domain.Entities.InvoiceItem", b =>
                 {
                     b.HasOne("ClinicManagement.Domain.Entities.LabTestOrder", "LabTestOrder")
@@ -2104,6 +2192,16 @@ namespace ClinicManagement.Persistence.Migrations
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranch", b =>
                 {
                     b.Navigation("PhoneNumbers");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCountry", b =>
+                {
+                    b.Navigation("States");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoState", b =>
+                {
+                    b.Navigation("Cities");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Patient", b =>
