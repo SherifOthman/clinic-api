@@ -14,3 +14,6 @@ public record GeoNamesLocation
     public string Fcode { get; init; } = null!;
     public string Name { get; init; } = null!;
 }
+
+/// <summary>A resolved GeoNames ID → name pair (used for filter dropdowns).</summary>
+public record GeoNamesNamedItem(int GeonameId, string Name);

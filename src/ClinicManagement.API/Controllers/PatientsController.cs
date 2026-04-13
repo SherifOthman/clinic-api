@@ -1,3 +1,4 @@
+using ClinicManagement.API.Contracts.Locations;
 using ClinicManagement.API.Contracts.Patients;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
@@ -5,6 +6,7 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,6 +16,9 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/patients")]
 public class PatientsController : BaseApiController
 {
+    private readonly GeoNamesService _geoNames;
+
+    public PatientsController(GeoNamesService geoNames) => _geoNames = geoNames;
     [HttpGet]
     [Authorize(Policy = "RequireClinic")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
@@ -38,40 +43,44 @@ public class PatientsController : BaseApiController
     // The frontend now uses the GeoNames API directly via /api/locations.
     // Filtering is done by GeoNames ID, not by stored name strings.
 
-    /// <summary>Returns distinct country GeoNames IDs from patients in this clinic.</summary>
-    [HttpGet("countries")]
+    /// <summary>
+    /// Returns all distinct location IDs from patients in this clinic,
+    /// with names resolved from GeoNames (cached server-side).
+    /// One round trip replaces three separate ID fetches + N name lookups.
+    /// </summary>
+    [HttpGet("location-filter")]
     [Authorize(Policy = "RequireClinic")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPatientCountries(CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(PatientLocationFilterResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetLocationFilter(
+        [FromQuery] string lang = "en",
+        CancellationToken cancellationToken = default)
     {
         var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var result = await Sender.Send(new GetDistinctPatientCountryIdsQuery(isSuperAdmin), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient countries");
-    }
 
-    /// <summary>Returns distinct state GeoNames IDs from patients in this clinic.</summary>
-    [HttpGet("states")]
-    [Authorize(Policy = "RequireClinic")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPatientStates(CancellationToken cancellationToken = default)
-    {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var result = await Sender.Send(new GetDistinctPatientStateIdsQuery(isSuperAdmin), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient states");
-    }
+        // Fetch all three ID lists in parallel from the DB
+        var countryIdsTask = Sender.Send(new GetDistinctPatientCountryIdsQuery(isSuperAdmin), cancellationToken);
+        var stateIdsTask   = Sender.Send(new GetDistinctPatientStateIdsQuery(isSuperAdmin), cancellationToken);
+        var cityIdsTask    = Sender.Send(new GetDistinctPatientCityIdsQuery(isSuperAdmin), cancellationToken);
+        await Task.WhenAll(countryIdsTask, stateIdsTask, cityIdsTask);
 
-    /// <summary>Returns distinct city GeoNames IDs from patients in this clinic.</summary>
-    [HttpGet("cities")]
-    [Authorize(Policy = "RequireClinic")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPatientCities(CancellationToken cancellationToken = default)
-    {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var result = await Sender.Send(new GetDistinctPatientCityIdsQuery(isSuperAdmin), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient cities");
+        var safeCountryIds = countryIdsTask.Result.IsSuccess ? countryIdsTask.Result.Value : [];
+        var safeStateIds   = stateIdsTask.Result.IsSuccess   ? stateIdsTask.Result.Value   : [];
+        var safeCityIds    = cityIdsTask.Result.IsSuccess     ? cityIdsTask.Result.Value    : [];
+
+        // Resolve names server-side using cached GeoNames data — parallel
+        var countriesTask = _geoNames.ResolveCountryNamesAsync(safeCountryIds, lang, cancellationToken);
+        var statesTask    = _geoNames.ResolveStateNamesAsync(safeStateIds, safeCountryIds, lang, cancellationToken);
+        var citiesTask    = _geoNames.ResolveCityNamesAsync(safeCityIds, safeStateIds, lang, cancellationToken);
+        await Task.WhenAll(countriesTask, statesTask, citiesTask);
+
+        var response = new PatientLocationFilterResponse(
+            countriesTask.Result.Select(c => new LocationNameDto(c.GeonameId, c.Name)).ToList(),
+            statesTask.Result.Select(s => new LocationNameDto(s.GeonameId, s.Name)).ToList(),
+            citiesTask.Result.Select(c => new LocationNameDto(c.GeonameId, c.Name)).ToList()
+        );
+
+        return Ok(response);
     }
 
     [HttpGet("all")]

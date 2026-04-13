@@ -127,6 +127,66 @@ public class GeoNamesService
             return result;
         });
 
+    // ── Resolve IDs → names (for filter dropdowns) ───────────────────────────
+
+    /// <summary>
+    /// Resolves a set of country GeoNames IDs to { id, name } pairs.
+    /// Uses the cached countries list — no extra GeoNames calls if already cached.
+    /// </summary>
+    public async Task<List<GeoNamesNamedItem>> ResolveCountryNamesAsync(
+        IEnumerable<int> ids, string lang = "en", CancellationToken ct = default)
+    {
+        var idSet = ids.ToHashSet();
+        if (idSet.Count == 0) return [];
+        var countries = await GetCountriesAsync(lang, ct);
+        return countries
+            .Where(c => idSet.Contains(c.GeonameId))
+            .Select(c => new GeoNamesNamedItem(c.GeonameId, c.Name))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Resolves a set of state GeoNames IDs to { id, name } pairs.
+    /// Fetches states for each of the given parent country IDs (all cached after first call).
+    /// </summary>
+    public async Task<List<GeoNamesNamedItem>> ResolveStateNamesAsync(
+        IEnumerable<int> stateIds, IEnumerable<int> parentCountryIds,
+        string lang = "en", CancellationToken ct = default)
+    {
+        var idSet = stateIds.ToHashSet();
+        if (idSet.Count == 0) return [];
+
+        var tasks = parentCountryIds.Select(cId => GetStatesAsync(cId, lang, ct));
+        var results = await Task.WhenAll(tasks);
+
+        return results
+            .SelectMany(list => list)
+            .Where(s => idSet.Contains(s.GeonameId))
+            .Select(s => new GeoNamesNamedItem(s.GeonameId, s.Name))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Resolves a set of city GeoNames IDs to { id, name } pairs.
+    /// Fetches cities for each of the given parent state IDs (all cached after first call).
+    /// </summary>
+    public async Task<List<GeoNamesNamedItem>> ResolveCityNamesAsync(
+        IEnumerable<int> cityIds, IEnumerable<int> parentStateIds,
+        string lang = "en", CancellationToken ct = default)
+    {
+        var idSet = cityIds.ToHashSet();
+        if (idSet.Count == 0) return [];
+
+        var tasks = parentStateIds.Select(sId => GetCitiesAsync(sId, lang, ct));
+        var results = await Task.WhenAll(tasks);
+
+        return results
+            .SelectMany(list => list)
+            .Where(c => idSet.Contains(c.GeonameId))
+            .Select(c => new GeoNamesNamedItem(c.GeonameId, c.Name))
+            .ToList();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task<List<T>> GetOrFetchAsync<T>(string key, Func<Task<List<T>>> fetch)
