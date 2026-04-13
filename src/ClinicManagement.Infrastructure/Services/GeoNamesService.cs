@@ -168,7 +168,8 @@ public class GeoNamesService
 
     /// <summary>
     /// Resolves a set of city GeoNames IDs to { id, name } pairs.
-    /// Fetches cities for each of the given parent state IDs (all cached after first call).
+    /// Fetches cities for each of the given parent state IDs (cached after first call).
+    /// Any IDs not found in the state city lists are resolved individually via getJSON (also cached).
     /// </summary>
     public async Task<List<GeoNamesNamedItem>> ResolveCityNamesAsync(
         IEnumerable<int> cityIds, IEnumerable<int> parentStateIds,
@@ -180,12 +181,40 @@ public class GeoNamesService
         var tasks = parentStateIds.Select(sId => GetCitiesAsync(sId, lang, ct));
         var results = await Task.WhenAll(tasks);
 
-        return results
+        var found = results
             .SelectMany(list => list)
             .Where(c => idSet.Contains(c.GeonameId))
             .Select(c => new GeoNamesNamedItem(c.GeonameId, c.Name))
             .ToList();
+
+        // Fall back to individual getJSON for any IDs not found in the city lists
+        // (small towns, different feature codes, etc.) — each result is cached 24h
+        var foundIds = found.Select(f => f.GeonameId).ToHashSet();
+        var missing  = idSet.Where(id => !foundIds.Contains(id)).ToList();
+        if (missing.Count > 0)
+        {
+            var fallbackTasks = missing.Select(id => ResolveByIdAsync(id, lang, ct));
+            var fallbacks = await Task.WhenAll(fallbackTasks);
+            found.AddRange(fallbacks.Where(f => f is not null)!);
+        }
+
+        return found;
     }
+
+    /// <summary>
+    /// Resolves a single GeoNames ID to a name via getJSON — cached 24h.
+    /// Used as fallback for locations not found in the standard list endpoints.
+    /// </summary>
+    public Task<GeoNamesNamedItem?> ResolveByIdAsync(int geonameId, string lang = "en", CancellationToken ct = default)
+        => GetOrFetchSingleAsync<GeoNamesNamedItem?>($"byid_{geonameId}_{lang}", async () =>
+        {
+            var url  = $"{_options.BaseUrl}/getJSON?geonameId={geonameId}&username={_options.Username}&lang={lang}";
+            var data = await FetchAsync<GeoNamesGetResponse>(url);
+            if (data is null) return null;
+            var name = string.IsNullOrWhiteSpace(data.Name) ? data.ToponymName : data.Name;
+            _logger.LogInformation("Resolved geonameId {Id} [{Lang}] = {Name} — cached 24h", geonameId, lang, name);
+            return new GeoNamesNamedItem(geonameId, name);
+        });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -198,6 +227,22 @@ public class GeoNamesService
         try
         {
             if (_cache.TryGetValue(key, out hit) && hit is not null) return hit;
+            var result = await fetch();
+            _cache.Set(key, result, CacheDuration);
+            return result;
+        }
+        finally { sem.Release(); }
+    }
+
+    private async Task<T?> GetOrFetchSingleAsync<T>(string key, Func<Task<T?>> fetch)
+    {
+        if (_cache.TryGetValue(key, out T? hit)) return hit;
+
+        var sem = _locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        await sem.WaitAsync();
+        try
+        {
+            if (_cache.TryGetValue(key, out hit)) return hit;
             var result = await fetch();
             _cache.Set(key, result, CacheDuration);
             return result;
@@ -224,4 +269,5 @@ public class GeoNamesService
     private class GeoNamesLocationInfo { public int GeonameId { get; set; } public string CountryCode { get; set; } = null!; public string AdminCode1 { get; set; } = null!; public string Fcode { get; set; } = null!; }
     private class GeoNamesSearchResponse { public List<GeoNamesSearchResult> Geonames { get; set; } = []; }
     private class GeoNamesSearchResult { public int GeonameId { get; set; } public string Name { get; set; } = null!; public string Fcode { get; set; } = null!; public int Population { get; set; } }
+    private class GeoNamesGetResponse  { public int GeonameId { get; set; } public string Name { get; set; } = null!; public string ToponymName { get; set; } = null!; }
 }
