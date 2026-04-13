@@ -15,8 +15,7 @@ public class GetBranchesHandler : IRequestHandler<GetBranchesQuery, Result<List<
         var branches = await _uow.Branches.GetProjectedListAsync(cancellationToken);
         var dtos = branches.Select(b => new BranchDto(
             b.Id, b.Name, b.AddressLine,
-            b.CityNameEn, b.CityNameAr,
-            b.StateNameEn, b.StateNameAr,
+            b.StateGeonameId, b.CityGeonameId,
             b.IsMainBranch, b.IsActive,
             b.PhoneNumbers.Select(p => new BranchPhoneDto(p, null)).ToList()
         )).ToList();

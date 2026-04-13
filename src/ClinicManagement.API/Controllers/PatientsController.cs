@@ -21,51 +21,22 @@ public class PatientsController : BaseApiController
     public async Task<IActionResult> GetPatients(
         [FromQuery] string? searchTerm,
         [FromQuery] string? gender,
-        [FromQuery] string? stateSearch,
-        [FromQuery] string? citySearch,
-        [FromQuery] string? countrySearch,
+        [FromQuery] int? stateGeonameId,
+        [FromQuery] int? cityGeonameId,
+        [FromQuery] int? countryGeonameId,
         [FromQuery] PaginationRequest pagination,
         [FromQuery] string? sortBy = null,
         [FromQuery] string sortDirection = "asc",
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, StateSearch: stateSearch, CitySearch: citySearch, CountrySearch: countrySearch);
+        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, StateGeonameId: stateGeonameId, CityGeonameId: cityGeonameId, CountryGeonameId: countryGeonameId);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }
 
-    [HttpGet("states")]
-    [Authorize(Policy = "RequireClinic")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<PatientStateDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPatientStates(CancellationToken cancellationToken = default)
-    {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var result = await Sender.Send(new GetPatientStatesQuery(isSuperAdmin), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient states");
-    }
-
-    [HttpGet("cities")]
-    [Authorize(Policy = "RequireClinic")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<PatientStateDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPatientCities(CancellationToken cancellationToken = default)
-    {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var result = await Sender.Send(new GetPatientCitiesQuery(isSuperAdmin), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient cities");
-    }
-
-    [HttpGet("countries")]
-    [Authorize(Policy = "RequireClinic")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<PatientStateDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPatientCountries(CancellationToken cancellationToken = default)
-    {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var result = await Sender.Send(new GetPatientCountriesQuery(isSuperAdmin), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient countries");
-    }
+    // NOTE: /states, /cities, /countries endpoints removed.
+    // The frontend now uses the GeoNames API directly via /api/locations.
+    // Filtering is done by GeoNames ID, not by stored name strings.
 
     [HttpGet("all")]
     [Authorize(Policy = "SuperAdmin")]
@@ -75,15 +46,15 @@ public class PatientsController : BaseApiController
         [FromQuery] string? searchTerm,
         [FromQuery] string? gender,
         [FromQuery] string? clinicSearch,
-        [FromQuery] string? stateSearch,
-        [FromQuery] string? citySearch,
-        [FromQuery] string? countrySearch,
+        [FromQuery] int? stateGeonameId,
+        [FromQuery] int? cityGeonameId,
+        [FromQuery] int? countryGeonameId,
         [FromQuery] PaginationRequest pagination,
         [FromQuery] string? sortBy = null,
         [FromQuery] string sortDirection = "asc",
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, clinicSearch, stateSearch, citySearch, countrySearch, IsSuperAdmin: true);
+        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, clinicSearch, stateGeonameId, cityGeonameId, countryGeonameId, IsSuperAdmin: true);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }
@@ -124,12 +95,9 @@ public class PatientsController : BaseApiController
             request.FullName,
             request.DateOfBirth,
             request.Gender,
-            request.CityNameEn,
-            request.CityNameAr,
-            request.StateNameEn,
-            request.StateNameAr,
-            request.CountryNameEn,
-            request.CountryNameAr,
+            request.CountryGeonameId,
+            request.StateGeonameId,
+            request.CityGeonameId,
             request.BloodType,
             request.PhoneNumbers,
             request.ChronicDiseaseIds);
@@ -156,12 +124,9 @@ public class PatientsController : BaseApiController
             request.FullName,
             request.DateOfBirth,
             request.Gender,
-            request.CityNameEn,
-            request.CityNameAr,
-            request.StateNameEn,
-            request.StateNameAr,
-            request.CountryNameEn,
-            request.CountryNameAr,
+            request.CountryGeonameId,
+            request.StateGeonameId,
+            request.CityGeonameId,
             request.BloodType,
             request.PhoneNumbers,
             request.ChronicDiseaseIds);

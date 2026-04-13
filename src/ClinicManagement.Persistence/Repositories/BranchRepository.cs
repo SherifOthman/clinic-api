@@ -16,8 +16,7 @@ public class BranchRepository : Repository<ClinicBranch>, IBranchRepository
             .ThenBy(b => b.Name)
             .Select(b => new BranchRow(
                 b.Id, b.Name, b.AddressLine,
-                b.CityNameEn, b.CityNameAr,
-                b.StateNameEn, b.StateNameAr,
+                b.StateGeonameId, b.CityGeonameId,
                 b.IsMainBranch, b.IsActive,
                 b.PhoneNumbers.Select(p => p.PhoneNumber).ToList()))
             .ToListAsync(ct);

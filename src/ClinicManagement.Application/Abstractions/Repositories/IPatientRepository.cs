@@ -13,10 +13,7 @@ public interface IPatientRepository : IRepository<Patient>
     Task<bool> AnyByCodeAsync(string code, CancellationToken ct = default);
     Task<int> CountIgnoreFiltersAsync(CancellationToken ct = default);
 
-    /// <summary>Count patients registered in the given month (from inclusive).</summary>
     Task<int> CountCreatedFromAsync(DateTimeOffset from, CancellationToken ct = default);
-
-    /// <summary>Count patients registered between two dates.</summary>
     Task<int> CountCreatedBetweenAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 
     Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
@@ -26,17 +23,13 @@ public interface IPatientRepository : IRepository<Patient>
         string? sortBy,
         string? sortDirection,
         string? clinicSearch,
-        string? stateSearch,
-        string? citySearch,
-        string? countrySearch,
+        int? stateGeonameId,
+        int? cityGeonameId,
+        int? countryGeonameId,
         bool isSuperAdmin,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default);
-
-    Task<List<PatientStateDto>> GetDistinctStatesAsync(bool isSuperAdmin = false, CancellationToken ct = default);
-    Task<List<PatientStateDto>> GetDistinctCitiesAsync(bool isSuperAdmin = false, CancellationToken ct = default);
-    Task<List<PatientStateDto>> GetDistinctCountriesAsync(bool isSuperAdmin = false, CancellationToken ct = default);
 
     Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
     Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default);

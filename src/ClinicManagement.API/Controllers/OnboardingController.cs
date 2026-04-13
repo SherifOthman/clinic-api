@@ -25,10 +25,8 @@ public class OnboardingController : BaseApiController
             request.SubscriptionPlanId,
             request.BranchName,
             request.AddressLine,
-            request.CityNameEn,
-            request.CityNameAr,
-            request.StateNameEn,
-            request.StateNameAr,
+            request.StateGeonameId,
+            request.CityGeonameId,
             request.ProvideMedicalServices,
             request.SpecializationId,
             request.CountryCode);

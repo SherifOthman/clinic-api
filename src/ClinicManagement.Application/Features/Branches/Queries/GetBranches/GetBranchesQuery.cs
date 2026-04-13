@@ -9,10 +9,8 @@ public record BranchDto(
     Guid Id,
     string Name,
     string? AddressLine,
-    string? CityNameEn,
-    string? CityNameAr,
-    string? StateNameEn,
-    string? StateNameAr,
+    int? StateGeonameId,
+    int? CityGeonameId,
     bool IsMainBranch,
     bool IsActive,
     List<BranchPhoneDto> PhoneNumbers

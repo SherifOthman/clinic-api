@@ -118,8 +118,8 @@ public class DemoUsersSeedService
         {
             ClinicId = clinic.Id, Name = "Main Branch",
             AddressLine = "123 Medical Street, Downtown",
-            CityNameEn = "Cairo", CityNameAr = "القاهرة",
-            StateNameEn = "Cairo Governorate", StateNameAr = "محافظة القاهرة",
+            StateGeonameId = 360630,  // Cairo Governorate GeoNames ID
+            CityGeonameId  = 360630,  // Cairo GeoNames ID
             IsMainBranch = true, IsActive = true,
         });
 

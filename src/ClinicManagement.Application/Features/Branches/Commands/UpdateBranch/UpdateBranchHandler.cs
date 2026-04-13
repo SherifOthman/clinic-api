@@ -19,12 +19,10 @@ public class UpdateBranchHandler : IRequestHandler<UpdateBranchCommand, Result>
         if (branch is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Branch not found");
 
-        branch.Name        = request.Name;
-        branch.AddressLine = request.AddressLine;
-        branch.CityNameEn  = request.CityNameEn;
-        branch.CityNameAr  = request.CityNameAr;
-        branch.StateNameEn = request.StateNameEn;
-        branch.StateNameAr = request.StateNameAr;
+        branch.Name           = request.Name;
+        branch.AddressLine    = request.AddressLine;
+        branch.StateGeonameId = request.StateGeonameId;
+        branch.CityGeonameId  = request.CityGeonameId;
         branch.Touch();
 
         // Replace phone numbers

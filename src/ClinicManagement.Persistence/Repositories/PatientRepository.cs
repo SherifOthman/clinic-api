@@ -62,9 +62,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         string? sortBy,
         string? sortDirection,
         string? clinicSearch,
-        string? stateSearch,
-        string? citySearch,
-        string? countrySearch,
+        int? stateGeonameId,
+        int? cityGeonameId,
+        int? countryGeonameId,
         bool isSuperAdmin,
         int pageNumber,
         int pageSize,
@@ -89,14 +89,14 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             Enum.TryParse<Gender>(gender, ignoreCase: true, out var genderEnum))
             query = query.Where(p => p.Gender == genderEnum);
 
-        if (!string.IsNullOrWhiteSpace(stateSearch))
-            query = query.Where(p => p.StateNameEn == stateSearch || p.StateNameAr == stateSearch);
+        if (stateGeonameId.HasValue)
+            query = query.Where(p => p.StateGeonameId == stateGeonameId.Value);
 
-        if (!string.IsNullOrWhiteSpace(citySearch))
-            query = query.Where(p => p.CityNameEn == citySearch || p.CityNameAr == citySearch);
+        if (cityGeonameId.HasValue)
+            query = query.Where(p => p.CityGeonameId == cityGeonameId.Value);
 
-        if (!string.IsNullOrWhiteSpace(countrySearch))
-            query = query.Where(p => p.CountryNameEn == countrySearch || p.CountryNameAr == countrySearch);
+        if (countryGeonameId.HasValue)
+            query = query.Where(p => p.CountryGeonameId == countryGeonameId.Value);
 
         if (isSuperAdmin && !string.IsNullOrWhiteSpace(clinicSearch))
         {
@@ -139,7 +139,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 p.Id.ToString(), p.PatientCode, p.FullName, p.DateOfBirth,
                 p.Gender, p.BloodType, p.ChronicDiseases.Count,
                 p.Phones.OrderBy(ph => ph.Id).Select(ph => ph.PhoneNumber).FirstOrDefault(),
-                p.CreatedAt, p.ClinicId, p.CityNameEn, p.CityNameAr, p.StateNameEn, p.StateNameAr))
+                p.CreatedAt, p.ClinicId, p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId))
             .ToPagedAsync(pageNumber, pageSize, ct);
 
         var clinicNames = await LoadClinicNames(rawPage.Items.Select(p => p.ClinicId), isSuperAdmin, ct);
@@ -148,7 +148,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             p.BloodType?.ToDisplayString(), p.ChronicDiseaseCount, p.PrimaryPhone,
             p.CreatedAt, p.ClinicId,
             clinicNames.TryGetValue(p.ClinicId, out var cn) ? cn : null,
-            p.CityNameEn, p.CityNameAr, p.StateNameEn, p.StateNameAr)).ToList();
+            p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId)).ToList();
 
         return PaginatedResult<PatientListRow>.Create(items, rawPage.TotalCount, pageNumber, pageSize);
     }
@@ -178,8 +178,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             {
                 p.Id, p.PatientCode, p.FullName, p.DateOfBirth, p.Gender,
                 p.BloodType,
-                p.CityNameEn, p.CityNameAr, p.StateNameEn, p.StateNameAr,
-                p.CountryNameEn, p.CountryNameAr,
+                p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
                 p.ClinicId, p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
                 Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
                 Diseases = p.ChronicDiseases
@@ -199,89 +198,10 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return new PatientDetailData(
             patient.Id, patient.PatientCode, patient.FullName, patient.DateOfBirth,
             patient.Gender.ToString(), patient.BloodType?.ToDisplayString(),
-            patient.CityNameEn, patient.CityNameAr,
-            patient.StateNameEn, patient.StateNameAr,
-            patient.CountryNameEn, patient.CountryNameAr,
+            patient.CountryGeonameId, patient.StateGeonameId, patient.CityGeonameId,
             patient.ClinicId, patient.CreatedAt, patient.UpdatedAt,
             patient.CreatedBy, patient.UpdatedBy,
             patient.Phones, patient.Diseases, auditNames, clinicName);
-    }
-
-    // ── Distinct states ───────────────────────────────────────────────────────
-
-    public async Task<List<PatientStateDto>> GetDistinctStatesAsync(bool isSuperAdmin = false, CancellationToken ct = default)
-    {
-        var query = isSuperAdmin
-            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
-            : DbSet.AsNoTracking();
-
-        var rows = await query
-            .Where(p => p.StateNameEn != null || p.StateNameAr != null)
-            .Select(p => new { p.StateNameEn, p.StateNameAr })
-            .Distinct()
-            .ToListAsync(ct);
-
-        // Merge rows that represent the same location stored with different language coverage.
-        // Strategy: build a lookup of AR→EN and EN→AR, then deduplicate.
-        var merged = rows
-            .Select(r => new PatientStateDto(
-                NameEn: r.StateNameEn ?? rows.FirstOrDefault(x => x.StateNameAr == r.StateNameAr && x.StateNameEn != null)?.StateNameEn ?? r.StateNameAr!,
-                NameAr: r.StateNameAr ?? rows.FirstOrDefault(x => x.StateNameEn == r.StateNameEn && x.StateNameAr != null)?.StateNameAr ?? r.StateNameEn!))
-            .DistinctBy(s => s.NameEn)
-            .OrderBy(s => s.NameEn)
-            .ToList();
-
-        return merged;
-    }
-
-    // ── Distinct cities ───────────────────────────────────────────────────────
-
-    public async Task<List<PatientStateDto>> GetDistinctCitiesAsync(bool isSuperAdmin = false, CancellationToken ct = default)
-    {
-        var query = isSuperAdmin
-            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
-            : DbSet.AsNoTracking();
-
-        var rows = await query
-            .Where(p => p.CityNameEn != null || p.CityNameAr != null)
-            .Select(p => new { p.CityNameEn, p.CityNameAr })
-            .Distinct()
-            .ToListAsync(ct);
-
-        var merged = rows
-            .Select(r => new PatientStateDto(
-                NameEn: r.CityNameEn ?? rows.FirstOrDefault(x => x.CityNameAr == r.CityNameAr && x.CityNameEn != null)?.CityNameEn ?? r.CityNameAr!,
-                NameAr: r.CityNameAr ?? rows.FirstOrDefault(x => x.CityNameEn == r.CityNameEn && x.CityNameAr != null)?.CityNameAr ?? r.CityNameEn!))
-            .DistinctBy(s => s.NameEn)
-            .OrderBy(s => s.NameEn)
-            .ToList();
-
-        return merged;
-    }
-
-    // ── Distinct countries ────────────────────────────────────────────────────
-
-    public async Task<List<PatientStateDto>> GetDistinctCountriesAsync(bool isSuperAdmin = false, CancellationToken ct = default)
-    {
-        var query = isSuperAdmin
-            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
-            : DbSet.AsNoTracking();
-
-        var rows = await query
-            .Where(p => p.CountryNameEn != null || p.CountryNameAr != null)
-            .Select(p => new { p.CountryNameEn, p.CountryNameAr })
-            .Distinct()
-            .ToListAsync(ct);
-
-        var merged = rows
-            .Select(r => new PatientStateDto(
-                NameEn: r.CountryNameEn ?? rows.FirstOrDefault(x => x.CountryNameAr == r.CountryNameAr && x.CountryNameEn != null)?.CountryNameEn ?? r.CountryNameAr!,
-                NameAr: r.CountryNameAr ?? rows.FirstOrDefault(x => x.CountryNameEn == r.CountryNameEn && x.CountryNameAr != null)?.CountryNameAr ?? r.CountryNameEn!))
-            .DistinctBy(s => s.NameEn)
-            .OrderBy(s => s.NameEn)
-            .ToList();
-
-        return merged;
     }
 
     // ── Child entity helpers ──────────────────────────────────────────────────
@@ -329,5 +249,5 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         string Id, string PatientCode, string FullName, DateOnly DateOfBirth,
         Gender Gender, BloodType? BloodType, int ChronicDiseaseCount,
         string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId,
-        string? CityNameEn, string? CityNameAr, string? StateNameEn, string? StateNameAr);
+        int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId);
 }

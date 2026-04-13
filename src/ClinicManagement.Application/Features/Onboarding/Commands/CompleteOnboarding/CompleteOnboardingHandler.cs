@@ -52,15 +52,13 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 
         var branch = new ClinicBranch
         {
-            ClinicId     = clinic.Id,
-            Name         = request.BranchName,
-            AddressLine  = request.AddressLine,
-            CityNameEn   = request.CityNameEn,
-            CityNameAr   = request.CityNameAr,
-            StateNameEn  = request.StateNameEn,
-            StateNameAr  = request.StateNameAr,
-            IsMainBranch = true,
-            IsActive     = true,
+            ClinicId        = clinic.Id,
+            Name            = request.BranchName,
+            AddressLine     = request.AddressLine,
+            StateGeonameId  = request.StateGeonameId,
+            CityGeonameId   = request.CityGeonameId,
+            IsMainBranch    = true,
+            IsActive        = true,
         };
         await _uow.Branches.AddAsync(branch);
 

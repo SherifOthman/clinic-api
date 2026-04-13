@@ -23,16 +23,14 @@ public class CreateBranchHandler : IRequestHandler<CreateBranchCommand, Result<G
 
         var branch = new ClinicBranch
         {
-            ClinicId     = clinicId,
-            Name         = request.Name,
-            AddressLine  = request.AddressLine,
-            CityNameEn   = request.CityNameEn,
-            CityNameAr   = request.CityNameAr,
-            StateNameEn  = request.StateNameEn,
-            StateNameAr  = request.StateNameAr,
-            IsMainBranch = false,
-            IsActive     = true,
-            PhoneNumbers = request.PhoneNumbers
+            ClinicId        = clinicId,
+            Name            = request.Name,
+            AddressLine     = request.AddressLine,
+            StateGeonameId  = request.StateGeonameId,
+            CityGeonameId   = request.CityGeonameId,
+            IsMainBranch    = false,
+            IsActive        = true,
+            PhoneNumbers    = request.PhoneNumbers
                 .Where(p => !string.IsNullOrWhiteSpace(p))
                 .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.Trim() })
                 .ToList(),

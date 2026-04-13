@@ -5,6 +5,11 @@ namespace ClinicManagement.Application.Features.Patients.Queries;
 
 public record GetPatientDetailQuery(Guid PatientId, bool IsSuperAdmin = false) : IRequest<Result<PatientDetailDto>>;
 
+/// <summary>
+/// Full patient detail DTO.
+/// Location is returned as GeoNames IDs — the frontend resolves display names
+/// from the GeoNames API using the user's current language.
+/// </summary>
 public record PatientDetailDto
 {
     public string Id { get; init; } = null!;
@@ -13,12 +18,9 @@ public record PatientDetailDto
     public DateOnly DateOfBirth { get; init; }
     public string Gender { get; init; } = null!;
     public string? BloodType { get; init; }
-    public string? CityNameEn { get; init; }
-    public string? CityNameAr { get; init; }
-    public string? StateNameEn { get; init; }
-    public string? StateNameAr { get; init; }
-    public string? CountryNameEn { get; init; }
-    public string? CountryNameAr { get; init; }
+    public int? CountryGeonameId { get; init; }
+    public int? StateGeonameId { get; init; }
+    public int? CityGeonameId { get; init; }
     public List<string> PhoneNumbers { get; init; } = [];
     public List<PatientChronicDiseaseDto> ChronicDiseases { get; init; } = [];
     public DateTimeOffset CreatedAt { get; init; }

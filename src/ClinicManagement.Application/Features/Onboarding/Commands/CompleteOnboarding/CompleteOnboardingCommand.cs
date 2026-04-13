@@ -8,10 +8,8 @@ public record CompleteOnboarding(
     Guid SubscriptionPlanId,
     string BranchName,
     string AddressLine,
-    string? CityNameEn,
-    string? CityNameAr,
-    string? StateNameEn,
-    string? StateNameAr,
+    int? StateGeonameId,
+    int? CityGeonameId,
     bool ProvideMedicalServices,
     Guid? SpecializationId,
     string? CountryCode

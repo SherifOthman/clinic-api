@@ -7,9 +7,7 @@ public record UpdateBranchCommand(
     Guid Id,
     string Name,
     string AddressLine,
-    string? CityNameEn,
-    string? CityNameAr,
-    string? StateNameEn,
-    string? StateNameAr,
+    int? StateGeonameId,
+    int? CityGeonameId,
     List<string> PhoneNumbers
 ) : IRequest<Result>;

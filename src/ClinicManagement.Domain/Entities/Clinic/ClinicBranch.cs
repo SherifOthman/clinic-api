@@ -6,10 +6,13 @@ public class ClinicBranch : AuditableTenantEntity
 {
     public string Name { get; set; } = null!;
     public string? AddressLine { get; set; }
-    public string? CityNameEn { get; set; }
-    public string? CityNameAr { get; set; }
-    public string? StateNameEn { get; set; }
-    public string? StateNameAr { get; set; }
+
+    /// <summary>GeoNames ID for the branch's state/governorate.</summary>
+    public int? StateGeonameId { get; set; }
+
+    /// <summary>GeoNames ID for the branch's city.</summary>
+    public int? CityGeonameId { get; set; }
+
     public bool IsMainBranch { get; set; }
     public bool IsActive { get; set; } = true;
 

@@ -28,16 +28,13 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         if (patient is null)
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        patient.FullName      = request.FullName;
-        patient.DateOfBirth   = DateOnly.Parse(request.DateOfBirth);
-        patient.Gender        = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
-        patient.CityNameEn    = request.CityNameEn;
-        patient.CityNameAr    = request.CityNameAr;
-        patient.StateNameEn   = request.StateNameEn;
-        patient.StateNameAr   = request.StateNameAr;
-        patient.CountryNameEn = request.CountryNameEn;
-        patient.CountryNameAr = request.CountryNameAr;
-        patient.BloodType     = ParseBloodType(request.BloodType);
+        patient.FullName          = request.FullName;
+        patient.DateOfBirth       = DateOnly.Parse(request.DateOfBirth);
+        patient.Gender            = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
+        patient.CountryGeonameId  = request.CountryGeonameId;
+        patient.StateGeonameId    = request.StateGeonameId;
+        patient.CityGeonameId     = request.CityGeonameId;
+        patient.BloodType         = ParseBloodType(request.BloodType);
 
         if (request.PhoneNumbers != null)
         {

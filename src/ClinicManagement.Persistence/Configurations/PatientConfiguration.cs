@@ -33,9 +33,9 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasIndex(p => p.PatientCode).IsUnique();
         builder.HasIndex(p => new { p.ClinicId, p.IsDeleted, p.CreatedAt });
         builder.HasIndex(p => p.FullName);
-        builder.HasIndex(p => new { p.StateNameEn, p.StateNameAr });
-        builder.HasIndex(p => new { p.CityNameEn, p.CityNameAr });
-        builder.HasIndex(p => new { p.CountryNameEn, p.CountryNameAr });
+        builder.HasIndex(p => p.StateGeonameId);
+        builder.HasIndex(p => p.CityGeonameId);
+        builder.HasIndex(p => p.CountryGeonameId);
         builder.HasIndex(p => p.Gender);
     }
 }
