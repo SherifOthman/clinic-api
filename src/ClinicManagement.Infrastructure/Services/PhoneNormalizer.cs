@@ -28,14 +28,16 @@ public class PhoneNormalizer : IPhoneNormalizer
 
         try
         {
-            // If input starts with + it's already international — no region hint needed
-            var region = cleaned.StartsWith("+") ? null : defaultRegion;
-            var parsed = _util.Parse(cleaned, region);
+            var region = cleaned.StartsWith("+") ? null : (defaultRegion ?? "EG");
+
+            // Use ParseHelper which does NOT validate — it just parses the structure.
+            // This allows partial/incomplete numbers like "010" to still yield
+            // a national significant number for prefix search.
+            var parsed = _util.ParseAndKeepRawInput(cleaned, region);
             return _util.GetNationalSignificantNumber(parsed);
         }
         catch
         {
-            // Unparseable input — return null, caller handles gracefully
             return null;
         }
     }
