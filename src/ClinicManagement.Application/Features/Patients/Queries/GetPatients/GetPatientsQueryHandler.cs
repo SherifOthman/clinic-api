@@ -24,14 +24,10 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
     public async Task<Result<PaginatedResult<PatientDto>>> Handle(
         GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        // CountryCode comes from the JWT claim — set at login, zero DB calls.
         // Used to strip the correct trunk prefix from the search term so
         // "010" → "10" for Egypt, "07" → "7" for UK, etc.
         var countryCode = _currentUser.CountryCode;
 
-        // Normalize the phone search term here (business logic belongs in the handler).
-        // The repository receives the already-processed national number and does
-        // a simple StartsWith — no logic, just data access.
         var nationalSearch = !string.IsNullOrWhiteSpace(request.SearchTerm)
             ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, countryCode)
             : null;
