@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddSingleton<IPhoneNormalizer, PhoneNormalizer>();
 
         services.AddHttpClient<GeoNamesService>();
 

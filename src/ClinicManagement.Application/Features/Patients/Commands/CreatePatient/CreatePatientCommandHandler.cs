@@ -11,11 +11,13 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
+    private readonly IPhoneNormalizer _phoneNormalizer;
 
-    public CreatePatientCommandHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public CreatePatientCommandHandler(IUnitOfWork uow, ICurrentUserService currentUser, IPhoneNormalizer phoneNormalizer)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _uow             = uow;
+        _currentUser     = currentUser;
+        _phoneNormalizer = phoneNormalizer;
     }
 
     public async Task<Result<Guid>> Handle(CreatePatientCommand request, CancellationToken cancellationToken)
@@ -43,7 +45,12 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         await _uow.Patients.AddAsync(patient);
 
         foreach (var phone in request.PhoneNumbers)
-            _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = phone });
+            _uow.Patients.AddPhone(new PatientPhone
+            {
+                PatientId      = patient.Id,
+                PhoneNumber    = phone,
+                NationalNumber = _phoneNormalizer.GetNationalNumber(phone) ?? phone,
+            });
 
         foreach (var diseaseId in request.ChronicDiseaseIds)
             _uow.Patients.AddChronicDisease(new PatientChronicDisease { PatientId = patient.Id, ChronicDiseaseId = diseaseId });

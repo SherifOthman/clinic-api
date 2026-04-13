@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -10,8 +11,13 @@ namespace ClinicManagement.Application.Features.Patients.Commands;
 public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand, Result>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IPhoneNormalizer _phoneNormalizer;
 
-    public UpdatePatientCommandHandler(IUnitOfWork uow) => _uow = uow;
+    public UpdatePatientCommandHandler(IUnitOfWork uow, IPhoneNormalizer phoneNormalizer)
+    {
+        _uow             = uow;
+        _phoneNormalizer = phoneNormalizer;
+    }
 
     public async Task<Result> Handle(UpdatePatientCommand request, CancellationToken cancellationToken)
     {
@@ -37,7 +43,12 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
                 _uow.Patients.RemovePhone(phone);
 
             foreach (var phone in request.PhoneNumbers)
-                _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = phone });
+                _uow.Patients.AddPhone(new PatientPhone
+                {
+                    PatientId      = patient.Id,
+                    PhoneNumber    = phone,
+                    NationalNumber = _phoneNormalizer.GetNationalNumber(phone) ?? phone,
+                });
         }
 
         if (request.ChronicDiseaseIds != null)
