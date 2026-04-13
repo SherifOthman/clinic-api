@@ -221,10 +221,12 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Distinct()
             .ToListAsync(ct);
 
+        // Group rows that share the same EN or AR name so a state stored with
+        // only EN on one patient and only AR on another merges into one entry.
         return rows
             .GroupBy(r => r.StateNameEn ?? r.StateNameAr!)
             .Select(g => new PatientStateDto(
-                NameEn: g.Key,
+                NameEn: g.Select(r => r.StateNameEn).FirstOrDefault(n => n != null) ?? g.Key,
                 NameAr: g.Select(r => r.StateNameAr).FirstOrDefault(n => n != null) ?? g.Key))
             .OrderBy(s => s.NameEn)
             .ToList();
@@ -247,7 +249,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return rows
             .GroupBy(r => r.CityNameEn ?? r.CityNameAr!)
             .Select(g => new PatientStateDto(
-                NameEn: g.Key,
+                NameEn: g.Select(r => r.CityNameEn).FirstOrDefault(n => n != null) ?? g.Key,
                 NameAr: g.Select(r => r.CityNameAr).FirstOrDefault(n => n != null) ?? g.Key))
             .OrderBy(s => s.NameEn)
             .ToList();
@@ -270,7 +272,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return rows
             .GroupBy(r => r.CountryNameEn ?? r.CountryNameAr!)
             .Select(g => new PatientStateDto(
-                NameEn: g.Key,
+                NameEn: g.Select(r => r.CountryNameEn).FirstOrDefault(n => n != null) ?? g.Key,
                 NameAr: g.Select(r => r.CountryNameAr).FirstOrDefault(n => n != null) ?? g.Key))
             .OrderBy(s => s.NameEn)
             .ToList();
