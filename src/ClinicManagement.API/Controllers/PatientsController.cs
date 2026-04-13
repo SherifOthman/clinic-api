@@ -38,6 +38,42 @@ public class PatientsController : BaseApiController
     // The frontend now uses the GeoNames API directly via /api/locations.
     // Filtering is done by GeoNames ID, not by stored name strings.
 
+    /// <summary>Returns distinct country GeoNames IDs from patients in this clinic.</summary>
+    [HttpGet("countries")]
+    [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPatientCountries(CancellationToken cancellationToken = default)
+    {
+        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
+        var result = await Sender.Send(new GetDistinctPatientCountryIdsQuery(isSuperAdmin), cancellationToken);
+        return HandleResult(result, "Failed to retrieve patient countries");
+    }
+
+    /// <summary>Returns distinct state GeoNames IDs from patients in this clinic.</summary>
+    [HttpGet("states")]
+    [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPatientStates(CancellationToken cancellationToken = default)
+    {
+        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
+        var result = await Sender.Send(new GetDistinctPatientStateIdsQuery(isSuperAdmin), cancellationToken);
+        return HandleResult(result, "Failed to retrieve patient states");
+    }
+
+    /// <summary>Returns distinct city GeoNames IDs from patients in this clinic.</summary>
+    [HttpGet("cities")]
+    [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPatientCities(CancellationToken cancellationToken = default)
+    {
+        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
+        var result = await Sender.Send(new GetDistinctPatientCityIdsQuery(isSuperAdmin), cancellationToken);
+        return HandleResult(result, "Failed to retrieve patient cities");
+    }
+
     [HttpGet("all")]
     [Authorize(Policy = "SuperAdmin")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]

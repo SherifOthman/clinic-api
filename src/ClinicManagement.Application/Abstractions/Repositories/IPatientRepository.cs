@@ -34,6 +34,15 @@ public interface IPatientRepository : IRepository<Patient>
     Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
     Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default);
 
+    /// <summary>Returns distinct GeoNames IDs of countries that have at least one patient.</summary>
+    Task<List<int>> GetDistinctCountryGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default);
+
+    /// <summary>Returns distinct GeoNames IDs of states that have at least one patient.</summary>
+    Task<List<int>> GetDistinctStateGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default);
+
+    /// <summary>Returns distinct GeoNames IDs of cities that have at least one patient.</summary>
+    Task<List<int>> GetDistinctCityGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default);
+
     void AddPhone(PatientPhone phone);
     void RemovePhone(PatientPhone phone);
     void AddChronicDisease(PatientChronicDisease disease);

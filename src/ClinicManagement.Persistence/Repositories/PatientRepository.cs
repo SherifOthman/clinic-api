@@ -204,6 +204,44 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             patient.Phones, patient.Diseases, auditNames, clinicName);
     }
 
+    // ── Distinct GeoNames IDs (for filter dropdowns) ──────────────────────────
+
+    public async Task<List<int>> GetDistinctCountryGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default)
+    {
+        var query = isSuperAdmin
+            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+            : DbSet.AsNoTracking();
+        return await query
+            .Where(p => p.CountryGeonameId != null)
+            .Select(p => p.CountryGeonameId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<int>> GetDistinctStateGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default)
+    {
+        var query = isSuperAdmin
+            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+            : DbSet.AsNoTracking();
+        return await query
+            .Where(p => p.StateGeonameId != null)
+            .Select(p => p.StateGeonameId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<int>> GetDistinctCityGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default)
+    {
+        var query = isSuperAdmin
+            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+            : DbSet.AsNoTracking();
+        return await query
+            .Where(p => p.CityGeonameId != null)
+            .Select(p => p.CityGeonameId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+    }
+
     // ── Child entity helpers ──────────────────────────────────────────────────
 
     public void AddPhone(PatientPhone phone)                  => _phones.Add(phone);
