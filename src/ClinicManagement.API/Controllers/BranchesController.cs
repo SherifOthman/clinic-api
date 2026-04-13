@@ -1,8 +1,10 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Branches.Commands;
 using ClinicManagement.Application.Features.Branches.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -11,6 +13,7 @@ namespace ClinicManagement.API.Controllers;
 public class BranchesController : BaseApiController
 {
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<BranchDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBranches(CancellationToken cancellationToken = default)
     {
@@ -19,6 +22,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateBranch([FromBody] CreateBranchCommand command, CancellationToken cancellationToken = default)
@@ -30,6 +34,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
@@ -40,6 +45,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPatch("{id:guid}/active-status")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetActiveStatus([FromRoute] Guid id, [FromBody] SetBranchActiveStatusCommand command, CancellationToken cancellationToken = default)

@@ -1,18 +1,17 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Audit.Queries;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
-/// <summary>
-/// SuperAdmin-only audit log endpoint.
-/// Provides full cross-clinic audit trail for debugging and compliance.
-/// </summary>
 [Authorize(Policy = "SuperAdmin")]
 [Route("api/audit")]
+[EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class AuditController : BaseApiController
 {
     /// <summary>

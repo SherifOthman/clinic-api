@@ -1,18 +1,16 @@
 using ClinicManagement.API.Contracts.Locations;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
-/// <summary>
-/// Proxies GeoNames location data with per-language caching.
-/// Pass ?lang=en or ?lang=ar — defaults to "en".
-/// Each language is cached independently for 24h.
-/// </summary>
 [ApiController]
 [Route("api/locations")]
 [Produces("application/json")]
+[EnableRateLimiting(RateLimitPolicies.AnonStatic)]
 public class LocationsController : ControllerBase
 {
     private readonly GeoNamesService _geoNames;

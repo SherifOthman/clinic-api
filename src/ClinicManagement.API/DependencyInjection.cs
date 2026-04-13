@@ -3,6 +3,7 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.API.Middleware;
 using ClinicManagement.API.OpenApi;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         AddOptions(services, configuration);
         AddCors(services, configuration);
         AddSwagger(services);
+        services.AddRateLimiting();
 
         services.AddControllers();
 
@@ -133,6 +135,7 @@ public static class DependencyInjection
         app.UseStaticFiles();
         app.UseCors("AllowAll");
         app.UseRouting();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

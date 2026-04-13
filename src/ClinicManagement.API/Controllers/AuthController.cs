@@ -1,5 +1,6 @@
 using ClinicManagement.API.Contracts.Auth;
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.Commands;
@@ -15,6 +16,7 @@ using ClinicManagement.Application.Features.Auth.Queries;
 using ClinicManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -37,6 +39,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
     [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
@@ -74,6 +77,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthRegister)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct)
@@ -100,6 +104,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpGet("me")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(GetMeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMe(CancellationToken ct)
@@ -119,6 +124,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
     [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest? request, CancellationToken ct)
@@ -166,6 +172,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("confirm-email")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthConfirmEmail)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request, CancellationToken ct)
@@ -180,6 +187,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthForgotPassword)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
     {
@@ -194,6 +202,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("reset-password")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthResetPassword)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
@@ -208,6 +217,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("change-password")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
@@ -222,6 +232,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpGet("check-email")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthEnumeration)]
     [ProducesResponseType(typeof(AvailabilityDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckEmailAvailability([FromQuery] string email, CancellationToken ct)
     {
@@ -235,6 +246,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpGet("check-username")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthEnumeration)]
     [ProducesResponseType(typeof(AvailabilityDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckUsernameAvailability([FromQuery] string username, CancellationToken ct)
     {
@@ -248,6 +260,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request, CancellationToken ct)
     {
@@ -274,6 +287,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("resend-email-verification")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthResendVerification)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationRequest request, CancellationToken ct)
@@ -288,6 +302,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPut("profile")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken ct)
@@ -302,6 +317,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("profile/image/upload")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserUpload)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UploadProfileImage(IFormFile file, CancellationToken ct)
@@ -316,6 +332,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpDelete("profile/image")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteProfileImage(CancellationToken ct)

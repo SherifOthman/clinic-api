@@ -1,5 +1,6 @@
 using ClinicManagement.API.Contracts.Staff;
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Features.Staff.Dtos;
@@ -7,6 +8,7 @@ using ClinicManagement.Application.Features.Staff.Queries;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -15,6 +17,7 @@ namespace ClinicManagement.API.Controllers;
 public class StaffController : BaseApiController
 {
     [HttpPost("invite")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(InviteStaffResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> InviteStaff(
@@ -26,6 +29,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpGet("invitations")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<InvitationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetInvitations(
         [FromQuery] InvitationStatus? status,
@@ -39,6 +43,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpGet("invitations/{id:guid}")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(InvitationDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetInvitationDetail(Guid id, CancellationToken cancellationToken)
@@ -48,6 +53,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpPost("invitations/{id:guid}/resend")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResendInvitation(Guid id, CancellationToken cancellationToken)
@@ -58,6 +64,7 @@ public class StaffController : BaseApiController
 
     [HttpPost("invitations/{token}/accept-with-registration")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.UserOnce)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AcceptInvitationWithRegistration(
@@ -73,6 +80,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpDelete("invitations/{id}")]
+    [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CancelInvitation(Guid id, CancellationToken cancellationToken)
@@ -82,6 +90,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<StaffDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaffList(
         [FromQuery] string? role,
@@ -95,6 +104,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpGet("{id:guid}")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(StaffDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStaffDetail(Guid id, CancellationToken cancellationToken)
@@ -104,6 +114,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpPost("set-owner-as-doctor")]
+    [EnableRateLimiting(RateLimitPolicies.UserOnce)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetOwnerAsDoctor(
@@ -114,6 +125,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpPatch("{id:guid}/active-status")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetActiveStatus(
@@ -124,6 +136,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpGet("{id:guid}/working-days")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<WorkingDayDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWorkingDays(Guid id, [FromQuery] Guid? branchId, CancellationToken cancellationToken)
@@ -133,6 +146,7 @@ public class StaffController : BaseApiController
     }
 
     [HttpPut("{id:guid}/working-days")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SaveWorkingDays(

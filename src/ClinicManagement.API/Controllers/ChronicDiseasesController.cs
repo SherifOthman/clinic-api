@@ -1,12 +1,15 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Reference.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
 [Authorize(Policy = "RequireClinic")]
 [Route("api/chronic-diseases")]
+[EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class ChronicDiseasesController : BaseApiController
 {
     /// <summary>

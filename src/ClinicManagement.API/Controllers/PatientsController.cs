@@ -1,11 +1,13 @@
 using ClinicManagement.API.Contracts.Patients;
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -14,6 +16,7 @@ public class PatientsController : BaseApiController
 {
     [HttpGet]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<PatientDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPatients(
         [FromQuery] string? searchTerm,
@@ -33,6 +36,7 @@ public class PatientsController : BaseApiController
 
     [HttpGet("states")]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<PatientStateDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPatientStates(CancellationToken cancellationToken = default)
     {
@@ -43,6 +47,7 @@ public class PatientsController : BaseApiController
 
     [HttpGet("cities")]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<PatientStateDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPatientCities(CancellationToken cancellationToken = default)
     {
@@ -53,6 +58,7 @@ public class PatientsController : BaseApiController
 
     [HttpGet("countries")]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<PatientStateDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPatientCountries(CancellationToken cancellationToken = default)
     {
@@ -63,6 +69,7 @@ public class PatientsController : BaseApiController
 
     [HttpGet("all")]
     [Authorize(Policy = "SuperAdmin")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<PatientDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllPatients(
         [FromQuery] string? searchTerm,
@@ -83,6 +90,7 @@ public class PatientsController : BaseApiController
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPatientDetail(Guid id, CancellationToken cancellationToken = default)
@@ -94,6 +102,7 @@ public class PatientsController : BaseApiController
     /// <summary>SuperAdmin: get patient detail bypassing tenant filter.</summary>
     [HttpGet("all/{id:guid}")]
     [Authorize(Policy = "SuperAdmin")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPatientDetailAdmin(Guid id, CancellationToken cancellationToken = default)
@@ -104,6 +113,7 @@ public class PatientsController : BaseApiController
 
     [HttpPost]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePatient(
@@ -132,6 +142,7 @@ public class PatientsController : BaseApiController
 
     [HttpPut("{id}")]
     [Authorize(Policy = "RequireClinic")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
@@ -160,6 +171,7 @@ public class PatientsController : BaseApiController
 
     [HttpDelete("{id}")]
     [Authorize(Policy = "RequireClinicOwner")]
+    [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeletePatient([FromRoute] Guid id, CancellationToken cancellationToken = default)
@@ -171,6 +183,7 @@ public class PatientsController : BaseApiController
     /// <summary>Restore a soft-deleted patient. SuperAdmin only.</summary>
     [HttpPost("{id}/restore")]
     [Authorize(Policy = "SuperAdmin")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestorePatient([FromRoute] Guid id, CancellationToken cancellationToken = default)

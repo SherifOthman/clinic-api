@@ -1,11 +1,14 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Dashboard.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/dashboard")]
+[EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class DashboardController : BaseApiController
 {
     /// <summary>Clinic staff dashboard stats — patients, staff, invitations, subscription.</summary>

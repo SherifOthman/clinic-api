@@ -1,10 +1,13 @@
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Reference.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/specializations")]
+[EnableRateLimiting(RateLimitPolicies.AnonStatic)]
 public class SpecializationsController : BaseApiController
 {
     [HttpGet]
