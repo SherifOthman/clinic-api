@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Infrastructure.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -8,13 +9,9 @@ namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
 /// GeoNames API proxy — single language per request, cached by (resource + language).
-///
-/// The frontend sends the current language ("en" or "ar") as a query param.
-/// We call GeoNames once per request (not twice for bilingual merge).
-/// Cache key includes the language so EN and AR are cached independently.
-/// Cache duration: 24h — location data is static.
+/// Implements IGeoNamesService for use by the seed service.
 /// </summary>
-public class GeoNamesService
+public class GeoNamesService : IGeoNamesService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GeoNamesService> _logger;
@@ -36,6 +33,26 @@ public class GeoNamesService
         _logger     = logger;
         _cache      = cache;
         _options    = options.Value;
+    }
+
+    // ── IGeoNamesService (used by seed service) ───────────────────────────────
+
+    async Task<List<GeoNamesItem>> IGeoNamesService.GetCountriesAsync(string lang, CancellationToken ct)
+    {
+        var list = await GetCountriesAsync(lang, ct);
+        return list.Select(c => new GeoNamesItem(c.GeonameId, c.Name, c.CountryCode)).ToList();
+    }
+
+    async Task<List<GeoNamesItem>> IGeoNamesService.GetStatesAsync(int countryGeonameId, string lang, CancellationToken ct)
+    {
+        var list = await GetStatesAsync(countryGeonameId, lang, ct);
+        return list.Select(s => new GeoNamesItem(s.GeonameId, s.Name)).ToList();
+    }
+
+    async Task<List<GeoNamesItem>> IGeoNamesService.GetCitiesAsync(int stateGeonameId, string lang, CancellationToken ct)
+    {
+        var list = await GetCitiesAsync(stateGeonameId, lang, ct);
+        return list.Select(c => new GeoNamesItem(c.GeonameId, c.Name)).ToList();
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

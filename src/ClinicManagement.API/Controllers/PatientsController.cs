@@ -6,19 +6,20 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Infrastructure.Services;
+using ClinicManagement.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/patients")]
 public class PatientsController : BaseApiController
 {
-    private readonly GeoNamesService _geoNames;
+    private readonly ApplicationDbContext _db;
 
-    public PatientsController(GeoNamesService geoNames) => _geoNames = geoNames;
+    public PatientsController(ApplicationDbContext db) => _db = db;
     [HttpGet]
     [Authorize(Policy = "RequireClinic")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
@@ -45,8 +46,7 @@ public class PatientsController : BaseApiController
 
     /// <summary>
     /// Returns all distinct location IDs from patients in this clinic,
-    /// with names resolved from GeoNames (cached server-side).
-    /// One round trip replaces three separate ID fetches + N name lookups.
+    /// with names resolved from the seeded GeoNames DB — one round trip, no external API.
     /// </summary>
     [HttpGet("location-filter")]
     [Authorize(Policy = "RequireClinic")]
@@ -57,29 +57,37 @@ public class PatientsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
+        var isAr = lang == "ar";
 
         // DB queries must be sequential — EF Core DbContext is not thread-safe
         var countryResult = await Sender.Send(new GetDistinctPatientCountryIdsQuery(isSuperAdmin), cancellationToken);
         var stateResult   = await Sender.Send(new GetDistinctPatientStateIdsQuery(isSuperAdmin), cancellationToken);
         var cityResult    = await Sender.Send(new GetDistinctPatientCityIdsQuery(isSuperAdmin), cancellationToken);
 
-        var safeCountryIds = countryResult.IsSuccess ? countryResult.Value : [];
-        var safeStateIds   = stateResult.IsSuccess   ? stateResult.Value   : [];
-        var safeCityIds    = cityResult.IsSuccess     ? cityResult.Value    : [];
+        var countryIds = countryResult.IsSuccess ? countryResult.Value ?? [] : [];
+        var stateIds   = stateResult.IsSuccess   ? stateResult.Value   ?? [] : [];
+        var cityIds    = cityResult.IsSuccess     ? cityResult.Value    ?? [] : [];
 
-        // GeoNames resolution is safe to parallelize — uses HttpClient + IMemoryCache
-        var countriesTask = _geoNames.ResolveCountryNamesAsync(safeCountryIds, lang, cancellationToken);
-        var statesTask    = _geoNames.ResolveStateNamesAsync(safeStateIds, safeCountryIds, lang, cancellationToken);
-        var citiesTask    = _geoNames.ResolveCityNamesAsync(safeCityIds, safeStateIds, lang, cancellationToken);
-        await Task.WhenAll(countriesTask, statesTask, citiesTask);
+        // Resolve names from seeded DB — simple IN queries, no GeoNames API
+        var countries = countryIds.Count == 0 ? [] : await _db.GeoCountries
+            .AsNoTracking()
+            .Where(c => countryIds.Contains(c.GeonameId))
+            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn))
+            .ToListAsync(cancellationToken);
 
-        var response = new PatientLocationFilterResponse(
-            countriesTask.Result.Select(c => new LocationNameDto(c.GeonameId, c.Name)).ToList(),
-            statesTask.Result.Select(s => new LocationNameDto(s.GeonameId, s.Name)).ToList(),
-            citiesTask.Result.Select(c => new LocationNameDto(c.GeonameId, c.Name)).ToList()
-        );
+        var states = stateIds.Count == 0 ? [] : await _db.GeoStates
+            .AsNoTracking()
+            .Where(s => stateIds.Contains(s.GeonameId))
+            .Select(s => new LocationNameDto(s.GeonameId, isAr ? s.NameAr : s.NameEn))
+            .ToListAsync(cancellationToken);
 
-        return Ok(response);
+        var cities = cityIds.Count == 0 ? [] : await _db.GeoCities
+            .AsNoTracking()
+            .Where(c => cityIds.Contains(c.GeonameId))
+            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn))
+            .ToListAsync(cancellationToken);
+
+        return Ok(new PatientLocationFilterResponse(countries, states, cities));
     }
 
     [HttpGet("all")]

@@ -1,8 +1,7 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;
-using ClinicManagement.Infrastructure.Services;
+using ClinicManagement.Application.Abstractions.Storage;using ClinicManagement.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,6 +27,7 @@ public static class DependencyInjection
         services.AddSingleton<IPhoneNormalizer, PhoneNormalizer>();
 
         services.AddHttpClient<GeoNamesService>();
+        services.AddScoped<IGeoNamesService>(sp => sp.GetRequiredService<GeoNamesService>());
 
         services.AddHostedService<RefreshTokenCleanupService>();
         services.AddHostedService<AuditLogCleanupService>();

@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<ChronicDiseaseSeedService>();
         services.AddScoped<SubscriptionPlanSeedService>();
         services.AddScoped<DemoUsersSeedService>();
+        services.AddScoped<GeoLocationSeedService>();
 
         return services;
     }

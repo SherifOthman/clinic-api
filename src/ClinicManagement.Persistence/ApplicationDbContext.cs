@@ -15,6 +15,11 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     private readonly ICurrentUserService? _currentUserService;
     private readonly AuditEntryBuilder _auditEntryBuilder;
 
+    // ── Location reference tables (GeoNames seed) ─────────────────────────────
+    public DbSet<GeoCountry> GeoCountries => Set<GeoCountry>();
+    public DbSet<GeoState>   GeoStates    => Set<GeoState>();
+    public DbSet<GeoCity>    GeoCities    => Set<GeoCity>();
+
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         ICurrentUserService? currentUserService = null,
