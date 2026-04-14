@@ -231,43 +231,34 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (stateGeonameId.HasValue)
         {
-            // Distinct cities in this state that have at least one patient
             return await query
-                .Where(p => p.StateGeonameId == stateGeonameId.Value && p.City != null)
-                .Select(p => new { p.CityGeonameId, p.City })
-                .Where(x => x.CityGeonameId != null)
-                .GroupBy(x => x.CityGeonameId)
-                .Select(g => new LocationOption(
-                    g.Key!.Value,
-                    isAr ? g.First().City!.NameAr : g.First().City!.NameEn))
+                .Where(p => p.StateGeonameId == stateGeonameId.Value && p.CityGeonameId != null)
+                .Select(p => new LocationOption(
+                    p.CityGeonameId!.Value,
+                    isAr ? p.City!.NameAr : p.City!.NameEn))
+                .Distinct()
                 .OrderBy(o => o.Name)
                 .ToListAsync(ct);
         }
 
         if (countryGeonameId.HasValue)
         {
-            // Distinct states in this country that have at least one patient
             return await query
-                .Where(p => p.CountryGeonameId == countryGeonameId.Value && p.State != null)
-                .Select(p => new { p.StateGeonameId, p.State })
-                .Where(x => x.StateGeonameId != null)
-                .GroupBy(x => x.StateGeonameId)
-                .Select(g => new LocationOption(
-                    g.Key!.Value,
-                    isAr ? g.First().State!.NameAr : g.First().State!.NameEn))
+                .Where(p => p.CountryGeonameId == countryGeonameId.Value && p.StateGeonameId != null)
+                .Select(p => new LocationOption(
+                    p.StateGeonameId!.Value,
+                    isAr ? p.State!.NameAr : p.State!.NameEn))
+                .Distinct()
                 .OrderBy(o => o.Name)
                 .ToListAsync(ct);
         }
 
-        // Distinct countries that have at least one patient
         return await query
-            .Where(p => p.Country != null)
-            .Select(p => new { p.CountryGeonameId, p.Country })
-            .Where(x => x.CountryGeonameId != null)
-            .GroupBy(x => x.CountryGeonameId)
-            .Select(g => new LocationOption(
-                g.Key!.Value,
-                isAr ? g.First().Country!.NameAr : g.First().Country!.NameEn))
+            .Where(p => p.CountryGeonameId != null)
+            .Select(p => new LocationOption(
+                p.CountryGeonameId!.Value,
+                isAr ? p.Country!.NameAr : p.Country!.NameEn))
+            .Distinct()
             .OrderBy(o => o.Name)
             .ToListAsync(ct);
     }
