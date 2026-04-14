@@ -43,31 +43,19 @@ public class GeoLocationSeedService
         var toAddCountries    = new List<GeoCountry>();
         var toUpdateCountries = new List<GeoCountry>();
 
-        foreach (var en in countriesEn)
-        {
-            var ar   = countriesAr.FirstOrDefault(c => c.GeonameId == en.GeonameId);
-            var nameAr = ar?.Name ?? en.Name;
+        // Only fetch countries not already in DB — existing ones are already correct
+        var newCountriesEn = countriesEn.Where(c => !existingCountryIds.Contains(c.GeonameId)).ToList();
 
-            if (existingCountryIds.Contains(en.GeonameId))
+        foreach (var en in newCountriesEn)
+        {
+            var ar = countriesAr.FirstOrDefault(c => c.GeonameId == en.GeonameId);
+            toAddCountries.Add(new GeoCountry
             {
-                toUpdateCountries.Add(new GeoCountry
-                {
-                    GeonameId   = en.GeonameId,
-                    CountryCode = en.CountryCode,
-                    NameEn      = en.Name,
-                    NameAr      = nameAr,
-                });
-            }
-            else
-            {
-                toAddCountries.Add(new GeoCountry
-                {
-                    GeonameId   = en.GeonameId,
-                    CountryCode = en.CountryCode,
-                    NameEn      = en.Name,
-                    NameAr      = nameAr,
-                });
-            }
+                GeonameId   = en.GeonameId,
+                CountryCode = en.CountryCode,
+                NameEn      = en.Name,
+                NameAr      = ar?.Name ?? en.Name,
+            });
         }
 
         if (toAddCountries.Count > 0)
@@ -82,15 +70,30 @@ public class GeoLocationSeedService
         _logger.LogInformation("Countries: +{Added} updated:{Updated}", result.CountriesAdded, result.CountriesUpdated);
 
         // ── States ────────────────────────────────────────────────────────────
-        var allCountries = toAddCountries.Concat(toUpdateCountries).ToList();
+        // Use ALL countries from DB (not just newly added) so re-runs can fill missing states
+        var allCountryIds = await _context.GeoCountries
+            .Select(c => new { c.GeonameId, c.CountryCode })
+            .ToListAsync(ct);
 
         var existingStateIds = await _context.GeoStates
             .Select(s => s.GeonameId).ToHashSetAsync(ct);
 
+        // Countries that already have states — skip fetching them again
+        var countriesWithStates = await _context.GeoStates
+            .Select(s => s.CountryGeonameId).Distinct().ToHashSetAsync(ct);
+
+        var countriesToFetch = allCountryIds
+            .Where(c => !countriesWithStates.Contains(c.GeonameId))
+            .ToList();
+
+        _logger.LogInformation(
+            "States: {Total} countries total, {Skip} already have states, fetching {Fetch}",
+            allCountryIds.Count, countriesWithStates.Count, countriesToFetch.Count);
+
         var toAddStates    = new List<GeoState>();
         var toUpdateStates = new List<GeoState>();
 
-        foreach (var country in allCountries)
+        foreach (var country in countriesToFetch)
         {
             var (statesEn, statesAr) = await FetchBothLangs(
                 lang => _geoNames.GetStatesAsync(country.GeonameId, lang, ct));
@@ -128,18 +131,32 @@ public class GeoLocationSeedService
         _logger.LogInformation("States: +{Added} updated:{Updated}", result.StatesAdded, result.StatesUpdated);
 
         // ── Cities ────────────────────────────────────────────────────────────
-        var allStates = toAddStates.Concat(toUpdateStates).ToList();
+        // Use ALL states from DB so re-runs can fill missing cities
+        var allStateIds = await _context.GeoStates
+            .Select(s => s.GeonameId).ToListAsync(ct);
 
         var existingCityIds = await _context.GeoCities
             .Select(c => c.GeonameId).ToHashSetAsync(ct);
 
+        // States that already have at least one city — skip fetching them again
+        var statesWithCities = await _context.GeoCities
+            .Select(c => c.StateGeonameId).Distinct().ToHashSetAsync(ct);
+
+        var statesToFetch = allStateIds
+            .Where(id => !statesWithCities.Contains(id))
+            .ToList();
+
+        _logger.LogInformation(
+            "Cities: {Total} states total, {Skip} already have cities, fetching {Fetch}",
+            allStateIds.Count, statesWithCities.Count, statesToFetch.Count);
+
         var toAddCities    = new List<GeoCity>();
         var toUpdateCities = new List<GeoCity>();
 
-        foreach (var state in allStates)
+        foreach (var stateId in statesToFetch)
         {
             var (citiesEn, citiesAr) = await FetchBothLangs(
-                lang => _geoNames.GetCitiesAsync(state.GeonameId, lang, ct));
+                lang => _geoNames.GetCitiesAsync(stateId, lang, ct));
 
             foreach (var en in citiesEn)
             {
@@ -147,7 +164,7 @@ public class GeoLocationSeedService
                 var city = new GeoCity
                 {
                     GeonameId      = en.GeonameId,
-                    StateGeonameId = state.GeonameId,
+                    StateGeonameId = stateId,
                     NameEn         = en.Name,
                     NameAr         = ar?.Name ?? en.Name,
                 };
