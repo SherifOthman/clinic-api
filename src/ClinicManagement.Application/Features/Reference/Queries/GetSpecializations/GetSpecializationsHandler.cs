@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Data;
-using Mapster;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Reference.Queries;
@@ -14,6 +13,6 @@ public class GetSpecializationsHandler : IRequestHandler<GetSpecializationsQuery
         GetSpecializationsQuery request, CancellationToken cancellationToken)
     {
         var rows = await _uow.Reference.GetSpecializationsAsync(cancellationToken);
-        return rows.Adapt<List<SpecializationDto>>();
+        return rows.Select(r => new SpecializationDto(r.Id, r.NameEn, r.NameAr, r.DescriptionEn, r.DescriptionAr));
     }
 }

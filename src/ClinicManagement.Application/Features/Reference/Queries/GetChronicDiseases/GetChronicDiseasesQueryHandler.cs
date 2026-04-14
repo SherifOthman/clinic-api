@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common;
-using Mapster;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Reference.Queries;
@@ -15,6 +14,6 @@ public class GetChronicDiseasesQueryHandler : IRequestHandler<GetChronicDiseases
         GetChronicDiseasesQuery request, CancellationToken cancellationToken)
     {
         var rows = await _uow.Reference.GetChronicDiseasesAsync(cancellationToken);
-        return Result.Success(rows.Adapt<List<ChronicDiseaseDto>>());
+        return Result.Success(rows.Select(r => new ChronicDiseaseDto { Id = r.Id, NameEn = r.NameEn, NameAr = r.NameAr }).ToList());
     }
 }
