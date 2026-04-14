@@ -68,23 +68,23 @@ public class PatientsController : BaseApiController
         var stateIds   = stateResult.IsSuccess   ? stateResult.Value   ?? [] : [];
         var cityIds    = cityResult.IsSuccess     ? cityResult.Value    ?? [] : [];
 
-        // Resolve names from seeded DB — simple IN queries, no GeoNames API
+        // Resolve names from the seeded GeoNames DB — simple IN queries, no external API
         var countries = countryIds.Count == 0 ? [] : await _db.GeoCountries
             .AsNoTracking()
             .Where(c => countryIds.Contains(c.GeonameId))
-            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn, null))
+            .Select(c => new FilterCountry(c.GeonameId, isAr ? c.NameAr : c.NameEn))
             .ToListAsync(cancellationToken);
 
         var states = stateIds.Count == 0 ? [] : await _db.GeoStates
             .AsNoTracking()
             .Where(s => stateIds.Contains(s.GeonameId))
-            .Select(s => new LocationNameDto(s.GeonameId, isAr ? s.NameAr : s.NameEn, s.CountryGeonameId))
+            .Select(s => new FilterState(s.GeonameId, isAr ? s.NameAr : s.NameEn, s.CountryGeonameId))
             .ToListAsync(cancellationToken);
 
         var cities = cityIds.Count == 0 ? [] : await _db.GeoCities
             .AsNoTracking()
             .Where(c => cityIds.Contains(c.GeonameId))
-            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn, c.StateGeonameId))
+            .Select(c => new FilterCity(c.GeonameId, isAr ? c.NameAr : c.NameEn, c.StateGeonameId))
             .ToListAsync(cancellationToken);
 
         return Ok(new PatientLocationFilterResponse(countries, states, cities));
