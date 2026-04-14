@@ -65,30 +65,29 @@ public class GeoNamesService : IGeoNamesService
             return [];
         }
 
+        var filter   = _options.CityFilter;
+        var maxRows  = filter.MaxRows;
+        var alwaysFc = filter.AlwaysIncludeFeatureCodes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var minPop   = filter.MinPopulationForPpl;
+
         List<GeoNamesChildInfo> cities;
 
         if (!string.IsNullOrWhiteSpace(stateInfo.AdminCode1) && stateInfo.AdminCode1 != "00")
         {
             var searchUrl  = $"{_options.BaseUrl}/searchJSON?country={stateInfo.CountryCode}&adminCode1={stateInfo.AdminCode1}" +
-                             $"&featureClass=P&username={_options.Username}&lang={lang}&maxRows=1000&orderby=population";
+                             $"&featureClass=P&username={_options.Username}&lang={lang}&maxRows={maxRows}&orderby=population";
             var searchData = await FetchAsync<GeoNamesSearchResponse>(searchUrl);
             cities = (searchData?.Geonames ?? [])
-                .Where(g =>
-                    g.Fcode == "PPLC"  ||
-                    g.Fcode == "PPLA"  ||
-                    g.Fcode == "PPLA2" ||
-                    g.Fcode == "PPLA3" ||
-                    g.Fcode == "PPLA4" ||
-                    (g.Fcode == "PPL" && g.Population >= 50_000))
+                .Where(g => alwaysFc.Contains(g.Fcode) || (g.Fcode == "PPL" && g.Population >= minPop))
                 .Select(g => new GeoNamesChildInfo { GeonameId = g.GeonameId, Name = g.Name, Fcode = g.Fcode })
                 .ToList();
         }
         else
         {
-            var childUrl  = $"{_options.BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={_options.Username}&lang={lang}&maxRows=1000";
+            var childUrl  = $"{_options.BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={_options.Username}&lang={lang}&maxRows={maxRows}";
             var childData = await FetchAsync<GeoNamesResponse<GeoNamesChildInfo>>(childUrl);
             cities = (childData?.Geonames ?? [])
-                .Where(c => c.Fcode is "PPLC" or "PPLA" or "PPLA2" or "PPLA3" or "PPLA4")
+                .Where(c => alwaysFc.Contains(c.Fcode))
                 .ToList();
         }
 

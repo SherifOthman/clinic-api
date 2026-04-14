@@ -6,9 +6,11 @@ using Microsoft.Extensions.Logging;
 namespace ClinicManagement.Persistence.Seeders;
 
 /// <summary>
-/// Seeds GeoCountries, GeoStates, GeoCities from GeoNames API — runs once at startup.
-/// Fetches both EN and AR names in parallel per resource, then bulk-inserts.
-/// Skips entirely if GeoCountries table already has data.
+/// Upserts GeoCountries, GeoStates, GeoCities from GeoNames API.
+/// - New rows are inserted.
+/// - Existing rows are updated (names may change if filters or GeoNames data changed).
+/// - Rows no longer returned by GeoNames are left in place (safe — patients may reference them).
+/// Triggered via POST /api/admin/geo-seed — not on startup.
 /// </summary>
 public class GeoLocationSeedService
 {
@@ -26,104 +28,165 @@ public class GeoLocationSeedService
         _logger   = logger;
     }
 
-    public async Task SeedAsync(CancellationToken ct = default)
+    public async Task<GeoSeedResult> SeedAsync(CancellationToken ct = default)
     {
-        if (await _context.GeoCountries.AnyAsync(ct))
-        {
-            _logger.LogInformation("GeoLocation tables already seeded — skipping");
-            return;
-        }
-
-        _logger.LogInformation("Starting GeoLocation seed from GeoNames API...");
+        _logger.LogInformation("Starting GeoLocation upsert from GeoNames API...");
+        var result = new GeoSeedResult();
 
         // ── Countries ─────────────────────────────────────────────────────────
         var (countriesEn, countriesAr) = await FetchBothLangs(
             lang => _geoNames.GetCountriesAsync(lang, ct));
 
-        var countries = countriesEn
-            .Select(en =>
+        var existingCountryIds = await _context.GeoCountries
+            .Select(c => c.GeonameId).ToHashSetAsync(ct);
+
+        var toAddCountries    = new List<GeoCountry>();
+        var toUpdateCountries = new List<GeoCountry>();
+
+        foreach (var en in countriesEn)
+        {
+            var ar   = countriesAr.FirstOrDefault(c => c.GeonameId == en.GeonameId);
+            var nameAr = ar?.Name ?? en.Name;
+
+            if (existingCountryIds.Contains(en.GeonameId))
             {
-                var ar = countriesAr.FirstOrDefault(c => c.GeonameId == en.GeonameId);
-                return new GeoCountry
+                toUpdateCountries.Add(new GeoCountry
                 {
                     GeonameId   = en.GeonameId,
                     CountryCode = en.CountryCode,
                     NameEn      = en.Name,
-                    NameAr      = ar?.Name ?? en.Name,
-                };
-            })
-            .ToList();
+                    NameAr      = nameAr,
+                });
+            }
+            else
+            {
+                toAddCountries.Add(new GeoCountry
+                {
+                    GeonameId   = en.GeonameId,
+                    CountryCode = en.CountryCode,
+                    NameEn      = en.Name,
+                    NameAr      = nameAr,
+                });
+            }
+        }
 
-        await _context.GeoCountries.AddRangeAsync(countries, ct);
+        if (toAddCountries.Count > 0)
+            await _context.GeoCountries.AddRangeAsync(toAddCountries, ct);
+
+        foreach (var c in toUpdateCountries)
+            _context.GeoCountries.Update(c);
+
         await _context.SaveChangesAsync(ct);
-        _logger.LogInformation("Seeded {Count} countries", countries.Count);
+        result.CountriesAdded   = toAddCountries.Count;
+        result.CountriesUpdated = toUpdateCountries.Count;
+        _logger.LogInformation("Countries: +{Added} updated:{Updated}", result.CountriesAdded, result.CountriesUpdated);
 
         // ── States ────────────────────────────────────────────────────────────
-        var allStates = new List<GeoState>();
+        var allCountries = toAddCountries.Concat(toUpdateCountries).ToList();
 
-        foreach (var country in countries)
+        var existingStateIds = await _context.GeoStates
+            .Select(s => s.GeonameId).ToHashSetAsync(ct);
+
+        var toAddStates    = new List<GeoState>();
+        var toUpdateStates = new List<GeoState>();
+
+        foreach (var country in allCountries)
         {
             var (statesEn, statesAr) = await FetchBothLangs(
                 lang => _geoNames.GetStatesAsync(country.GeonameId, lang, ct));
 
-            allStates.AddRange(statesEn.Select(en =>
+            foreach (var en in statesEn)
             {
                 var ar = statesAr.FirstOrDefault(s => s.GeonameId == en.GeonameId);
-                return new GeoState
+                var state = new GeoState
                 {
                     GeonameId        = en.GeonameId,
                     CountryGeonameId = country.GeonameId,
                     NameEn           = en.Name,
                     NameAr           = ar?.Name ?? en.Name,
                 };
-            }));
+
+                if (existingStateIds.Contains(en.GeonameId))
+                    toUpdateStates.Add(state);
+                else
+                    toAddStates.Add(state);
+            }
         }
 
-        await _context.GeoStates.AddRangeAsync(allStates, ct);
+        if (toAddStates.Count > 0)
+            await _context.GeoStates.AddRangeAsync(toAddStates, ct);
+
+        foreach (var s in toUpdateStates)
+            _context.GeoStates.Update(s);
+
         await _context.SaveChangesAsync(ct);
-        _logger.LogInformation("Seeded {Count} states across {CountryCount} countries",
-            allStates.Count, countries.Count);
+        result.StatesAdded   = toAddStates.Count;
+        result.StatesUpdated = toUpdateStates.Count;
+        _logger.LogInformation("States: +{Added} updated:{Updated}", result.StatesAdded, result.StatesUpdated);
 
         // ── Cities ────────────────────────────────────────────────────────────
-        var allCities = new List<GeoCity>();
+        var allStates = toAddStates.Concat(toUpdateStates).ToList();
+
+        var existingCityIds = await _context.GeoCities
+            .Select(c => c.GeonameId).ToHashSetAsync(ct);
+
+        var toAddCities    = new List<GeoCity>();
+        var toUpdateCities = new List<GeoCity>();
 
         foreach (var state in allStates)
         {
             var (citiesEn, citiesAr) = await FetchBothLangs(
                 lang => _geoNames.GetCitiesAsync(state.GeonameId, lang, ct));
 
-            allCities.AddRange(citiesEn.Select(en =>
+            foreach (var en in citiesEn)
             {
-                var ar = citiesAr.FirstOrDefault(c => c.GeonameId == en.GeonameId);
-                return new GeoCity
+                var ar   = citiesAr.FirstOrDefault(c => c.GeonameId == en.GeonameId);
+                var city = new GeoCity
                 {
                     GeonameId      = en.GeonameId,
                     StateGeonameId = state.GeonameId,
                     NameEn         = en.Name,
                     NameAr         = ar?.Name ?? en.Name,
                 };
-            }));
 
-            // Batch save every 500 cities to avoid huge transactions
-            if (allCities.Count >= 500)
+                if (existingCityIds.Contains(en.GeonameId))
+                    toUpdateCities.Add(city);
+                else
+                    toAddCities.Add(city);
+            }
+
+            // Batch save every 500 to avoid huge transactions
+            if (toAddCities.Count + toUpdateCities.Count >= 500)
             {
-                await _context.GeoCities.AddRangeAsync(allCities, ct);
-                await _context.SaveChangesAsync(ct);
-                _logger.LogInformation("Saved batch of {Count} cities (running total)", allCities.Count);
-                allCities.Clear();
+                await FlushCities(toAddCities, toUpdateCities, ct);
+                result.CitiesAdded   += toAddCities.Count;
+                result.CitiesUpdated += toUpdateCities.Count;
+                toAddCities.Clear();
+                toUpdateCities.Clear();
             }
         }
 
-        if (allCities.Count > 0)
+        if (toAddCities.Count > 0 || toUpdateCities.Count > 0)
         {
-            await _context.GeoCities.AddRangeAsync(allCities, ct);
-            await _context.SaveChangesAsync(ct);
+            result.CitiesAdded   += toAddCities.Count;
+            result.CitiesUpdated += toUpdateCities.Count;
+            await FlushCities(toAddCities, toUpdateCities, ct);
         }
 
-        _logger.LogInformation("GeoLocation seed complete");
+        _logger.LogInformation("Cities: +{Added} updated:{Updated}", result.CitiesAdded, result.CitiesUpdated);
+        _logger.LogInformation("GeoLocation upsert complete: {Result}", result);
+        return result;
     }
 
-    /// <summary>Fetches EN and AR results in parallel.</summary>
+    private async Task FlushCities(List<GeoCity> toAdd, List<GeoCity> toUpdate, CancellationToken ct)
+    {
+        if (toAdd.Count > 0)
+            await _context.GeoCities.AddRangeAsync(toAdd, ct);
+        foreach (var c in toUpdate)
+            _context.GeoCities.Update(c);
+        await _context.SaveChangesAsync(ct);
+    }
+
     private static async Task<(List<T> En, List<T> Ar)> FetchBothLangs<T>(
         Func<string, Task<List<T>>> fetch)
     {
@@ -132,4 +195,14 @@ public class GeoLocationSeedService
         await Task.WhenAll(enTask, arTask);
         return (enTask.Result, arTask.Result);
     }
+}
+
+public record GeoSeedResult
+{
+    public int CountriesAdded   { get; set; }
+    public int CountriesUpdated { get; set; }
+    public int StatesAdded      { get; set; }
+    public int StatesUpdated    { get; set; }
+    public int CitiesAdded      { get; set; }
+    public int CitiesUpdated    { get; set; }
 }
