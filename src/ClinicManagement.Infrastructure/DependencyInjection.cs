@@ -26,7 +26,11 @@ public static class DependencyInjection
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddSingleton<IPhoneNormalizer, PhoneNormalizer>();
 
-        services.AddHttpClient<GeoNamesService>();
+        services.AddHttpClient<GeoNamesService>(client =>
+        {
+            // Dump files can be large (alternateNamesV2.zip ~200MB) — allow enough time
+            client.Timeout = TimeSpan.FromMinutes(10);
+        });
         services.AddScoped<IGeoNamesService>(sp => sp.GetRequiredService<GeoNamesService>());
         services.AddHostedService<RefreshTokenCleanupService>();
         services.AddHostedService<AuditLogCleanupService>();

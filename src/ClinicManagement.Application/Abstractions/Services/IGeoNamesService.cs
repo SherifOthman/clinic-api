@@ -1,11 +1,28 @@
 namespace ClinicManagement.Application.Abstractions.Services;
 
-/// <summary>Minimal interface for GeoNames data access — used by the seed service.</summary>
+/// <summary>
+/// Downloads GeoNames bulk data dumps and parses them into seed-ready collections.
+/// No API credits or rate limits — uses the free file exports from download.geonames.org.
+/// </summary>
 public interface IGeoNamesService
 {
-    Task<List<GeoNamesItem>> GetCountriesAsync(string lang = "en", CancellationToken ct = default);
-    Task<List<GeoNamesItem>> GetStatesAsync(int countryGeonameId, string lang = "en", CancellationToken ct = default);
-    Task<List<GeoNamesItem>> GetCitiesAsync(int stateGeonameId, string lang = "en", CancellationToken ct = default);
+    /// <summary>Downloads and parses all countries from countryInfo.txt.</summary>
+    Task<List<GeoNamesCountryDump>> GetCountriesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Downloads and parses admin1CodesASCII.txt for English state names,
+    /// and alternateNamesV2 filtered to 'ar' for Arabic names.
+    /// Returns a flat list of all ADM1 states worldwide.
+    /// </summary>
+    Task<List<GeoNamesStateDump>> GetStatesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Downloads cities1000.zip (cities with pop>1000 or PPLA seats) and
+    /// alternateNamesV2 filtered to 'ar'. Returns cities grouped by ADM1 geonameId.
+    /// </summary>
+    Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default);
 }
 
-public record GeoNamesItem(int GeonameId, string Name, string CountryCode = "");
+public record GeoNamesCountryDump(int GeonameId, string CountryCode, string NameEn, string NameAr);
+public record GeoNamesStateDump(int GeonameId, int CountryGeonameId, string NameEn, string NameAr);
+public record GeoNamesCityDump(int GeonameId, int StateGeonameId, string NameEn, string NameAr);
