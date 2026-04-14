@@ -28,7 +28,6 @@ public static class DependencyInjection
 
         services.AddHttpClient<GeoNamesService>();
         services.AddScoped<IGeoNamesService>(sp => sp.GetRequiredService<GeoNamesService>());
-
         services.AddHostedService<RefreshTokenCleanupService>();
         services.AddHostedService<AuditLogCleanupService>();
         services.AddHostedService<UsageMetricsAggregationJob>();
