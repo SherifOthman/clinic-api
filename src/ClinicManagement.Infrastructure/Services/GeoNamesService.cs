@@ -8,31 +8,34 @@ namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
 /// GeoNames API client — used only by GeoLocationSeedService at startup.
-/// No caching needed: data is seeded into the DB once and never fetched again at runtime.
+/// Uses IOptionsSnapshot so config changes in appsettings.json take effect
+/// on the next seed request without restarting the application.
 /// </summary>
 public class GeoNamesService : IGeoNamesService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GeoNamesService> _logger;
-    private readonly GeoNamesOptions _options;
+    private readonly IOptionsSnapshot<GeoNamesOptions> _options;
     private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
     public GeoNamesService(
         HttpClient httpClient,
         ILogger<GeoNamesService> logger,
-        IOptions<GeoNamesOptions> options)
+        IOptionsSnapshot<GeoNamesOptions> options)
     {
         _httpClient = httpClient;
         _logger     = logger;
-        _options    = options.Value;
+        _options    = options;
     }
+
+    private GeoNamesOptions Options => _options.Value;
 
     // ── IGeoNamesService ──────────────────────────────────────────────────────
 
     async Task<List<GeoNamesItem>> IGeoNamesService.GetCountriesAsync(string lang, CancellationToken ct)
     {
         _logger.LogInformation("Fetching countries [{Lang}] from GeoNames", lang);
-        var url  = $"{_options.BaseUrl}/countryInfoJSON?username={_options.Username}&lang={lang}";
+        var url  = $"{Options.BaseUrl}/countryInfoJSON?username={Options.Username}&lang={lang}";
         var data = await FetchAsync<GeoNamesCountryInfoResponse>(url);
         return (data?.Geonames ?? [])
             .Select(c => new GeoNamesItem(c.GeonameId, c.CountryName, c.CountryCode))
@@ -43,7 +46,7 @@ public class GeoNamesService : IGeoNamesService
     async Task<List<GeoNamesItem>> IGeoNamesService.GetStatesAsync(int countryGeonameId, string lang, CancellationToken ct)
     {
         _logger.LogInformation("Fetching states for country {Id} [{Lang}]", countryGeonameId, lang);
-        var url  = $"{_options.BaseUrl}/childrenJSON?geonameId={countryGeonameId}&username={_options.Username}&lang={lang}&maxRows=1000";
+        var url  = $"{Options.BaseUrl}/childrenJSON?geonameId={countryGeonameId}&username={Options.Username}&lang={lang}&maxRows=1000";
         var data = await FetchAsync<GeoNamesResponse<GeoNamesChildInfo>>(url);
         return (data?.Geonames ?? [])
             .Where(s => s.Fcode.StartsWith("ADM1"))
@@ -56,7 +59,7 @@ public class GeoNamesService : IGeoNamesService
     {
         _logger.LogInformation("Fetching cities for state {Id} [{Lang}]", stateGeonameId, lang);
 
-        var infoUrl   = $"{_options.BaseUrl}/getJSON?geonameId={stateGeonameId}&username={_options.Username}&lang=en";
+        var infoUrl   = $"{Options.BaseUrl}/getJSON?geonameId={stateGeonameId}&username={Options.Username}&lang=en";
         var stateInfo = await FetchAsync<GeoNamesLocationInfo>(infoUrl);
 
         if (stateInfo is null)
@@ -65,7 +68,7 @@ public class GeoNamesService : IGeoNamesService
             return [];
         }
 
-        var filter   = _options.CityFilter;
+        var filter   = Options.CityFilter;
         var maxRows  = filter.MaxRows;
         var alwaysFc = filter.AlwaysIncludeFeatureCodes.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var minPop   = filter.MinPopulationForPpl;
@@ -74,8 +77,8 @@ public class GeoNamesService : IGeoNamesService
 
         if (!string.IsNullOrWhiteSpace(stateInfo.AdminCode1) && stateInfo.AdminCode1 != "00")
         {
-            var searchUrl  = $"{_options.BaseUrl}/searchJSON?country={stateInfo.CountryCode}&adminCode1={stateInfo.AdminCode1}" +
-                             $"&featureClass=P&username={_options.Username}&lang={lang}&maxRows={maxRows}&orderby=population";
+            var searchUrl  = $"{Options.BaseUrl}/searchJSON?country={stateInfo.CountryCode}&adminCode1={stateInfo.AdminCode1}" +
+                             $"&featureClass=P&username={Options.Username}&lang={lang}&maxRows={maxRows}&orderby=population";
             var searchData = await FetchAsync<GeoNamesSearchResponse>(searchUrl);
             cities = (searchData?.Geonames ?? [])
                 .Where(g => alwaysFc.Contains(g.Fcode) || (g.Fcode == "PPL" && g.Population >= minPop))
@@ -84,7 +87,7 @@ public class GeoNamesService : IGeoNamesService
         }
         else
         {
-            var childUrl  = $"{_options.BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={_options.Username}&lang={lang}&maxRows={maxRows}";
+            var childUrl  = $"{Options.BaseUrl}/childrenJSON?geonameId={stateGeonameId}&username={Options.Username}&lang={lang}&maxRows={maxRows}";
             var childData = await FetchAsync<GeoNamesResponse<GeoNamesChildInfo>>(childUrl);
             cities = (childData?.Geonames ?? [])
                 .Where(c => alwaysFc.Contains(c.Fcode))
