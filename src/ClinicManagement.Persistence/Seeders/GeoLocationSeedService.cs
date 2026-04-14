@@ -111,6 +111,9 @@ public class GeoLocationSeedService
                 else
                     toAddStates.Add(state);
             }
+
+            // Throttle: 2 requests per country (childrenJSON EN + AR)
+            await Task.Delay(100, ct);
         }
 
         if (toAddStates.Count > 0)
@@ -154,6 +157,10 @@ public class GeoLocationSeedService
                 else
                     toAddCities.Add(city);
             }
+
+            // Throttle: ~3 requests per state (getJSON + searchJSON x2 langs).
+            // Free GeoNames account = 1000 credits/hour → safe at ~300ms per state.
+            await Task.Delay(300, ct);
 
             // Batch save every 500 to avoid huge transactions
             if (toAddCities.Count + toUpdateCities.Count >= 500)
