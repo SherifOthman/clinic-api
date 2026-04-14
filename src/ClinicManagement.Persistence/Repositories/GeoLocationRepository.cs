@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Repositories;
-using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
@@ -10,47 +9,26 @@ public class GeoLocationRepository : IGeoLocationRepository
 
     public GeoLocationRepository(ApplicationDbContext db) => _db = db;
 
-    public async Task<List<CountryItem>> GetCountriesAsync(string lang, CancellationToken ct = default)
-    {
-        var isAr = lang == "ar";
-        var rows = await _db.GeoCountries
+    public async Task<List<CountryItem>> GetCountriesAsync(CancellationToken ct = default)
+        => await _db.GeoCountries
             .AsNoTracking()
-            .Select(c => new { c.GeonameId, c.NameEn, c.NameAr, c.CountryCode })
+            .OrderBy(c => c.NameEn)
+            .Select(c => new CountryItem(c.GeonameId, c.NameEn, c.NameAr, c.CountryCode))
             .ToListAsync(ct);
 
-        return rows
-            .Select(c => new CountryItem(c.GeonameId, isAr ? c.NameAr : c.NameEn, c.CountryCode))
-            .OrderBy(c => c.Name)
-            .ToList();
-    }
-
-    public async Task<List<StateItem>> GetStatesAsync(int countryGeonameId, string lang, CancellationToken ct = default)
-    {
-        var isAr = lang == "ar";
-        var rows = await _db.GeoStates
+    public async Task<List<StateItem>> GetStatesAsync(int countryGeonameId, CancellationToken ct = default)
+        => await _db.GeoStates
             .AsNoTracking()
             .Where(s => s.CountryGeonameId == countryGeonameId)
-            .Select(s => new { s.GeonameId, s.NameEn, s.NameAr })
+            .OrderBy(s => s.NameEn)
+            .Select(s => new StateItem(s.GeonameId, s.NameEn, s.NameAr))
             .ToListAsync(ct);
 
-        return rows
-            .Select(s => new StateItem(s.GeonameId, isAr ? s.NameAr : s.NameEn))
-            .OrderBy(s => s.Name)
-            .ToList();
-    }
-
-    public async Task<List<CityItem>> GetCitiesAsync(int stateGeonameId, string lang, CancellationToken ct = default)
-    {
-        var isAr = lang == "ar";
-        var rows = await _db.GeoCities
+    public async Task<List<CityItem>> GetCitiesAsync(int stateGeonameId, CancellationToken ct = default)
+        => await _db.GeoCities
             .AsNoTracking()
             .Where(c => c.StateGeonameId == stateGeonameId)
-            .Select(c => new { c.GeonameId, c.NameEn, c.NameAr })
+            .OrderBy(c => c.NameEn)
+            .Select(c => new CityItem(c.GeonameId, c.NameEn, c.NameAr))
             .ToListAsync(ct);
-
-        return rows
-            .Select(c => new CityItem(c.GeonameId, isAr ? c.NameAr : c.NameEn))
-            .OrderBy(c => c.Name)
-            .ToList();
-    }
 }

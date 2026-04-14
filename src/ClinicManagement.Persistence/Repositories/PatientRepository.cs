@@ -68,7 +68,6 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         bool isSuperAdmin,
         int pageNumber,
         int pageSize,
-        string lang,
         CancellationToken ct = default)
     {
         var query = isSuperAdmin
@@ -135,17 +134,18 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             };
         }
 
-        var isAr = lang == "ar";
-
         var rawPage = await query
             .Select(p => new PatientListRaw(
                 p.Id.ToString(), p.PatientCode, p.FullName, p.DateOfBirth,
                 p.Gender, p.BloodType, p.ChronicDiseases.Count,
                 p.Phones.OrderBy(ph => ph.Id).Select(ph => ph.PhoneNumber).FirstOrDefault(),
                 p.CreatedAt, p.ClinicId, p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
-                isAr ? p.Country!.NameAr : p.Country!.NameEn,
-                isAr ? p.State!.NameAr   : p.State!.NameEn,
-                isAr ? p.City!.NameAr    : p.City!.NameEn))
+                p.Country != null ? p.Country.NameEn : null,
+                p.Country != null ? p.Country.NameAr : null,
+                p.State   != null ? p.State.NameEn   : null,
+                p.State   != null ? p.State.NameAr   : null,
+                p.City    != null ? p.City.NameEn    : null,
+                p.City    != null ? p.City.NameAr    : null))
             .ToPagedAsync(pageNumber, pageSize, ct);
 
         var clinicNames = await LoadClinicNames(rawPage.Items.Select(p => p.ClinicId), isSuperAdmin, ct);
@@ -155,7 +155,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             p.CreatedAt, p.ClinicId,
             clinicNames.TryGetValue(p.ClinicId, out var cn) ? cn : null,
             p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
-            p.CountryName, p.StateName, p.CityName)).ToList();
+            p.CountryNameEn, p.CountryNameAr,
+            p.StateNameEn,   p.StateNameAr,
+            p.CityNameEn,    p.CityNameAr)).ToList();
 
         return PaginatedResult<PatientListRow>.Create(items, rawPage.TotalCount, pageNumber, pageSize);
     }
@@ -173,13 +175,11 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     // ── Full detail ───────────────────────────────────────────────────────────
 
-    public async Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, string lang, CancellationToken ct = default)
+    public async Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default)
     {
         var baseQuery = isSuperAdmin
             ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant])
             : DbSet;
-
-        var isAr = lang == "ar";
 
         var patient = await baseQuery.AsNoTracking()
             .Where(p => p.Id == id)
@@ -188,9 +188,12 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 p.Id, p.PatientCode, p.FullName, p.DateOfBirth, p.Gender,
                 p.BloodType,
                 p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
-                CountryName = p.Country == null ? null : (isAr ? p.Country.NameAr : p.Country.NameEn),
-                StateName   = p.State   == null ? null : (isAr ? p.State.NameAr   : p.State.NameEn),
-                CityName    = p.City    == null ? null : (isAr ? p.City.NameAr    : p.City.NameEn),
+                CountryNameEn = p.Country != null ? p.Country.NameEn : null,
+                CountryNameAr = p.Country != null ? p.Country.NameAr : null,
+                StateNameEn   = p.State   != null ? p.State.NameEn   : null,
+                StateNameAr   = p.State   != null ? p.State.NameAr   : null,
+                CityNameEn    = p.City    != null ? p.City.NameEn    : null,
+                CityNameAr    = p.City    != null ? p.City.NameAr    : null,
                 p.ClinicId, p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
                 Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
                 Diseases = p.ChronicDiseases
@@ -211,7 +214,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             patient.Id, patient.PatientCode, patient.FullName, patient.DateOfBirth,
             patient.Gender.ToString(), patient.BloodType?.ToDisplayString(),
             patient.CountryGeonameId, patient.StateGeonameId, patient.CityGeonameId,
-            patient.CountryName, patient.StateName, patient.CityName,
+            patient.CountryNameEn, patient.CountryNameAr,
+            patient.StateNameEn,   patient.StateNameAr,
+            patient.CityNameEn,    patient.CityNameAr,
             patient.ClinicId, patient.CreatedAt, patient.UpdatedAt,
             patient.CreatedBy, patient.UpdatedBy,
             patient.Phones, patient.Diseases, auditNames, clinicName);
@@ -220,14 +225,12 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     // ── Location filter options ───────────────────────────────────────────────
 
     public async Task<List<LocationOption>> GetLocationOptionsAsync(
-        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin, string lang,
+        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin,
         CancellationToken ct = default)
     {
         var query = isSuperAdmin
             ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
             : DbSet.AsNoTracking();
-
-        var isAr = lang == "ar";
 
         if (stateGeonameId.HasValue)
         {
@@ -239,8 +242,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
             return rows
                 .DistinctBy(r => r.CityGeonameId)
-                .Select(r => new LocationOption(r.CityGeonameId!.Value, isAr ? r.NameAr : r.NameEn))
-                .OrderBy(o => o.Name)
+                .Select(r => new LocationOption(r.CityGeonameId!.Value, r.NameEn, r.NameAr))
+                .OrderBy(o => o.NameEn)
                 .ToList();
         }
 
@@ -254,8 +257,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
             return rows
                 .DistinctBy(r => r.StateGeonameId)
-                .Select(r => new LocationOption(r.StateGeonameId!.Value, isAr ? r.NameAr : r.NameEn))
-                .OrderBy(o => o.Name)
+                .Select(r => new LocationOption(r.StateGeonameId!.Value, r.NameEn, r.NameAr))
+                .OrderBy(o => o.NameEn)
                 .ToList();
         }
 
@@ -267,8 +270,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         return countryRows
             .DistinctBy(r => r.CountryGeonameId)
-            .Select(r => new LocationOption(r.CountryGeonameId!.Value, isAr ? r.NameAr : r.NameEn))
-            .OrderBy(o => o.Name)
+            .Select(r => new LocationOption(r.CountryGeonameId!.Value, r.NameEn, r.NameAr))
+            .OrderBy(o => o.NameEn)
             .ToList();
     }
 
@@ -317,5 +320,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         Gender Gender, BloodType? BloodType, int ChronicDiseaseCount,
         string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId,
         int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
-        string? CountryName, string? StateName, string? CityName);
+        string? CountryNameEn, string? CountryNameAr,
+        string? StateNameEn,   string? StateNameAr,
+        string? CityNameEn,    string? CityNameAr);
 }

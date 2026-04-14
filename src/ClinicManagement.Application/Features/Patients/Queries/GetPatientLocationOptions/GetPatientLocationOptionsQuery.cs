@@ -5,18 +5,13 @@ using MediatR;
 namespace ClinicManagement.Application.Features.Patients.Queries;
 
 /// <summary>
-/// Returns distinct location options from actual patient data.
-///
-/// How it works:
-///   - No parent IDs  → returns countries that have at least one patient
-///   - CountryGeonameId set → returns states in that country that have patients
-///   - StateGeonameId set  → returns cities in that state that have patients
-///
-/// Names are resolved from the seeded GeoNames tables (GeoCountries/GeoStates/GeoCities).
+/// Returns distinct location options from actual patient data — both EN and AR names.
+///   - No parent IDs        → countries that have at least one patient
+///   - CountryGeonameId set → states in that country that have patients
+///   - StateGeonameId set   → cities in that state that have patients
 /// </summary>
 public record GetPatientLocationOptionsQuery(
     int? CountryGeonameId,
     int? StateGeonameId,
-    bool IsSuperAdmin,
-    string Lang
+    bool IsSuperAdmin
 ) : IRequest<Result<List<LocationOption>>>;

@@ -3,11 +3,11 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.Patients.Queries;
 
-public record GetPatientDetailQuery(Guid PatientId, bool IsSuperAdmin = false, string Lang = "en") : IRequest<Result<PatientDetailDto>>;
+public record GetPatientDetailQuery(Guid PatientId, bool IsSuperAdmin = false) : IRequest<Result<PatientDetailDto>>;
 
 /// <summary>
 /// Full patient detail DTO.
-/// Location names are resolved server-side — no extra frontend API calls needed.
+/// Both EN and AR location names are always returned — no re-fetching on language switch.
 /// IDs are still included so the edit form can pre-populate the location selectors.
 /// </summary>
 public record PatientDetailDto
@@ -22,10 +22,13 @@ public record PatientDetailDto
     public int? CountryGeonameId { get; init; }
     public int? StateGeonameId { get; init; }
     public int? CityGeonameId { get; init; }
-    // Resolved names for display
-    public string? CountryName { get; init; }
-    public string? StateName { get; init; }
-    public string? CityName { get; init; }
+    // Both language names — frontend picks based on current language
+    public string? CountryNameEn { get; init; }
+    public string? CountryNameAr { get; init; }
+    public string? StateNameEn { get; init; }
+    public string? StateNameAr { get; init; }
+    public string? CityNameEn { get; init; }
+    public string? CityNameAr { get; init; }
     public List<string> PhoneNumbers { get; init; } = [];
     public List<PatientChronicDiseaseDto> ChronicDiseases { get; init; } = [];
     public DateTimeOffset CreatedAt { get; init; }

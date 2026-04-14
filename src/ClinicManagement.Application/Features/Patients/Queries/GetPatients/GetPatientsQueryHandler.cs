@@ -1,9 +1,7 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Features.Patients.QueryModels;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
-using Mapster;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Patients.Queries;
@@ -24,12 +22,8 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
     public async Task<Result<PaginatedResult<PatientDto>>> Handle(
         GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        // Used to strip the correct trunk prefix from the search term so
-        // "010" → "10" for Egypt, "07" → "7" for UK, etc.
-        var countryCode = _currentUser.CountryCode;
-
         var nationalSearch = !string.IsNullOrWhiteSpace(request.SearchTerm)
-            ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, countryCode)
+            ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, _currentUser.CountryCode)
             : null;
 
         var result = await _uow.Patients.GetProjectedPageAsync(
@@ -45,7 +39,6 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             request.IsSuperAdmin,
             request.PageNumber,
             request.PageSize,
-            request.Lang,
             cancellationToken);
 
         var dtos = result.Items.Select(p => new PatientDto
@@ -63,9 +56,12 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             CountryGeonameId    = p.CountryGeonameId,
             StateGeonameId      = p.StateGeonameId,
             CityGeonameId       = p.CityGeonameId,
-            CountryName         = p.CountryName,
-            StateName           = p.StateName,
-            CityName            = p.CityName,
+            CountryNameEn       = p.CountryNameEn,
+            CountryNameAr       = p.CountryNameAr,
+            StateNameEn         = p.StateNameEn,
+            StateNameAr         = p.StateNameAr,
+            CityNameEn          = p.CityNameEn,
+            CityNameAr          = p.CityNameAr,
         }).ToList();
 
         return Result.Success(PaginatedResult<PatientDto>.Create(dtos, result.TotalCount, result.PageNumber, result.PageSize));

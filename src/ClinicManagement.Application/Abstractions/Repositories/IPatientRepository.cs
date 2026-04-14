@@ -6,8 +6,8 @@ using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
-/// <summary>A single item in a location filter dropdown — geonameId + resolved name.</summary>
-public record LocationOption(int GeonameId, string Name);
+/// <summary>A single item in a location filter dropdown — both language names always returned.</summary>
+public record LocationOption(int GeonameId, string NameEn, string NameAr);
 
 public interface IPatientRepository : IRepository<Patient>
 {
@@ -32,20 +32,20 @@ public interface IPatientRepository : IRepository<Patient>
         bool isSuperAdmin,
         int pageNumber,
         int pageSize,
-        string lang,
         CancellationToken ct = default);
 
     Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
-    Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, string lang, CancellationToken ct = default);
+    Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default);
 
     /// <summary>
     /// Returns distinct location options from actual patient data.
     /// - countryGeonameId = null, stateGeonameId = null → distinct countries
     /// - countryGeonameId set                          → distinct states in that country
     /// - stateGeonameId set                            → distinct cities in that state
+    /// Both EN and AR names are always returned.
     /// </summary>
     Task<List<LocationOption>> GetLocationOptionsAsync(
-        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin, string lang,
+        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin,
         CancellationToken ct = default);
 
     void AddPhone(PatientPhone phone);

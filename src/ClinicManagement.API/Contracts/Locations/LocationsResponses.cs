@@ -1,12 +1,9 @@
 namespace ClinicManagement.API.Contracts.Locations;
 
-// ── /api/locations endpoints (used by LocationSelector form component) ────────
+// ── /api/locations endpoints ──────────────────────────────────────────────────
+// Both language names are always returned — the frontend picks which to display.
+// No ?lang= param needed, no re-fetching on language switch.
 
-/// <summary>A country item returned by GET /api/locations/countries</summary>
-public record CountryResponse(int GeonameId, string Name, string CountryCode);
-
-/// <summary>A state item returned by GET /api/locations/countries/{id}/states</summary>
-public record StateResponse(int GeonameId, string Name);
-
-/// <summary>A city item returned by GET /api/locations/states/{id}/cities</summary>
-public record CityResponse(int GeonameId, string Name);
+public record CountryResponse(int GeonameId, string NameEn, string NameAr, string CountryCode);
+public record StateResponse(int GeonameId, string NameEn, string NameAr);
+public record CityResponse(int GeonameId, string NameEn, string NameAr);

@@ -19,7 +19,6 @@ public class GetPatientLocationOptionsHandler
             request.CountryGeonameId,
             request.StateGeonameId,
             request.IsSuperAdmin,
-            request.Lang,
             ct);
 
         return Result.Success(options);

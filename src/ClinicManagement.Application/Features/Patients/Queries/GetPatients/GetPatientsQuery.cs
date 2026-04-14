@@ -15,14 +15,13 @@ public record GetPatientsQuery(
     int? StateGeonameId = null,
     int? CityGeonameId = null,
     int? CountryGeonameId = null,
-    bool IsSuperAdmin = false,
-    string Lang = "en"
+    bool IsSuperAdmin = false
 ) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<PatientDto>>>;
 
 /// <summary>
-/// List DTO — minimal fields for the patients table.
-/// Location names are resolved server-side from the seeded GeoNames DB
-/// using the ?lang= query param (defaults to "en").
+/// List DTO — both EN and AR location names are always returned.
+/// The frontend picks which to display based on the current language.
+/// No re-fetching needed when the user switches language.
 /// </summary>
 public record PatientDto
 {
@@ -36,12 +35,15 @@ public record PatientDto
     public string? PrimaryPhone { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public string? ClinicName { get; init; }
-    // IDs kept for filtering/editing
+    // IDs — kept for filtering and the edit form
     public int? CountryGeonameId { get; init; }
     public int? StateGeonameId { get; init; }
     public int? CityGeonameId { get; init; }
-    // Resolved names — ready to display, no extra frontend calls needed
-    public string? CountryName { get; init; }
-    public string? StateName { get; init; }
-    public string? CityName { get; init; }
+    // Both language names — frontend picks based on current language
+    public string? CountryNameEn { get; init; }
+    public string? CountryNameAr { get; init; }
+    public string? StateNameEn { get; init; }
+    public string? StateNameAr { get; init; }
+    public string? CityNameEn { get; init; }
+    public string? CityNameAr { get; init; }
 }

@@ -3,11 +3,12 @@ namespace ClinicManagement.Application.Abstractions.Repositories;
 /// <summary>Read-only access to the seeded GeoNames reference tables.</summary>
 public interface IGeoLocationRepository
 {
-    Task<List<CountryItem>> GetCountriesAsync(string lang, CancellationToken ct = default);
-    Task<List<StateItem>>   GetStatesAsync(int countryGeonameId, string lang, CancellationToken ct = default);
-    Task<List<CityItem>>    GetCitiesAsync(int stateGeonameId, string lang, CancellationToken ct = default);
+    Task<List<CountryItem>> GetCountriesAsync(CancellationToken ct = default);
+    Task<List<StateItem>>   GetStatesAsync(int countryGeonameId, CancellationToken ct = default);
+    Task<List<CityItem>>    GetCitiesAsync(int stateGeonameId, CancellationToken ct = default);
 }
 
-public record CountryItem(int GeonameId, string Name, string CountryCode);
-public record StateItem(int GeonameId, string Name);
-public record CityItem(int GeonameId, string Name);
+/// <summary>Both language names are always returned — the frontend picks the one to display.</summary>
+public record CountryItem(int GeonameId, string NameEn, string NameAr, string CountryCode);
+public record StateItem(int GeonameId, string NameEn, string NameAr);
+public record CityItem(int GeonameId, string NameEn, string NameAr);
