@@ -219,7 +219,6 @@ public class GeoNamesService : IGeoNamesService
     }
 
 
-
     /// <summary>
     /// Returns a dictionary of GeoNames ID → Arabic name.
     ///
