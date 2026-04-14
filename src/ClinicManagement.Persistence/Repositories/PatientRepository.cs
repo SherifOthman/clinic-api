@@ -217,8 +217,56 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             patient.Phones, patient.Diseases, auditNames, clinicName);
     }
 
-    // ── Child entity helpers ──────────────────────────────────────────────────
+    // ── Location filter options ───────────────────────────────────────────────
 
+    public async Task<List<LocationOption>> GetLocationOptionsAsync(
+        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin, string lang,
+        CancellationToken ct = default)
+    {
+        var query = isSuperAdmin
+            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+            : DbSet.AsNoTracking();
+
+        var isAr = lang == "ar";
+
+        if (stateGeonameId.HasValue)
+        {
+            // Distinct cities in this state that have at least one patient
+            return await query
+                .Where(p => p.StateGeonameId == stateGeonameId.Value && p.CityGeonameId != null)
+                .Select(p => p.CityGeonameId!.Value)
+                .Distinct()
+                .Join(Context.Set<GeoCity>(), id => id, c => c.GeonameId,
+                    (id, c) => new LocationOption(id, isAr ? c.NameAr : c.NameEn))
+                .OrderBy(o => o.Name)
+                .ToListAsync(ct);
+        }
+
+        if (countryGeonameId.HasValue)
+        {
+            // Distinct states in this country that have at least one patient
+            return await query
+                .Where(p => p.CountryGeonameId == countryGeonameId.Value && p.StateGeonameId != null)
+                .Select(p => p.StateGeonameId!.Value)
+                .Distinct()
+                .Join(Context.Set<GeoState>(), id => id, s => s.GeonameId,
+                    (id, s) => new LocationOption(id, isAr ? s.NameAr : s.NameEn))
+                .OrderBy(o => o.Name)
+                .ToListAsync(ct);
+        }
+
+        // Distinct countries that have at least one patient
+        return await query
+            .Where(p => p.CountryGeonameId != null)
+            .Select(p => p.CountryGeonameId!.Value)
+            .Distinct()
+            .Join(Context.Set<GeoCountry>(), id => id, c => c.GeonameId,
+                (id, c) => new LocationOption(id, isAr ? c.NameAr : c.NameEn))
+            .OrderBy(o => o.Name)
+            .ToListAsync(ct);
+    }
+
+    // ── Child entity helpers ──────────────────────────────────────────────────
     public void AddPhone(PatientPhone phone)                  => _phones.Add(phone);
     public void RemovePhone(PatientPhone phone)               => _phones.Remove(phone);
     public void AddChronicDisease(PatientChronicDisease d)    => _chronicDiseases.Add(d);

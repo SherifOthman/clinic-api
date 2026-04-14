@@ -6,6 +6,9 @@ using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
+/// <summary>A single item in a location filter dropdown — geonameId + resolved name.</summary>
+public record LocationOption(int GeonameId, string Name);
+
 public interface IPatientRepository : IRepository<Patient>
 {
     Task<Patient?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct = default);
@@ -34,6 +37,16 @@ public interface IPatientRepository : IRepository<Patient>
 
     Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
     Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, string lang, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns distinct location options from actual patient data.
+    /// - countryGeonameId = null, stateGeonameId = null → distinct countries
+    /// - countryGeonameId set                          → distinct states in that country
+    /// - stateGeonameId set                            → distinct cities in that state
+    /// </summary>
+    Task<List<LocationOption>> GetLocationOptionsAsync(
+        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin, string lang,
+        CancellationToken ct = default);
 
     void AddPhone(PatientPhone phone);
     void RemovePhone(PatientPhone phone);
