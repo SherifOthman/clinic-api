@@ -1,40 +1,26 @@
 using ClinicManagement.API.Contracts.Locations;
 using ClinicManagement.API.RateLimiting;
-using ClinicManagement.Persistence;
+using ClinicManagement.Application.Features.Locations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.API.Controllers;
 
-[ApiController]
 [Route("api/locations")]
-[Produces("application/json")]
 [EnableRateLimiting(RateLimitPolicies.AnonStatic)]
-public class LocationsController : ControllerBase
+public class LocationsController : BaseApiController
 {
-    private readonly ApplicationDbContext _db;
-
-    public LocationsController(ApplicationDbContext db) => _db = db;
-
     [HttpGet("countries")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(List<CountryResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCountries(
         [FromQuery] string lang = "en", CancellationToken ct = default)
     {
-        var isAr = lang == "ar";
-        var countries = await _db.GeoCountries
-            .AsNoTracking()
-            .OrderBy(c => isAr ? c.NameAr : c.NameEn)
-            .Select(c => new CountryResponse(
-                c.GeonameId,
-                isAr ? c.NameAr : c.NameEn,
-                c.CountryCode))
-            .ToListAsync(ct);
-
-        return Ok(countries);
+        var result = await Sender.Send(new GetCountriesQuery(lang), ct);
+        return result.IsSuccess
+            ? Ok(result.Value!.Select(c => new CountryResponse(c.GeonameId, c.Name, c.CountryCode)))
+            : HandleResult(result, "Failed to retrieve countries");
     }
 
     [HttpGet("countries/{countryGeonameId:int}/states")]
@@ -44,17 +30,10 @@ public class LocationsController : ControllerBase
         [FromRoute] int countryGeonameId,
         [FromQuery] string lang = "en", CancellationToken ct = default)
     {
-        var isAr = lang == "ar";
-        var states = await _db.GeoStates
-            .AsNoTracking()
-            .Where(s => s.CountryGeonameId == countryGeonameId)
-            .OrderBy(s => isAr ? s.NameAr : s.NameEn)
-            .Select(s => new StateResponse(
-                s.GeonameId,
-                isAr ? s.NameAr : s.NameEn))
-            .ToListAsync(ct);
-
-        return Ok(states);
+        var result = await Sender.Send(new GetStatesQuery(countryGeonameId, lang), ct);
+        return result.IsSuccess
+            ? Ok(result.Value!.Select(s => new StateResponse(s.GeonameId, s.Name)))
+            : HandleResult(result, "Failed to retrieve states");
     }
 
     [HttpGet("states/{stateGeonameId:int}/cities")]
@@ -64,16 +43,9 @@ public class LocationsController : ControllerBase
         [FromRoute] int stateGeonameId,
         [FromQuery] string lang = "en", CancellationToken ct = default)
     {
-        var isAr = lang == "ar";
-        var cities = await _db.GeoCities
-            .AsNoTracking()
-            .Where(c => c.StateGeonameId == stateGeonameId)
-            .OrderBy(c => isAr ? c.NameAr : c.NameEn)
-            .Select(c => new CityResponse(
-                c.GeonameId,
-                isAr ? c.NameAr : c.NameEn))
-            .ToListAsync(ct);
-
-        return Ok(cities);
+        var result = await Sender.Send(new GetCitiesQuery(stateGeonameId, lang), ct);
+        return result.IsSuccess
+            ? Ok(result.Value!.Select(c => new CityResponse(c.GeonameId, c.Name)))
+            : HandleResult(result, "Failed to retrieve cities");
     }
 }

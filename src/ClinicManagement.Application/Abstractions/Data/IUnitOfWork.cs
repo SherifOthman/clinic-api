@@ -25,6 +25,7 @@ public interface IUnitOfWork
     IWorkingDaysRepository WorkingDays { get; }
     IReferenceRepository Reference { get; }
     IClinicSubscriptionRepository ClinicSubscriptions { get; }
+    IGeoLocationRepository GeoLocations { get; }
 
     // Generic repos for reference/lookup entities (used for seeding in tests)
     IRepository<ChronicDisease>   ChronicDiseases   { get; }

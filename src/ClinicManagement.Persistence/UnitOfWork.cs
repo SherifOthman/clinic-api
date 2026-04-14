@@ -28,6 +28,7 @@ public class UnitOfWork : IUnitOfWork
     public IWorkingDaysRepository        WorkingDays       => field ??= new WorkingDaysRepository(_context);
     public IReferenceRepository          Reference         => field ??= new ReferenceRepository(_context, _cache);
     public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);
+    public IGeoLocationRepository        GeoLocations      => field ??= new GeoLocationRepository(_context);
 
     // Generic repos for reference/lookup entities — used for seeding in tests
     public IRepository<ChronicDisease>   ChronicDiseases   => field ??= new Repository<ChronicDisease>(_context);
