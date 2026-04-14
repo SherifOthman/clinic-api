@@ -22,6 +22,9 @@ public class Patient : AuditableTenantEntity
     public BloodType? BloodType { get; set; }
 
     // Navigation properties
+    public GeoCountry? Country { get; set; }
+    public GeoState?   State   { get; set; }
+    public GeoCity?    City    { get; set; }
     public ICollection<PatientPhone> Phones { get; set; } = new List<PatientPhone>();
     public ICollection<PatientChronicDisease> ChronicDiseases { get; set; } = new List<PatientChronicDisease>();
 }

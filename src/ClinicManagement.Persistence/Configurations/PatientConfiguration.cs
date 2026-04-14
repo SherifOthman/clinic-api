@@ -37,5 +37,21 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasIndex(p => p.CityGeonameId);
         builder.HasIndex(p => p.CountryGeonameId);
         builder.HasIndex(p => p.Gender);
+
+        // Optional FK relationships to GeoNames tables — no cascade delete (geo data is shared)
+        builder.HasOne(p => p.Country)
+            .WithMany()
+            .HasForeignKey(p => p.CountryGeonameId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(p => p.State)
+            .WithMany()
+            .HasForeignKey(p => p.StateGeonameId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(p => p.City)
+            .WithMany()
+            .HasForeignKey(p => p.CityGeonameId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

@@ -29,10 +29,11 @@ public interface IPatientRepository : IRepository<Patient>
         bool isSuperAdmin,
         int pageNumber,
         int pageSize,
+        string lang,
         CancellationToken ct = default);
 
     Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
-    Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default);
+    Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, string lang, CancellationToken ct = default);
 
     /// <summary>Returns distinct GeoNames IDs of countries that have at least one patient.</summary>
     Task<List<int>> GetDistinctCountryGeonameIdsAsync(bool isSuperAdmin = false, CancellationToken ct = default);

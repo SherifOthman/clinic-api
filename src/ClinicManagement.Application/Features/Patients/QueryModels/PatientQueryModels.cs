@@ -5,7 +5,8 @@ public record PatientListRow(
     string Id, string PatientCode, string FullName, DateOnly DateOfBirth,
     string Gender, string? BloodType, int ChronicDiseaseCount,
     string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId, string? ClinicName,
-    int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId
+    int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
+    string? CountryName, string? StateName, string? CityName
 );
 
 /// <summary>Flat row returned by the recent patients dashboard query.</summary>
@@ -19,6 +20,7 @@ public record PatientDetailData(
     Guid Id, string PatientCode, string FullName, DateOnly DateOfBirth,
     string Gender, string? BloodType,
     int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
+    string? CountryName, string? StateName, string? CityName,
     Guid ClinicId, DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt,
     Guid? CreatedBy, Guid? UpdatedBy,
     List<string> Phones, List<PatientDiseaseRow> Diseases,

@@ -33,9 +33,10 @@ public class PatientsController : BaseApiController
         [FromQuery] PaginationRequest pagination,
         [FromQuery] string? sortBy = null,
         [FromQuery] string sortDirection = "asc",
+        [FromQuery] string lang = "en",
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, StateGeonameId: stateGeonameId, CityGeonameId: cityGeonameId, CountryGeonameId: countryGeonameId);
+        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, StateGeonameId: stateGeonameId, CityGeonameId: cityGeonameId, CountryGeonameId: countryGeonameId, Lang: lang);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }
@@ -104,9 +105,10 @@ public class PatientsController : BaseApiController
         [FromQuery] PaginationRequest pagination,
         [FromQuery] string? sortBy = null,
         [FromQuery] string sortDirection = "asc",
+        [FromQuery] string lang = "en",
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, clinicSearch, stateGeonameId, cityGeonameId, countryGeonameId, IsSuperAdmin: true);
+        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, clinicSearch, stateGeonameId, cityGeonameId, countryGeonameId, IsSuperAdmin: true, Lang: lang);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }
@@ -116,9 +118,9 @@ public class PatientsController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPatientDetail(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetPatientDetail(Guid id, [FromQuery] string lang = "en", CancellationToken cancellationToken = default)
     {
-        var result = await Sender.Send(new GetPatientDetailQuery(id), cancellationToken);
+        var result = await Sender.Send(new GetPatientDetailQuery(id, Lang: lang), cancellationToken);
         return HandleResult(result, "Failed to retrieve patient detail");
     }
 
@@ -128,9 +130,9 @@ public class PatientsController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPatientDetailAdmin(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetPatientDetailAdmin(Guid id, [FromQuery] string lang = "en", CancellationToken cancellationToken = default)
     {
-        var result = await Sender.Send(new GetPatientDetailQuery(id, IsSuperAdmin: true), cancellationToken);
+        var result = await Sender.Send(new GetPatientDetailQuery(id, IsSuperAdmin: true, Lang: lang), cancellationToken);
         return HandleResult(result, "Failed to retrieve patient detail");
     }
 

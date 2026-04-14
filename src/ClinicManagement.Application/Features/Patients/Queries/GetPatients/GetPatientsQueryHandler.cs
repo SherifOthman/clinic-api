@@ -45,9 +45,28 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             request.IsSuperAdmin,
             request.PageNumber,
             request.PageSize,
+            request.Lang,
             cancellationToken);
 
-        var dtos = result.Items.Adapt<List<PatientDto>>();
+        var dtos = result.Items.Select(p => new PatientDto
+        {
+            Id                  = p.Id,
+            PatientCode         = p.PatientCode,
+            FullName            = p.FullName,
+            DateOfBirth         = p.DateOfBirth,
+            Gender              = p.Gender,
+            BloodType           = p.BloodType,
+            ChronicDiseaseCount = p.ChronicDiseaseCount,
+            PrimaryPhone        = p.PrimaryPhone,
+            CreatedAt           = p.CreatedAt,
+            ClinicName          = p.ClinicName,
+            CountryGeonameId    = p.CountryGeonameId,
+            StateGeonameId      = p.StateGeonameId,
+            CityGeonameId       = p.CityGeonameId,
+            CountryName         = p.CountryName,
+            StateName           = p.StateName,
+            CityName            = p.CityName,
+        }).ToList();
 
         return Result.Success(PaginatedResult<PatientDto>.Create(dtos, result.TotalCount, result.PageNumber, result.PageSize));
     }

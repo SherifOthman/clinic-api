@@ -33,6 +33,13 @@ public class GeoNamesService : IGeoNamesService
     private readonly string _baseUrl;  // e.g. https://download.geonames.org/export/dump
     private readonly string _cacheDir; // local folder where files are saved
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ARABIC NAMES — loaded once and cached in memory for the lifetime of the service
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // In-memory cache so we don't re-read the file for every method call
+    private Dictionary<int, string>? _arabicNamesCache;
+
     public GeoNamesService(
         HttpClient http,
         IHostEnvironment env,
@@ -211,12 +218,7 @@ public class GeoNamesService : IGeoNamesService
         return result;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ARABIC NAMES — loaded once and cached in memory for the lifetime of the service
-    // ─────────────────────────────────────────────────────────────────────────
 
-    // In-memory cache so we don't re-read the file for every method call
-    private Dictionary<int, string>? _arabicNamesCache;
 
     /// <summary>
     /// Returns a dictionary of GeoNames ID → Arabic name.
@@ -303,7 +305,6 @@ public class GeoNamesService : IGeoNamesService
         _arabicNamesCache = result;
         return result;
     }
-
     // ─────────────────────────────────────────────────────────────────────────
     // FILE HELPERS — disk-first: read from disk if exists, otherwise download
     // ─────────────────────────────────────────────────────────────────────────

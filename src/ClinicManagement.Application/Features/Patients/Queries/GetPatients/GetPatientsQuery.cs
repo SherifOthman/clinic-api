@@ -15,13 +15,14 @@ public record GetPatientsQuery(
     int? StateGeonameId = null,
     int? CityGeonameId = null,
     int? CountryGeonameId = null,
-    bool IsSuperAdmin = false
+    bool IsSuperAdmin = false,
+    string Lang = "en"
 ) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<PatientDto>>>;
 
 /// <summary>
 /// List DTO — minimal fields for the patients table.
-/// Location is returned as GeoNames IDs; the frontend resolves display names
-/// from the GeoNames API using the user's current language.
+/// Location names are resolved server-side from the seeded GeoNames DB
+/// using the ?lang= query param (defaults to "en").
 /// </summary>
 public record PatientDto
 {
@@ -35,7 +36,12 @@ public record PatientDto
     public string? PrimaryPhone { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public string? ClinicName { get; init; }
+    // IDs kept for filtering/editing
     public int? CountryGeonameId { get; init; }
     public int? StateGeonameId { get; init; }
     public int? CityGeonameId { get; init; }
+    // Resolved names — ready to display, no extra frontend calls needed
+    public string? CountryName { get; init; }
+    public string? StateName { get; init; }
+    public string? CityName { get; init; }
 }
