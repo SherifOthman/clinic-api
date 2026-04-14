@@ -26,9 +26,13 @@ A complete auth system built on top of ASP.NET Identity. Users can register, con
 
 Every entity that belongs to a clinic implements `ITenantEntity` with a `ClinicId`. EF Core global query filters enforce tenant isolation automatically — a query from Clinic A can never return data from Clinic B. The `ICurrentUserService` extracts the `ClinicId` from JWT claims and injects it into every scoped operation. The `SuperAdmin` role bypasses these filters to see across all clinics.
 
+### Location Data
+
+Countries, states/governorates, and cities are seeded from GeoNames bulk dump files at startup. The app downloads the files once (`countryInfo.txt`, `admin1CodesASCII.txt`, `cities1000.zip`, and a pre-extracted `ar_names.tsv` for Arabic names), saves them to `SeedData/GeoNames/`, and never downloads them again. All location data is stored in the database in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query using the seeded tables — no external API calls at runtime.
+
 ### Onboarding Flow
 
-New clinic owners go through a guided setup: clinic name, branch details, location (country/state/city via GeoNames), subscription plan selection, and medical specialization. The clinic is marked as active only after onboarding completes.
+New clinic owners go through a guided setup: clinic name, branch details, location (country/state/city from the seeded GeoNames database), subscription plan selection, and medical specialization. The clinic is marked as active only after onboarding completes.
 
 ### Patient Management
 
@@ -73,7 +77,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 **Result pattern** — handlers return `Result<T>` instead of throwing exceptions for expected failures. `GlobalExceptionMiddleware` catches anything unexpected and returns RFC 7807 Problem Details with a trace ID. Error codes are string constants that map directly to frontend i18n keys, so the frontend can display the right translated message without any mapping logic.
 
-**No generic repository** — handlers access `IApplicationDbContext` directly. The abstraction exists for testability, not to wrap every EF Core method in a redundant interface.
+**No generic repository** — handlers access data through `IUnitOfWork`, which exposes typed repositories (`IPatientRepository`, `IGeoLocationRepository`, etc.). No direct DbContext access outside the Persistence layer.
 
 ---
 
@@ -92,7 +96,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | API Docs         | Scalar (OpenAPI)                 |
 | Email            | MailKit + SMTP queue             |
 | Phone validation | libphonenumber-csharp            |
-| Location data    | GeoNames API (cached 24h)        |
+| Location data    | GeoNames bulk dumps (seeded DB)  |
 | Database         | SQL Server                       |
 
 ---
@@ -129,16 +133,17 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 ### Patient Management
 
-| Feature                                                  | API | Notes                           |
-| -------------------------------------------------------- | --- | ------------------------------- |
-| Paginated list — search, sort, filter by gender / region | ✅  | Search ranked by relevance      |
-| Create / edit / view / soft-delete / restore             | ✅  | Restore is SuperAdmin only      |
-| Unique 8-digit patient code                              | ✅  | Auto-generated                  |
-| Multiple phone numbers                                   | ✅  | International format validation |
-| Blood type, DOB, chronic diseases                        | ✅  |                                 |
-| Bilingual location (country / state / city)              | ✅  | GeoNames-backed, EN+AR stored   |
-| Medical visit history                                    | 🗂️  | `MedicalVisit` entity modeled   |
-| Medical files / documents                                | 🗂️  | `MedicalFile` entity modeled    |
+| Feature                                                  | API | Notes                             |
+| -------------------------------------------------------- | --- | --------------------------------- |
+| Paginated list — search, sort, filter by gender / region | ✅  | Search ranked by relevance        |
+| Create / edit / view / soft-delete / restore             | ✅  | Restore is SuperAdmin only        |
+| Unique 8-digit patient code                              | ✅  | Auto-generated                    |
+| Multiple phone numbers                                   | ✅  | International format validation   |
+| Blood type, DOB, chronic diseases                        | ✅  |                                   |
+| Bilingual location (country / state / city)              | ✅  | Seeded from GeoNames, EN+AR in DB |
+| Patient location filter (by country/state/city)          | ✅  | Queries actual patient data       |
+| Medical visit history                                    | 🗂️  | `MedicalVisit` entity modeled     |
+| Medical files / documents                                | 🗂️  | `MedicalFile` entity modeled      |
 
 ### Staff Management
 
@@ -214,6 +219,15 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Security event logging                                         | ✅  | Login, logout, failed attempts, lockouts |
 | Audit log query (filter by entity, action, user, clinic, date) | ✅  | SuperAdmin only                          |
 | 12-month retention with auto-cleanup                           | ✅  | Background job                           |
+
+### Reference Data
+
+| Feature                      | API | Notes                              |
+| ---------------------------- | --- | ---------------------------------- |
+| Chronic diseases list        | ✅  | Bilingual, seeded                  |
+| Medical specializations list | ✅  | Bilingual, seeded, anonymous       |
+| Subscription plans list      | ✅  | Anonymous, includes feature flags  |
+| Countries / states / cities  | ✅  | From seeded GeoNames DB, anonymous |
 
 ---
 
