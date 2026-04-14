@@ -72,19 +72,19 @@ public class PatientsController : BaseApiController
         var countries = countryIds.Count == 0 ? [] : await _db.GeoCountries
             .AsNoTracking()
             .Where(c => countryIds.Contains(c.GeonameId))
-            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn))
+            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn, null))
             .ToListAsync(cancellationToken);
 
         var states = stateIds.Count == 0 ? [] : await _db.GeoStates
             .AsNoTracking()
             .Where(s => stateIds.Contains(s.GeonameId))
-            .Select(s => new LocationNameDto(s.GeonameId, isAr ? s.NameAr : s.NameEn))
+            .Select(s => new LocationNameDto(s.GeonameId, isAr ? s.NameAr : s.NameEn, s.CountryGeonameId))
             .ToListAsync(cancellationToken);
 
         var cities = cityIds.Count == 0 ? [] : await _db.GeoCities
             .AsNoTracking()
             .Where(c => cityIds.Contains(c.GeonameId))
-            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn))
+            .Select(c => new LocationNameDto(c.GeonameId, isAr ? c.NameAr : c.NameEn, c.StateGeonameId))
             .ToListAsync(cancellationToken);
 
         return Ok(new PatientLocationFilterResponse(countries, states, cities));

@@ -6,7 +6,7 @@ public record StateResponse(int GeonameId, string Name);
 public record CityResponse(int GeonameId, string Name);
 
 /// <summary>A resolved GeoNames ID → name pair.</summary>
-public record LocationNameDto(int GeonameId, string Name);
+public record LocationNameDto(int GeonameId, string Name, int? ParentGeonameId = null);
 
 /// <summary>
 /// Combined response for the patient location filter.
