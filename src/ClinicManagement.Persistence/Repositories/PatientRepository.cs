@@ -231,36 +231,45 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (stateGeonameId.HasValue)
         {
-            return await query
+            var rows = await query
                 .Where(p => p.StateGeonameId == stateGeonameId.Value && p.CityGeonameId != null)
-                .Select(p => new LocationOption(
-                    p.CityGeonameId!.Value,
-                    isAr ? p.City!.NameAr : p.City!.NameEn))
+                .Select(p => new { p.CityGeonameId, p.City!.NameEn, p.City!.NameAr })
                 .Distinct()
-                .OrderBy(o => o.Name)
                 .ToListAsync(ct);
+
+            return rows
+                .DistinctBy(r => r.CityGeonameId)
+                .Select(r => new LocationOption(r.CityGeonameId!.Value, isAr ? r.NameAr : r.NameEn))
+                .OrderBy(o => o.Name)
+                .ToList();
         }
 
         if (countryGeonameId.HasValue)
         {
-            return await query
+            var rows = await query
                 .Where(p => p.CountryGeonameId == countryGeonameId.Value && p.StateGeonameId != null)
-                .Select(p => new LocationOption(
-                    p.StateGeonameId!.Value,
-                    isAr ? p.State!.NameAr : p.State!.NameEn))
+                .Select(p => new { p.StateGeonameId, p.State!.NameEn, p.State!.NameAr })
                 .Distinct()
-                .OrderBy(o => o.Name)
                 .ToListAsync(ct);
+
+            return rows
+                .DistinctBy(r => r.StateGeonameId)
+                .Select(r => new LocationOption(r.StateGeonameId!.Value, isAr ? r.NameAr : r.NameEn))
+                .OrderBy(o => o.Name)
+                .ToList();
         }
 
-        return await query
+        var countryRows = await query
             .Where(p => p.CountryGeonameId != null)
-            .Select(p => new LocationOption(
-                p.CountryGeonameId!.Value,
-                isAr ? p.Country!.NameAr : p.Country!.NameEn))
+            .Select(p => new { p.CountryGeonameId, p.Country!.NameEn, p.Country!.NameAr })
             .Distinct()
-            .OrderBy(o => o.Name)
             .ToListAsync(ct);
+
+        return countryRows
+            .DistinctBy(r => r.CountryGeonameId)
+            .Select(r => new LocationOption(r.CountryGeonameId!.Value, isAr ? r.NameAr : r.NameEn))
+            .OrderBy(o => o.Name)
+            .ToList();
     }
 
     // ── Child entity helpers ──────────────────────────────────────────────────
