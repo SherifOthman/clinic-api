@@ -2,6 +2,7 @@ using ClinicManagement.API.Contracts.Locations;
 using ClinicManagement.API.Contracts.Patients;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
