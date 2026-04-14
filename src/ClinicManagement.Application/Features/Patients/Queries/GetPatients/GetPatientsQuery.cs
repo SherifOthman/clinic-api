@@ -39,11 +39,7 @@ public record PatientDto
     public int? CountryGeonameId { get; init; }
     public int? StateGeonameId { get; init; }
     public int? CityGeonameId { get; init; }
-    // Both language names — frontend picks based on current language
-    public string? CountryNameEn { get; init; }
-    public string? CountryNameAr { get; init; }
-    public string? StateNameEn { get; init; }
-    public string? StateNameAr { get; init; }
+    // City name for the table column — country/state not shown in the list
     public string? CityNameEn { get; init; }
     public string? CityNameAr { get; init; }
 }

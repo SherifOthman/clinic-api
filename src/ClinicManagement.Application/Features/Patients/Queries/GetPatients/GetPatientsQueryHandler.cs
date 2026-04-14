@@ -56,10 +56,6 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             CountryGeonameId    = p.CountryGeonameId,
             StateGeonameId      = p.StateGeonameId,
             CityGeonameId       = p.CityGeonameId,
-            CountryNameEn       = p.CountryNameEn,
-            CountryNameAr       = p.CountryNameAr,
-            StateNameEn         = p.StateNameEn,
-            StateNameAr         = p.StateNameAr,
             CityNameEn          = p.CityNameEn,
             CityNameAr          = p.CityNameAr,
         }).ToList();
