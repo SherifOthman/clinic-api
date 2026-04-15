@@ -233,11 +233,12 @@ public class GeoNamesService : IGeoNamesService
             // Only populated places (feature class P):
             // - PPLC, PPLA, PPLA2, PPLA3, PPLA4, PPLA5 — all administrative centers
             // - PPL  — any populated place with recorded population (> 0)
-            // - PPLX excluded — too granular (neighborhoods/sections)
+            // - PPLX — neighborhoods/districts with population > 0 (filters unnamed sections)
             if (featureClass != "P") continue;
             var isAdminCenter = includedCodes.Contains(fcode);
             var isSignificantPPL = fcode == "PPL" && population > 0;
-            if (!isAdminCenter && !isSignificantPPL) continue;
+            var isSignificantPPLX = fcode == "PPLX" && population > 0;
+            if (!isAdminCenter && !isSignificantPPL && !isSignificantPPLX) continue;
             // Look up the parent state
             var admin1Key = $"{countryCode}.{admin1Code}";
             if (!admin1Map.TryGetValue(admin1Key, out var stateGeonameId)) continue;
