@@ -163,8 +163,8 @@ public class GeoNamesService : IGeoNamesService
     ///   - PPLA2 = district capital
     ///   - PPLA3 = sub-district capital
     ///   - PPLA4 = minor administrative seat
-    ///   - PPL   = towns/villages with population >= 500
-    ///   - PPLX  excluded (neighborhoods — too granular)
+    ///   - PPL   = populated place (all, since allCountries has accurate data)
+    ///   - PPLX  = section of populated place (neighborhoods/districts)
     ///
     /// allCountries.zip is ~1.5GB but we only keep feature class P rows,
     /// which reduces the working set significantly.
@@ -186,7 +186,7 @@ public class GeoNamesService : IGeoNamesService
 
         // Feature codes for populated places we want to include
         var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLA5" };
+            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLX" };
 
         var result   = new List<GeoNamesCityDump>();
         var seenIds  = new HashSet<int>();  // prevent duplicates from allCountries.txt
@@ -231,14 +231,13 @@ public class GeoNamesService : IGeoNamesService
             long.TryParse(cols[14], out var population);
 
             // Only populated places (feature class P):
-            // - PPLC, PPLA, PPLA2, PPLA3, PPLA4, PPLA5 — all administrative centers
-            // - PPL  — any populated place with recorded population (> 0)
-            // - PPLX — neighborhoods/districts with population > 0 (filters unnamed sections)
+            // - PPLC, PPLA, PPLA2, PPLA3, PPLA4 — all administrative centers, always included
+            // - PPLX — sections/neighborhoods of populated places (districts, quarters)
+            // - PPL  — all populated places with a state mapping
             if (featureClass != "P") continue;
             var isAdminCenter = includedCodes.Contains(fcode);
-            var isSignificantPPL = fcode == "PPL" && population > 0;
-            var isSignificantPPLX = fcode == "PPLX" && population > 0;
-            if (!isAdminCenter && !isSignificantPPL && !isSignificantPPLX) continue;
+            var isSignificantPPL = fcode == "PPL";
+            if (!isAdminCenter && !isSignificantPPL) continue;
             // Look up the parent state
             var admin1Key = $"{countryCode}.{admin1Code}";
             if (!admin1Map.TryGetValue(admin1Key, out var stateGeonameId)) continue;
