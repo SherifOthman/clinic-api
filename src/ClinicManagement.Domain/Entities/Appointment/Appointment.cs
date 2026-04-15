@@ -21,14 +21,20 @@ public class Appointment : AuditableEntity, INoAuditLog
     public AppointmentType Type { get; set; } = AppointmentType.Queue;
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
 
-    /// <summary>Visit type (كشف / إعادة) — FK to VisitType.</summary>
-    public Guid VisitTypeId { get; set; }
+    /// <summary>Visit type FK — links to DoctorVisitType.</summary>
+    public Guid DoctorVisitTypeId { get; set; }
+
+    /// <summary>Price snapshot — copied from DoctorVisitType.Price at booking time.</summary>
+    public decimal Price { get; set; }
 
     /// <summary>
-    /// Price snapshot — copied from BranchVisitType.Price at booking time.
-    /// Never recalculated from current pricing to preserve history.
+    /// Discount percentage (0-100). Applied at booking time.
+    /// FinalPrice = Price * (1 - DiscountPercent / 100).
     /// </summary>
-    public decimal Price { get; set; }
+    public decimal? DiscountPercent { get; set; }
+
+    /// <summary>Final price after discount. Computed and stored at booking time.</summary>
+    public decimal FinalPrice { get; set; }
 
     public Guid? InvoiceId { get; set; }
 
@@ -36,5 +42,5 @@ public class Appointment : AuditableEntity, INoAuditLog
     public ClinicBranch Branch { get; set; } = null!;
     public Patient Patient { get; set; } = null!;
     public Doctor Doctor { get; set; } = null!;
-    public VisitType VisitType { get; set; } = null!;
+    public DoctorVisitType DoctorVisitType { get; set; } = null!;
 }

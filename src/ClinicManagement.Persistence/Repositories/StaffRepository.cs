@@ -109,7 +109,8 @@ public class StaffRepository : Repository<Staff>, IStaffRepository
                 DoctorProfile   = s.DoctorProfile == null ? null : new DoctorDetailRow(
                     s.DoctorProfile.Id,
                     s.DoctorProfile.Specialization != null ? s.DoctorProfile.Specialization.NameEn : "",
-                    s.DoctorProfile.Specialization != null ? s.DoctorProfile.Specialization.NameAr : ""),
+                    s.DoctorProfile.Specialization != null ? s.DoctorProfile.Specialization.NameAr : "",
+                    s.DoctorProfile.CanSelfManageSchedule),
             })
             .FirstOrDefaultAsync(ct);
 

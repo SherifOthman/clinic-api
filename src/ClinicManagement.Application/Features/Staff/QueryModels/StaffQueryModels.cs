@@ -11,7 +11,7 @@ public record StaffDetailRow(
     string? ProfileImageUrl, DoctorDetailRow? DoctorProfile
 );
 
-public record DoctorDetailRow(Guid Id, string SpecializationNameEn, string SpecializationNameAr);
+public record DoctorDetailRow(Guid Id, string SpecializationNameEn, string SpecializationNameAr, bool CanSelfManageSchedule);
 
 public record StaffRoleRow(Guid UserId, string RoleName);
 
@@ -28,4 +28,4 @@ public record InvitationDetailRow(
     DateTimeOffset? AcceptedAt, string CreatedByName, string? AcceptedByName
 );
 
-public record WorkingDayRow(int Day, string StartTime, string EndTime, bool IsAvailable, Guid BranchId);
+public record WorkingDayRow(int Day, string StartTime, string EndTime, bool IsAvailable, Guid BranchId, int? MaxAppointmentsPerDay = null);

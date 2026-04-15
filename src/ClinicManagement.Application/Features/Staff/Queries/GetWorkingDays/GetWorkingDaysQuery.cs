@@ -10,5 +10,6 @@ public record WorkingDayDto(
     string StartTime,  // "HH:mm"
     string EndTime,    // "HH:mm"
     bool IsAvailable,
-    Guid BranchId
+    Guid BranchId,
+    int? MaxAppointmentsPerDay = null
 );

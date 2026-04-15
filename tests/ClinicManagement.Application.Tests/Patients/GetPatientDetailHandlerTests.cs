@@ -53,8 +53,8 @@ public class GetPatientDetailHandlerTests
         await _uow.Patients.AddAsync(patient);
         await _uow.SaveChangesAsync();
 
-        _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000001" });
-        _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000002" });
+        _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000001", NationalNumber = "500000001" });
+        _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000002", NationalNumber = "500000002" });
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(new GetPatientDetailQuery(patient.Id), default);

@@ -12,6 +12,9 @@ public class DoctorWorkingDay : BaseEntity
     public TimeOnly EndTime { get; set; }
     public bool IsAvailable { get; set; } = true;
 
+    /// <summary>Maximum appointments allowed on this day. Null = no limit.</summary>
+    public int? MaxAppointmentsPerDay { get; set; }
+
     // Navigation properties
     public Doctor DoctorProfile { get; set; } = null!;
     public ClinicBranch ClinicBranch { get; set; } = null!;

@@ -26,6 +26,7 @@ public class UnitOfWork : IUnitOfWork
     public IAuditLogRepository           AuditLogs         => field ??= new AuditLogRepository(_context);
     public IDoctorProfileRepository      DoctorProfiles    => field ??= new DoctorProfileRepository(_context);
     public IWorkingDaysRepository        WorkingDays       => field ??= new WorkingDaysRepository(_context);
+    public IDoctorVisitTypeRepository    DoctorVisitTypes  => field ??= new DoctorVisitTypeRepository(_context);
     public IReferenceRepository          Reference         => field ??= new ReferenceRepository(_context, _cache);
     public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);
     public IGeoLocationRepository        GeoLocations      => field ??= new GeoLocationRepository(_context);

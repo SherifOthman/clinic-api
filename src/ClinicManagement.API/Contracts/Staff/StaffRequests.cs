@@ -23,4 +23,15 @@ public record WorkingDayRequest(
     int Day,
     string StartTime,
     string EndTime,
-    bool IsAvailable);
+    bool IsAvailable,
+    int? MaxAppointmentsPerDay = null);
+
+public record UpsertDoctorVisitTypeRequest(
+    Guid BranchId,
+    Guid? VisitTypeId,
+    string NameAr,
+    string NameEn,
+    decimal Price,
+    bool IsActive = true);
+
+public record SetDoctorScheduleLockRequest(bool CanSelfManage);

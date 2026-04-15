@@ -23,6 +23,7 @@ public interface IUnitOfWork
     IAuditLogRepository AuditLogs { get; }
     IDoctorProfileRepository DoctorProfiles { get; }
     IWorkingDaysRepository WorkingDays { get; }
+    IDoctorVisitTypeRepository DoctorVisitTypes { get; }
     IReferenceRepository Reference { get; }
     IClinicSubscriptionRepository ClinicSubscriptions { get; }
     IGeoLocationRepository GeoLocations { get; }

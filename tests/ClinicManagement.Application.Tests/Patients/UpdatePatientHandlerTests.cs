@@ -63,7 +63,7 @@ public class UpdatePatientHandlerTests
         await _uow.Patients.AddAsync(patient);
         await _uow.SaveChangesAsync();
 
-        _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000000" });
+        _uow.Patients.AddPhone(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000000", NationalNumber = "500000000" });
         await _uow.SaveChangesAsync();
 
         await _handler.Handle(new UpdatePatientCommand(

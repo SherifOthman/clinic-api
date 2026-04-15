@@ -100,6 +100,7 @@ public static class ErrorCodes
     public const string OPERATION_FAILED = "OPERATION_FAILED";
     public const string USER_CREATION_FAILED = "USER_CREATION_FAILED";
     public const string ROLE_ASSIGNMENT_FAILED = "ROLE_ASSIGNMENT_FAILED";
+    public const string CONFLICT = "CONFLICT";
 
     // System (500)
     public const string INTERNAL_ERROR = "INTERNAL_ERROR";

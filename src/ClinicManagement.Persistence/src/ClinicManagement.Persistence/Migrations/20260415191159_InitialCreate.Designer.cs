@@ -9,10 +9,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ClinicManagement.Persistence.Migrations
+namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260415143016_InitialCreate")]
+    [Migration("20260415191159_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,6 +24,90 @@ namespace ClinicManagement.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Appointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AppointmentNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ClinicBranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<decimal?>("DiscountPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorVisitTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("FinalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("QueueNumber")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly?>("ScheduledTime")
+                        .HasColumnType("time");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<short>("Type")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorVisitTypeId");
+
+                    b.HasIndex("PatientId", "Date");
+
+                    b.HasIndex("ClinicBranchId", "Date", "Status");
+
+                    b.HasIndex("DoctorId", "Date", "QueueNumber")
+                        .IsUnique()
+                        .HasFilter("[QueueNumber] IS NOT NULL");
+
+                    b.HasIndex("DoctorId", "Date", "ScheduledTime")
+                        .IsUnique()
+                        .HasFilter("[ScheduledTime] IS NOT NULL");
+
+                    b.ToTable("Appointment");
+                });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.AuditLog", b =>
                 {
@@ -206,6 +290,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("ClinicId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ClinicId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -236,6 +323,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClinicId1");
 
                     b.HasIndex("ClinicId", "IsMainBranch");
 
@@ -422,10 +511,16 @@ namespace ClinicManagement.Persistence.Migrations
                     b.ToTable("ClinicUsageMetrics");
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorProfile", b =>
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Doctor", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("CanSelfManageSchedule")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("ClinicId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -451,12 +546,51 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClinicId");
+
                     b.HasIndex("SpecializationId");
 
                     b.HasIndex("StaffId")
                         .IsUnique();
 
-                    b.ToTable("DoctorProfile");
+                    b.ToTable("Doctor");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorVisitType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClinicBranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicBranchId");
+
+                    b.HasIndex("DoctorId", "ClinicBranchId", "IsActive");
+
+                    b.ToTable("DoctorVisitType");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorWorkingDay", b =>
@@ -474,11 +608,17 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("DoctorId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("MaxAppointmentsPerDay")
+                        .HasColumnType("int");
 
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
@@ -488,6 +628,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("ClinicBranchId");
 
                     b.HasIndex("DoctorId");
+
+                    b.HasIndex("DoctorId1");
 
                     b.ToTable("DoctorWorkingDay");
                 });
@@ -1885,6 +2027,41 @@ namespace ClinicManagement.Persistence.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Appointment", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", "Branch")
+                        .WithMany("Appointment")
+                        .HasForeignKey("ClinicBranchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ClinicManagement.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("Appointments")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ClinicManagement.Domain.Entities.DoctorVisitType", "DoctorVisitType")
+                        .WithMany()
+                        .HasForeignKey("DoctorVisitTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ClinicManagement.Domain.Entities.Patient", "Patient")
+                        .WithMany("Appointments")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("DoctorVisitType");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Clinic", b =>
                 {
                     b.HasOne("ClinicManagement.Domain.Entities.User", "Owner")
@@ -1911,6 +2088,10 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasForeignKey("ClinicId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("ClinicManagement.Domain.Entities.Clinic", null)
+                        .WithMany("Branches")
+                        .HasForeignKey("ClinicId1");
 
                     b.Navigation("Clinic");
                 });
@@ -1950,8 +2131,12 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Navigation("SubscriptionPlan");
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorProfile", b =>
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Doctor", b =>
                 {
+                    b.HasOne("ClinicManagement.Domain.Entities.Clinic", null)
+                        .WithMany("Doctors")
+                        .HasForeignKey("ClinicId");
+
                     b.HasOne("ClinicManagement.Domain.Entities.Specialization", "Specialization")
                         .WithMany()
                         .HasForeignKey("SpecializationId")
@@ -1959,13 +2144,32 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasOne("ClinicManagement.Domain.Entities.Staff", "Staff")
                         .WithOne("DoctorProfile")
-                        .HasForeignKey("ClinicManagement.Domain.Entities.DoctorProfile", "StaffId")
+                        .HasForeignKey("ClinicManagement.Domain.Entities.Doctor", "StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Specialization");
 
                     b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorVisitType", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", "Branch")
+                        .WithMany("DoctorVisitTypes")
+                        .HasForeignKey("ClinicBranchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ClinicManagement.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("VisitTypes")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Doctor");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorWorkingDay", b =>
@@ -1975,10 +2179,14 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasForeignKey("ClinicBranchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("ClinicManagement.Domain.Entities.DoctorProfile", "DoctorProfile")
+                    b.HasOne("ClinicManagement.Domain.Entities.Doctor", "DoctorProfile")
                         .WithMany()
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ClinicManagement.Domain.Entities.Doctor", null)
+                        .WithMany("WorkingDays")
+                        .HasForeignKey("DoctorId1");
 
                     b.Navigation("ClinicBranch");
 
@@ -2210,9 +2418,29 @@ namespace ClinicManagement.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Clinic", b =>
+                {
+                    b.Navigation("Branches");
+
+                    b.Navigation("Doctors");
+                });
+
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranch", b =>
                 {
+                    b.Navigation("Appointment");
+
+                    b.Navigation("DoctorVisitTypes");
+
                     b.Navigation("PhoneNumbers");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Doctor", b =>
+                {
+                    b.Navigation("Appointments");
+
+                    b.Navigation("VisitTypes");
+
+                    b.Navigation("WorkingDays");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCountry", b =>
@@ -2227,6 +2455,8 @@ namespace ClinicManagement.Persistence.Migrations
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Patient", b =>
                 {
+                    b.Navigation("Appointments");
+
                     b.Navigation("ChronicDiseases");
 
                     b.Navigation("Phones");

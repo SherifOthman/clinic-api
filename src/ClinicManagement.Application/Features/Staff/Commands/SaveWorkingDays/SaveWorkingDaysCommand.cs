@@ -13,5 +13,6 @@ public record WorkingDayInput(
     int Day,
     string StartTime,
     string EndTime,
-    bool IsAvailable
+    bool IsAvailable,
+    int? MaxAppointmentsPerDay = null
 );

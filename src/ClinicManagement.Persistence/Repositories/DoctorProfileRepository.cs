@@ -13,4 +13,7 @@ public class DoctorProfileRepository : Repository<Doctor>, IDoctorProfileReposit
             .Where(dp => dp.StaffId == staffId)
             .Select(dp => dp.Id)
             .FirstOrDefaultAsync(ct);
+
+    public Task<Doctor?> GetByIdAsync(Guid doctorId, CancellationToken ct = default)
+        => DbSet.FirstOrDefaultAsync(dp => dp.Id == doctorId, ct);
 }
