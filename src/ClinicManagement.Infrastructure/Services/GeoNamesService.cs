@@ -240,7 +240,7 @@ public class GeoNamesService : IGeoNamesService
             result.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
 
             if (++lineCount % 500_000 == 0)
-                _logger.LogInformation("Cities: processed {Lines:N0} lines, {Cities:N0} cities so far...", lineCount, result.Count);
+                _logger.LogInformation("Cities: scanned {Lines:N0} lines, {Cities:N0} populated places found so far...", lineCount, result.Count);
         }
 
         _logger.LogInformation("Parsed {Count} cities from allCountries.zip", result.Count);

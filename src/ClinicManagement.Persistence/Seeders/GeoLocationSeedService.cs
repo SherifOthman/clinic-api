@@ -126,14 +126,14 @@ public class GeoLocationSeedService
             })
             .ToList();
 
-        // Insert in batches of 1000 to avoid one giant database transaction
-        const int batchSize = 1000;
+        // Insert in batches of 10,000
+        const int batchSize = 10_000;
         for (var i = 0; i < newCities.Count; i += batchSize)
         {
             var batch = newCities.Skip(i).Take(batchSize).ToList();
             await _db.GeoCities.AddRangeAsync(batch, ct);
             await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Cities: inserted {To} of {Total}",
+            _logger.LogInformation("Cities: inserted {To:N0} of {Total:N0}",
                 Math.Min(i + batchSize, newCities.Count), newCities.Count);
         }
 
