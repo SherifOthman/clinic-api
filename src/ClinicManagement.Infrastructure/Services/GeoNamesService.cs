@@ -171,11 +171,9 @@ public class GeoNamesService : IGeoNamesService
     /// </summary>
     public async Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
-        var lines   = await ReadZipFileAsync("allCountries.zip", "allCountries.txt", ct);
         var arNames = await GetArabicNamesAsync(ct);
 
         // Build a map: "CC.ADM1CODE" → state GeoNames ID  (e.g. "EG.11" → 349401)
-        // We need this to link each city to its parent state
         var admin1Text = await ReadTextFileAsync("admin1CodesASCII.txt", ct);
         var admin1Map  = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var line in admin1Text.Split('\n'))
@@ -190,35 +188,62 @@ public class GeoNamesService : IGeoNamesService
         var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPL", "PPLX" };
 
-        var result = new List<GeoNamesCityDump>();
+        var result  = new List<GeoNamesCityDump>();
+        var zipPath = Path.Combine(_cacheDir, "allCountries.zip");
 
-        foreach (var line in lines)
+        // Download if not cached
+        if (!File.Exists(zipPath))
         {
-            if (string.IsNullOrWhiteSpace(line)) continue;
+            _logger.LogInformation("Downloading allCountries.zip (~1.5 GB)...");
+            var bytes = await _http.GetByteArrayAsync(_baseUrl + "/allCountries.zip", ct);
+            await File.WriteAllBytesAsync(zipPath, bytes, ct);
+            _logger.LogInformation("Saved allCountries.zip ({SizeMB:F0} MB)", bytes.Length / 1_048_576.0);
+        }
 
-            var cols = line.Split('\t');
+        _logger.LogInformation("Streaming allCountries.txt from zip (line by line)...");
+
+        // Stream line by line — never loads the full 1.5 GB into memory
+        using var fs      = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var archive = new ZipArchive(fs, ZipArchiveMode.Read);
+        var entry = archive.GetEntry("allCountries.txt")
+            ?? archive.Entries.FirstOrDefault(e => e.Name.Equals("allCountries.txt", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException("allCountries.txt not found inside allCountries.zip");
+
+        using var stream = entry.Open();
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+
+        string? line2;
+        var lineCount = 0;
+        while ((line2 = await reader.ReadLineAsync(ct)) is not null)
+        {
+            if (string.IsNullOrWhiteSpace(line2)) continue;
+
+            var cols = line2.Split('\t');
             if (cols.Length < 15) continue;
-            if (!int.TryParse(cols[0].Trim(), out var geonameId)) continue;
+            if (!int.TryParse(cols[0], out var geonameId)) continue;
 
-            var featureClass = cols[6].Trim();  // feature class (P, A, H, etc.)
-            var fcode        = cols[7].Trim();  // feature code
-            var countryCode  = cols[8].Trim();
-            var admin1Code   = cols[10].Trim();
-            var nameEn       = cols[1].Trim();
+            var featureClass = cols[6];
+            var fcode        = cols[7];
+            var countryCode  = cols[8];
+            var admin1Code   = cols[10];
+            var nameEn       = cols[1];
 
             // Only populated places (feature class P) with known codes
             if (featureClass != "P") continue;
             if (!includedCodes.Contains(fcode)) continue;
 
-            // Look up the parent state using "CC.ADM1CODE" key (e.g. "EG.11")
+            // Look up the parent state
             var admin1Key = $"{countryCode}.{admin1Code}";
             if (!admin1Map.TryGetValue(admin1Key, out var stateGeonameId)) continue;
 
             var nameAr = arNames.GetValueOrDefault(geonameId, nameEn);
             result.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
+
+            if (++lineCount % 500_000 == 0)
+                _logger.LogInformation("Cities: processed {Lines:N0} lines, {Cities:N0} cities so far...", lineCount, result.Count);
         }
 
-        _logger.LogInformation("Parsed {Count} cities", result.Count);
+        _logger.LogInformation("Parsed {Count} cities from allCountries.zip", result.Count);
         return result;
     }
 
