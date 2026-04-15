@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260415195418_InitialCreate")]
+    [Migration("20260415202554_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -608,9 +608,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("MaxAppointmentsPerDay")
-                        .HasColumnType("int");
 
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");

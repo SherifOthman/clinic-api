@@ -28,4 +28,4 @@ public record InvitationDetailRow(
     DateTimeOffset? AcceptedAt, string CreatedByName, string? AcceptedByName
 );
 
-public record WorkingDayRow(int Day, string StartTime, string EndTime, bool IsAvailable, Guid BranchId, int? MaxAppointmentsPerDay = null);
+public record WorkingDayRow(int Day, string StartTime, string EndTime, bool IsAvailable, Guid BranchId);

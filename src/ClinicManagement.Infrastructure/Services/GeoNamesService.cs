@@ -186,7 +186,7 @@ public class GeoNamesService : IGeoNamesService
 
         // Feature codes for populated places we want to include
         var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4" };
+            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLX" };
 
         var result   = new List<GeoNamesCityDump>();
         var seenIds  = new HashSet<int>();  // prevent duplicates from allCountries.txt
@@ -232,11 +232,11 @@ public class GeoNamesService : IGeoNamesService
 
             // Only populated places (feature class P):
             // - PPLC, PPLA, PPLA2, PPLA3, PPLA4 — all administrative centers, always included
-            // - PPL — only if population > 0 (has recorded data, skips unnamed hamlets)
-            // - PPLX (neighborhoods) excluded — too granular, causes duplicates
+            // - PPLX — sections/neighborhoods of populated places (districts, quarters)
+            // - PPL  — all populated places with a state mapping
             if (featureClass != "P") continue;
             var isAdminCenter = includedCodes.Contains(fcode);
-            var isSignificantPPL = fcode == "PPL" && population > 0;
+            var isSignificantPPL = fcode == "PPL";
             if (!isAdminCenter && !isSignificantPPL) continue;
             // Look up the parent state
             var admin1Key = $"{countryCode}.{admin1Code}";

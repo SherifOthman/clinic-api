@@ -1088,8 +1088,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Day = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
-                    MaxAppointmentsPerDay = table.Column<int>(type: "int", nullable: true)
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

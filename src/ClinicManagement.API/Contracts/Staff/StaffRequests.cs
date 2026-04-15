@@ -23,8 +23,7 @@ public record WorkingDayRequest(
     int Day,
     string StartTime,
     string EndTime,
-    bool IsAvailable,
-    int? MaxAppointmentsPerDay = null);
+    bool IsAvailable);
 
 public record UpsertDoctorVisitTypeRequest(
     Guid BranchId,

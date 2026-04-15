@@ -24,6 +24,6 @@ public class GetWorkingDaysHandler : IRequestHandler<GetWorkingDaysQuery, Result
         if (request.BranchId.HasValue)
             days = days.Where(d => d.BranchId == request.BranchId.Value).ToList();
 
-        return Result.Success(days.Select(d => new WorkingDayDto(d.Day, d.StartTime, d.EndTime, d.IsAvailable, d.BranchId, d.MaxAppointmentsPerDay)).ToList());
+        return Result.Success(days.Select(d => new WorkingDayDto(d.Day, d.StartTime, d.EndTime, d.IsAvailable, d.BranchId)).ToList());
     }
 }

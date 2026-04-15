@@ -168,7 +168,7 @@ public class StaffController : BaseApiController
     {
         if (request.BranchId == Guid.Empty)
             return BadRequest("BranchId is required");
-        var days = request.Days.Select(d => new WorkingDayInput(d.Day, d.StartTime, d.EndTime, d.IsAvailable, d.MaxAppointmentsPerDay)).ToList();
+        var days = request.Days.Select(d => new WorkingDayInput(d.Day, d.StartTime, d.EndTime, d.IsAvailable)).ToList();
         var result = await Sender.Send(new SaveWorkingDaysCommand(id, request.BranchId, days), cancellationToken);
         return HandleNoContent(result, "Failed to save working days");
     }

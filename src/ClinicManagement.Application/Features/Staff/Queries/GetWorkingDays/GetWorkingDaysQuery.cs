@@ -6,10 +6,9 @@ namespace ClinicManagement.Application.Features.Staff.Queries;
 public record GetWorkingDaysQuery(Guid StaffId, Guid? BranchId = null) : IRequest<Result<List<WorkingDayDto>>>;
 
 public record WorkingDayDto(
-    int Day,           // 0=Sunday … 6=Saturday (DayOfWeek)
-    string StartTime,  // "HH:mm"
-    string EndTime,    // "HH:mm"
+    int Day,
+    string StartTime,
+    string EndTime,
     bool IsAvailable,
-    Guid BranchId,
-    int? MaxAppointmentsPerDay = null
+    Guid BranchId
 );

@@ -606,9 +606,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("MaxAppointmentsPerDay")
-                        .HasColumnType("int");
-
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
 

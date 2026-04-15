@@ -46,13 +46,12 @@ public class SaveWorkingDaysHandler : IRequestHandler<SaveWorkingDaysCommand, Re
         {
             _uow.WorkingDays.Add(new DoctorWorkingDay
             {
-                DoctorId              = doctorProfileId,
-                ClinicBranchId        = request.BranchId,
-                Day                   = (DayOfWeek)day.Day,
-                StartTime             = TimeOnly.Parse(day.StartTime),
-                EndTime               = TimeOnly.Parse(day.EndTime),
-                IsAvailable           = day.IsAvailable,
-                MaxAppointmentsPerDay = day.MaxAppointmentsPerDay,
+                DoctorId       = doctorProfileId,
+                ClinicBranchId = request.BranchId,
+                Day            = (DayOfWeek)day.Day,
+                StartTime      = TimeOnly.Parse(day.StartTime),
+                EndTime        = TimeOnly.Parse(day.EndTime),
+                IsAvailable    = day.IsAvailable,
             });
         }
 

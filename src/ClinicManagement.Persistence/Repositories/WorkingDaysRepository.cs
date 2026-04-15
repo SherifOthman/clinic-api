@@ -19,8 +19,7 @@ public class WorkingDaysRepository : Repository<DoctorWorkingDay>, IWorkingDaysR
                 d.StartTime.ToString("HH:mm"),
                 d.EndTime.ToString("HH:mm"),
                 d.IsAvailable,
-                d.ClinicBranchId,
-                d.MaxAppointmentsPerDay))
+                d.ClinicBranchId))
             .ToListAsync(ct);
 
     public async Task<List<DoctorWorkingDay>> GetEntitiesByDoctorProfileIdAsync(
