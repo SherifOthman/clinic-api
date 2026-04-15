@@ -116,8 +116,11 @@ public class GeoLocationSeedService
         var newCities = allCities
             .Where(c => !existingCityIds.Contains(c.GeonameId)
                      && validStateIds.Contains(c.StateGeonameId))
-            .GroupBy(c => c.GeonameId)          // deduplicate — allCountries can have same ID twice
+            .GroupBy(c => c.GeonameId)          // deduplicate same GeonameId
             .Select(g => g.First())
+            // deduplicate same name within the same state — keep highest GeonameId (most recent)
+            .GroupBy(c => (c.StateGeonameId, c.NameEn.ToLowerInvariant()))
+            .Select(g => g.OrderByDescending(c => c.GeonameId).First())
             .Select(c => new GeoCity
             {
                 GeonameId      = c.GeonameId,

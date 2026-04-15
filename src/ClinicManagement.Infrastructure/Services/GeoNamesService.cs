@@ -240,7 +240,6 @@ public class GeoNamesService : IGeoNamesService
             var nameAr = arNames.GetValueOrDefault(geonameId, nameEn);
             if (seenIds.Add(geonameId))  // Add returns false if already present
                 result.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
-
             if (++lineCount % 500_000 == 0)
                 _logger.LogInformation("Cities: scanned {Lines:N0} lines, {Cities:N0} populated places found so far...", lineCount, result.Count);
         }
