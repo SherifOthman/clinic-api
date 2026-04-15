@@ -163,8 +163,8 @@ public class GeoNamesService : IGeoNamesService
     ///   - PPLA2 = district capital
     ///   - PPLA3 = sub-district capital
     ///   - PPLA4 = minor administrative seat
-    ///   - PPL   = populated place (all, since allCountries has accurate data)
-    ///   - PPLX  = section of populated place (neighborhoods/districts)
+    ///   - PPL   = towns/villages with population >= 500
+    ///   - PPLX  excluded (neighborhoods — too granular)
     ///
     /// allCountries.zip is ~1.5GB but we only keep feature class P rows,
     /// which reduces the working set significantly.
@@ -186,7 +186,7 @@ public class GeoNamesService : IGeoNamesService
 
         // Feature codes for populated places we want to include
         var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLX" };
+            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4" };
 
         var result   = new List<GeoNamesCityDump>();
         var seenIds  = new HashSet<int>();  // prevent duplicates from allCountries.txt
@@ -232,11 +232,11 @@ public class GeoNamesService : IGeoNamesService
 
             // Only populated places (feature class P):
             // - PPLC, PPLA, PPLA2, PPLA3, PPLA4 — all administrative centers, always included
-            // - PPLX — sections/neighborhoods of populated places (districts, quarters)
-            // - PPL  — all populated places with a state mapping
+            // - PPL  — towns/villages with population >= 500 (filters out unnamed hamlets)
+            // - PPLX excluded — too granular (neighborhoods/sections)
             if (featureClass != "P") continue;
             var isAdminCenter = includedCodes.Contains(fcode);
-            var isSignificantPPL = fcode == "PPL";
+            var isSignificantPPL = fcode == "PPL" && population >= 500;
             if (!isAdminCenter && !isSignificantPPL) continue;
             // Look up the parent state
             var admin1Key = $"{countryCode}.{admin1Code}";
