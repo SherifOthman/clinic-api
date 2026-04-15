@@ -16,7 +16,7 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "CityGeonameId",
                 principalTable: "GeoCities",
                 principalColumn: "GeonameId",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.NoAction);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Patient_GeoCountries_CountryGeonameId",
@@ -24,7 +24,7 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "CountryGeonameId",
                 principalTable: "GeoCountries",
                 principalColumn: "GeonameId",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.NoAction);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Patient_GeoStates_StateGeonameId",
@@ -32,7 +32,7 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "StateGeonameId",
                 principalTable: "GeoStates",
                 principalColumn: "GeonameId",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.NoAction);
         }
 
         /// <inheritdoc />
