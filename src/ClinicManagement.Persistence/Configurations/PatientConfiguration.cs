@@ -39,19 +39,20 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasIndex(p => p.Gender);
 
         // Optional FK relationships to GeoNames tables — no cascade delete (geo data is shared)
+        // NoAction required: SQL Server rejects multiple SetNull cascade paths on the same table
         builder.HasOne(p => p.Country)
             .WithMany()
             .HasForeignKey(p => p.CountryGeonameId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(p => p.State)
             .WithMany()
             .HasForeignKey(p => p.StateGeonameId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(p => p.City)
             .WithMany()
             .HasForeignKey(p => p.CityGeonameId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
