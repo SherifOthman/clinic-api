@@ -14,9 +14,4 @@ public class Appointment : AuditableEntity, INoAuditLog
     public short QueueNumber { get; set; }
     public AppointmentStatus Status { get; set; }
     public Guid? InvoiceId { get; set; }
-
-    public bool IsPending => Status == AppointmentStatus.Pending;
-    public bool IsConfirmed => Status == AppointmentStatus.Confirmed;
-    public bool IsCompleted => Status == AppointmentStatus.Completed;
-    public bool IsCancelled => Status == AppointmentStatus.Cancelled;
 }
