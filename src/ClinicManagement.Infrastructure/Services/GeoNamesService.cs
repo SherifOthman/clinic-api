@@ -20,7 +20,7 @@ namespace ClinicManagement.Infrastructure.Services;
 /// FILES USED:
 ///   countryInfo.txt       — list of all countries (~270 KB)
 ///   admin1CodesASCII.txt  — list of all states/governorates (~120 KB)
-///   cities1000.zip        — cities with population > 1000 (~10 MB zip)
+///   allCountries.zip      — all GeoNames features (~1.5 GB zip), filtered to feature class P
 ///   ar_names.tsv          — Arabic names extracted from GeoNames (~14 MB)
 ///
 /// WHERE FILES ARE STORED:
@@ -146,27 +146,32 @@ public class GeoNamesService : IGeoNamesService
     }
 
     /// <summary>
-    /// Returns cities from cities1000.zip with English and Arabic names.
+    /// Returns cities from allCountries.zip filtered to populated places (feature class P).
     ///
-    /// cities1000.txt columns (tab-separated, 19 columns total):
+    /// allCountries.txt columns (tab-separated, 19 columns total):
     ///   [0]  GeoNames ID     (e.g. 360630)
     ///   [1]  English name    (e.g. "El-Burg")
+    ///   [6]  Feature class   (e.g. "P" — populated place)
     ///   [7]  Feature code    (e.g. "PPLA2" — type of place)
     ///   [8]  Country code    (e.g. "EG")
     ///   [10] Admin1 code     (e.g. "11")
     ///   [14] Population      (e.g. 52000)
     ///
-    /// WHICH CITIES ARE INCLUDED:
+    /// WHICH CITIES ARE INCLUDED (feature class P only):
     ///   - PPLC  = capital city
     ///   - PPLA  = state capital
     ///   - PPLA2 = district capital
     ///   - PPLA3 = sub-district capital
     ///   - PPLA4 = minor administrative seat
-    ///   - PPL   = populated place with population >= 50,000
+    ///   - PPL   = populated place (all, since allCountries has accurate data)
+    ///   - PPLX  = section of populated place (neighborhoods/districts)
+    ///
+    /// allCountries.zip is ~1.5GB but we only keep feature class P rows,
+    /// which reduces the working set significantly.
     /// </summary>
     public async Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
-        var lines   = await ReadZipFileAsync("cities1000.zip", "cities1000.txt", ct);
+        var lines   = await ReadZipFileAsync("allCountries.zip", "allCountries.txt", ct);
         var arNames = await GetArabicNamesAsync(ct);
 
         // Build a map: "CC.ADM1CODE" → state GeoNames ID  (e.g. "EG.11" → 349401)
@@ -181,9 +186,9 @@ public class GeoNamesService : IGeoNamesService
                 admin1Map[cols[0].Trim()] = gId;
         }
 
-        // Feature codes that always qualify as a city regardless of population
-        var capitalCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4" };
+        // Feature codes for populated places we want to include
+        var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPL", "PPLX" };
 
         var result = new List<GeoNamesCityDump>();
 
@@ -195,16 +200,15 @@ public class GeoNamesService : IGeoNamesService
             if (cols.Length < 15) continue;
             if (!int.TryParse(cols[0].Trim(), out var geonameId)) continue;
 
-            var nameEn      = cols[1].Trim();
-            var fcode       = cols[7].Trim();  // feature code
-            var countryCode = cols[8].Trim();
-            var admin1Code  = cols[10].Trim();
-            long.TryParse(cols[14].Trim(), out var population);
+            var featureClass = cols[6].Trim();  // feature class (P, A, H, etc.)
+            var fcode        = cols[7].Trim();  // feature code
+            var countryCode  = cols[8].Trim();
+            var admin1Code   = cols[10].Trim();
+            var nameEn       = cols[1].Trim();
 
-            // Decide whether to include this city
-            var isCapitalType  = capitalCodes.Contains(fcode);
-            var isLargeEnough  = fcode == "PPL" && population >= 50_000;
-            if (!isCapitalType && !isLargeEnough) continue;
+            // Only populated places (feature class P) with known codes
+            if (featureClass != "P") continue;
+            if (!includedCodes.Contains(fcode)) continue;
 
             // Look up the parent state using "CC.ADM1CODE" key (e.g. "EG.11")
             var admin1Key = $"{countryCode}.{admin1Code}";
