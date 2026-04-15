@@ -44,7 +44,7 @@ try
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
-            await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
+            // GeoLocation seeding runs in the background — see GeoLocationBackgroundSeeder
 
             Log.Information("Database seeded successfully");
         }
