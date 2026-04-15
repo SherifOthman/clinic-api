@@ -25,7 +25,7 @@ public class CreateBranchHandlerTests
         _currentUserMock.Setup(x => x.GetRequiredClinicId()).Returns(clinicId);
 
         var result = await _handler.Handle(
-            new CreateBranchCommand("North Branch", "123 North St", 1, 2, 3), default);
+            new CreateBranchCommand("North Branch", "123 North St", 1, 2, []), default);
 
         result.IsSuccess.Should().BeTrue();
 

@@ -67,7 +67,7 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             var staff = new Domain.Entities.Staff { UserId = userId, ClinicId = clinic.Id, IsActive = true };
             await _uow.Staff.AddAsync(staff);
 
-            await _uow.DoctorProfiles.AddAsync(new DoctorProfile
+            await _uow.DoctorProfiles.AddAsync(new Doctor
             {
                 StaffId          = staff.Id,
                 SpecializationId = request.SpecializationId,

@@ -13,6 +13,6 @@ public class DoctorWorkingDay : BaseEntity
     public bool IsAvailable { get; set; } = true;
 
     // Navigation properties
-    public DoctorProfile DoctorProfile { get; set; } = null!;
+    public Doctor DoctorProfile { get; set; } = null!;
     public ClinicBranch ClinicBranch { get; set; } = null!;
 }

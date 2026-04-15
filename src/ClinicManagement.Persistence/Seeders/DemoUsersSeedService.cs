@@ -132,7 +132,7 @@ public class DemoUsersSeedService
 
         var ownerStaff = new Staff { UserId = owner.Id, ClinicId = clinic.Id, IsActive = true };
         _context.Set<Staff>().Add(ownerStaff);
-        _context.Set<DoctorProfile>().Add(new DoctorProfile { StaffId = ownerStaff.Id, SpecializationId = generalPractice?.Id });
+        _context.Set<Doctor>().Add(new Doctor { StaffId = ownerStaff.Id, SpecializationId = generalPractice?.Id });
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Demo clinic seeded (ClinicId: {Id})", clinic.Id);
@@ -170,7 +170,7 @@ public class DemoUsersSeedService
         var cardiology = await _context.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
         var staff = new Staff { UserId = doctor.Id, ClinicId = clinic.Id, IsActive = true };
         _context.Set<Staff>().Add(staff);
-        _context.Set<DoctorProfile>().Add(new DoctorProfile { StaffId = staff.Id, SpecializationId = cardiology?.Id });
+        _context.Set<Doctor>().Add(new Doctor { StaffId = staff.Id, SpecializationId = cardiology?.Id });
         await _context.SaveChangesAsync();
     }
 

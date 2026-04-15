@@ -24,4 +24,7 @@ public class Clinic : AuditableEntity
     // Navigation properties
     public User Owner { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
-}
+
+    public ICollection<ClinicBranch> Branches { get; set; } = new List<ClinicBranch>();
+
+    public ICollection<Doctor> Doctors { get; set; } = new List<Doctor>();}

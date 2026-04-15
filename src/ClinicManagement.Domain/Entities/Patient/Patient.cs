@@ -27,4 +27,5 @@ public class Patient : AuditableTenantEntity
     public GeoCity?    City    { get; set; }
     public ICollection<PatientPhone> Phones { get; set; } = new List<PatientPhone>();
     public ICollection<PatientChronicDisease> ChronicDiseases { get; set; } = new List<PatientChronicDisease>();
+    public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

@@ -9,5 +9,5 @@ public class Staff : AuditableTenantEntity
 
     // Navigation properties
     public User User { get; set; } = null!;
-    public DoctorProfile? DoctorProfile { get; set; }
+    public Doctor? DoctorProfile { get; set; }
 }

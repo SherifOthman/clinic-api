@@ -40,7 +40,7 @@ public class CompleteOnboardingHandlerTests
     }
 
     private CompleteOnboarding MakeCommand(bool provideMedical = true, Guid? specId = null) =>
-        new("Test Clinic", _plan.Id, "Main Branch", "123 Test St", 1, 2, 3, provideMedical, specId ?? _spec.Id);
+        new("Test Clinic", _plan.Id, "Main Branch", "123 Test St", 2, 3, provideMedical, specId ?? _spec.Id, null);
 
     [Fact]
     public async Task Handle_ShouldCreateClinicBranchStaffAndDoctorProfile_WhenDoctorOnboarding()
@@ -101,7 +101,7 @@ public class CompleteOnboardingHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenSubscriptionPlanNotFound()
     {
-        var cmd = new CompleteOnboarding("Clinic", Guid.NewGuid(), "Branch", "Addr", 1, 2, 3, false, null);
+        var cmd = new CompleteOnboarding("Clinic", Guid.NewGuid(), "Branch", "Addr", 1, 2, false, null, null);
 
         var result = await _handler.Handle(cmd, default);
 

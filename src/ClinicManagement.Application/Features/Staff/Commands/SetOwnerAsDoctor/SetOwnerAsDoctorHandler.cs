@@ -53,7 +53,7 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
             await _uow.Staff.AddAsync(existingStaff);
         }
 
-        await _uow.DoctorProfiles.AddAsync(new DoctorProfile
+        await _uow.DoctorProfiles.AddAsync(new Doctor
         {
             StaffId          = existingStaff.Id,
             SpecializationId = request.SpecializationId,

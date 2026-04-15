@@ -1,19 +1,26 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using FluentAssertions;
+using Moq;
 namespace ClinicManagement.Application.Tests.Patients;
 
 public class GetPatientsQueryHandlerTests
 {
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<ICurrentUserService> _currentUserMock = new();
+    private readonly Mock<IPhoneNormalizer> _phoneNormalizerMock = new();
     private readonly GetPatientsQueryHandler _handler;
 
     public GetPatientsQueryHandlerTests()
     {
-        _handler = new GetPatientsQueryHandler(_uow);
+        _currentUserMock.Setup(x => x.CountryCode).Returns("EG");
+        _phoneNormalizerMock.Setup(x => x.GetNationalNumber(It.IsAny<string>(), It.IsAny<string?>()))
+            .Returns((string p, string? _) => p);
+        _handler = new GetPatientsQueryHandler(_uow, _currentUserMock.Object, _phoneNormalizerMock.Object);
     }
 
     private Patient MakePatient(string name, Gender gender, string code, int chronicDiseaseCount = 0)

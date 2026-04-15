@@ -55,7 +55,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         await _uow.Staff.AddAsync(staff);
 
         if (invitation.Role == UserRoles.Doctor)
-            await _uow.DoctorProfiles.AddAsync(new DoctorProfile { StaffId = staff.Id, SpecializationId = invitation.SpecializationId });
+            await _uow.DoctorProfiles.AddAsync(new Doctor { StaffId = staff.Id, SpecializationId = invitation.SpecializationId });
 
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();

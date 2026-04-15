@@ -16,8 +16,10 @@ public class ClinicBranch : AuditableTenantEntity
     public bool IsMainBranch { get; set; }
     public bool IsActive { get; set; } = true;
 
-    public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();
-
     // Navigation properties
     public Clinic Clinic { get; set; } = null!;
+    public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();
+    public ICollection<Appointment> Appointment { get; set; } = new List<Appointment>();
+    public ICollection<BranchVisitType> BranchVisitTypes { get; set; } = new List<BranchVisitType>();
+
 }

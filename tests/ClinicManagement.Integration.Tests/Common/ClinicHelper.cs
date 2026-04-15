@@ -73,9 +73,9 @@ public static class ClinicHelper
             ClinicId = clinic.Id,
             Name = "Main Branch",
             AddressLine = "123 Test St",
-            CountryGeoNameId = 1,
-            StateGeoNameId = 2,
-            CityGeoNameId = 3,
+            
+            StateGeonameId = 2,
+            CityGeonameId = 3,
             IsMainBranch = true,
             IsActive = true,
         });

@@ -1,21 +1,27 @@
 using ClinicManagement.Application.Abstractions.Data;
-using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using FluentAssertions;
+using Moq;
 
 namespace ClinicManagement.Application.Tests.Patients;
 
 public class UpdatePatientHandlerTests
 {
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<ICurrentUserService> _currentUserMock = new();
+    private readonly Mock<IPhoneNormalizer> _phoneNormalizerMock = new();
     private readonly UpdatePatientCommandHandler _handler;
 
     public UpdatePatientHandlerTests()
     {
-        _handler = new UpdatePatientCommandHandler(_uow);
+        _currentUserMock.Setup(x => x.CountryCode).Returns("EG");
+        _phoneNormalizerMock.Setup(x => x.GetNationalNumber(It.IsAny<string>(), It.IsAny<string?>()))
+            .Returns((string p, string? _) => p);
+        _handler = new UpdatePatientCommandHandler(_uow, _currentUserMock.Object, _phoneNormalizerMock.Object);
     }
 
     private Patient MakePatient() => new()
@@ -62,7 +68,7 @@ public class UpdatePatientHandlerTests
 
         await _handler.Handle(new UpdatePatientCommand(
             patient.Id, "Name", "1990-01-01", "Male", null, null, null, null,
-            [new PhoneNumberDto("+966500000001"), new PhoneNumberDto("+966500000002")],
+            ["+966500000001", "+966500000002"],
             null), default);
 
         var detail = await _uow.Patients.GetDetailAsync(patient.Id, false);

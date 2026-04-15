@@ -16,7 +16,7 @@ public class SaveWorkingDaysHandlerTests
         _handler = new SaveWorkingDaysHandler(_uow);
     }
 
-    private async Task<(Domain.Entities.Staff staff, DoctorProfile dp)> SeedDoctorAsync()
+    private async Task<(Domain.Entities.Staff staff, Doctor dp, Guid branchId)> SeedDoctorAsync()
     {
         var spec  = TestHandlerHelpers.CreateTestSpecialization();
         await _uow.Specializations.AddAsync(spec);
@@ -26,20 +26,23 @@ public class SaveWorkingDaysHandlerTests
 
         var dp = TestHandlerHelpers.CreateTestDoctorProfile(staffId: staff.Id, specializationId: spec.Id);
         await _uow.DoctorProfiles.AddAsync(dp);
-        await _uow.Branches.AddAsync(new ClinicBranch
+
+        var branch = new ClinicBranch
         {
             ClinicId = staff.ClinicId, Name = "Main Branch", AddressLine = "123 Test St",
-            CountryGeoNameId = 1, StateGeoNameId = 2, CityGeoNameId = 3,
+            StateGeonameId = 2, CityGeonameId = 3,
             IsMainBranch = true, IsActive = true,
-        });
+        };
+        await _uow.Branches.AddAsync(branch);
         await _uow.SaveChangesAsync();
-        return (staff, dp);
+        return (staff, dp, branch.Id);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenDoctorProfileNotFound()
     {
-        var result = await _handler.Handle(new SaveWorkingDaysCommand(Guid.NewGuid(), []), default);
+        var result = await _handler.Handle(
+            new SaveWorkingDaysCommand(Guid.NewGuid(), Guid.NewGuid(), []), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -56,9 +59,9 @@ public class SaveWorkingDaysHandlerTests
         var dp = TestHandlerHelpers.CreateTestDoctorProfile(staffId: staff.Id, specializationId: spec.Id);
         await _uow.DoctorProfiles.AddAsync(dp);
         await _uow.SaveChangesAsync();
-        // No branch added
 
-        var result = await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, []), default);
+        var result = await _handler.Handle(
+            new SaveWorkingDaysCommand(staff.Id, Guid.NewGuid(), []), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -66,9 +69,9 @@ public class SaveWorkingDaysHandlerTests
     [Fact]
     public async Task Handle_ShouldSaveWorkingDays()
     {
-        var (staff, dp) = await SeedDoctorAsync();
+        var (staff, dp, branchId) = await SeedDoctorAsync();
 
-        var result = await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, [
+        var result = await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
             new(Day: 1, StartTime: "09:00", EndTime: "17:00", IsAvailable: true),
             new(Day: 2, StartTime: "09:00", EndTime: "17:00", IsAvailable: false),
         ]), default);
@@ -84,15 +87,15 @@ public class SaveWorkingDaysHandlerTests
     [Fact]
     public async Task Handle_ShouldReplaceExistingDays_OnSecondSave()
     {
-        var (staff, dp) = await SeedDoctorAsync();
+        var (staff, dp, branchId) = await SeedDoctorAsync();
 
-        await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, [
+        await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
             new(1, "09:00", "17:00", true),
             new(2, "09:00", "17:00", true),
             new(3, "09:00", "17:00", true),
         ]), default);
 
-        var result = await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, [
+        var result = await _handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
             new(5, "10:00", "14:00", true),
         ]), default);
 

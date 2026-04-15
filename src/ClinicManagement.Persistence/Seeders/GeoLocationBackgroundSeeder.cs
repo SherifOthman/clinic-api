@@ -24,8 +24,8 @@ public class GeoLocationBackgroundSeeder : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Small delay so the app finishes starting up before we begin the heavy work
-        await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+        // Wait for the app to fully start and DB migration to complete
+        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
 
         _logger.LogInformation("GeoLocation background seeder starting...");
 

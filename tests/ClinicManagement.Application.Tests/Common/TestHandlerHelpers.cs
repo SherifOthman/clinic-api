@@ -68,13 +68,13 @@ public static class TestHandlerHelpers
             ClinicId = clinicId ?? Guid.NewGuid(),
             Name = "Main Branch",
             AddressLine = "123 Test Street",
-            CountryGeoNameId = 1, StateGeoNameId = 2, CityGeoNameId = 3,
+            StateGeonameId = 2, CityGeonameId = 3,
             IsMainBranch = isMainBranch, IsActive = true,
         };
 
     public static Domain.Entities.Staff CreateTestStaff(Guid? userId = null, Guid? clinicId = null) =>
         new() { UserId = userId ?? Guid.NewGuid(), ClinicId = clinicId ?? Guid.NewGuid(), IsActive = true };
 
-    public static DoctorProfile CreateTestDoctorProfile(Guid? staffId = null, Guid? specializationId = null) =>
+    public static Doctor CreateTestDoctorProfile(Guid? staffId = null, Guid? specializationId = null) =>
         new() { StaffId = staffId ?? Guid.NewGuid(), SpecializationId = specializationId ?? Guid.NewGuid(), CreatedAt = DateTimeOffset.UtcNow };
 }
