@@ -2146,8 +2146,7 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasOne("ClinicManagement.Domain.Entities.Doctor", "Doctor")
                         .WithMany("VisitTypes")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Branch");
 

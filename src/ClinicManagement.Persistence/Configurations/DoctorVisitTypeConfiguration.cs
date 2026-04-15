@@ -15,6 +15,7 @@ public class DoctorVisitTypeConfiguration : IEntityTypeConfiguration<DoctorVisit
         builder.HasOne(v => v.Doctor)
             .WithMany(d => d.VisitTypes)
             .HasForeignKey(v => v.DoctorId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(v => v.Branch)

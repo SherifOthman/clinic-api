@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260415194316_InitialCreate")]
+    [Migration("20260415195418_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -2149,8 +2149,7 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasOne("ClinicManagement.Domain.Entities.Doctor", "Doctor")
                         .WithMany("VisitTypes")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Branch");
 
