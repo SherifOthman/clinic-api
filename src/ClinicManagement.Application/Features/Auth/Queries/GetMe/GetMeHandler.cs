@@ -20,11 +20,14 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 
         string? specializationNameEn = null;
         string? specializationNameAr = null;
+        Guid? staffId = null;
         if (roles.Any(r => r.RoleName == Roles.Doctor))
         {
             var spec = await _uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
             specializationNameEn = spec?.NameEn;
             specializationNameAr = spec?.NameAr;
+            var staff = await _uow.Staff.GetByUserIdAsync(request.UserId, cancellationToken);
+            staffId = staff?.Id;
         }
 
         return new GetMeDto(
@@ -39,7 +42,8 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             OnboardingCompleted:  hasClinic,
             SpecializationNameEn: specializationNameEn,
             SpecializationNameAr: specializationNameAr,
-            Gender:               profile.Gender
+            Gender:               profile.Gender,
+            StaffId:              staffId
         );
     }
 }

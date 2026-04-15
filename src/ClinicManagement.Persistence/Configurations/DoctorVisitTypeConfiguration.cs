@@ -20,6 +20,7 @@ public class DoctorVisitTypeConfiguration : IEntityTypeConfiguration<DoctorVisit
         builder.HasOne(v => v.Branch)
             .WithMany(b => b.DoctorVisitTypes)
             .HasForeignKey(v => v.ClinicBranchId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasIndex(v => new { v.DoctorId, v.ClinicBranchId, v.IsActive });

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migrations
+namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -287,9 +287,6 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
                     b.Property<Guid>("ClinicId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ClinicId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -320,8 +317,6 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ClinicId1");
 
                     b.HasIndex("ClinicId", "IsMainBranch");
 
@@ -605,9 +600,6 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("DoctorId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time");
 
@@ -625,8 +617,6 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
                     b.HasIndex("ClinicBranchId");
 
                     b.HasIndex("DoctorId");
-
-                    b.HasIndex("DoctorId1");
 
                     b.ToTable("DoctorWorkingDay");
                 });
@@ -2081,14 +2071,10 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranch", b =>
                 {
                     b.HasOne("ClinicManagement.Domain.Entities.Clinic", "Clinic")
-                        .WithMany()
+                        .WithMany("Branches")
                         .HasForeignKey("ClinicId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("ClinicManagement.Domain.Entities.Clinic", null)
-                        .WithMany("Branches")
-                        .HasForeignKey("ClinicId1");
 
                     b.Navigation("Clinic");
                 });
@@ -2155,8 +2141,7 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
                     b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", "Branch")
                         .WithMany("DoctorVisitTypes")
                         .HasForeignKey("ClinicBranchId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ClinicManagement.Domain.Entities.Doctor", "Doctor")
                         .WithMany("VisitTypes")
@@ -2177,13 +2162,9 @@ namespace ClinicManagement.Persistence.src.ClinicManagement.Persistence.Migratio
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ClinicManagement.Domain.Entities.Doctor", "DoctorProfile")
-                        .WithMany()
+                        .WithMany("WorkingDays")
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("ClinicManagement.Domain.Entities.Doctor", null)
-                        .WithMany("WorkingDays")
-                        .HasForeignKey("DoctorId1");
 
                     b.Navigation("ClinicBranch");
 

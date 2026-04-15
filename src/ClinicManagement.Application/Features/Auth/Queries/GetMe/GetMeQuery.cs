@@ -16,5 +16,6 @@ public record GetMeDto(
     bool OnboardingCompleted,
     string? SpecializationNameEn,
     string? SpecializationNameAr,
-    string Gender
+    string Gender,
+    Guid? StaffId
 );

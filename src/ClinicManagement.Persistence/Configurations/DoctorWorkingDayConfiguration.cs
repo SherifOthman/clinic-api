@@ -8,10 +8,9 @@ public class DoctorWorkingDayConfiguration : IEntityTypeConfiguration<DoctorWork
 {
     public void Configure(EntityTypeBuilder<DoctorWorkingDay> builder)
     {
-        // DoctorProfile nav — optional to avoid query filter conflict.
-        // DoctorProfile has a soft-delete filter; making this optional suppresses the warning.
+        // DoctorProfile nav — wire to Doctor.WorkingDays collection to avoid shadow FK.
         builder.HasOne(wd => wd.DoctorProfile)
-            .WithMany()
+            .WithMany(d => d.WorkingDays)
             .HasForeignKey(wd => wd.DoctorId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);

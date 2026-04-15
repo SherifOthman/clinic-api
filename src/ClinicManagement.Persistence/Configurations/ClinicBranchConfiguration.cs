@@ -15,7 +15,7 @@ public class ClinicBranchConfiguration : IEntityTypeConfiguration<ClinicBranch>
 
         // Clinic nav property — used for branch→clinic traversal
         builder.HasOne(cb => cb.Clinic)
-            .WithMany()
+            .WithMany(c => c.Branches)
             .HasForeignKey(cb => cb.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
 
