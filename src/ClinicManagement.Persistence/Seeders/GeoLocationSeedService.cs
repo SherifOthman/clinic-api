@@ -114,13 +114,14 @@ public class GeoLocationSeedService
         var allCities = await _geoNames.GetCitiesAsync(ct);
 
         var newCities = allCities
-            .Where(c => !existingCityIds.Contains(c.GeonameId)     // not already in DB
-                     && validStateIds.Contains(c.StateGeonameId))   // parent state exists
+            .Where(c => !existingCityIds.Contains(c.GeonameId)
+                     && validStateIds.Contains(c.StateGeonameId))
+            .GroupBy(c => c.GeonameId)          // deduplicate — allCountries can have same ID twice
+            .Select(g => g.First())
             .Select(c => new GeoCity
             {
                 GeonameId      = c.GeonameId,
                 StateGeonameId = c.StateGeonameId,
-                // Truncate to 150 chars as a safety net (column max length)
                 NameEn = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
                 NameAr = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
             })

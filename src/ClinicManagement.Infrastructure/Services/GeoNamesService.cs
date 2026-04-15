@@ -188,8 +188,9 @@ public class GeoNamesService : IGeoNamesService
         var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPL", "PPLX" };
 
-        var result  = new List<GeoNamesCityDump>();
-        var zipPath = Path.Combine(_cacheDir, "allCountries.zip");
+        var result   = new List<GeoNamesCityDump>();
+        var seenIds  = new HashSet<int>();  // prevent duplicates from allCountries.txt
+        var zipPath  = Path.Combine(_cacheDir, "allCountries.zip");
 
         // Download if not cached
         if (!File.Exists(zipPath))
@@ -237,7 +238,8 @@ public class GeoNamesService : IGeoNamesService
             if (!admin1Map.TryGetValue(admin1Key, out var stateGeonameId)) continue;
 
             var nameAr = arNames.GetValueOrDefault(geonameId, nameEn);
-            result.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
+            if (seenIds.Add(geonameId))  // Add returns false if already present
+                result.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
 
             if (++lineCount % 500_000 == 0)
                 _logger.LogInformation("Cities: scanned {Lines:N0} lines, {Cities:N0} populated places found so far...", lineCount, result.Count);
