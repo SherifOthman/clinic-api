@@ -1,7 +1,5 @@
-﻿using ClinicManagement.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ClinicManagement.Domain.Common;
+using MediatR;
 
 namespace ClinicManagement.Application.Features.Appointments.Commands;
 
@@ -11,4 +9,4 @@ public record CreateQueueNumberAppointmentCommand(
     Guid DoctorId,
     DateOnly Date,
     Guid DoctorVisitTypeId,
-    decimal? DiscountPercent);
+    decimal? DiscountPercent) : IRequest<Result<Guid>>;

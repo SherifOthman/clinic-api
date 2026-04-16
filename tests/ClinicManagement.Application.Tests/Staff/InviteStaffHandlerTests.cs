@@ -3,12 +3,15 @@ using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Tests.Common;
-using ClinicManagement.Domain.Common.Constants;
 using FluentAssertions;
 using Moq;
 
 namespace ClinicManagement.Application.Tests.Staff;
 
+/// <summary>
+/// Tests for InviteStaffHandler business logic only.
+/// Role/specialization validation is tested in InviteStaffValidatorTests.
+/// </summary>
 public class InviteStaffHandlerTests
 {
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
@@ -23,27 +26,6 @@ public class InviteStaffHandlerTests
         _handler = new InviteStaffHandler(_uow, _currentUserMock.Object, _emailMock.Object);
     }
 
-    [Theory]
-    [InlineData("SuperAdmin")]
-    [InlineData("ClinicOwner")]
-    [InlineData("InvalidRole")]
-    public async Task Handle_ShouldFail_WhenRoleIsNotAllowed(string role)
-    {
-        var result = await _handler.Handle(new InviteStaffCommand(role, "test@test.com"), default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_ERROR);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldFail_WhenDoctorSpecializationNotFound()
-    {
-        var result = await _handler.Handle(new InviteStaffCommand("Doctor", "doc@test.com", Guid.NewGuid()), default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be(ErrorCodes.NOT_FOUND);
-    }
-
     [Fact]
     public async Task Handle_ShouldSucceed_AndCreateInvitation_ForReceptionist()
     {
@@ -52,14 +34,13 @@ public class InviteStaffHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Value!.Token.Should().NotBeNullOrEmpty();
 
-        // Verify via GetByIdAsync — no join needed
         var invitation = await _uow.Invitations.GetByIdAsync(result.Value.InvitationId);
         invitation!.Email.Should().Be("rec@test.com");
         invitation.Role.Should().Be("Receptionist");
     }
 
     [Fact]
-    public async Task Handle_ShouldSucceed_ForDoctorWithValidSpecialization()
+    public async Task Handle_ShouldSucceed_ForDoctorWithSpecialization()
     {
         var spec = TestHandlerHelpers.CreateTestSpecialization();
         await _uow.Specializations.AddAsync(spec);

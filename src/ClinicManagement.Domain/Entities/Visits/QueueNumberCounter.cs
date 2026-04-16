@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ClinicManagement.Domain.Common;
 
-namespace ClinicManagement.Domain.Entities.Appointment;
+namespace ClinicManagement.Domain.Entities;
 
-public class QueueNumberCounter
+public class QueueNumberCounter : BaseEntity
 {
     public Guid DoctorId { get; set; }
     public Guid ClinicBranchId { get; set; }
