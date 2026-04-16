@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260415202554_InitialCreate")]
+    [Migration("20260416184256_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -30,11 +30,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AppointmentNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("ClinicBranchId")
                         .HasColumnType("uniqueidentifier");
@@ -324,50 +319,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("ClinicId", "IsMainBranch");
 
                     b.ToTable("ClinicBranch");
-                });
-
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranchAppointmentPrice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AppointmentTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ClinicBranchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClinicBranchId");
-
-                    b.ToTable("ClinicBranchAppointmentPrice");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranchPhoneNumber", b =>
@@ -2077,15 +2028,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Clinic");
-                });
-
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranchAppointmentPrice", b =>
-                {
-                    b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", null)
-                        .WithMany()
-                        .HasForeignKey("ClinicBranchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicBranchPhoneNumber", b =>

@@ -922,33 +922,6 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ClinicBranchAppointmentPrice",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AppointmentTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ClinicBranchAppointmentPrice", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ClinicBranchAppointmentPrice_ClinicBranch_ClinicBranchId",
-                        column: x => x.ClinicBranchId,
-                        principalTable: "ClinicBranch",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ClinicBranchPhoneNumber",
                 columns: table => new
                 {
@@ -1112,7 +1085,6 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AppointmentNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -1242,11 +1214,6 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "IX_ClinicBranch_ClinicId_IsMainBranch",
                 table: "ClinicBranch",
                 columns: new[] { "ClinicId", "IsMainBranch" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ClinicBranchAppointmentPrice_ClinicBranchId",
-                table: "ClinicBranchAppointmentPrice",
-                column: "ClinicBranchId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClinicBranchPhoneNumber_ClinicBranchId",
@@ -1507,9 +1474,6 @@ namespace ClinicManagement.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "AuditLogs");
-
-            migrationBuilder.DropTable(
-                name: "ClinicBranchAppointmentPrice");
 
             migrationBuilder.DropTable(
                 name: "ClinicBranchPhoneNumber");
