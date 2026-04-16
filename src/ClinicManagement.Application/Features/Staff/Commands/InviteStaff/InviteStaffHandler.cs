@@ -3,7 +3,6 @@ using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Staff.Dtos;
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 
@@ -26,15 +25,6 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
     {
         var currentUserId = _currentUserService.GetRequiredUserId();
         var clinicId      = _currentUserService.GetRequiredClinicId();
-
-        if (request.Role != UserRoles.Doctor && request.Role != UserRoles.Receptionist)
-            return Result.Failure<InviteStaffResponseDto>(ErrorCodes.VALIDATION_ERROR, "Role must be either Doctor or Receptionist");
-
-        if (request.Role == UserRoles.Doctor && request.SpecializationId.HasValue)
-        {
-            if (!await _uow.Reference.SpecializationExistsAsync(request.SpecializationId.Value, cancellationToken))
-                return Result.Failure<InviteStaffResponseDto>(ErrorCodes.NOT_FOUND, "Specialization not found");
-        }
 
         var invitation = StaffInvitation.Create(clinicId, request.Email, request.Role, currentUserId, request.SpecializationId);
         await _uow.Invitations.AddAsync(invitation);

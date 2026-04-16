@@ -1,11 +1,12 @@
-using FluentValidation;
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Common.Validators;
+using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
 public class RegisterValidator : AbstractValidator<RegisterCommand>
 {
-    public RegisterValidator()
+    public RegisterValidator(IUnitOfWork uow)
     {
         RuleFor(x => x.FirstName)
             .NotEmpty()
@@ -18,12 +19,18 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
         RuleFor(x => x.UserName)
             .NotEmpty()
             .MinimumLength(3)
-            .MaximumLength(50);
+            .MaximumLength(50)
+            .MustAsync(async (username, ct) => !await uow.Users.AnyByUsernameAsync(username, ct))
+            .WithErrorCode("USERNAME_ALREADY_EXISTS")
+            .WithMessage("Username is already taken");
 
         RuleFor(x => x.Email)
             .NotEmpty()
             .EmailAddress(FluentValidation.Validators.EmailValidationMode.AspNetCoreCompatible)
-            .MaximumLength(100);
+            .MaximumLength(100)
+            .MustAsync(async (email, ct) => !await uow.Users.AnyByEmailAsync(email, ct))
+            .WithErrorCode("EMAIL_ALREADY_EXISTS")
+            .WithMessage("Email is already registered");
 
         RuleFor(x => x.Password)
             .NotEmpty()

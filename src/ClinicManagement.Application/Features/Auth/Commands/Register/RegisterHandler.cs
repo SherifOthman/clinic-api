@@ -34,13 +34,6 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 
     public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        if (await _uow.Users.AnyByEmailAsync(request.Email, cancellationToken))
-            return Result.Failure(ErrorCodes.EMAIL_ALREADY_EXISTS, "Email is already registered");
-
-        if (!string.IsNullOrEmpty(request.UserName) &&
-            await _uow.Users.AnyByUsernameAsync(request.UserName, cancellationToken))
-            return Result.Failure(ErrorCodes.USERNAME_ALREADY_EXISTS, "Username is already taken");
-
         var user = new User
         {
             Email          = request.Email,
