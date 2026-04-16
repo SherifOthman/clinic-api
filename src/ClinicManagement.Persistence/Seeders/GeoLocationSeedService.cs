@@ -36,6 +36,15 @@ public class GeoLocationSeedService
     {
         _logger.LogInformation("Starting GeoLocation seed...");
 
+        // ── Fast exit: if cities are already seeded, nothing to do ────────────
+        // Checking city count is cheap — avoids reading the 1.5GB zip on every restart.
+        var cityCount = await _db.GeoCities.CountAsync(ct);
+        if (cityCount > 0)
+        {
+            _logger.LogInformation("GeoLocation already seeded ({Count:N0} cities). Skipping.", cityCount);
+            return;
+        }
+
         // ── Step 1: Countries ─────────────────────────────────────────────────
 
         // Load IDs already in the database so we can skip them

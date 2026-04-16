@@ -8,7 +8,6 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
 {
     public void Configure(EntityTypeBuilder<Appointment> builder)
     {
-        builder.Property(a => a.AppointmentNumber).HasMaxLength(50).IsRequired();
         builder.Property(a => a.Price).HasColumnType("decimal(18,2)").IsRequired();
         builder.Property(a => a.DiscountPercent).HasColumnType("decimal(5,2)");
         builder.Property(a => a.FinalPrice).HasColumnType("decimal(18,2)").IsRequired();

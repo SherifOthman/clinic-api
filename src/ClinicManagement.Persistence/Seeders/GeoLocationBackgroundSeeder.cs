@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,17 @@ public class GeoLocationBackgroundSeeder : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Quick pre-check before the delay — if already seeded, exit immediately.
+        using (var quickScope = _scopeFactory.CreateScope())
+        {
+            var db = quickScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            if (await db.GeoCities.AnyAsync(stoppingToken))
+            {
+                _logger.LogInformation("GeoLocation already seeded. Background seeder skipped.");
+                return;
+            }
+        }
+
         // Wait for the app to fully start and DB migration to complete
         await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
 
