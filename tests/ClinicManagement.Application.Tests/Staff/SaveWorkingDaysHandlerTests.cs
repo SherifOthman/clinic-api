@@ -4,6 +4,7 @@ using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Infrastructure.Services;
 using FluentAssertions;
 using Moq;
 
@@ -13,21 +14,25 @@ public class SaveWorkingDaysHandlerTests
 {
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
 
-    /// <summary>Creates a handler where the caller is a clinic owner (can edit any doctor).</summary>
+    private SaveWorkingDaysHandler CreateHandler(ICurrentUserService currentUser)
+    {
+        var permissions = new PermissionService(currentUser, _uow);
+        return new SaveWorkingDaysHandler(_uow, permissions);
+    }
+
     private SaveWorkingDaysHandler CreateHandlerAsOwner()
     {
         var svc = new Mock<ICurrentUserService>();
         svc.Setup(s => s.Roles).Returns([UserRoles.ClinicOwner]);
-        return new SaveWorkingDaysHandler(_uow, svc.Object);
+        return CreateHandler(svc.Object);
     }
 
-    /// <summary>Creates a handler where the caller is the doctor themselves.</summary>
     private SaveWorkingDaysHandler CreateHandlerAsDoctor(Guid userId)
     {
         var svc = new Mock<ICurrentUserService>();
         svc.Setup(s => s.Roles).Returns([UserRoles.Doctor]);
         svc.Setup(s => s.GetRequiredUserId()).Returns(userId);
-        return new SaveWorkingDaysHandler(_uow, svc.Object);
+        return CreateHandler(svc.Object);
     }
 
     private async Task<(Domain.Entities.Staff staff, Doctor dp, Guid branchId)> SeedDoctorAsync()
@@ -60,6 +65,7 @@ public class SaveWorkingDaysHandlerTests
             new SaveWorkingDaysCommand(Guid.NewGuid(), Guid.NewGuid(), []), default);
 
         result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCodes.NOT_FOUND);
     }
 
     [Fact]
@@ -85,7 +91,6 @@ public class SaveWorkingDaysHandlerTests
     public async Task Handle_ShouldSaveWorkingDays_AsDoctor_WhenCanSelfManage()
     {
         var (staff, dp, branchId) = await SeedDoctorAsync();
-        // dp.CanSelfManageSchedule defaults to true
         var handler = CreateHandlerAsDoctor(staff.UserId);
 
         var result = await handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
@@ -107,6 +112,21 @@ public class SaveWorkingDaysHandlerTests
             new SaveWorkingDaysCommand(staff.Id, branchId, []), default);
 
         result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCodes.FORBIDDEN);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldFail_AsDoctor_WhenEditingAnotherDoctorsSchedule()
+    {
+        var (staff, _, branchId) = await SeedDoctorAsync();
+        // Different user ID — not the owner of this staff record
+        var handler = CreateHandlerAsDoctor(Guid.NewGuid());
+
+        var result = await handler.Handle(
+            new SaveWorkingDaysCommand(staff.Id, branchId, []), default);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCodes.FORBIDDEN);
     }
 
     [Fact]

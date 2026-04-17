@@ -10,12 +10,12 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 public class SaveWorkingDaysHandler : IRequestHandler<SaveWorkingDaysCommand, Result>
 {
     private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly IPermissionService _permissions;
 
-    public SaveWorkingDaysHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public SaveWorkingDaysHandler(IUnitOfWork uow, IPermissionService permissions)
     {
         _uow         = uow;
-        _currentUser = currentUser;
+        _permissions = permissions;
     }
 
     public async Task<Result> Handle(SaveWorkingDaysCommand request, CancellationToken cancellationToken)
@@ -24,20 +24,10 @@ public class SaveWorkingDaysHandler : IRequestHandler<SaveWorkingDaysCommand, Re
         if (doctorProfileId == Guid.Empty)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Doctor profile not found for this staff member");
 
-        // Authorization: clinic owner can edit any doctor; doctor can only edit own if not locked
-        var isOwner = _currentUser.Roles.Contains(UserRoles.ClinicOwner);
-        if (!isOwner)
-        {
-            var staff = await _uow.Staff.GetByUserIdAsync(_currentUser.GetRequiredUserId(), cancellationToken);
-            if (staff?.Id != request.StaffId)
-                return Result.Failure(ErrorCodes.FORBIDDEN, "You can only manage your own schedule");
+        var permission = await _permissions.CanManageScheduleAsync(request.StaffId, cancellationToken);
+        if (!permission.IsAllowed)
+            return Result.Failure(ErrorCodes.FORBIDDEN, permission.DeniedReason!);
 
-            var doctor = await _uow.DoctorProfiles.GetByIdAsync(doctorProfileId, cancellationToken);
-            if (doctor is not null && !doctor.CanSelfManageSchedule)
-                return Result.Failure(ErrorCodes.FORBIDDEN, "Schedule management is locked by the clinic owner");
-        }
-
-        // Replace working days for this specific branch only
         var existing = await _uow.WorkingDays.GetEntitiesByDoctorProfileIdAsync(doctorProfileId, cancellationToken);
         var branchExisting = existing.Where(d => d.ClinicBranchId == request.BranchId).ToList();
         _uow.WorkingDays.RemoveRange(branchExisting);

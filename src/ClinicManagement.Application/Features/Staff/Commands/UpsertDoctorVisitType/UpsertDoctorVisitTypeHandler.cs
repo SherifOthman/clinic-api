@@ -10,12 +10,12 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTypeCommand, Result<Guid>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly IPermissionService _permissions;
 
-    public UpsertDoctorVisitTypeHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public UpsertDoctorVisitTypeHandler(IUnitOfWork uow, IPermissionService permissions)
     {
         _uow         = uow;
-        _currentUser = currentUser;
+        _permissions = permissions;
     }
 
     public async Task<Result<Guid>> Handle(UpsertDoctorVisitTypeCommand request, CancellationToken ct)
@@ -24,18 +24,9 @@ public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTyp
         if (doctorId == Guid.Empty)
             return Result.Failure<Guid>(ErrorCodes.NOT_FOUND, "Doctor profile not found");
 
-        // Authorization: doctor can only edit own schedule if CanSelfManageSchedule = true
-        var isOwner = _currentUser.Roles.Contains(UserRoles.ClinicOwner);
-        if (!isOwner)
-        {
-            var staff = await _uow.Staff.GetByUserIdAsync(_currentUser.GetRequiredUserId(), ct);
-            if (staff?.Id != request.StaffId)
-                return Result.Failure<Guid>(ErrorCodes.FORBIDDEN, "You can only manage your own visit types");
-
-            var doctor = await _uow.DoctorProfiles.GetByIdAsync(doctorId, ct);
-            if (doctor is not null && !doctor.CanSelfManageSchedule)
-                return Result.Failure<Guid>(ErrorCodes.FORBIDDEN, "Schedule management is locked by the clinic owner");
-        }
+        var permission = await _permissions.CanManageVisitTypesAsync(request.StaffId, ct);
+        if (!permission.IsAllowed)
+            return Result.Failure<Guid>(ErrorCodes.FORBIDDEN, permission.DeniedReason!);
 
         // Update existing
         if (request.VisitTypeId.HasValue)
@@ -55,12 +46,12 @@ public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTyp
         // Create new
         var visitType = new DoctorVisitType
         {
-            DoctorId      = doctorId,
+            DoctorId       = doctorId,
             ClinicBranchId = request.BranchId,
-            NameAr        = request.NameAr,
-            NameEn        = request.NameEn,
-            Price         = request.Price,
-            IsActive      = request.IsActive,
+            NameAr         = request.NameAr,
+            NameEn         = request.NameEn,
+            Price          = request.Price,
+            IsActive       = request.IsActive,
         };
         _uow.DoctorVisitTypes.Add(visitType);
         await _uow.SaveChangesAsync(ct);
