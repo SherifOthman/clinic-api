@@ -15,15 +15,23 @@ namespace ClinicManagement.Application.Abstractions.Data;
 public interface IUnitOfWork
 {
     IPatientRepository Patients { get; }
+
+    // ── Old staff repositories (kept during migration) ────────────────────────
     IStaffRepository Staff { get; }
+    IDoctorProfileRepository DoctorProfiles { get; }
+    IWorkingDaysRepository WorkingDays { get; }
+    IDoctorVisitTypeRepository DoctorVisitTypes { get; }
+
+    // ── New repositories (use these going forward) ────────────────────────────
+    IClinicMemberRepository Members { get; }
+    IDoctorInfoRepository DoctorInfos { get; }
+    IDoctorScheduleRepository DoctorSchedules { get; }
+
     IInvitationRepository Invitations { get; }
     IClinicRepository Clinics { get; }
     IBranchRepository Branches { get; }
     IUserRepository Users { get; }
     IAuditLogRepository AuditLogs { get; }
-    IDoctorProfileRepository DoctorProfiles { get; }
-    IWorkingDaysRepository WorkingDays { get; }
-    IDoctorVisitTypeRepository DoctorVisitTypes { get; }
     IReferenceRepository Reference { get; }
     IClinicSubscriptionRepository ClinicSubscriptions { get; }
     IGeoLocationRepository GeoLocations { get; }
@@ -34,6 +42,5 @@ public interface IUnitOfWork
     IRepository<SubscriptionPlan> SubscriptionPlans { get; }
     IUserSeedRepository           UserEntities      { get; }
 
-    /// <summary>Persist all pending changes in one transaction.</summary>
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
