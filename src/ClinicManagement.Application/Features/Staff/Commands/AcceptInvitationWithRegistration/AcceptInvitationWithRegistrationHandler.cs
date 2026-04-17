@@ -28,6 +28,10 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
         var person = new Person { FirstName = request.FirstName, LastName = request.LastName, Gender = gender };
 
+        // Person must be persisted before UserManager.CreateAsync so the FK is satisfied
+        await _uow.Persons.AddAsync(person);
+        await _uow.SaveChangesAsync(cancellationToken);
+
         var user = new User
         {
             UserName       = request.UserName,
@@ -35,7 +39,6 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = true,
             PersonId       = person.Id,
-            Person         = person,
         };
 
         var createResult = await _userManager.CreateAsync(user, request.Password);

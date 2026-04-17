@@ -49,9 +49,9 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         {
             name = "North Branch",
             addressLine = "456 North Street",
-            countryGeoNameId = 1,
-            stateGeoNameId = 2,
-            cityGeoNameId = 3
+            stateGeonameId = 2,
+            cityGeonameId = 3,
+            phoneNumbers = Array.Empty<string>()
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -66,7 +66,7 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         var response = await _client.PostAsJsonAsync("/api/branches", new
         {
             // missing name and addressLine
-            countryGeoNameId = 1
+            stateGeonameId = 2
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -82,9 +82,9 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         {
             name = "South Branch",
             addressLine = "789 South Ave",
-            countryGeoNameId = 1,
-            stateGeoNameId = 2,
-            cityGeoNameId = 3
+            stateGeonameId = 2,
+            cityGeonameId = 3,
+            phoneNumbers = Array.Empty<string>()
         });
 
         var listResponse = await _client.GetAsync("/api/branches");
@@ -103,26 +103,24 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
         _client.SetBearerToken(token);
 
-        // Create a branch
         var createResponse = await _client.PostAsJsonAsync("/api/branches", new
         {
             name = "Branch To Update",
             addressLine = "Old Address",
-            countryGeoNameId = 1,
-            stateGeoNameId = 2,
-            cityGeoNameId = 3
+            stateGeonameId = 2,
+            cityGeonameId = 3,
+            phoneNumbers = Array.Empty<string>()
         });
         var branchId = (await createResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts))
             .GetString();
 
-        // Update it
         var updateResponse = await _client.PutAsJsonAsync($"/api/branches/{branchId}", new
         {
             name = "Updated Branch",
             addressLine = "New Address",
-            countryGeoNameId = 1,
-            stateGeoNameId = 2,
-            cityGeoNameId = 3
+            stateGeonameId = 2,
+            cityGeonameId = 3,
+            phoneNumbers = Array.Empty<string>()
         });
 
         updateResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -138,9 +136,9 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         {
             name = "Branch To Deactivate",
             addressLine = "Some Address",
-            countryGeoNameId = 1,
-            stateGeoNameId = 2,
-            cityGeoNameId = 3
+            stateGeonameId = 2,
+            cityGeonameId = 3,
+            phoneNumbers = Array.Empty<string>()
         });
         var branchId = (await createResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts))
             .GetString();

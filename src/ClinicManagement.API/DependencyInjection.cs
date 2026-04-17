@@ -24,6 +24,7 @@ public static class DependencyInjection
         AddOptions(services, configuration);
         AddCors(services, configuration);
         AddSwagger(services);
+
         services.AddRateLimiting();
 
         services.AddControllers();

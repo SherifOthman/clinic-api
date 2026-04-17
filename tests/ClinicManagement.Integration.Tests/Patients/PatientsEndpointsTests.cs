@@ -33,7 +33,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
         var response = await _factory.CreateClient().PostAsJsonAsync("/api/patients", new
         {
             fullName = "Test", dateOfBirth = "1990-01-01", gender = "Male",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000200" } },
+            phoneNumbers = new[] { "+966500000200" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -66,7 +66,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "Ahmed Ali",
             dateOfBirth = "1990-06-15",
             gender = "Male",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000300" } },
+            phoneNumbers = new[] { "+966500000300" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
@@ -99,7 +99,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "Sara Mohamed",
             dateOfBirth = "1985-03-20",
             gender = "Female",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000400" } },
+            phoneNumbers = new[] { "+966500000400" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
@@ -134,7 +134,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "To Delete",
             dateOfBirth = "1990-01-01",
             gender = "Male",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000500" } },
+            phoneNumbers = new[] { "+966500000500" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
@@ -161,7 +161,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "Original Name",
             dateOfBirth = "1990-01-01",
             gender = "Male",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000700" } },
+            phoneNumbers = new[] { "+966500000700" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
@@ -174,7 +174,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "Updated Name",
             dateOfBirth = "1990-01-01",
             gender = "Female",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000800" } },
+            phoneNumbers = new[] { "+966500000800" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
@@ -198,7 +198,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "Detail Patient",
             dateOfBirth = "1985-06-15",
             gender = "Female",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000900" } },
+            phoneNumbers = new[] { "+966500000900" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 

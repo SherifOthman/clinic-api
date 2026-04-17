@@ -26,6 +26,7 @@ public interface IUnitOfWork
     IRepository<ChronicDisease>   ChronicDiseases   { get; }
     IRepository<Specialization>   Specializations   { get; }
     IRepository<SubscriptionPlan> SubscriptionPlans { get; }
+    IRepository<Person>           Persons           { get; }
     IUserSeedRepository           UserEntities      { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);

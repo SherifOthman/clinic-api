@@ -70,7 +70,7 @@ public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
             fullName = "Recent Patient",
             dateOfBirth = "1990-01-01",
             gender = "Male",
-            phoneNumbers = new[] { new { phoneNumber = "+966500000600" } },
+            phoneNumbers = new[] { "+966500000600" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 

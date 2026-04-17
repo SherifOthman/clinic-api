@@ -1,14 +1,18 @@
+using System.Threading.RateLimiting;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence;
 using ClinicManagement.Infrastructure.Services;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Integration.Tests.Common;
 
@@ -53,6 +57,30 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
             services.AddScoped<IEmailService, NoOpEmailService>();
             services.AddScoped<IEmailTokenService, NoOpEmailTokenService>();
             services.AddScoped<SmtpEmailSender, NoOpSmtpEmailSender>();
+
+            // Disable rate limiting — remove all existing policy registrations and replace with unlimited
+            services.RemoveAll<IConfigureOptions<RateLimiterOptions>>();
+            services.RemoveAll<IPostConfigureOptions<RateLimiterOptions>>();
+            services.AddRateLimiter(options =>
+            {
+                static RateLimitPartition<string> Unlimited(string key) =>
+                    RateLimitPartition.GetNoLimiter(key);
+
+                options.AddPolicy("auth-login",               _ => Unlimited("test"));
+                options.AddPolicy("auth-register",            _ => Unlimited("test"));
+                options.AddPolicy("auth-forgot-password",     _ => Unlimited("test"));
+                options.AddPolicy("auth-resend-verification", _ => Unlimited("test"));
+                options.AddPolicy("auth-reset-password",      _ => Unlimited("test"));
+                options.AddPolicy("auth-confirm-email",       _ => Unlimited("test"));
+                options.AddPolicy("auth-refresh",             _ => Unlimited("test"));
+                options.AddPolicy("auth-enumeration",         _ => Unlimited("test"));
+                options.AddPolicy("user-reads",               _ => Unlimited("test"));
+                options.AddPolicy("user-writes",              _ => Unlimited("test"));
+                options.AddPolicy("user-deletes",             _ => Unlimited("test"));
+                options.AddPolicy("user-upload",              _ => Unlimited("test"));
+                options.AddPolicy("user-once",                _ => Unlimited("test"));
+                options.AddPolicy("anon-static",              _ => Unlimited("test"));
+            });
 
             // Remove background services — they would connect to the test DB on a timer
             services

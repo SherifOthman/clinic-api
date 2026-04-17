@@ -42,6 +42,10 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             Gender    = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male,
         };
 
+        // Person must be persisted before UserManager.CreateAsync so the FK is satisfied
+        await _uow.Persons.AddAsync(person);
+        await _uow.SaveChangesAsync(cancellationToken);
+
         var user = new User
         {
             Email          = request.Email,
@@ -49,7 +53,6 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = false,
             PersonId       = person.Id,
-            Person         = person,
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
