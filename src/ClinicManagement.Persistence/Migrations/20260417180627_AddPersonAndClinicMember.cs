@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ClinicManagement.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddPersonAndClinicMember : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -298,6 +298,22 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Person",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Gender = table.Column<short>(type: "smallint", nullable: false),
+                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
+                    ProfileImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Person", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RadiologyOrder",
                 columns: table => new
                 {
@@ -431,6 +447,26 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GeoStates",
+                columns: table => new
+                {
+                    GeonameId = table.Column<int>(type: "int", nullable: false),
+                    CountryGeonameId = table.Column<int>(type: "int", nullable: false),
+                    NameEn = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeoStates", x => x.GeonameId);
+                    table.ForeignKey(
+                        name: "FK_GeoStates_GeoCountries_CountryGeonameId",
+                        column: x => x.CountryGeonameId,
+                        principalTable: "GeoCountries",
+                        principalColumn: "GeonameId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -441,6 +477,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Gender = table.Column<short>(type: "smallint", nullable: false),
                     LastLoginAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     LastPasswordChangeAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -459,26 +496,12 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "GeoStates",
-                columns: table => new
-                {
-                    GeonameId = table.Column<int>(type: "int", nullable: false),
-                    CountryGeonameId = table.Column<int>(type: "int", nullable: false),
-                    NameEn = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    NameAr = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GeoStates", x => x.GeonameId);
                     table.ForeignKey(
-                        name: "FK_GeoStates_GeoCountries_CountryGeonameId",
-                        column: x => x.CountryGeonameId,
-                        principalTable: "GeoCountries",
-                        principalColumn: "GeonameId",
-                        onDelete: ReferentialAction.Cascade);
+                        name: "FK_Users_Person_PersonId",
+                        column: x => x.PersonId,
+                        principalTable: "Person",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -550,6 +573,26 @@ namespace ClinicManagement.Persistence.Migrations
                         column: x => x.RoleId,
                         principalTable: "Roles",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GeoCities",
+                columns: table => new
+                {
+                    GeonameId = table.Column<int>(type: "int", nullable: false),
+                    StateGeonameId = table.Column<int>(type: "int", nullable: false),
+                    NameEn = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeoCities", x => x.GeonameId);
+                    table.ForeignKey(
+                        name: "FK_GeoCities_GeoStates_StateGeonameId",
+                        column: x => x.StateGeonameId,
+                        principalTable: "GeoStates",
+                        principalColumn: "GeonameId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -707,26 +750,6 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "GeoCities",
-                columns: table => new
-                {
-                    GeonameId = table.Column<int>(type: "int", nullable: false),
-                    StateGeonameId = table.Column<int>(type: "int", nullable: false),
-                    NameEn = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    NameAr = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GeoCities", x => x.GeonameId);
-                    table.ForeignKey(
-                        name: "FK_GeoCities_GeoStates_StateGeonameId",
-                        column: x => x.StateGeonameId,
-                        principalTable: "GeoStates",
-                        principalColumn: "GeonameId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ClinicBranch",
                 columns: table => new
                 {
@@ -753,6 +776,46 @@ namespace ClinicManagement.Persistence.Migrations
                         principalTable: "Clinic",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClinicMember",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Role = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    JoinedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClinicMember", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClinicMember_Clinic_ClinicId",
+                        column: x => x.ClinicId,
+                        principalTable: "Clinic",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ClinicMember_Person_PersonId",
+                        column: x => x.PersonId,
+                        principalTable: "Person",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClinicMember_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -789,6 +852,59 @@ namespace ClinicManagement.Persistence.Migrations
                         name: "FK_ClinicSubscription_SubscriptionPlan_SubscriptionPlanId",
                         column: x => x.SubscriptionPlanId,
                         principalTable: "SubscriptionPlan",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Patient",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Gender = table.Column<short>(type: "smallint", nullable: false),
+                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
+                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BloodType = table.Column<int>(type: "int", nullable: true),
+                    CountryGeonameId = table.Column<int>(type: "int", nullable: true),
+                    StateGeonameId = table.Column<int>(type: "int", nullable: true),
+                    CityGeonameId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Patient", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Patient_Clinic_ClinicId",
+                        column: x => x.ClinicId,
+                        principalTable: "Clinic",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Patient_GeoCities_CityGeonameId",
+                        column: x => x.CityGeonameId,
+                        principalTable: "GeoCities",
+                        principalColumn: "GeonameId");
+                    table.ForeignKey(
+                        name: "FK_Patient_GeoCountries_CountryGeonameId",
+                        column: x => x.CountryGeonameId,
+                        principalTable: "GeoCountries",
+                        principalColumn: "GeonameId");
+                    table.ForeignKey(
+                        name: "FK_Patient_GeoStates_StateGeonameId",
+                        column: x => x.StateGeonameId,
+                        principalTable: "GeoStates",
+                        principalColumn: "GeonameId");
+                    table.ForeignKey(
+                        name: "FK_Patient_Person_PersonId",
+                        column: x => x.PersonId,
+                        principalTable: "Person",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -876,52 +992,6 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Patient",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PatientCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Gender = table.Column<short>(type: "smallint", nullable: false),
-                    CountryGeonameId = table.Column<int>(type: "int", nullable: true),
-                    StateGeonameId = table.Column<int>(type: "int", nullable: true),
-                    CityGeonameId = table.Column<int>(type: "int", nullable: true),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
-                    BloodType = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Patient", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Patient_Clinic_ClinicId",
-                        column: x => x.ClinicId,
-                        principalTable: "Clinic",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Patient_GeoCities_CityGeonameId",
-                        column: x => x.CityGeonameId,
-                        principalTable: "GeoCities",
-                        principalColumn: "GeonameId");
-                    table.ForeignKey(
-                        name: "FK_Patient_GeoCountries_CountryGeonameId",
-                        column: x => x.CountryGeonameId,
-                        principalTable: "GeoCountries",
-                        principalColumn: "GeonameId");
-                    table.ForeignKey(
-                        name: "FK_Patient_GeoStates_StateGeonameId",
-                        column: x => x.StateGeonameId,
-                        principalTable: "GeoStates",
-                        principalColumn: "GeonameId");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ClinicBranchPhoneNumber",
                 columns: table => new
                 {
@@ -942,40 +1012,30 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Doctor",
+                name: "DoctorInfo",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StaffId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClinicMemberId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SpecializationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CanSelfManageSchedule = table.Column<bool>(type: "bit", nullable: false),
-                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    LicenseNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    CanSelfManageSchedule = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Doctor", x => x.Id);
+                    table.PrimaryKey("PK_DoctorInfo", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Doctor_Clinic_ClinicId",
-                        column: x => x.ClinicId,
-                        principalTable: "Clinic",
-                        principalColumn: "Id");
+                        name: "FK_DoctorInfo_ClinicMember_ClinicMemberId",
+                        column: x => x.ClinicMemberId,
+                        principalTable: "ClinicMember",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Doctor_Specialization_SpecializationId",
+                        name: "FK_DoctorInfo_Specialization_SpecializationId",
                         column: x => x.SpecializationId,
                         principalTable: "Specialization",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Doctor_Staff_StaffId",
-                        column: x => x.StaffId,
-                        principalTable: "Staff",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1019,6 +1079,68 @@ namespace ClinicManagement.Persistence.Migrations
                         name: "FK_PatientPhone_Patient_PatientId",
                         column: x => x.PatientId,
                         principalTable: "Patient",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Doctor",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StaffId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SpecializationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CanSelfManageSchedule = table.Column<bool>(type: "bit", nullable: false),
+                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Doctor", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Doctor_Clinic_ClinicId",
+                        column: x => x.ClinicId,
+                        principalTable: "Clinic",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Doctor_Specialization_SpecializationId",
+                        column: x => x.SpecializationId,
+                        principalTable: "Specialization",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Doctor_Staff_StaffId",
+                        column: x => x.StaffId,
+                        principalTable: "Staff",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DoctorBranchSchedule",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorInfoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DoctorBranchSchedule", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DoctorBranchSchedule_ClinicBranch_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "ClinicBranch",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_DoctorBranchSchedule_DoctorInfo_DoctorInfoId",
+                        column: x => x.DoctorInfoId,
+                        principalTable: "DoctorInfo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1081,6 +1203,50 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "VisitType",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorBranchScheduleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    NameEn = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VisitType", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VisitType_DoctorBranchSchedule_DoctorBranchScheduleId",
+                        column: x => x.DoctorBranchScheduleId,
+                        principalTable: "DoctorBranchSchedule",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WorkingDay",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorBranchScheduleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Day = table.Column<int>(type: "int", nullable: false),
+                    StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkingDay", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WorkingDay_DoctorBranchSchedule_DoctorBranchScheduleId",
+                        column: x => x.DoctorBranchScheduleId,
+                        principalTable: "DoctorBranchSchedule",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Appointment",
                 columns: table => new
                 {
@@ -1088,12 +1254,14 @@ namespace ClinicManagement.Persistence.Migrations
                     ClinicBranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorVisitTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorInfoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    VisitTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     QueueNumber = table.Column<int>(type: "int", nullable: true),
                     ScheduledTime = table.Column<TimeOnly>(type: "time", nullable: true),
                     Type = table.Column<short>(type: "smallint", nullable: false),
                     Status = table.Column<short>(type: "smallint", nullable: false),
-                    DoctorVisitTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountPercent = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     FinalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -1113,6 +1281,11 @@ namespace ClinicManagement.Persistence.Migrations
                         principalTable: "ClinicBranch",
                         principalColumn: "Id");
                     table.ForeignKey(
+                        name: "FK_Appointment_DoctorInfo_DoctorInfoId",
+                        column: x => x.DoctorInfoId,
+                        principalTable: "DoctorInfo",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Appointment_DoctorVisitType_DoctorVisitTypeId",
                         column: x => x.DoctorVisitTypeId,
                         principalTable: "DoctorVisitType",
@@ -1128,6 +1301,12 @@ namespace ClinicManagement.Persistence.Migrations
                         column: x => x.PatientId,
                         principalTable: "Patient",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Appointment_VisitType_VisitTypeId",
+                        column: x => x.VisitTypeId,
+                        principalTable: "VisitType",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -1150,6 +1329,11 @@ namespace ClinicManagement.Persistence.Migrations
                 filter: "[ScheduledTime] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Appointment_DoctorInfoId",
+                table: "Appointment",
+                column: "DoctorInfoId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Appointment_DoctorVisitTypeId",
                 table: "Appointment",
                 column: "DoctorVisitTypeId");
@@ -1158,6 +1342,11 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "IX_Appointment_PatientId_Date",
                 table: "Appointment",
                 columns: new[] { "PatientId", "Date" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointment_VisitTypeId",
+                table: "Appointment",
+                column: "VisitTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_ClinicId_Timestamp",
@@ -1221,6 +1410,22 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "ClinicBranchId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClinicMember_ClinicId_IsDeleted_IsActive",
+                table: "ClinicMember",
+                columns: new[] { "ClinicId", "IsDeleted", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicMember_PersonId_ClinicId",
+                table: "ClinicMember",
+                columns: new[] { "PersonId", "ClinicId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicMember_UserId",
+                table: "ClinicMember",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ClinicSubscription_ClinicId",
                 table: "ClinicSubscription",
                 column: "ClinicId");
@@ -1245,6 +1450,28 @@ namespace ClinicManagement.Persistence.Migrations
                 table: "Doctor",
                 column: "StaffId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorBranchSchedule_BranchId",
+                table: "DoctorBranchSchedule",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorBranchSchedule_DoctorInfoId_BranchId",
+                table: "DoctorBranchSchedule",
+                columns: new[] { "DoctorInfoId", "BranchId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorInfo_ClinicMemberId",
+                table: "DoctorInfo",
+                column: "ClinicMemberId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorInfo_SpecializationId",
+                table: "DoctorInfo",
+                column: "SpecializationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DoctorVisitType_ClinicBranchId",
@@ -1347,6 +1574,11 @@ namespace ClinicManagement.Persistence.Migrations
                 table: "Patient",
                 column: "PatientCode",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Patient_PersonId",
+                table: "Patient",
+                column: "PersonId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Patient_StateGeonameId",
@@ -1459,11 +1691,28 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Users_PersonId",
+                table: "Users",
+                column: "PersonId",
+                unique: true,
+                filter: "[PersonId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "Users",
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VisitType_DoctorBranchScheduleId_IsActive",
+                table: "VisitType",
+                columns: new[] { "DoctorBranchScheduleId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkingDay_DoctorBranchScheduleId",
+                table: "WorkingDay",
+                column: "DoctorBranchScheduleId");
         }
 
         /// <inheritdoc />
@@ -1533,7 +1782,13 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "UserTokens");
 
             migrationBuilder.DropTable(
+                name: "WorkingDay");
+
+            migrationBuilder.DropTable(
                 name: "DoctorVisitType");
+
+            migrationBuilder.DropTable(
+                name: "VisitType");
 
             migrationBuilder.DropTable(
                 name: "LabTestOrder");
@@ -1563,34 +1818,46 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "Roles");
 
             migrationBuilder.DropTable(
-                name: "ClinicBranch");
+                name: "Doctor");
 
             migrationBuilder.DropTable(
-                name: "Doctor");
+                name: "DoctorBranchSchedule");
 
             migrationBuilder.DropTable(
                 name: "GeoCities");
 
             migrationBuilder.DropTable(
-                name: "Specialization");
+                name: "Staff");
 
             migrationBuilder.DropTable(
-                name: "Staff");
+                name: "ClinicBranch");
+
+            migrationBuilder.DropTable(
+                name: "DoctorInfo");
 
             migrationBuilder.DropTable(
                 name: "GeoStates");
 
             migrationBuilder.DropTable(
-                name: "Clinic");
+                name: "ClinicMember");
+
+            migrationBuilder.DropTable(
+                name: "Specialization");
 
             migrationBuilder.DropTable(
                 name: "GeoCountries");
+
+            migrationBuilder.DropTable(
+                name: "Clinic");
 
             migrationBuilder.DropTable(
                 name: "SubscriptionPlan");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Person");
         }
     }
 }

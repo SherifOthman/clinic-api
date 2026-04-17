@@ -14,6 +14,14 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .HasConversion<short>()
             .HasColumnType("smallint");
 
+        // PersonId — nullable during migration
+        builder.Property(p => p.PersonId).IsRequired(false);
+        builder.HasOne(p => p.Person)
+            .WithMany(per => per.PatientRecords)
+            .HasForeignKey(p => p.PersonId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<Clinic>()
             .WithMany()
             .HasForeignKey(p => p.ClinicId)

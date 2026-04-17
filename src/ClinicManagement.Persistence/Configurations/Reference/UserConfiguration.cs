@@ -15,5 +15,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Gender)
             .HasConversion<short>()
             .HasColumnType("smallint");
+
+        // PersonId — nullable during migration, will become required once all users have a Person
+        builder.Property(u => u.PersonId).IsRequired(false);
     }
 }

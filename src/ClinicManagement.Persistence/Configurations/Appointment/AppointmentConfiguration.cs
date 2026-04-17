@@ -35,6 +35,19 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .HasForeignKey(a => a.DoctorVisitTypeId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // New model FKs — nullable during migration
+        builder.HasOne(a => a.DoctorInfo)
+            .WithMany(d => d.Appointments)
+            .HasForeignKey(a => a.DoctorInfoId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(a => a.NewVisitType)
+            .WithMany(v => v.Appointments)
+            .HasForeignKey(a => a.VisitTypeId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(a => new { a.DoctorId, a.Date, a.QueueNumber })
             .IsUnique()
             .HasFilter("[QueueNumber] IS NOT NULL");
