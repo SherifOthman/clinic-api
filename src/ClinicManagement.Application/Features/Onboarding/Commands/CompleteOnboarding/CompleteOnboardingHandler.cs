@@ -50,45 +50,27 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         };
         await _uow.Clinics.AddAsync(clinic);
 
-        var branch = new ClinicBranch
+        await _uow.Branches.AddAsync(new ClinicBranch
         {
-            ClinicId        = clinic.Id,
-            Name            = request.BranchName,
-            AddressLine     = request.AddressLine,
-            StateGeonameId  = request.StateGeonameId,
-            CityGeonameId   = request.CityGeonameId,
-            IsMainBranch    = true,
-            IsActive        = true,
-        };
-        await _uow.Branches.AddAsync(branch);
+            ClinicId       = clinic.Id,
+            Name           = request.BranchName,
+            AddressLine    = request.AddressLine,
+            StateGeonameId = request.StateGeonameId,
+            CityGeonameId  = request.CityGeonameId,
+            IsMainBranch   = true,
+            IsActive       = true,
+        });
+
+        var ownerMember = CreateOwnerMember(user, clinic.Id);
+        await _uow.Members.AddAsync(ownerMember);
 
         if (request.ProvideMedicalServices)
         {
-            // Old model — kept during migration
-            var staff = new Domain.Entities.Staff { UserId = userId, ClinicId = clinic.Id, IsActive = true };
-            await _uow.Staff.AddAsync(staff);
-
-            await _uow.DoctorProfiles.AddAsync(new Doctor
-            {
-                StaffId          = staff.Id,
-                SpecializationId = request.SpecializationId,
-                CreatedAt        = DateTimeOffset.UtcNow,
-            });
-
-            // New model
-            var ownerMember = CreateOwnerMember(user, clinic.Id);
-            await _uow.Members.AddAsync(ownerMember);
             await _uow.DoctorInfos.AddAsync(new DoctorInfo
             {
                 ClinicMemberId   = ownerMember.Id,
                 SpecializationId = request.SpecializationId,
             });
-        }
-        else
-        {
-            // Owner without medical services — still create ClinicMember
-            var ownerMember = CreateOwnerMember(user, clinic.Id);
-            await _uow.Members.AddAsync(ownerMember);
         }
 
         await _uow.SaveChangesAsync(cancellationToken);
@@ -109,22 +91,15 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             };
         }
 
-        // Person doesn't exist yet — create it via navigation
-        var person = new Person
+        var person = new Person { FirstName = user.FirstName, LastName = user.LastName, Gender = user.Gender };
+        return new ClinicMember
         {
-            FirstName = user.FirstName,
-            LastName  = user.LastName,
-            Gender    = user.Gender,
-        };
-        var member = new ClinicMember
-        {
-            PersonId = person.Id, // BaseEntity generates Id in constructor
+            PersonId = person.Id,
             UserId   = user.Id,
             ClinicId = clinicId,
             Role     = Domain.Enums.ClinicMemberRole.Owner,
             IsActive = true,
             Person   = person,
         };
-        return member;
     }
 }

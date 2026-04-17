@@ -55,7 +55,7 @@ public class UsageMetricsAggregationJob : BackgroundService
         using var scope      = _serviceProvider.CreateScope();
         var context          = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var clinics          = context.Set<Clinic>();
-        var staff            = context.Set<Staff>();
+        var members          = context.Set<ClinicMember>();
         var usageMetrics     = context.Set<ClinicUsageMetrics>();
 
         var yesterday    = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
@@ -71,7 +71,7 @@ public class UsageMetricsAggregationJob : BackgroundService
         {
             try
             {
-                var activeStaffCount = await staff.CountAsync(s => s.ClinicId == clinic.Id && s.IsActive, cancellationToken);
+                var activeStaffCount = await members.CountAsync(m => m.ClinicId == clinic.Id && m.IsActive, cancellationToken);
 
                 var metrics = new ClinicUsageMetrics
                 {

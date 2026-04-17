@@ -22,11 +22,11 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
     public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
     {
         var invitation = await _uow.Invitations.GetByTokenAsync(request.Token, cancellationToken);
-
         if (invitation is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
         var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
+        var person = new Person { FirstName = request.FirstName, LastName = request.LastName, Gender = gender };
 
         var user = new User
         {
@@ -37,12 +37,8 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = true,
             Gender         = gender,
-            Person         = new Person
-            {
-                FirstName = request.FirstName,
-                LastName  = request.LastName,
-                Gender    = gender,
-            },
+            PersonId       = person.Id,
+            Person         = person,
         };
 
         var createResult = await _userManager.CreateAsync(user, request.Password);
@@ -59,40 +55,30 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var acceptResult = invitation.Accept(user.Id, DateTimeOffset.UtcNow);
         if (acceptResult.IsFailure) { await _userManager.DeleteAsync(user); return acceptResult; }
 
-        // Old model — kept during migration
-        var staff = new Domain.Entities.Staff { UserId = user.Id, ClinicId = invitation.ClinicId, IsActive = true };
-        await _uow.Staff.AddAsync(staff);
-
-        if (invitation.Role == UserRoles.Doctor)
-            await _uow.DoctorProfiles.AddAsync(new Doctor { StaffId = staff.Id, SpecializationId = invitation.SpecializationId });
-
-        // New model — ClinicMember + DoctorInfo
         var role = invitation.Role switch
         {
-            UserRoles.Doctor       => Domain.Enums.ClinicMemberRole.Doctor,
-            UserRoles.Receptionist => Domain.Enums.ClinicMemberRole.Receptionist,
-            _                      => Domain.Enums.ClinicMemberRole.Receptionist,
+            UserRoles.Doctor       => ClinicMemberRole.Doctor,
+            UserRoles.Receptionist => ClinicMemberRole.Receptionist,
+            _                      => ClinicMemberRole.Receptionist,
         };
 
         var member = new ClinicMember
         {
-            PersonId = user.Person!.Id,
+            PersonId = person.Id,
             UserId   = user.Id,
             ClinicId = invitation.ClinicId,
             Role     = role,
             IsActive = true,
-            JoinedAt = DateTimeOffset.UtcNow,
         };
         await _uow.Members.AddAsync(member);
 
-        if (role == Domain.Enums.ClinicMemberRole.Doctor)
+        if (role == ClinicMemberRole.Doctor)
         {
-            var doctorInfo = new DoctorInfo
+            await _uow.DoctorInfos.AddAsync(new DoctorInfo
             {
                 ClinicMemberId   = member.Id,
                 SpecializationId = invitation.SpecializationId,
-            };
-            await _uow.DoctorInfos.AddAsync(doctorInfo);
+            });
         }
 
         await _uow.SaveChangesAsync(cancellationToken);

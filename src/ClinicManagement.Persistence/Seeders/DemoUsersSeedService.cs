@@ -9,11 +9,6 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Persistence.Seeders;
 
-/// <summary>
-/// Seeds all four demo login accounts and their clinic/staff relationships.
-/// Controlled by Seed:SeedDemoUsers in appsettings.
-/// Set to false in appsettings.Production.json when demo accounts are no longer needed.
-/// </summary>
 public class DemoUsersSeedService
 {
     private readonly ApplicationDbContext _context;
@@ -27,17 +22,17 @@ public class DemoUsersSeedService
         ILogger<DemoUsersSeedService> logger,
         IOptions<SeedOptions> options)
     {
-        _context = context;
+        _context     = context;
         _userManager = userManager;
-        _logger = logger;
-        _options = options.Value;
+        _logger      = logger;
+        _options     = options.Value;
     }
 
     public async Task SeedAsync()
     {
         if (!_options.SeedDemoUsers)
         {
-            _logger.LogInformation("Demo user seeding is disabled (Seed:SeedDemoUsers = false)");
+            _logger.LogInformation("Demo user seeding is disabled");
             return;
         }
 
@@ -47,8 +42,6 @@ public class DemoUsersSeedService
         await SeedDoctorAsync(clinic);
         await SeedReceptionistAsync(clinic);
     }
-
-    // ── SuperAdmin ────────────────────────────────────────────────────────────
 
     private async Task SeedSuperAdminAsync()
     {
@@ -61,46 +54,41 @@ public class DemoUsersSeedService
             FirstName = "System", LastName = "Administrator",
             PhoneNumber = "+966500000000", EmailConfirmed = true, Gender = Gender.Male,
         };
-
         var result = await _userManager.CreateAsync(user, opts.Password);
         if (!result.Succeeded) { LogError("SuperAdmin", result); return; }
-
         await _userManager.AddToRoleAsync(user, UserRoles.SuperAdmin);
         _logger.LogInformation("SuperAdmin seeded: {Email}", opts.Email);
     }
 
-    // ── Clinic Owner ──────────────────────────────────────────────────────────
-
     private async Task<Clinic?> SeedClinicOwnerAsync()
     {
-        var opts = _options.ClinicOwner;
-
+        var opts  = _options.ClinicOwner;
         var owner = await _userManager.FindByEmailAsync(opts.Email);
+
         if (owner == null)
         {
+            var person = new Person { FirstName = "John", LastName = "Smith", Gender = Gender.Male };
             owner = new User
             {
                 UserName = "owner", Email = opts.Email,
                 FirstName = "John", LastName = "Smith",
                 PhoneNumber = "+1234567890", EmailConfirmed = true, Gender = Gender.Male,
+                PersonId = person.Id, Person = person,
             };
-
             var result = await _userManager.CreateAsync(owner, opts.Password);
             if (!result.Succeeded) { LogError("ClinicOwner", result); return null; }
-
             await _userManager.AddToRoleAsync(owner, UserRoles.ClinicOwner);
             await _userManager.AddToRoleAsync(owner, UserRoles.Doctor);
             _logger.LogInformation("ClinicOwner seeded: {Email}", opts.Email);
         }
 
-        // Return existing clinic if already set up
         var existing = await _context.Set<Clinic>()
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .FirstOrDefaultAsync(c => c.OwnerUserId == owner.Id);
         if (existing != null) return existing;
 
         var basicPlan = await _context.Set<SubscriptionPlan>().FirstOrDefaultAsync(p => p.Name == "Basic");
-        if (basicPlan == null) { _logger.LogError("Basic plan not found — run SubscriptionPlanSeedService first"); return null; }
+        if (basicPlan == null) { _logger.LogError("Basic plan not found"); return null; }
 
         var generalPractice = await _context.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "General Practice");
 
@@ -109,8 +97,8 @@ public class DemoUsersSeedService
             Name = "Demo Medical Clinic", OwnerUserId = owner.Id,
             SubscriptionPlanId = basicPlan.Id, OnboardingCompleted = true, IsActive = true,
             SubscriptionStartDate = DateTimeOffset.UtcNow,
-            SubscriptionEndDate = DateTimeOffset.UtcNow.AddMonths(1),
-            TrialEndDate = DateTimeOffset.UtcNow.AddDays(14),
+            SubscriptionEndDate   = DateTimeOffset.UtcNow.AddMonths(1),
+            TrialEndDate          = DateTimeOffset.UtcNow.AddDays(14),
         };
         _context.Set<Clinic>().Add(clinic);
 
@@ -118,8 +106,7 @@ public class DemoUsersSeedService
         {
             ClinicId = clinic.Id, Name = "Main Branch",
             AddressLine = "123 Medical Street, Downtown",
-            StateGeonameId = 360630,  // Cairo Governorate GeoNames ID
-            CityGeonameId  = 360630,  // Cairo GeoNames ID
+            StateGeonameId = 360630, CityGeonameId = 360630,
             IsMainBranch = true, IsActive = true,
         });
 
@@ -130,79 +117,94 @@ public class DemoUsersSeedService
             StartDate = DateTimeOffset.UtcNow, TrialEndDate = DateTimeOffset.UtcNow.AddDays(14), AutoRenew = true,
         });
 
-        var ownerStaff = new Staff { UserId = owner.Id, ClinicId = clinic.Id, IsActive = true };
-        _context.Set<Staff>().Add(ownerStaff);
-        _context.Set<Doctor>().Add(new Doctor { StaffId = ownerStaff.Id, SpecializationId = generalPractice?.Id });
+        // New model
+        var ownerPersonId = owner.PersonId ?? Guid.NewGuid();
+        var ownerMember = new ClinicMember
+        {
+            PersonId = ownerPersonId, UserId = owner.Id,
+            ClinicId = clinic.Id, Role = ClinicMemberRole.Owner, IsActive = true,
+        };
+        _context.Set<ClinicMember>().Add(ownerMember);
+        _context.Set<DoctorInfo>().Add(new DoctorInfo
+        {
+            ClinicMemberId = ownerMember.Id, SpecializationId = generalPractice?.Id,
+        });
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Demo clinic seeded (ClinicId: {Id})", clinic.Id);
         return clinic;
     }
 
-    // ── Doctor ────────────────────────────────────────────────────────────────
-
     private async Task SeedDoctorAsync(Clinic clinic)
     {
-        var opts = _options.Doctor;
-
+        var opts   = _options.Doctor;
         var doctor = await _userManager.FindByEmailAsync(opts.Email);
+
         if (doctor == null)
         {
+            var person = new Person { FirstName = "Sarah", LastName = "Johnson", Gender = Gender.Female };
             doctor = new User
             {
                 UserName = "doctor", Email = opts.Email,
                 FirstName = "Sarah", LastName = "Johnson",
                 PhoneNumber = "+1234567891", EmailConfirmed = true, Gender = Gender.Female,
+                PersonId = person.Id, Person = person,
             };
-
             var result = await _userManager.CreateAsync(doctor, opts.Password);
             if (!result.Succeeded) { LogError("Doctor", result); return; }
-
             await _userManager.AddToRoleAsync(doctor, UserRoles.Doctor);
             _logger.LogInformation("Doctor seeded: {Email}", opts.Email);
         }
 
-        var alreadyStaff = await _context.Set<Staff>()
+        var alreadyMember = await _context.Set<ClinicMember>()
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .AnyAsync(s => s.UserId == doctor.Id && s.ClinicId == clinic.Id);
-        if (alreadyStaff) return;
+            .AnyAsync(m => m.UserId == doctor.Id && m.ClinicId == clinic.Id);
+        if (alreadyMember) return;
 
         var cardiology = await _context.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
-        var staff = new Staff { UserId = doctor.Id, ClinicId = clinic.Id, IsActive = true };
-        _context.Set<Staff>().Add(staff);
-        _context.Set<Doctor>().Add(new Doctor { StaffId = staff.Id, SpecializationId = cardiology?.Id });
+        var doctorPersonId = doctor.PersonId ?? Guid.NewGuid();
+        var member = new ClinicMember
+        {
+            PersonId = doctorPersonId, UserId = doctor.Id,
+            ClinicId = clinic.Id, Role = ClinicMemberRole.Doctor, IsActive = true,
+        };
+        _context.Set<ClinicMember>().Add(member);
+        _context.Set<DoctorInfo>().Add(new DoctorInfo { ClinicMemberId = member.Id, SpecializationId = cardiology?.Id });
         await _context.SaveChangesAsync();
     }
 
-    // ── Receptionist ──────────────────────────────────────────────────────────
-
     private async Task SeedReceptionistAsync(Clinic clinic)
     {
-        var opts = _options.Receptionist;
-
+        var opts         = _options.Receptionist;
         var receptionist = await _userManager.FindByEmailAsync(opts.Email);
+
         if (receptionist == null)
         {
+            var person = new Person { FirstName = "Emily", LastName = "Davis", Gender = Gender.Female };
             receptionist = new User
             {
                 UserName = "receptionist", Email = opts.Email,
                 FirstName = "Emily", LastName = "Davis",
                 PhoneNumber = "+1234567892", EmailConfirmed = true, Gender = Gender.Female,
+                PersonId = person.Id, Person = person,
             };
-
             var result = await _userManager.CreateAsync(receptionist, opts.Password);
             if (!result.Succeeded) { LogError("Receptionist", result); return; }
-
             await _userManager.AddToRoleAsync(receptionist, UserRoles.Receptionist);
             _logger.LogInformation("Receptionist seeded: {Email}", opts.Email);
         }
 
-        var alreadyStaff = await _context.Set<Staff>()
+        var alreadyMember = await _context.Set<ClinicMember>()
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .AnyAsync(s => s.UserId == receptionist.Id && s.ClinicId == clinic.Id);
-        if (alreadyStaff) return;
+            .AnyAsync(m => m.UserId == receptionist.Id && m.ClinicId == clinic.Id);
+        if (alreadyMember) return;
 
-        _context.Set<Staff>().Add(new Staff { UserId = receptionist.Id, ClinicId = clinic.Id, IsActive = true });
+        var recPersonId = receptionist.PersonId ?? Guid.NewGuid();
+        _context.Set<ClinicMember>().Add(new ClinicMember
+        {
+            PersonId = recPersonId, UserId = receptionist.Id,
+            ClinicId = clinic.Id, Role = ClinicMemberRole.Receptionist, IsActive = true,
+        });
         await _context.SaveChangesAsync();
     }
 

@@ -12,7 +12,7 @@ public class UserRepository : IUserRepository
     private readonly DbSet<User>                   _users;
     private readonly DbSet<IdentityUserRole<Guid>> _userRoles;
     private readonly DbSet<Role>                   _roles;
-    private readonly DbSet<Staff>                  _staff;
+    private readonly DbSet<ClinicMember>           _members;
     private readonly DbSet<Clinic>                 _clinics;
 
     public UserRepository(ApplicationDbContext context)
@@ -20,7 +20,7 @@ public class UserRepository : IUserRepository
         _users     = context.Set<User>();
         _userRoles = context.Set<IdentityUserRole<Guid>>();
         _roles     = context.Set<Role>();
-        _staff     = context.Set<Staff>();
+        _members   = context.Set<ClinicMember>();
         _clinics   = context.Set<Clinic>();
     }
 
@@ -57,16 +57,14 @@ public class UserRepository : IUserRepository
 
     public async Task<UserSpecializationRow?> GetDoctorSpecializationAsync(Guid userId, CancellationToken ct = default)
     {
-        // Use navigation chain Staff → DoctorProfile → Specialization
-        // instead of manual 3-table join
-        var spec = await _staff
+        var spec = await _members
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .AsNoTracking()
-            .Where(s => s.UserId == userId && s.DoctorProfile != null && s.DoctorProfile.Specialization != null)
-            .Select(s => new
+            .Where(m => m.UserId == userId && m.DoctorInfo != null && m.DoctorInfo.Specialization != null)
+            .Select(m => new
             {
-                s.DoctorProfile!.Specialization!.NameEn,
-                s.DoctorProfile!.Specialization!.NameAr,
+                m.DoctorInfo!.Specialization!.NameEn,
+                m.DoctorInfo!.Specialization!.NameAr,
             })
             .FirstOrDefaultAsync(ct);
 

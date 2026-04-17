@@ -70,7 +70,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             }
             else
             {
-                var staff = await _uow.Staff.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
+                var staff = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
                 clinicId  = staff?.ClinicId;
 
                 if (clinicId.HasValue)

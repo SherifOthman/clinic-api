@@ -12,24 +12,14 @@ public class GetDoctorVisitTypesHandler : IRequestHandler<GetDoctorVisitTypesQue
 
     public async Task<Result<List<DoctorVisitTypeDto>>> Handle(GetDoctorVisitTypesQuery request, CancellationToken ct)
     {
-        // Try new model first
         var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(request.StaffId, ct);
-        if (doctorInfoId != Guid.Empty)
-        {
-            var schedule = await _uow.DoctorSchedules.GetScheduleAsync(doctorInfoId, request.BranchId, ct);
-            if (schedule is null) return Result.Success(new List<DoctorVisitTypeDto>());
-
-            var newItems = await _uow.DoctorSchedules.GetVisitTypesByScheduleAsync(schedule.Id, ct);
-            var newDtos  = newItems.Select(v => new DoctorVisitTypeDto(v.Id, v.NameAr, v.NameEn, v.Price, v.IsActive)).ToList();
-            return Result.Success(newDtos);
-        }
-
-        // Fall back to old model
-        var doctorId = await _uow.DoctorProfiles.GetIdByStaffIdAsync(request.StaffId, ct);
-        if (doctorId == Guid.Empty)
+        if (doctorInfoId == Guid.Empty)
             return Result.Failure<List<DoctorVisitTypeDto>>(ErrorCodes.NOT_FOUND, "Doctor profile not found");
 
-        var items = await _uow.DoctorVisitTypes.GetByDoctorAndBranchAsync(doctorId, request.BranchId, ct);
+        var schedule = await _uow.DoctorSchedules.GetScheduleAsync(doctorInfoId, request.BranchId, ct);
+        if (schedule is null) return Result.Success(new List<DoctorVisitTypeDto>());
+
+        var items = await _uow.DoctorSchedules.GetVisitTypesByScheduleAsync(schedule.Id, ct);
         var dtos  = items.Select(v => new DoctorVisitTypeDto(v.Id, v.NameAr, v.NameEn, v.Price, v.IsActive)).ToList();
         return Result.Success(dtos);
     }

@@ -26,10 +26,8 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             var spec = await _uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
             specializationNameEn = spec?.NameEn;
             specializationNameAr = spec?.NameAr;
-            // Try new model first, fall back to old
             var member = await _uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
-            staffId = member?.Id ?? (await _uow.Staff.GetByUserIdAsync(request.UserId, cancellationToken))?.Id;
-        }
+            staffId = member?.Id;        }
 
         return new GetMeDto(
             UserName:             profile.UserName,

@@ -26,6 +26,5 @@ public class Clinic : AuditableEntity
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
 
     public ICollection<ClinicBranch> Branches { get; set; } = new List<ClinicBranch>();
-    public ICollection<Doctor> Doctors { get; set; } = new List<Doctor>();
     public ICollection<ClinicMember> Members { get; set; } = new List<ClinicMember>();
 }

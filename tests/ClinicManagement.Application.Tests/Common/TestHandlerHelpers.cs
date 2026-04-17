@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,6 @@ namespace ClinicManagement.Application.Tests.Common;
 
 public static class TestHandlerHelpers
 {
-    /// <summary>
-    /// Creates a real UnitOfWork backed by an isolated in-memory database.
-    /// Use this in ALL tests — never use ApplicationDbContext directly.
-    /// </summary>
     public static IUnitOfWork CreateUow()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -72,9 +69,27 @@ public static class TestHandlerHelpers
             IsMainBranch = isMainBranch, IsActive = true,
         };
 
-    public static Domain.Entities.Staff CreateTestStaff(Guid? userId = null, Guid? clinicId = null) =>
-        new() { UserId = userId ?? Guid.NewGuid(), ClinicId = clinicId ?? Guid.NewGuid(), IsActive = true };
+    /// <summary>Creates a Person + ClinicMember (Doctor role) for testing.</summary>
+    public static (Person person, ClinicMember member) CreateTestMember(
+        Guid? userId = null, Guid? clinicId = null,
+        string firstName = "Test", string lastName = "User",
+        Gender gender = Gender.Male,
+        ClinicMemberRole role = ClinicMemberRole.Doctor)
+    {
+        var person = new Person { FirstName = firstName, LastName = lastName, Gender = gender };
+        var member = new ClinicMember
+        {
+            PersonId = person.Id,
+            UserId   = userId ?? Guid.NewGuid(),
+            ClinicId = clinicId ?? Guid.NewGuid(),
+            Role     = role,
+            IsActive = true,
+            Person   = person,
+        };
+        return (person, member);
+    }
 
-    public static Doctor CreateTestDoctorProfile(Guid? staffId = null, Guid? specializationId = null) =>
-        new() { StaffId = staffId ?? Guid.NewGuid(), SpecializationId = specializationId ?? Guid.NewGuid(), CreatedAt = DateTimeOffset.UtcNow };
+    /// <summary>Creates a DoctorInfo for a ClinicMember.</summary>
+    public static DoctorInfo CreateTestDoctorInfo(Guid clinicMemberId, Guid? specializationId = null) =>
+        new() { ClinicMemberId = clinicMemberId, SpecializationId = specializationId };
 }

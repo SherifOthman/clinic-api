@@ -19,7 +19,6 @@ public class SetStaffActiveStatusHandlerTests
     public async Task Handle_ShouldFail_WhenStaffNotFound()
     {
         var result = await _handler.Handle(new SetStaffActiveStatusCommand(Guid.NewGuid(), false), default);
-
         result.IsSuccess.Should().BeFalse();
     }
 
@@ -28,16 +27,16 @@ public class SetStaffActiveStatusHandlerTests
     [InlineData(false, true)]
     public async Task Handle_ShouldToggleActiveStatus(bool initial, bool target)
     {
-        var staff = TestHandlerHelpers.CreateTestStaff();
-        staff.IsActive = initial;
-        await _uow.Staff.AddAsync(staff);
+        var (_, member) = TestHandlerHelpers.CreateTestMember();
+        member.IsActive = initial;
+        await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 
-        var result = await _handler.Handle(new SetStaffActiveStatusCommand(staff.Id, target), default);
+        var result = await _handler.Handle(new SetStaffActiveStatusCommand(member.Id, target), default);
 
         result.IsSuccess.Should().BeTrue();
 
-        var updated = await _uow.Staff.GetByIdAsync(staff.Id);
+        var updated = await _uow.Members.GetByIdAsync(member.Id);
         updated!.IsActive.Should().Be(target);
     }
 }

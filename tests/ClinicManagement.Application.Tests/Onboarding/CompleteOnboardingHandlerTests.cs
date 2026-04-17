@@ -6,7 +6,6 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace ClinicManagement.Application.Tests.Onboarding;
@@ -43,7 +42,7 @@ public class CompleteOnboardingHandlerTests
         new("Test Clinic", _plan.Id, "Main Branch", "123 Test St", 2, 3, provideMedical, specId ?? _spec.Id, null);
 
     [Fact]
-    public async Task Handle_ShouldCreateClinicBranchStaffAndDoctorProfile_WhenDoctorOnboarding()
+    public async Task Handle_ShouldCreateClinicBranchAndMember_WhenDoctorOnboarding()
     {
         var result = await _handler.Handle(MakeCommand(), default);
 
@@ -56,28 +55,30 @@ public class CompleteOnboardingHandlerTests
         var branch = await _uow.Branches.GetMainBranchIdAsync();
         branch.Should().NotBe(Guid.Empty);
 
-        var staff = await _uow.Staff.GetByUserIdAsync(_owner.Id);
-        staff.Should().NotBeNull();
+        var member = await _uow.Members.GetByUserIdAsync(_owner.Id);
+        member.Should().NotBeNull();
 
-        var dpId = await _uow.DoctorProfiles.GetIdByStaffIdAsync(staff!.Id);
-        dpId.Should().NotBe(Guid.Empty);
+        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(member!.Id);
+        doctorInfoId.Should().NotBe(Guid.Empty);
     }
 
     [Fact]
-    public async Task Handle_ShouldNotCreateStaffOrDoctorProfile_WhenAdminOnboarding()
+    public async Task Handle_ShouldCreateMemberWithoutDoctorInfo_WhenAdminOnboarding()
     {
         var result = await _handler.Handle(MakeCommand(provideMedical: false), default);
 
         result.IsSuccess.Should().BeTrue();
 
-        var staff = await _uow.Staff.GetByUserIdAsync(_owner.Id);
-        staff.Should().BeNull();
+        var member = await _uow.Members.GetByUserIdAsync(_owner.Id);
+        member.Should().NotBeNull();
+
+        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(member!.Id);
+        doctorInfoId.Should().Be(Guid.Empty);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenUserAlreadyOnboarded()
     {
-        // Seed an existing clinic for this owner
         await _uow.Clinics.AddAsync(TestHandlerHelpers.CreateTestClinic(ownerUserId: _owner.Id, subscriptionPlanId: _plan.Id));
         await _uow.SaveChangesAsync();
 

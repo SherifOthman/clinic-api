@@ -101,7 +101,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         }
         else
         {
-            var staff = await _uow.Staff.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
+            var staff = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
             clinicId  = staff?.ClinicId;
 
             if (staff is not null && !staff.IsActive)

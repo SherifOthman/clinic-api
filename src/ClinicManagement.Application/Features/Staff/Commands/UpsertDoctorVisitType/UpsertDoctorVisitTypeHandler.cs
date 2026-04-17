@@ -24,48 +24,16 @@ public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTyp
         if (!permission.IsAllowed)
             return Result.Failure<Guid>(ErrorCodes.FORBIDDEN, permission.DeniedReason!);
 
-        // Try new model first
         var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(request.StaffId, ct);
-        if (doctorInfoId != Guid.Empty)
-        {
-            var schedule = await _uow.DoctorSchedules.GetOrCreateScheduleAsync(doctorInfoId, request.BranchId, ct);
-
-            if (request.VisitTypeId.HasValue)
-            {
-                var existing = await _uow.DoctorSchedules.GetVisitTypeByIdAsync(request.VisitTypeId.Value, ct);
-                if (existing is null || existing.DoctorBranchScheduleId != schedule.Id)
-                    return Result.Failure<Guid>(ErrorCodes.NOT_FOUND, "Visit type not found");
-
-                existing.NameAr   = request.NameAr;
-                existing.NameEn   = request.NameEn;
-                existing.Price    = request.Price;
-                existing.IsActive = request.IsActive;
-                await _uow.SaveChangesAsync(ct);
-                return Result.Success(existing.Id);
-            }
-
-            var visitType = new VisitType
-            {
-                DoctorBranchScheduleId = schedule.Id,
-                NameAr   = request.NameAr,
-                NameEn   = request.NameEn,
-                Price    = request.Price,
-                IsActive = request.IsActive,
-            };
-            _uow.DoctorSchedules.AddVisitType(visitType);
-            await _uow.SaveChangesAsync(ct);
-            return Result.Success(visitType.Id);
-        }
-
-        // Fall back to old model
-        var doctorId = await _uow.DoctorProfiles.GetIdByStaffIdAsync(request.StaffId, ct);
-        if (doctorId == Guid.Empty)
+        if (doctorInfoId == Guid.Empty)
             return Result.Failure<Guid>(ErrorCodes.NOT_FOUND, "Doctor profile not found");
+
+        var schedule = await _uow.DoctorSchedules.GetOrCreateScheduleAsync(doctorInfoId, request.BranchId, ct);
 
         if (request.VisitTypeId.HasValue)
         {
-            var existing = await _uow.DoctorVisitTypes.GetByIdAsync(request.VisitTypeId.Value, ct);
-            if (existing is null || existing.DoctorId != doctorId)
+            var existing = await _uow.DoctorSchedules.GetVisitTypeByIdAsync(request.VisitTypeId.Value, ct);
+            if (existing is null || existing.DoctorBranchScheduleId != schedule.Id)
                 return Result.Failure<Guid>(ErrorCodes.NOT_FOUND, "Visit type not found");
 
             existing.NameAr   = request.NameAr;
@@ -76,17 +44,16 @@ public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTyp
             return Result.Success(existing.Id);
         }
 
-        var oldVisitType = new DoctorVisitType
+        var visitType = new VisitType
         {
-            DoctorId       = doctorId,
-            ClinicBranchId = request.BranchId,
-            NameAr         = request.NameAr,
-            NameEn         = request.NameEn,
-            Price          = request.Price,
-            IsActive       = request.IsActive,
+            DoctorBranchScheduleId = schedule.Id,
+            NameAr   = request.NameAr,
+            NameEn   = request.NameEn,
+            Price    = request.Price,
+            IsActive = request.IsActive,
         };
-        _uow.DoctorVisitTypes.Add(oldVisitType);
+        _uow.DoctorSchedules.AddVisitType(visitType);
         await _uow.SaveChangesAsync(ct);
-        return Result.Success(oldVisitType.Id);
+        return Result.Success(visitType.Id);
     }
 }

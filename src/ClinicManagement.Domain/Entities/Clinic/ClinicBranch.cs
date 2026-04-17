@@ -20,7 +20,6 @@ public class ClinicBranch : AuditableTenantEntity
     public Clinic Clinic { get; set; } = null!;
     public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();
     public ICollection<Appointment> Appointment { get; set; } = new List<Appointment>();
-    public ICollection<DoctorVisitType> DoctorVisitTypes { get; set; } = new List<DoctorVisitType>();
     public ICollection<DoctorBranchSchedule> DoctorSchedules { get; set; } = new List<DoctorBranchSchedule>();
 
 }

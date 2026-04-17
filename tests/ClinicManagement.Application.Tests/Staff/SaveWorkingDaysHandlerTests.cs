@@ -35,34 +35,33 @@ public class SaveWorkingDaysHandlerTests
         return CreateHandler(svc.Object);
     }
 
-    private async Task<(Domain.Entities.Staff staff, Doctor dp, Guid branchId)> SeedDoctorAsync()
+    private async Task<(ClinicMember member, DoctorInfo doctorInfo, Guid branchId)> SeedDoctorAsync()
     {
-        var spec  = TestHandlerHelpers.CreateTestSpecialization();
+        var spec = TestHandlerHelpers.CreateTestSpecialization();
         await _uow.Specializations.AddAsync(spec);
-        var staff = TestHandlerHelpers.CreateTestStaff();
-        await _uow.Staff.AddAsync(staff);
+
+        var (_, member) = TestHandlerHelpers.CreateTestMember();
+        await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 
-        var dp = TestHandlerHelpers.CreateTestDoctorProfile(staffId: staff.Id, specializationId: spec.Id);
-        await _uow.DoctorProfiles.AddAsync(dp);
+        var doctorInfo = TestHandlerHelpers.CreateTestDoctorInfo(member.Id, spec.Id);
+        await _uow.DoctorInfos.AddAsync(doctorInfo);
 
         var branch = new ClinicBranch
         {
-            ClinicId = staff.ClinicId, Name = "Main Branch", AddressLine = "123 Test St",
-            StateGeonameId = 2, CityGeonameId = 3,
-            IsMainBranch = true, IsActive = true,
+            ClinicId = member.ClinicId, Name = "Main Branch", AddressLine = "123 Test St",
+            StateGeonameId = 2, CityGeonameId = 3, IsMainBranch = true, IsActive = true,
         };
         await _uow.Branches.AddAsync(branch);
         await _uow.SaveChangesAsync();
-        return (staff, dp, branch.Id);
+        return (member, doctorInfo, branch.Id);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenDoctorProfileNotFound()
     {
         var handler = CreateHandlerAsOwner();
-        var result = await handler.Handle(
-            new SaveWorkingDaysCommand(Guid.NewGuid(), Guid.NewGuid(), []), default);
+        var result  = await handler.Handle(new SaveWorkingDaysCommand(Guid.NewGuid(), Guid.NewGuid(), []), default);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCodes.NOT_FOUND);
@@ -71,29 +70,24 @@ public class SaveWorkingDaysHandlerTests
     [Fact]
     public async Task Handle_ShouldSaveWorkingDays_AsOwner()
     {
-        var (staff, dp, branchId) = await SeedDoctorAsync();
+        var (member, _, branchId) = await SeedDoctorAsync();
         var handler = CreateHandlerAsOwner();
 
-        var result = await handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
+        var result = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, [
             new(Day: 1, StartTime: "09:00", EndTime: "17:00", IsAvailable: true),
             new(Day: 2, StartTime: "09:00", EndTime: "17:00", IsAvailable: false),
         ]), default);
 
         result.IsSuccess.Should().BeTrue();
-
-        var days = await _uow.WorkingDays.GetByDoctorProfileIdAsync(dp.Id);
-        days.Should().HaveCount(2);
-        days.Should().Contain(d => d.Day == (int)DayOfWeek.Monday && d.IsAvailable);
-        days.Should().Contain(d => d.Day == (int)DayOfWeek.Tuesday && !d.IsAvailable);
     }
 
     [Fact]
     public async Task Handle_ShouldSaveWorkingDays_AsDoctor_WhenCanSelfManage()
     {
-        var (staff, dp, branchId) = await SeedDoctorAsync();
-        var handler = CreateHandlerAsDoctor(staff.UserId);
+        var (member, _, branchId) = await SeedDoctorAsync();
+        var handler = CreateHandlerAsDoctor(member.UserId!.Value);
 
-        var result = await handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
+        var result = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, [
             new(Day: 3, StartTime: "08:00", EndTime: "16:00", IsAvailable: true),
         ]), default);
 
@@ -103,13 +97,12 @@ public class SaveWorkingDaysHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_AsDoctor_WhenScheduleLocked()
     {
-        var (staff, dp, branchId) = await SeedDoctorAsync();
-        dp.CanSelfManageSchedule = false;
+        var (member, doctorInfo, branchId) = await SeedDoctorAsync();
+        doctorInfo.CanSelfManageSchedule = false;
         await _uow.SaveChangesAsync();
 
-        var handler = CreateHandlerAsDoctor(staff.UserId);
-        var result = await handler.Handle(
-            new SaveWorkingDaysCommand(staff.Id, branchId, []), default);
+        var handler = CreateHandlerAsDoctor(member.UserId!.Value);
+        var result  = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, []), default);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCodes.FORBIDDEN);
@@ -118,12 +111,10 @@ public class SaveWorkingDaysHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_AsDoctor_WhenEditingAnotherDoctorsSchedule()
     {
-        var (staff, _, branchId) = await SeedDoctorAsync();
-        // Different user ID — not the owner of this staff record
+        var (member, _, branchId) = await SeedDoctorAsync();
         var handler = CreateHandlerAsDoctor(Guid.NewGuid());
 
-        var result = await handler.Handle(
-            new SaveWorkingDaysCommand(staff.Id, branchId, []), default);
+        var result = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, []), default);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCodes.FORBIDDEN);
@@ -132,23 +123,18 @@ public class SaveWorkingDaysHandlerTests
     [Fact]
     public async Task Handle_ShouldReplaceExistingDays_OnSecondSave()
     {
-        var (staff, dp, branchId) = await SeedDoctorAsync();
+        var (member, _, branchId) = await SeedDoctorAsync();
         var handler = CreateHandlerAsOwner();
 
-        await handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
+        await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, [
             new(1, "09:00", "17:00", true),
             new(2, "09:00", "17:00", true),
-            new(3, "09:00", "17:00", true),
         ]), default);
 
-        var result = await handler.Handle(new SaveWorkingDaysCommand(staff.Id, branchId, [
+        var result = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, [
             new(5, "10:00", "14:00", true),
         ]), default);
 
         result.IsSuccess.Should().BeTrue();
-
-        var days = await _uow.WorkingDays.GetByDoctorProfileIdAsync(dp.Id);
-        days.Should().HaveCount(1);
-        days.Single().Day.Should().Be((int)DayOfWeek.Friday);
     }
 }

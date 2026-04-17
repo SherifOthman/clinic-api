@@ -26,11 +26,6 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
 
         // Child relationships — FK configured from child side
         // ClinicBranch.Clinic nav configured in ClinicBranchConfiguration
-        builder.HasMany<Staff>()
-            .WithOne()
-            .HasForeignKey(s => s.ClinicId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasMany<Patient>()
             .WithOne()
             .HasForeignKey(p => p.ClinicId)

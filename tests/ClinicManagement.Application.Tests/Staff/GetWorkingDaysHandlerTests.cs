@@ -30,31 +30,33 @@ public class GetWorkingDaysHandlerTests
     {
         var spec = TestHandlerHelpers.CreateTestSpecialization();
         await _uow.Specializations.AddAsync(spec);
-        var staff = TestHandlerHelpers.CreateTestStaff();
-        await _uow.Staff.AddAsync(staff);
+
+        var (_, member) = TestHandlerHelpers.CreateTestMember();
+        await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 
-        var dp = TestHandlerHelpers.CreateTestDoctorProfile(staffId: staff.Id, specializationId: spec.Id);
-        await _uow.DoctorProfiles.AddAsync(dp);
-        var clinic = TestHandlerHelpers.CreateTestClinic();
-        await _uow.Clinics.AddAsync(clinic);
-        var branch = TestHandlerHelpers.CreateTestBranch(clinicId: clinic.Id);
+        var doctorInfo = TestHandlerHelpers.CreateTestDoctorInfo(member.Id, spec.Id);
+        await _uow.DoctorInfos.AddAsync(doctorInfo);
+
+        var branch = TestHandlerHelpers.CreateTestBranch(clinicId: member.ClinicId);
         await _uow.Branches.AddAsync(branch);
         await _uow.SaveChangesAsync();
 
-        _uow.WorkingDays.Add(new DoctorWorkingDay
+        // Create schedule + working days
+        var schedule = await _uow.DoctorSchedules.GetOrCreateScheduleAsync(doctorInfo.Id, branch.Id);
+        _uow.DoctorSchedules.AddWorkingDay(new WorkingDay
         {
-            DoctorId = dp.Id, ClinicBranchId = branch.Id,
+            DoctorBranchScheduleId = schedule.Id,
             Day = DayOfWeek.Monday, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(17, 0), IsAvailable = true,
         });
-        _uow.WorkingDays.Add(new DoctorWorkingDay
+        _uow.DoctorSchedules.AddWorkingDay(new WorkingDay
         {
-            DoctorId = dp.Id, ClinicBranchId = branch.Id,
+            DoctorBranchScheduleId = schedule.Id,
             Day = DayOfWeek.Friday, StartTime = new TimeOnly(10, 0), EndTime = new TimeOnly(14, 0), IsAvailable = false,
         });
         await _uow.SaveChangesAsync();
 
-        var result = await _handler.Handle(new GetWorkingDaysQuery(staff.Id), default);
+        var result = await _handler.Handle(new GetWorkingDaysQuery(member.Id), default);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(2);

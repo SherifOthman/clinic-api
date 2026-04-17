@@ -17,37 +17,30 @@ public class GetStaffDetailHandlerTests
         _handler = new GetStaffDetailHandler(_uow);
     }
 
-    private async Task<Domain.Entities.Staff> SeedStaffAsync(
+    private async Task<ClinicMember> SeedMemberAsync(
         string firstName = "Ahmed", string lastName = "Ali", Gender gender = Gender.Male)
     {
-        var user = new User
-        {
-            FirstName = firstName, LastName = lastName,
-            UserName = $"{firstName.ToLower()}.{lastName.ToLower()}",
-            Email = $"{firstName.ToLower()}@test.com",
-            PhoneNumber = "+966500000001", Gender = gender,
-        };
-        _uow.UserEntities.Add(user);
-        var staff = new Domain.Entities.Staff { UserId = user.Id, ClinicId = Guid.NewGuid(), IsActive = true };
-        await _uow.Staff.AddAsync(staff);
+        var (_, member) = TestHandlerHelpers.CreateTestMember(
+            firstName: firstName, lastName: lastName, gender: gender,
+            role: ClinicMemberRole.Receptionist);
+        await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
-        return staff;
+        return member;
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenStaffNotFound()
     {
         var result = await _handler.Handle(new GetStaffDetailQuery(Guid.NewGuid()), default);
-
         result.IsSuccess.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_ShouldReturnStaffDetail()
     {
-        var staff = await SeedStaffAsync("Ahmed", "Ali", Gender.Male);
+        var member = await SeedMemberAsync("Ahmed", "Ali", Gender.Male);
 
-        var result = await _handler.Handle(new GetStaffDetailQuery(staff.Id), default);
+        var result = await _handler.Handle(new GetStaffDetailQuery(member.Id), default);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.FullName.Should().Be("Ahmed Ali");
@@ -63,11 +56,16 @@ public class GetStaffDetailHandlerTests
         await _uow.Specializations.AddAsync(spec);
         await _uow.SaveChangesAsync();
 
-        var staff = await SeedStaffAsync("Sara", "Doctor", Gender.Female);
-        await _uow.DoctorProfiles.AddAsync(TestHandlerHelpers.CreateTestDoctorProfile(staffId: staff.Id, specializationId: spec.Id));
+        var (_, member) = TestHandlerHelpers.CreateTestMember(
+            firstName: "Sara", lastName: "Doctor", gender: Gender.Female,
+            role: ClinicMemberRole.Doctor);
+        await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 
-        var result = await _handler.Handle(new GetStaffDetailQuery(staff.Id), default);
+        await _uow.DoctorInfos.AddAsync(TestHandlerHelpers.CreateTestDoctorInfo(member.Id, spec.Id));
+        await _uow.SaveChangesAsync();
+
+        var result = await _handler.Handle(new GetStaffDetailQuery(member.Id), default);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.DoctorProfile.Should().NotBeNull();
