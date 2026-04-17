@@ -4,6 +4,7 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Staff.Dtos;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Staff.Commands;
@@ -26,10 +27,17 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
         var currentUserId = _currentUserService.GetRequiredUserId();
         var clinicId      = _currentUserService.GetRequiredClinicId();
 
-        var invitation = StaffInvitation.Create(clinicId, request.Email, request.Role, currentUserId, request.SpecializationId);
+        var role = request.Role switch
+        {
+            "Doctor"       => ClinicMemberRole.Doctor,
+            "Receptionist" => ClinicMemberRole.Receptionist,
+            _              => ClinicMemberRole.Receptionist,
+        };
+
+        var invitation = StaffInvitation.Create(clinicId, request.Email, role, currentUserId, request.SpecializationId);
         await _uow.Invitations.AddAsync(invitation);
 
-        var inviter = await _uow.Users.GetByIdAsync(currentUserId, cancellationToken);
+        var inviter = await _uow.Users.GetByIdWithPersonAsync(currentUserId, cancellationToken);
         var clinic  = await _uow.Clinics.GetByIdAsync(clinicId, cancellationToken);
 
         await _emailService.SendStaffInvitationEmailAsync(

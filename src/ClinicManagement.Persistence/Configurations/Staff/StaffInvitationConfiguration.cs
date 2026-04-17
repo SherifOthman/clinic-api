@@ -9,7 +9,10 @@ public class StaffInvitationConfiguration : IEntityTypeConfiguration<StaffInvita
     public void Configure(EntityTypeBuilder<StaffInvitation> builder)
     {
         builder.Property(si => si.Email).HasMaxLength(256).IsRequired();
-        builder.Property(si => si.Role).HasMaxLength(50).IsRequired();
+        builder.Property(si => si.Role)
+            .HasConversion<short>()
+            .HasColumnType("smallint")
+            .IsRequired();
         builder.Property(si => si.InvitationToken).HasMaxLength(100).IsRequired();
 
         builder.HasIndex(si => si.InvitationToken).IsUnique();

@@ -27,15 +27,15 @@ public static class ClinicHelper
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
+        var person = new Person { FirstName = "Clinic", LastName = "Owner", Gender = Gender.Male };
         var user = new User
         {
-            UserName = username,
-            Email = email,
-            FirstName = "Clinic",
-            LastName = "Owner",
-            PhoneNumber = "+966500000001",
+            UserName       = username,
+            Email          = email,
+            PhoneNumber    = "+966500000001",
             EmailConfirmed = true,
-            Gender = Gender.Male,
+            PersonId       = person.Id,
+            Person         = person,
         };
         await userManager.CreateAsync(user, "Test@1234!");
         await userManager.AddToRoleAsync(user, "ClinicOwner");
@@ -80,10 +80,12 @@ public static class ClinicHelper
             IsActive = true,
         });
 
-        db.Set<Domain.Entities.Staff>().Add(new Domain.Entities.Staff
+        db.Set<ClinicMember>().Add(new ClinicMember
         {
-            UserId = user.Id,
+            PersonId = user.PersonId,
+            UserId   = user.Id,
             ClinicId = clinic.Id,
+            Role     = ClinicMemberRole.Owner,
             IsActive = true,
         });
 

@@ -43,7 +43,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         }
 
         var token       = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var displayName = $"{user.FirstName} {user.LastName}".Trim();
+        var displayName = user.FullName;
         var resetLink   = $"{_appOptions.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
 
         try

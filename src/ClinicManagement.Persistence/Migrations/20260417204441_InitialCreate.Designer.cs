@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260417194213_InitialCreate")]
+    [Migration("20260417204441_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1119,17 +1119,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("date");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<short>("Gender")
-                        .HasColumnType("smallint");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -1138,7 +1127,7 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<Guid?>("PersonId")
+                    b.Property<Guid>("PersonId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int?>("StateGeonameId")
@@ -1155,10 +1144,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("CityGeonameId");
 
                     b.HasIndex("CountryGeonameId");
-
-                    b.HasIndex("FullName");
-
-                    b.HasIndex("Gender");
 
                     b.HasIndex("PatientCode")
                         .IsUnique();
@@ -1561,10 +1546,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<short>("Role")
+                        .HasColumnType("smallint");
 
                     b.Property<Guid?>("SpecializationId")
                         .HasColumnType("uniqueidentifier");
@@ -1779,21 +1762,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<short>("Gender")
-                        .HasColumnType("smallint");
-
                     b.Property<DateTimeOffset?>("LastLoginAt")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTimeOffset?>("LastPasswordChangeAt")
                         .HasColumnType("datetimeoffset");
@@ -1815,7 +1785,7 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("PersonId")
+                    b.Property<Guid>("PersonId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("PhoneNumber")
@@ -1823,10 +1793,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("ProfileImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -1849,8 +1815,7 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.HasIndex("PersonId")
-                        .IsUnique()
-                        .HasFilter("[PersonId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
                 });
@@ -2249,7 +2214,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasOne("ClinicManagement.Domain.Entities.Person", "Person")
                         .WithMany("PatientRecords")
                         .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("ClinicManagement.Domain.Entities.GeoState", "State")
                         .WithMany()
@@ -2336,7 +2302,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasOne("ClinicManagement.Domain.Entities.Person", "Person")
                         .WithOne("User")
                         .HasForeignKey("ClinicManagement.Domain.Entities.User", "PersonId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Person");
                 });

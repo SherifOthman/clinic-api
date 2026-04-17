@@ -1,5 +1,6 @@
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
@@ -8,7 +9,7 @@ public class StaffInvitation : AuditableTenantEntity
     private const int DefaultExpirationDays = 7;
 
     public string Email { get; private set; } = null!;
-    public string Role { get; private set; } = null!;
+    public ClinicMemberRole Role { get; private set; }
     public Guid? SpecializationId { get; private set; }
     public string InvitationToken { get; private set; } = null!;
     public DateTimeOffset ExpiresAt { get; set; }
@@ -56,20 +57,20 @@ public class StaffInvitation : AuditableTenantEntity
     public static StaffInvitation Create(
         Guid clinicId,
         string email,
-        string role,
+        ClinicMemberRole role,
         Guid createdByUserId,
         Guid? specializationId = null,
         int expirationDays = DefaultExpirationDays)
     {
         return new StaffInvitation
         {
-            ClinicId = clinicId,
-            Email = email,
-            Role = role,
+            ClinicId         = clinicId,
+            Email            = email,
+            Role             = role,
             SpecializationId = specializationId,
-            InvitationToken = Guid.NewGuid().ToString("N"),
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(expirationDays),
-            CreatedByUserId = createdByUserId,
+            InvitationToken  = Guid.NewGuid().ToString("N"),
+            ExpiresAt        = DateTimeOffset.UtcNow.AddDays(expirationDays),
+            CreatedByUserId  = createdByUserId,
         };
     }
 }

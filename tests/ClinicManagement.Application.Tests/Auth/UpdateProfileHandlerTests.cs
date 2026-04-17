@@ -34,11 +34,8 @@ public class UpdateProfileHandlerTests
     [Fact]
     public async Task Handle_ShouldUpdateAllFields_WhenUserExists()
     {
-        var user = new User
-        {
-            FirstName = "Old", LastName = "Name", UserName = "olduser",
-            Email = "user@test.com", Gender = Gender.Female,
-        };
+        var user = TestHandlerHelpers.CreateTestUser("user@test.com");
+        user.UserName = "olduser";
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
@@ -48,21 +45,19 @@ public class UpdateProfileHandlerTests
 
         result.IsSuccess.Should().BeTrue();
 
-        var updated = await _uow.Users.GetByIdAsync(user.Id);
-        updated!.FirstName.Should().Be("New");
+        var updated = await _uow.Users.GetByIdWithPersonAsync(user.Id);
+        updated!.Person.FirstName.Should().Be("New");
         updated.UserName.Should().Be("newuser");
-        updated.Gender.Should().Be(Gender.Male);
+        updated.Person.Gender.Should().Be(Gender.Male);
         updated.PhoneNumber.Should().Be("+966500000001");
     }
 
     [Fact]
     public async Task Handle_ShouldSetPhoneToNull_WhenPhoneIsWhitespace()
     {
-        var user = new User
-        {
-            FirstName = "Test", LastName = "User", UserName = "testuser",
-            Email = "test@test.com", PhoneNumber = "+966500000000",
-        };
+        var user = TestHandlerHelpers.CreateTestUser("test@test.com");
+        user.UserName = "testuser";
+        user.PhoneNumber = "+966500000000";
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);

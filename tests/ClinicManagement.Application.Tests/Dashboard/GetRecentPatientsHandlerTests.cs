@@ -17,12 +17,25 @@ public class GetRecentPatientsHandlerTests
         _handler = new GetRecentPatientsHandler(_uow);
     }
 
-    private Patient MakePatient(string name, Gender gender, DateTimeOffset createdAt) => new()
+    private Patient MakePatient(string name, Gender gender, DateTimeOffset createdAt)
     {
-        ClinicId = Guid.NewGuid(), PatientCode = Guid.NewGuid().ToString()[..7],
-        FullName = name, DateOfBirth = new DateOnly(1990, 1, 1),
-        Gender = gender, CreatedAt = createdAt,
-    };
+        var parts  = name.Split(' ', 2);
+        var person = new Person
+        {
+            FirstName   = parts[0],
+            LastName    = parts.Length > 1 ? parts[1] : string.Empty,
+            Gender      = gender,
+            DateOfBirth = new DateOnly(1990, 1, 1),
+        };
+        return new Patient
+        {
+            ClinicId    = Guid.NewGuid(),
+            PatientCode = Guid.NewGuid().ToString()[..7],
+            PersonId    = person.Id,
+            Person      = person,
+            CreatedAt   = createdAt,
+        };
+    }
 
     [Fact]
     public async Task Handle_ShouldReturnEmpty_WhenNoPatients()

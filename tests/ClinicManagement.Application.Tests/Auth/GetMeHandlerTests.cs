@@ -28,11 +28,11 @@ public class GetMeHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnUserData_WithGenderMapped()
     {
-        var user = new User
-        {
-            FirstName = "Ahmed", LastName = "Ali", UserName = "ahmed.ali",
-            Email = "ahmed@test.com", EmailConfirmed = true, Gender = Gender.Male,
-        };
+        var user = TestHandlerHelpers.CreateTestUser("ahmed@test.com");
+        user.UserName = "ahmed.ali";
+        user.Person.FirstName = "Ahmed";
+        user.Person.LastName  = "Ali";
+        user.Person.Gender    = Gender.Male;
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
 
@@ -47,11 +47,8 @@ public class GetMeHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnOnboardingCompleted_WhenClinicExists()
     {
-        var user = new User
-        {
-            FirstName = "Owner", LastName = "User", UserName = "owner",
-            Email = "owner@test.com", EmailConfirmed = true, Gender = Gender.Male,
-        };
+        var user = TestHandlerHelpers.CreateTestUser("owner@test.com");
+        user.UserName = "owner";
         _uow.UserEntities.Add(user);
         var plan = TestHandlerHelpers.CreateTestSubscriptionPlan();
         await _uow.SubscriptionPlans.AddAsync(plan);

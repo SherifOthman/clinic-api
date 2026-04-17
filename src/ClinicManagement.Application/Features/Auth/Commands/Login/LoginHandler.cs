@@ -57,7 +57,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             var remainingMinutes  = lockoutEnd.HasValue ? (int)(lockoutEnd.Value - DateTimeOffset.UtcNow).TotalMinutes + 1 : 30;
 
             _logger.LogWarning("Login attempt for locked account {UserId}", user.Id);
-            await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+            await _auditWriter.WriteAsync(user.Id, user.FullName,
                 user.UserName, user.Email, null, null,
                 "LoginBlocked", $"Account locked, {remainingMinutes} min remaining", cancellationToken);
 
@@ -73,14 +73,14 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             if (await _userManager.IsLockedOutAsync(user))
             {
                 _logger.LogWarning("Account {UserId} locked after multiple failed login attempts", user.Id);
-                await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+                await _auditWriter.WriteAsync(user.Id, user.FullName,
                     user.UserName, user.Email, null, null,
                     "AccountLocked", "Locked after too many failed attempts", cancellationToken);
                 return Result.Failure<TokenResponseDto>(ErrorCodes.ACCOUNT_LOCKED,
                     "Account is locked due to multiple failed login attempts. Please try again in 30 minutes.");
             }
 
-            await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+            await _auditWriter.WriteAsync(user.Id, user.FullName,
                 user.UserName, user.Email, null, null, "LoginFailed", "Invalid password", cancellationToken);
             return Result.Failure<TokenResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
@@ -107,7 +107,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             if (staff is not null && !staff.IsActive)
             {
                 _logger.LogWarning("Inactive staff {UserId} attempted to log in", user.Id);
-                await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+                await _auditWriter.WriteAsync(user.Id, user.FullName,
                     user.UserName, user.Email, null, clinicId, "LoginFailed", "Account inactive", cancellationToken);
                 return Result.Failure<TokenResponseDto>(ErrorCodes.STAFF_INACTIVE,
                     "Your account has been deactivated. Please contact your clinic owner.");
@@ -123,7 +123,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId, countryCode);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
-        await _auditWriter.WriteAsync(user.Id, $"{user.FirstName} {user.LastName}".Trim(),
+        await _auditWriter.WriteAsync(user.Id, user.FullName,
             user.UserName, user.Email, string.Join(",", roles), clinicId,
             "LoginSuccess", cancellationToken: cancellationToken);
 

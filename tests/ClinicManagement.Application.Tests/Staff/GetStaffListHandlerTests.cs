@@ -19,12 +19,8 @@ public class GetStaffListHandlerTests
 
     private async Task SeedMemberAsync(bool isActive = true, Gender gender = Gender.Male)
     {
-        var user = new User
-        {
-            FirstName = "Test", LastName = "User",
-            UserName = $"u_{Guid.NewGuid():N}", Email = $"u_{Guid.NewGuid():N}@test.com",
-            Gender = gender,
-        };
+        var user = TestHandlerHelpers.CreateTestUser($"u_{Guid.NewGuid():N}@test.com");
+        user.UserName = $"u_{Guid.NewGuid():N}";
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
 

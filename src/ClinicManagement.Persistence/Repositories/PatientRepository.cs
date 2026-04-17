@@ -17,6 +17,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     public async Task<Patient?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct = default)
         => await DbSet
+            .Include(p => p.Person)
             .Include(p => p.Phones)
             .Include(p => p.ChronicDiseases)
             .AsSplitQuery()
@@ -68,7 +69,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
             query = query.Where(p =>
-                p.FullName.StartsWith(searchTerm) ||
+                p.Person.FirstName.StartsWith(searchTerm) ||
+                p.Person.LastName.StartsWith(searchTerm) ||
+                (p.Person.FirstName + " " + p.Person.LastName).StartsWith(searchTerm) ||
                 p.PatientCode.StartsWith(searchTerm) ||
                 p.Phones.Any(ph =>
                     ph.PhoneNumber.StartsWith(searchTerm) ||
@@ -76,7 +79,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(gender) &&
             Enum.TryParse<Gender>(gender, ignoreCase: true, out var genderEnum))
-            query = query.Where(p => p.Gender == genderEnum);
+            query = query.Where(p => p.Person.Gender == genderEnum);
 
         if (countryGeonameId.HasValue)
             query = query.Where(p => p.CountryGeonameId == countryGeonameId.Value);
@@ -110,18 +113,19 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         {
             query = query
                 .OrderByDescending(p => p.PatientCode == searchTerm)
-                .ThenByDescending(p => p.FullName == searchTerm)
+                .ThenByDescending(p => (p.Person.FirstName + " " + p.Person.LastName).Trim() == searchTerm)
                 .ThenByDescending(p => p.PatientCode.StartsWith(searchTerm))
-                .ThenByDescending(p => p.FullName.StartsWith(searchTerm))
+                .ThenByDescending(p => (p.Person.FirstName + " " + p.Person.LastName).Trim().StartsWith(searchTerm))
                 .ThenByDescending(p => p.CreatedAt);
         }
         else
         {
             query = sortBy?.Trim().ToLower() switch
             {
-                "fullname"            => desc ? query.OrderByDescending(p => p.FullName)              : query.OrderBy(p => p.FullName),
-                "age"                 => desc ? query.OrderByDescending(p => p.DateOfBirth)           : query.OrderBy(p => p.DateOfBirth),
-                "createdat"           => desc ? query.OrderByDescending(p => p.CreatedAt)             : query.OrderBy(p => p.CreatedAt),
+                "fullname"            => desc ? query.OrderByDescending(p => p.Person.LastName).ThenByDescending(p => p.Person.FirstName)
+                                              : query.OrderBy(p => p.Person.LastName).ThenBy(p => p.Person.FirstName),
+                "age"                 => desc ? query.OrderByDescending(p => p.Person.DateOfBirth) : query.OrderBy(p => p.Person.DateOfBirth),
+                "createdat"           => desc ? query.OrderByDescending(p => p.CreatedAt)          : query.OrderBy(p => p.CreatedAt),
                 "chronicdiseasecount" => desc ? query.OrderByDescending(p => p.ChronicDiseases.Count) : query.OrderBy(p => p.ChronicDiseases.Count),
                 _                     => query.OrderByDescending(p => p.CreatedAt),
             };
@@ -134,9 +138,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Select(p => new PatientListRaw(
                 Id:                 p.Id.ToString(),
                 PatientCode:        p.PatientCode,
-                FullName:           p.FullName,
-                DateOfBirth:        p.DateOfBirth,
-                Gender:             p.Gender,
+                FullName:           (p.Person.FirstName + " " + p.Person.LastName).Trim(),
+                DateOfBirth:        p.Person.DateOfBirth,
+                Gender:             p.Person.Gender,
                 BloodType:          p.BloodType,
                 ChronicDiseaseCount: p.ChronicDiseases.Count,
                 PrimaryPhone:       p.Phones.OrderBy(ph => ph.Id).Select(ph => ph.PhoneNumber).FirstOrDefault(),
@@ -180,8 +184,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .OrderByDescending(p => p.CreatedAt)
             .Take(count)
             .Select(p => new RecentPatientRow(
-                p.Id.ToString(), p.PatientCode, p.FullName,
-                p.DateOfBirth, p.Gender.ToString(), p.CreatedAt))
+                p.Id.ToString(), p.PatientCode,
+                (p.Person.FirstName + " " + p.Person.LastName).Trim(),
+                p.Person.DateOfBirth, p.Person.Gender.ToString(), p.CreatedAt))
             .ToListAsync(ct);
 
     // ── Full detail ───────────────────────────────────────────────────────────
@@ -196,7 +201,10 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Where(p => p.Id == id)
             .Select(p => new
             {
-                p.Id, p.PatientCode, p.FullName, p.DateOfBirth, p.Gender, p.BloodType,
+                p.Id, p.PatientCode, p.BloodType,
+                FullName    = (p.Person.FirstName + " " + p.Person.LastName).Trim(),
+                DateOfBirth = p.Person.DateOfBirth,
+                Gender      = p.Person.Gender,
                 p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
                 CountryNameEn = p.Country != null ? p.Country.NameEn : null,
                 CountryNameAr = p.Country != null ? p.Country.NameAr : null,
@@ -341,14 +349,14 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return await Context.Set<User>()
             .AsNoTracking()
             .Where(u => ids.Contains(u.Id))
-            .Select(u => new { u.Id, Name = (u.FirstName + " " + u.LastName).Trim() })
+            .Select(u => new { u.Id, Name = (u.Person.FirstName + " " + u.Person.LastName).Trim() })
             .ToDictionaryAsync(u => u.Id, u => u.Name, ct);
     }
 
     // ── Private projection record ─────────────────────────────────────────────
 
     private record PatientListRaw(
-        string Id, string PatientCode, string FullName, DateOnly DateOfBirth,
+        string Id, string PatientCode, string FullName, DateOnly? DateOfBirth,
         Gender Gender, BloodType? BloodType, int ChronicDiseaseCount,
         string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId,
         int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,

@@ -3,6 +3,7 @@ using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Tests.Common;
+using ClinicManagement.Domain.Enums;
 using FluentAssertions;
 using Moq;
 
@@ -36,7 +37,7 @@ public class InviteStaffHandlerTests
 
         var invitation = await _uow.Invitations.GetByIdAsync(result.Value.InvitationId);
         invitation!.Email.Should().Be("rec@test.com");
-        invitation.Role.Should().Be("Receptionist");
+        invitation.Role.Should().Be(ClinicMemberRole.Receptionist);
     }
 
     [Fact]

@@ -42,7 +42,7 @@ public class ForgotPasswordHandlerTests
     public async Task Handle_ShouldSendResetEmail_WhenUserExists()
     {
         var user = TestHandlerHelpers.CreateTestUser();
-        user.FirstName = "Test"; user.LastName = "User"; user.PasswordHash = "hash";
+        user.PasswordHash = "hash";
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
 

@@ -28,7 +28,7 @@ public record PatientDto
     public string Id { get; init; } = null!;
     public string PatientCode { get; init; } = null!;
     public string FullName { get; init; } = null!;
-    public DateOnly DateOfBirth { get; init; }
+    public DateOnly? DateOfBirth { get; init; }
     public string Gender { get; init; } = null!;
     public string? BloodType { get; init; }
     public int ChronicDiseaseCount { get; init; }

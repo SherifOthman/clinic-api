@@ -48,11 +48,12 @@ public class DemoUsersSeedService
         var opts = _options.SuperAdmin;
         if (await _userManager.FindByEmailAsync(opts.Email) != null) return;
 
+        var person = new Person { FirstName = "System", LastName = "Administrator", Gender = Gender.Male };
         var user = new User
         {
             UserName = "superadmin", Email = opts.Email,
-            FirstName = "System", LastName = "Administrator",
-            PhoneNumber = "+966500000000", EmailConfirmed = true, Gender = Gender.Male,
+            PhoneNumber = "+966500000000", EmailConfirmed = true,
+            PersonId = person.Id, Person = person,
         };
         var result = await _userManager.CreateAsync(user, opts.Password);
         if (!result.Succeeded) { LogError("SuperAdmin", result); return; }
@@ -71,8 +72,7 @@ public class DemoUsersSeedService
             owner = new User
             {
                 UserName = "owner", Email = opts.Email,
-                FirstName = "John", LastName = "Smith",
-                PhoneNumber = "+1234567890", EmailConfirmed = true, Gender = Gender.Male,
+                PhoneNumber = "+1234567890", EmailConfirmed = true,
                 PersonId = person.Id, Person = person,
             };
             var result = await _userManager.CreateAsync(owner, opts.Password);
@@ -118,10 +118,9 @@ public class DemoUsersSeedService
         });
 
         // New model
-        var ownerPersonId = owner.PersonId ?? Guid.NewGuid();
         var ownerMember = new ClinicMember
         {
-            PersonId = ownerPersonId, UserId = owner.Id,
+            PersonId = owner.PersonId, UserId = owner.Id,
             ClinicId = clinic.Id, Role = ClinicMemberRole.Owner, IsActive = true,
         };
         _context.Set<ClinicMember>().Add(ownerMember);
@@ -146,8 +145,7 @@ public class DemoUsersSeedService
             doctor = new User
             {
                 UserName = "doctor", Email = opts.Email,
-                FirstName = "Sarah", LastName = "Johnson",
-                PhoneNumber = "+1234567891", EmailConfirmed = true, Gender = Gender.Female,
+                PhoneNumber = "+1234567891", EmailConfirmed = true,
                 PersonId = person.Id, Person = person,
             };
             var result = await _userManager.CreateAsync(doctor, opts.Password);
@@ -162,10 +160,9 @@ public class DemoUsersSeedService
         if (alreadyMember) return;
 
         var cardiology = await _context.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
-        var doctorPersonId = doctor.PersonId ?? Guid.NewGuid();
         var member = new ClinicMember
         {
-            PersonId = doctorPersonId, UserId = doctor.Id,
+            PersonId = doctor.PersonId, UserId = doctor.Id,
             ClinicId = clinic.Id, Role = ClinicMemberRole.Doctor, IsActive = true,
         };
         _context.Set<ClinicMember>().Add(member);
@@ -184,8 +181,7 @@ public class DemoUsersSeedService
             receptionist = new User
             {
                 UserName = "receptionist", Email = opts.Email,
-                FirstName = "Emily", LastName = "Davis",
-                PhoneNumber = "+1234567892", EmailConfirmed = true, Gender = Gender.Female,
+                PhoneNumber = "+1234567892", EmailConfirmed = true,
                 PersonId = person.Id, Person = person,
             };
             var result = await _userManager.CreateAsync(receptionist, opts.Password);
@@ -199,10 +195,9 @@ public class DemoUsersSeedService
             .AnyAsync(m => m.UserId == receptionist.Id && m.ClinicId == clinic.Id);
         if (alreadyMember) return;
 
-        var recPersonId = receptionist.PersonId ?? Guid.NewGuid();
         _context.Set<ClinicMember>().Add(new ClinicMember
         {
-            PersonId = recPersonId, UserId = receptionist.Id,
+            PersonId = receptionist.PersonId, UserId = receptionist.Id,
             ClinicId = clinic.Id, Role = ClinicMemberRole.Receptionist, IsActive = true,
         });
         await _context.SaveChangesAsync();

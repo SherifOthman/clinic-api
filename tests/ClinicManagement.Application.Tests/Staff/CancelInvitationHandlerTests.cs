@@ -3,6 +3,7 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using FluentAssertions;
 using Moq;
 
@@ -20,7 +21,7 @@ public class CancelInvitationHandlerTests
     }
 
     private StaffInvitation MakeInvitation(Guid clinicId) =>
-        StaffInvitation.Create(clinicId, "doctor@test.com", "Doctor", Guid.NewGuid());
+        StaffInvitation.Create(clinicId, "doctor@test.com", ClinicMemberRole.Doctor, Guid.NewGuid());
 
     [Fact]
     public async Task Handle_ShouldFail_WhenInvitationNotFound()

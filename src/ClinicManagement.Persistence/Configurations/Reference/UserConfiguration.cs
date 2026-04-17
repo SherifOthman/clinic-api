@@ -1,5 +1,4 @@
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,14 +8,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.Property(u => u.FirstName).HasMaxLength(100).IsRequired();
-        builder.Property(u => u.LastName).HasMaxLength(100).IsRequired();
-        builder.Property(u => u.ProfileImageUrl).HasMaxLength(500);
-        builder.Property(u => u.Gender)
-            .HasConversion<short>()
-            .HasColumnType("smallint");
+        builder.Property(u => u.PersonId).IsRequired();
 
-        // PersonId — nullable during migration, will become required once all users have a Person
-        builder.Property(u => u.PersonId).IsRequired(false);
+        builder.HasOne(u => u.Person)
+            .WithOne(p => p.User)
+            .HasForeignKey<User>(u => u.PersonId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -79,27 +79,13 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 
     private static ClinicMember CreateOwnerMember(User user, Guid clinicId)
     {
-        if (user.PersonId.HasValue)
-        {
-            return new ClinicMember
-            {
-                PersonId = user.PersonId.Value,
-                UserId   = user.Id,
-                ClinicId = clinicId,
-                Role     = Domain.Enums.ClinicMemberRole.Owner,
-                IsActive = true,
-            };
-        }
-
-        var person = new Person { FirstName = user.FirstName, LastName = user.LastName, Gender = user.Gender };
         return new ClinicMember
         {
-            PersonId = person.Id,
+            PersonId = user.PersonId,
             UserId   = user.Id,
             ClinicId = clinicId,
             Role     = Domain.Enums.ClinicMemberRole.Owner,
             IsActive = true,
-            Person   = person,
         };
     }
 }

@@ -9,17 +9,13 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
     public void Configure(EntityTypeBuilder<Patient> builder)
     {
         builder.Property(p => p.PatientCode).HasMaxLength(50).IsRequired();
-        builder.Property(p => p.FullName).HasMaxLength(200).IsRequired();
-        builder.Property(p => p.Gender)
-            .HasConversion<short>()
-            .HasColumnType("smallint");
 
-        // PersonId — nullable during migration
-        builder.Property(p => p.PersonId).IsRequired(false);
+        // PersonId — required, every patient must have a Person
+        builder.Property(p => p.PersonId).IsRequired();
         builder.HasOne(p => p.Person)
             .WithMany(per => per.PatientRecords)
             .HasForeignKey(p => p.PersonId)
-            .IsRequired(false)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<Clinic>()
@@ -40,11 +36,9 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         builder.HasIndex(p => p.PatientCode).IsUnique();
         builder.HasIndex(p => new { p.ClinicId, p.IsDeleted, p.CreatedAt });
-        builder.HasIndex(p => p.FullName);
         builder.HasIndex(p => p.StateGeonameId);
         builder.HasIndex(p => p.CityGeonameId);
         builder.HasIndex(p => p.CountryGeonameId);
-        builder.HasIndex(p => p.Gender);
 
         // Optional FK relationships to GeoNames tables — no cascade delete (geo data is shared)
         // NoAction required: SQL Server rejects multiple SetNull cascade paths on the same table

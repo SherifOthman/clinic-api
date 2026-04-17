@@ -9,7 +9,7 @@ public record RecentPatientDto(
     string Id,
     string PatientCode,
     string FullName,
-    DateOnly DateOfBirth,
+    DateOnly? DateOfBirth,
     string Gender,
     DateTimeOffset RegisteredAt
 );

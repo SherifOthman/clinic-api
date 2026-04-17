@@ -25,10 +25,21 @@ public class GetPatientsQueryHandlerTests
 
     private Patient MakePatient(string name, Gender gender, string code, int chronicDiseaseCount = 0)
     {
+        var parts  = name.Split(' ', 2);
+        var person = new Person
+        {
+            FirstName   = parts[0],
+            LastName    = parts.Length > 1 ? parts[1] : string.Empty,
+            Gender      = gender,
+            DateOfBirth = new DateOnly(1990, 1, 1),
+        };
         var patient = new Patient
         {
-            ClinicId = Guid.NewGuid(), PatientCode = code, FullName = name,
-            DateOfBirth = new DateOnly(1990, 1, 1), Gender = gender, CreatedAt = DateTimeOffset.UtcNow,
+            ClinicId    = Guid.NewGuid(),
+            PatientCode = code,
+            PersonId    = person.Id,
+            Person      = person,
+            CreatedAt   = DateTimeOffset.UtcNow,
         };
         for (var i = 0; i < chronicDiseaseCount; i++)
             patient.ChronicDiseases.Add(new PatientChronicDisease { ChronicDiseaseId = Guid.NewGuid() });

@@ -31,8 +31,18 @@ public static class TestHandlerHelpers
 
     // ── Entity factories ──────────────────────────────────────────────────────
 
-    public static User CreateTestUser(string email = "test@test.com", bool emailConfirmed = true) =>
-        new() { Email = email, UserName = email, EmailConfirmed = emailConfirmed };
+    public static User CreateTestUser(string email = "test@test.com", bool emailConfirmed = true)
+    {
+        var person = new Person { FirstName = "Test", LastName = "User", Gender = Gender.Male };
+        return new User
+        {
+            Email          = email,
+            UserName       = email,
+            EmailConfirmed = emailConfirmed,
+            PersonId       = person.Id,
+            Person         = person,
+        };
+    }
 
     public static SubscriptionPlan CreateTestSubscriptionPlan(string name = "Test Plan") =>
         new()
@@ -69,7 +79,29 @@ public static class TestHandlerHelpers
             IsMainBranch = isMainBranch, IsActive = true,
         };
 
-    /// <summary>Creates a Person + ClinicMember (Doctor role) for testing.</summary>
+    /// <summary>Creates a Person + Patient for testing.</summary>
+    public static Patient CreateTestPatient(
+        string firstName = "Test", string lastName = "Patient",
+        Gender gender = Gender.Male,
+        string patientCode = "0000001",
+        Guid? clinicId = null)
+    {
+        var person = new Person
+        {
+            FirstName   = firstName,
+            LastName    = lastName,
+            Gender      = gender,
+            DateOfBirth = new DateOnly(1990, 1, 1),
+        };
+        return new Patient
+        {
+            ClinicId    = clinicId ?? Guid.NewGuid(),
+            PatientCode = patientCode,
+            PersonId    = person.Id,
+            Person      = person,
+            CreatedAt   = DateTimeOffset.UtcNow,
+        };
+    }
     public static (Person person, ClinicMember member) CreateTestMember(
         Guid? userId = null, Guid? clinicId = null,
         string firstName = "Test", string lastName = "User",

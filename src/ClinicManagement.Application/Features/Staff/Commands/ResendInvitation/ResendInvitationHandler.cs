@@ -44,7 +44,7 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
         await _emailService.SendStaffInvitationEmailAsync(
             invitation.Email,
             clinic?.Name ?? "Clinic",
-            invitation.Role,
+            invitation.Role.ToString(),
             inviter?.FullName ?? "Clinic Administrator",
             $"/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);

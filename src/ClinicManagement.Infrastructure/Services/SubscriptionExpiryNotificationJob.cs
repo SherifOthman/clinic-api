@@ -79,7 +79,9 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
                 var clinic = await clinics.FirstOrDefaultAsync(c => c.Id == subscription.ClinicId, cancellationToken);
                 if (clinic is null) continue;
 
-                var owner = await users.FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId, cancellationToken);
+                var owner = await users
+                    .Include(u => u.Person)
+                    .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId, cancellationToken);
                 if (owner is null) continue;
 
                 var daysLeft = subscription.EndDate.HasValue
@@ -98,7 +100,7 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
                 emailQueue.Add(new EmailQueue
                 {
                     ToEmail  = !string.IsNullOrWhiteSpace(clinic.BillingEmail) ? clinic.BillingEmail : owner.Email!,
-                    ToName   = $"{owner.FirstName} {owner.LastName}",
+                    ToName   = owner.FullName,
                     Subject  = "Subscription Expiring Soon - Action Required",
                     Body     = $"<p>Your subscription for <strong>{clinic.Name}</strong> expires in {daysLeft} days ({subscription.EndDate:yyyy-MM-dd}). Please renew to avoid interruption.</p>",
                     IsHtml   = true,

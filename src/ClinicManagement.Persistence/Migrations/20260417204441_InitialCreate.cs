@@ -471,13 +471,9 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ProfileImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Gender = table.Column<short>(type: "smallint", nullable: false),
                     LastLoginAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     LastPasswordChangeAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -862,10 +858,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Gender = table.Column<short>(type: "smallint", nullable: false),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
-                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BloodType = table.Column<int>(type: "int", nullable: true),
                     CountryGeonameId = table.Column<int>(type: "int", nullable: true),
                     StateGeonameId = table.Column<int>(type: "int", nullable: true),
@@ -915,7 +908,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Role = table.Column<short>(type: "smallint", nullable: false),
                     SpecializationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     InvitationToken = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -1376,16 +1369,6 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "CountryGeonameId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patient_FullName",
-                table: "Patient",
-                column: "FullName");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Patient_Gender",
-                table: "Patient",
-                column: "Gender");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Patient_PatientCode",
                 table: "Patient",
                 column: "PatientCode",
@@ -1499,8 +1482,7 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "IX_Users_PersonId",
                 table: "Users",
                 column: "PersonId",
-                unique: true,
-                filter: "[PersonId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",

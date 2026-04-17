@@ -11,13 +11,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(p => p.LastName).HasMaxLength(100).IsRequired();
         builder.Property(p => p.ProfileImageUrl).HasMaxLength(500);
-
         builder.Property(p => p.Gender).HasConversion<short>().HasColumnType("smallint");
-
-        builder.HasOne(p => p.User)
-            .WithOne(u => u.Person)
-            .HasForeignKey<User>(u => u.PersonId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

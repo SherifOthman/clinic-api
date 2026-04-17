@@ -27,9 +27,14 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
+    public async Task<User?> GetByIdWithPersonAsync(Guid id, CancellationToken ct = default)
+        => await _users.Include(u => u.Person).FirstOrDefaultAsync(u => u.Id == id, ct);
+
     public async Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername, CancellationToken ct = default)
-        => await _users.FirstOrDefaultAsync(
-            u => u.Email == emailOrUsername || u.UserName == emailOrUsername, ct);
+        => await _users
+            .Include(u => u.Person)
+            .FirstOrDefaultAsync(
+                u => u.Email == emailOrUsername || u.UserName == emailOrUsername, ct);
 
     public async Task<bool> AnyByEmailAsync(string email, CancellationToken ct = default)
         => await _users.AnyAsync(u => u.Email == email, ct);
@@ -81,7 +86,13 @@ public class UserRepository : IUserRepository
             .AsNoTracking()
             .Where(u => u.Id == userId)
             .Select(u => new UserProfileRow(
-                u.UserName!, u.FirstName, u.LastName, u.Email!,
-                u.PhoneNumber, u.ProfileImageUrl, u.EmailConfirmed, u.Gender.ToString()))
+                u.UserName!,
+                u.Person.FirstName,
+                u.Person.LastName,
+                u.Email!,
+                u.PhoneNumber,
+                u.Person.ProfileImageUrl,
+                u.EmailConfirmed,
+                u.Person.Gender.ToString()))
             .FirstOrDefaultAsync(ct);
 }

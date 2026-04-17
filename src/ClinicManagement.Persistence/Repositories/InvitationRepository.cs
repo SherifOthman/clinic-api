@@ -50,8 +50,9 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
                 _ => query
             };
 
-        if (!string.IsNullOrWhiteSpace(role))
-            query = query.Where(si => si.Role == role);
+        if (!string.IsNullOrWhiteSpace(role) &&
+            Enum.TryParse<ClinicMemberRole>(role, ignoreCase: true, out var roleEnum))
+            query = query.Where(si => si.Role == roleEnum);
 
         var desc = sortDirection.IsDescending();
         query = sortBy?.Trim().ToLower() switch
@@ -62,11 +63,11 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
 
         return await query
             .Select(si => new InvitationListRow(
-                si.Id, si.Email, si.Role,
+                si.Id, si.Email, si.Role.ToString(),
                 si.Specialization != null ? si.Specialization.NameEn : null,
                 si.Specialization != null ? si.Specialization.NameAr : null,
                 si.CreatedAt, si.ExpiresAt, si.IsAccepted, si.IsCanceled,
-                (si.CreatedByUser.FirstName + " " + si.CreatedByUser.LastName).Trim()))
+                (si.CreatedByUser.Person.FirstName + " " + si.CreatedByUser.Person.LastName).Trim()))
             .ToPagedAsync(pageNumber, pageSize, ct);
     }
 
@@ -80,9 +81,9 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
                 x.IsAccepted, x.IsCanceled, x.AcceptedAt,
                 SpecializationNameEn = x.Specialization != null ? x.Specialization.NameEn : null,
                 SpecializationNameAr = x.Specialization != null ? x.Specialization.NameAr : null,
-                CreatedByName        = x.CreatedByUser.FirstName + " " + x.CreatedByUser.LastName,
+                CreatedByName        = x.CreatedByUser.Person.FirstName + " " + x.CreatedByUser.Person.LastName,
                 AcceptedByName       = x.AcceptedByUser != null
-                    ? x.AcceptedByUser.FirstName + " " + x.AcceptedByUser.LastName
+                    ? x.AcceptedByUser.Person.FirstName + " " + x.AcceptedByUser.Person.LastName
                     : null,
             })
             .FirstOrDefaultAsync(ct);
@@ -90,7 +91,7 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         if (si is null) return null;
 
         return new InvitationDetailRow(
-            si.Id, si.Email, si.Role,
+            si.Id, si.Email, si.Role.ToString(),
             si.SpecializationNameEn, si.SpecializationNameAr,
             si.CreatedAt, si.ExpiresAt, si.IsAccepted, si.IsCanceled,
             si.AcceptedAt, si.CreatedByName.Trim(), si.AcceptedByName?.Trim());

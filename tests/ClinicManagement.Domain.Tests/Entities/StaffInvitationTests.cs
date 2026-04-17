@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Domain.Tests.Builders;
 using FluentAssertions;
 
@@ -9,7 +10,7 @@ public class StaffInvitationTests
     [Fact]
     public void Create_ShouldInitializeWithCorrectDefaults()
     {
-        var invitation = StaffInvitation.Create(Guid.NewGuid(), "doc@test.com", "Doctor", Guid.NewGuid());
+        var invitation = StaffInvitation.Create(Guid.NewGuid(), "doc@test.com", ClinicMemberRole.Doctor, Guid.NewGuid());
 
         invitation.IsAccepted.Should().BeFalse();
         invitation.IsCanceled.Should().BeFalse();

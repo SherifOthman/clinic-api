@@ -2,7 +2,7 @@ namespace ClinicManagement.Application.Features.Patients.QueryModels;
 
 /// <summary>Flat row returned by the patients list query.</summary>
 public record PatientListRow(
-    string Id, string PatientCode, string FullName, DateOnly DateOfBirth,
+    string Id, string PatientCode, string FullName, DateOnly? DateOfBirth,
     string Gender, string? BloodType, int ChronicDiseaseCount,
     string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId, string? ClinicName,
     int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
@@ -12,12 +12,12 @@ public record PatientListRow(
 /// <summary>Flat row returned by the recent patients dashboard query.</summary>
 public record RecentPatientRow(
     string Id, string PatientCode, string FullName,
-    DateOnly DateOfBirth, string Gender, DateTimeOffset CreatedAt
+    DateOnly? DateOfBirth, string Gender, DateTimeOffset CreatedAt
 );
 
 /// <summary>Full patient detail including phones, diseases, and audit user names.</summary>
 public record PatientDetailData(
-    Guid Id, string PatientCode, string FullName, DateOnly DateOfBirth,
+    Guid Id, string PatientCode, string FullName, DateOnly? DateOfBirth,
     string Gender, string? BloodType,
     int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
     string? CountryNameEn, string? CountryNameAr,

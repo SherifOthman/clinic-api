@@ -30,13 +30,10 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
         var user = new User
         {
-            FirstName      = request.FirstName,
-            LastName       = request.LastName,
             UserName       = request.UserName,
             Email          = invitation.Email,
             PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = true,
-            Gender         = gender,
             PersonId       = person.Id,
             Person         = person,
         };
@@ -45,7 +42,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         if (!createResult.Succeeded)
             return Result.Failure(ErrorCodes.OPERATION_FAILED, string.Join(", ", createResult.Errors.Select(e => e.Description)));
 
-        var roleResult = await _userManager.AddToRoleAsync(user, invitation.Role);
+        var roleResult = await _userManager.AddToRoleAsync(user, invitation.Role.ToString());
         if (!roleResult.Succeeded)
         {
             await _userManager.DeleteAsync(user);
@@ -55,24 +52,17 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var acceptResult = invitation.Accept(user.Id, DateTimeOffset.UtcNow);
         if (acceptResult.IsFailure) { await _userManager.DeleteAsync(user); return acceptResult; }
 
-        var role = invitation.Role switch
-        {
-            UserRoles.Doctor       => ClinicMemberRole.Doctor,
-            UserRoles.Receptionist => ClinicMemberRole.Receptionist,
-            _                      => ClinicMemberRole.Receptionist,
-        };
-
         var member = new ClinicMember
         {
             PersonId = person.Id,
             UserId   = user.Id,
             ClinicId = invitation.ClinicId,
-            Role     = role,
+            Role     = invitation.Role,
             IsActive = true,
         };
         await _uow.Members.AddAsync(member);
 
-        if (role == ClinicMemberRole.Doctor)
+        if (invitation.Role == ClinicMemberRole.Doctor)
         {
             await _uow.DoctorInfos.AddAsync(new DoctorInfo
             {

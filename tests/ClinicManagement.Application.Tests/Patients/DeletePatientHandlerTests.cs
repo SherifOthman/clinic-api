@@ -28,11 +28,7 @@ public class DeletePatientHandlerTests
     [Fact]
     public async Task Handle_ShouldSoftDelete_WhenPatientExists()
     {
-        var patient = new Patient
-        {
-            ClinicId = Guid.NewGuid(), PatientCode = "00000001", FullName = "Test Patient",
-            DateOfBirth = new DateOnly(1990, 1, 1), Gender = Gender.Male, CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var patient = TestHandlerHelpers.CreateTestPatient(patientCode: "00000001");
         await _uow.Patients.AddAsync(patient);
         await _uow.SaveChangesAsync();
 

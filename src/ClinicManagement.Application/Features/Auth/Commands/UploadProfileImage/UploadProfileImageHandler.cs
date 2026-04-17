@@ -30,7 +30,7 @@ public class UploadProfileImageHandler : IRequestHandler<UploadProfileImageComma
     public async Task<Result> Handle(UploadProfileImageCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var user   = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+        var user   = await _uow.Users.GetByIdWithPersonAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -40,8 +40,8 @@ public class UploadProfileImageHandler : IRequestHandler<UploadProfileImageComma
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
-                await _fileStorageService.DeleteFileAsync(user.ProfileImageUrl, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(user.Person.ProfileImageUrl))
+                await _fileStorageService.DeleteFileAsync(user.Person.ProfileImageUrl, cancellationToken);
 
             var uploadResult = await _fileStorageService.UploadFileWithValidationAsync(
                 request.File, "ProfileImage", cancellationToken);
@@ -52,7 +52,7 @@ public class UploadProfileImageHandler : IRequestHandler<UploadProfileImageComma
                 return Result.Failure(uploadResult.ErrorCode ?? ErrorCodes.UPLOAD_FAILED, uploadResult.ErrorMessage ?? "File upload failed");
             }
 
-            user.ProfileImageUrl = uploadResult.Value;
+            user.Person.ProfileImageUrl = uploadResult.Value;
             await _uow.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Profile image uploaded successfully for user: {UserId}", user.Id);

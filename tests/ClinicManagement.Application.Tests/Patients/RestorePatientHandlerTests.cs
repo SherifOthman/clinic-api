@@ -28,11 +28,7 @@ public class RestorePatientHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenPatientNotDeleted()
     {
-        var patient = new Patient
-        {
-            ClinicId = Guid.NewGuid(), PatientCode = "0000001", FullName = "Test",
-            DateOfBirth = new DateOnly(1990, 1, 1), Gender = Gender.Male, CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var patient = TestHandlerHelpers.CreateTestPatient();
         await _uow.Patients.AddAsync(patient);
         await _uow.SaveChangesAsync();
 
@@ -44,12 +40,8 @@ public class RestorePatientHandlerTests
     [Fact]
     public async Task Handle_ShouldRestoreDeletedPatient()
     {
-        var patient = new Patient
-        {
-            ClinicId = Guid.NewGuid(), PatientCode = "0000001", FullName = "Test",
-            DateOfBirth = new DateOnly(1990, 1, 1), Gender = Gender.Male,
-            CreatedAt = DateTimeOffset.UtcNow, IsDeleted = true,
-        };
+        var patient = TestHandlerHelpers.CreateTestPatient();
+        patient.IsDeleted = true;
         await _uow.Patients.AddAsync(patient);
         await _uow.SaveChangesAsync();
 

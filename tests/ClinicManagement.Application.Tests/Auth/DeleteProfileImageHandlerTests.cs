@@ -54,7 +54,7 @@ public class DeleteProfileImageHandlerTests
     public async Task Handle_ShouldDeleteFileAndClearUrl_WhenUserHasImage()
     {
         var user = TestHandlerHelpers.CreateTestUser();
-        user.ProfileImageUrl = "profile.jpg";
+        user.Person.ProfileImageUrl = "profile.jpg";
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
@@ -64,7 +64,7 @@ public class DeleteProfileImageHandlerTests
         result.IsSuccess.Should().BeTrue();
         _fileStorageMock.Verify(x => x.DeleteFileAsync("profile.jpg", default), Times.Once);
 
-        var updated = await _uow.Users.GetByIdAsync(user.Id);
-        updated!.ProfileImageUrl.Should().BeNull();
+        var updated = await _uow.Users.GetByIdWithPersonAsync(user.Id);
+        updated!.Person.ProfileImageUrl.Should().BeNull();
     }
 }

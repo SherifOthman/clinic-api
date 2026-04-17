@@ -17,11 +17,15 @@ public class GetPatientDetailHandlerTests
         _handler = new GetPatientDetailHandler(_uow);
     }
 
-    private Patient MakePatient(Gender gender = Gender.Male) => new()
+    private Patient MakePatient(Gender gender = Gender.Male)
     {
-        ClinicId = Guid.NewGuid(), PatientCode = "0000001", FullName = "Test Patient",
-        DateOfBirth = new DateOnly(1990, 6, 15), Gender = gender, CreatedAt = DateTimeOffset.UtcNow,
-    };
+        var person = new Person { FirstName = "Test", LastName = "Patient", Gender = gender, DateOfBirth = new DateOnly(1990, 6, 15) };
+        return new Patient
+        {
+            ClinicId = Guid.NewGuid(), PatientCode = "0000001",
+            PersonId = person.Id, Person = person, CreatedAt = DateTimeOffset.UtcNow,
+        };
+    }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenPatientNotFound()

@@ -24,11 +24,7 @@ public class UpdatePatientHandlerTests
         _handler = new UpdatePatientCommandHandler(_uow, _currentUserMock.Object, _phoneNormalizerMock.Object);
     }
 
-    private Patient MakePatient() => new()
-    {
-        ClinicId = Guid.NewGuid(), PatientCode = "0000001", FullName = "Old Name",
-        DateOfBirth = new DateOnly(1990, 1, 1), Gender = Gender.Male, CreatedAt = DateTimeOffset.UtcNow,
-    };
+    private Patient MakePatient() => TestHandlerHelpers.CreateTestPatient();
 
     [Fact]
     public async Task Handle_ShouldFail_WhenPatientNotFound()
@@ -51,9 +47,9 @@ public class UpdatePatientHandlerTests
 
         result.IsSuccess.Should().BeTrue();
 
-        var updated = await _uow.Patients.GetByIdAsync(patient.Id);
-        updated!.FullName.Should().Be("New Name");
-        updated.Gender.Should().Be(Gender.Female);
+        var updated = await _uow.Patients.GetByIdWithDetailsAsync(patient.Id);
+        updated!.Person.FullName.Should().Be("New Name");
+        updated.Person.Gender.Should().Be(Gender.Female);
     }
 
     [Fact]

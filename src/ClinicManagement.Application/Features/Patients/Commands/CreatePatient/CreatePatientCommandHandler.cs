@@ -42,15 +42,13 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         {
             ClinicId         = clinicId,
             PatientCode      = patientCode,
-            FullName         = request.FullName,
-            DateOfBirth      = dob,
-            Gender           = gender,
             CountryGeonameId = request.CountryGeonameId,
             StateGeonameId   = request.StateGeonameId,
             CityGeonameId    = request.CityGeonameId,
             BloodType        = ParseBloodType(request.BloodType),
             CreatedAt        = DateTimeOffset.UtcNow,
-            Person           = person, // EF creates Person and sets PersonId
+            PersonId         = person.Id,
+            Person           = person,
         };
 
         await _uow.Patients.AddAsync(patient);
