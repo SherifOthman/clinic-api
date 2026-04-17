@@ -59,7 +59,7 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
             .ToListAsync(ct);
 
     public Task<VisitType?> GetVisitTypeByIdAsync(Guid visitTypeId, CancellationToken ct = default)
-        => _db.Set<VisitType>().FirstOrDefaultAsync(v => v.Id == visitTypeId, ct);
+        => _db.Set<VisitType>().Include(v => v.Schedule).FirstOrDefaultAsync(v => v.Id == visitTypeId, ct);
 
     public Task<bool> VisitTypeHasAppointmentsAsync(Guid visitTypeId, CancellationToken ct = default)
         => _db.Set<Appointment>().AnyAsync(a => a.VisitTypeId == visitTypeId, ct);

@@ -21,7 +21,7 @@ public class GetDashboardStatsHandler : IRequestHandler<GetDashboardStatsQuery, 
         var totalPatients      = await _uow.Patients.CountAsync(cancellationToken);
         var patientsThisMonth  = await _uow.Patients.CountCreatedFromAsync(thisMonth, cancellationToken);
         var patientsLastMonth  = await _uow.Patients.CountCreatedBetweenAsync(lastMonth, thisMonth, cancellationToken);
-        var activeStaff        = await _uow.Staff.CountActiveAsync(cancellationToken);
+        var activeStaff        = await _uow.Members.CountActiveAsync(cancellationToken);
         var pendingInvitations = await _uow.Invitations.CountPendingAsync(cancellationToken);
 
         var sub = await _uow.ClinicSubscriptions.GetLatestAsync(cancellationToken);

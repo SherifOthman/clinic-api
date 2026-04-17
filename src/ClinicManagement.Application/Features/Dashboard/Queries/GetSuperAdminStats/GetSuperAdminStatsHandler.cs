@@ -17,7 +17,7 @@ public class GetSuperAdminStatsHandler : IRequestHandler<GetSuperAdminStatsQuery
         // IgnoreQueryFilters counts — these need dedicated repo methods (can't use base CountAsync)
         var totalClinics  = await _uow.Clinics.CountIgnoreFiltersAsync(cancellationToken);
         var totalPatients = await _uow.Patients.CountIgnoreFiltersAsync(cancellationToken);
-        var totalStaff    = await _uow.Staff.CountActiveIgnoreFiltersAsync(cancellationToken);
+        var totalStaff    = await _uow.Members.CountActiveIgnoreFiltersAsync(cancellationToken);
         var clinicsOnTrial = await _uow.ClinicSubscriptions.CountByStatusIgnoreFiltersAsync(SubscriptionStatus.Trial, cancellationToken);
         var clinicsActive  = await _uow.ClinicSubscriptions.CountByStatusIgnoreFiltersAsync(SubscriptionStatus.Active, cancellationToken);
 

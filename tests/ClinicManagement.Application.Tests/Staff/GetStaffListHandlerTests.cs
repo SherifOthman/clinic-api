@@ -17,7 +17,7 @@ public class GetStaffListHandlerTests
         _handler = new GetStaffListHandler(_uow);
     }
 
-    private async Task SeedStaffAsync(bool isActive = true, Gender gender = Gender.Male)
+    private async Task SeedMemberAsync(bool isActive = true, Gender gender = Gender.Male)
     {
         var user = new User
         {
@@ -26,15 +26,27 @@ public class GetStaffListHandlerTests
             Gender = gender,
         };
         _uow.UserEntities.Add(user);
-        await _uow.Staff.AddAsync(new Domain.Entities.Staff { UserId = user.Id, ClinicId = Guid.NewGuid(), IsActive = isActive });
+        await _uow.SaveChangesAsync();
+
+        var person = new Person { FirstName = "Test", LastName = "User", Gender = gender };
+        var member = new ClinicMember
+        {
+            PersonId = person.Id,
+            UserId   = user.Id,
+            ClinicId = Guid.NewGuid(),
+            Role     = ClinicMemberRole.Doctor,
+            IsActive = isActive,
+            Person   = person,
+        };
+        await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
     }
 
     [Fact]
     public async Task Handle_ShouldReturnAllStaff()
     {
-        await SeedStaffAsync();
-        await SeedStaffAsync();
+        await SeedMemberAsync();
+        await SeedMemberAsync();
 
         var result = await _handler.Handle(new GetStaffListQuery(PageNumber: 1, PageSize: 10), default);
 
@@ -45,8 +57,8 @@ public class GetStaffListHandlerTests
     [Fact]
     public async Task Handle_ShouldFilterByActiveStatus()
     {
-        await SeedStaffAsync(isActive: true);
-        await SeedStaffAsync(isActive: false);
+        await SeedMemberAsync(isActive: true);
+        await SeedMemberAsync(isActive: false);
 
         var result = await _handler.Handle(new GetStaffListQuery(IsActive: true, PageNumber: 1, PageSize: 10), default);
 
