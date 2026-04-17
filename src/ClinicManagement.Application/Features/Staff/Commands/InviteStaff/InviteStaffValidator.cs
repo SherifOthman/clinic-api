@@ -1,4 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using FluentValidation;
 
 namespace ClinicManagement.Application.Features.Staff.Commands;
@@ -14,14 +16,14 @@ public class InviteStaffValidator : AbstractValidator<InviteStaffCommand>
 
         RuleFor(x => x.Role)
             .NotEmpty().WithMessage("Role is required")
-            .Must(r => r == "Doctor" || r == "Receptionist")
-            .WithMessage("Role must be either Doctor or Receptionist");
+            .Must(r => r == UserRoles.Doctor || r == UserRoles.Receptionist)
+            .WithMessage($"Role must be either {UserRoles.Doctor} or {UserRoles.Receptionist}");
 
         RuleFor(x => x.SpecializationId)
-            .NotNull().When(x => x.Role == "Doctor")
+            .NotNull().When(x => x.Role == UserRoles.Doctor)
             .WithMessage("Specialization is required for doctors");
 
-        When(x => x.Role == "Doctor" && x.SpecializationId.HasValue, () =>
+        When(x => x.Role == UserRoles.Doctor && x.SpecializationId.HasValue, () =>
         {
             RuleFor(x => x.SpecializationId!.Value)
                 .MustAsync(async (id, ct) => await uow.Reference.SpecializationExistsAsync(id, ct))

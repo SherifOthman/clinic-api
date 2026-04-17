@@ -3,6 +3,7 @@ using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Staff.Dtos;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using MediatR;
@@ -29,9 +30,9 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         var role = request.Role switch
         {
-            "Doctor"       => ClinicMemberRole.Doctor,
-            "Receptionist" => ClinicMemberRole.Receptionist,
-            _              => ClinicMemberRole.Receptionist,
+            UserRoles.Doctor       => ClinicMemberRole.Doctor,
+            UserRoles.Receptionist => ClinicMemberRole.Receptionist,
+            _                      => ClinicMemberRole.Receptionist,
         };
 
         var invitation = StaffInvitation.Create(clinicId, request.Email, role, currentUserId, request.SpecializationId);
