@@ -24,19 +24,33 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
     {
         var clinicId    = _currentUser.GetRequiredClinicId();
         var patientCode = await GenerateUniquePatientCodeAsync(cancellationToken);
+        var gender      = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male;
+        var dob         = DateOnly.Parse(request.DateOfBirth);
+
+        // Create Person — the human being
+        var person = new Person
+        {
+            FirstName   = request.FullName.Split(' ').FirstOrDefault() ?? request.FullName,
+            LastName    = request.FullName.Contains(' ')
+                ? string.Join(' ', request.FullName.Split(' ').Skip(1))
+                : string.Empty,
+            Gender      = gender,
+            DateOfBirth = dob,
+        };
 
         var patient = new Patient
         {
             ClinicId         = clinicId,
             PatientCode      = patientCode,
             FullName         = request.FullName,
-            DateOfBirth      = DateOnly.Parse(request.DateOfBirth),
-            Gender           = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male,
+            DateOfBirth      = dob,
+            Gender           = gender,
             CountryGeonameId = request.CountryGeonameId,
             StateGeonameId   = request.StateGeonameId,
             CityGeonameId    = request.CityGeonameId,
             BloodType        = ParseBloodType(request.BloodType),
             CreatedAt        = DateTimeOffset.UtcNow,
+            Person           = person, // EF creates Person and sets PersonId
         };
 
         await _uow.Patients.AddAsync(patient);

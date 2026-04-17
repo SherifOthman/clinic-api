@@ -26,6 +26,8 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         if (invitation is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
+        var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
+
         var user = new User
         {
             FirstName      = request.FirstName,
@@ -34,7 +36,13 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             Email          = invitation.Email,
             PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = true,
-            Gender         = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male,
+            Gender         = gender,
+            Person         = new Person
+            {
+                FirstName = request.FirstName,
+                LastName  = request.LastName,
+                Gender    = gender,
+            },
         };
 
         var createResult = await _userManager.CreateAsync(user, request.Password);
@@ -51,11 +59,41 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var acceptResult = invitation.Accept(user.Id, DateTimeOffset.UtcNow);
         if (acceptResult.IsFailure) { await _userManager.DeleteAsync(user); return acceptResult; }
 
+        // Old model — kept during migration
         var staff = new Domain.Entities.Staff { UserId = user.Id, ClinicId = invitation.ClinicId, IsActive = true };
         await _uow.Staff.AddAsync(staff);
 
         if (invitation.Role == UserRoles.Doctor)
             await _uow.DoctorProfiles.AddAsync(new Doctor { StaffId = staff.Id, SpecializationId = invitation.SpecializationId });
+
+        // New model — ClinicMember + DoctorInfo
+        var role = invitation.Role switch
+        {
+            UserRoles.Doctor       => Domain.Enums.ClinicMemberRole.Doctor,
+            UserRoles.Receptionist => Domain.Enums.ClinicMemberRole.Receptionist,
+            _                      => Domain.Enums.ClinicMemberRole.Receptionist,
+        };
+
+        var member = new ClinicMember
+        {
+            PersonId = user.Person!.Id,
+            UserId   = user.Id,
+            ClinicId = invitation.ClinicId,
+            Role     = role,
+            IsActive = true,
+            JoinedAt = DateTimeOffset.UtcNow,
+        };
+        await _uow.Members.AddAsync(member);
+
+        if (role == Domain.Enums.ClinicMemberRole.Doctor)
+        {
+            var doctorInfo = new DoctorInfo
+            {
+                ClinicMemberId   = member.Id,
+                SpecializationId = invitation.SpecializationId,
+            };
+            await _uow.DoctorInfos.AddAsync(doctorInfo);
+        }
 
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();

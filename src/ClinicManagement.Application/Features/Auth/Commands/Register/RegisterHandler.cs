@@ -34,6 +34,18 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 
     public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
+        // Create Person first — the human being behind the account
+        var person = new Person
+        {
+            FirstName      = request.FirstName,
+            LastName       = request.LastName,
+            Gender         = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male,
+        };
+        // Person is saved via User navigation — EF will insert it
+        // We need to save it first to get the ID
+        // Use a temporary approach: save person separately
+        // (In a future cleanup, User.PersonId will be required)
+
         var user = new User
         {
             Email          = request.Email,
@@ -43,6 +55,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             PhoneNumber    = request.PhoneNumber,
             Gender         = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var rg) ? rg : Domain.Enums.Gender.Male,
             EmailConfirmed = false,
+            Person         = person, // EF will create Person and set PersonId
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);

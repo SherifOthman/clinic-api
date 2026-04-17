@@ -64,6 +64,7 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 
         if (request.ProvideMedicalServices)
         {
+            // Old model — kept during migration
             var staff = new Domain.Entities.Staff { UserId = userId, ClinicId = clinic.Id, IsActive = true };
             await _uow.Staff.AddAsync(staff);
 
@@ -73,9 +74,57 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
                 SpecializationId = request.SpecializationId,
                 CreatedAt        = DateTimeOffset.UtcNow,
             });
+
+            // New model
+            var ownerMember = CreateOwnerMember(user, clinic.Id);
+            await _uow.Members.AddAsync(ownerMember);
+            await _uow.DoctorInfos.AddAsync(new DoctorInfo
+            {
+                ClinicMemberId   = ownerMember.Id,
+                SpecializationId = request.SpecializationId,
+            });
+        }
+        else
+        {
+            // Owner without medical services — still create ClinicMember
+            var ownerMember = CreateOwnerMember(user, clinic.Id);
+            await _uow.Members.AddAsync(ownerMember);
         }
 
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    private static ClinicMember CreateOwnerMember(User user, Guid clinicId)
+    {
+        if (user.PersonId.HasValue)
+        {
+            return new ClinicMember
+            {
+                PersonId = user.PersonId.Value,
+                UserId   = user.Id,
+                ClinicId = clinicId,
+                Role     = Domain.Enums.ClinicMemberRole.Owner,
+                IsActive = true,
+            };
+        }
+
+        // Person doesn't exist yet — create it via navigation
+        var person = new Person
+        {
+            FirstName = user.FirstName,
+            LastName  = user.LastName,
+            Gender    = user.Gender,
+        };
+        var member = new ClinicMember
+        {
+            PersonId = person.Id, // BaseEntity generates Id in constructor
+            UserId   = user.Id,
+            ClinicId = clinicId,
+            Role     = Domain.Enums.ClinicMemberRole.Owner,
+            IsActive = true,
+            Person   = person,
+        };
+        return member;
     }
 }

@@ -60,6 +60,48 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
             CreatedAt        = DateTimeOffset.UtcNow,
         });
 
+        // New model — ensure ClinicMember + DoctorInfo exist
+        var existingMember = await _uow.Members.GetByUserIdAsync(userId, cancellationToken);
+        if (existingMember is null)
+        {
+            ClinicMember newMember;
+            if (user.PersonId.HasValue)
+            {
+                newMember = new ClinicMember
+                {
+                    PersonId = user.PersonId.Value,
+                    UserId   = userId,
+                    ClinicId = clinic.Id,
+                    Role     = Domain.Enums.ClinicMemberRole.Owner,
+                    IsActive = true,
+                };
+            }
+            else
+            {
+                var person = new Person { FirstName = user.FirstName, LastName = user.LastName, Gender = user.Gender };
+                newMember = new ClinicMember
+                {
+                    PersonId = person.Id,
+                    UserId   = userId,
+                    ClinicId = clinic.Id,
+                    Role     = Domain.Enums.ClinicMemberRole.Owner,
+                    IsActive = true,
+                    Person   = person,
+                };
+            }
+            await _uow.Members.AddAsync(newMember);
+            existingMember = newMember;
+        }
+
+        if (existingMember.DoctorInfo is null)
+        {
+            await _uow.DoctorInfos.AddAsync(new DoctorInfo
+            {
+                ClinicMemberId   = existingMember.Id,
+                SpecializationId = request.SpecializationId,
+            });
+        }
+
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
