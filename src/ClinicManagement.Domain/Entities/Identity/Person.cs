@@ -16,7 +16,24 @@ public class Person : BaseEntity
     public DateOnly? DateOfBirth { get; set; }
     public string? ProfileImageUrl { get; set; }
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
     public string FullName => $"{FirstName} {LastName}".Trim();
+
+    public bool HasProfileImage => !string.IsNullOrWhiteSpace(ProfileImageUrl);
+
+    /// <summary>Age in full years, or null if DateOfBirth is not set.</summary>
+    public int? Age
+    {
+        get
+        {
+            if (DateOfBirth is not { } dob) return null;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var age   = today.Year - dob.Year;
+            if (dob.AddYears(age) > today) age--;
+            return age;
+        }
+    }
 
     // Navigation
     public User? User { get; set; }

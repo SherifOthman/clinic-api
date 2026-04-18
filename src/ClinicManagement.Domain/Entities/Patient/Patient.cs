@@ -19,6 +19,25 @@ public class Patient : AuditableTenantEntity
     public int? StateGeonameId { get; set; }
     public int? CityGeonameId { get; set; }
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    /// <summary>Age in full years, or null if DateOfBirth is not set.</summary>
+    public int? Age
+    {
+        get
+        {
+            if (Person?.DateOfBirth is not { } dob) return null;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var age   = today.Year - dob.Year;
+            if (dob.AddYears(age) > today) age--;
+            return age;
+        }
+    }
+
+    public bool HasChronicDiseases => ChronicDiseases.Count > 0;
+    public bool HasPhones          => Phones.Count > 0;
+    public bool HasLocation        => CountryGeonameId.HasValue;
+
     // Navigation
     public Person Person { get; set; } = null!;
     public GeoCountry? Country { get; set; }

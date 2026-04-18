@@ -12,4 +12,10 @@ public class Payment : AuditableEntity, INoAuditLog
     public PaymentStatus Status { get; set; } = PaymentStatus.Paid;
     public string? Note { get; set; }
     public string? ReferenceNumber { get; set; }
+
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool IsPaid      => Status == PaymentStatus.Paid;
+    public bool HasNote     => !string.IsNullOrWhiteSpace(Note);
+    public bool HasReference => !string.IsNullOrWhiteSpace(ReferenceNumber);
 }

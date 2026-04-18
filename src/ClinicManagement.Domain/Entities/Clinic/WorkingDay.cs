@@ -11,6 +11,15 @@ public class WorkingDay : BaseEntity
     public TimeOnly EndTime { get; set; }
     public bool IsAvailable { get; set; } = true;
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public int DurationMinutes => (int)(EndTime - StartTime).TotalMinutes;
+
+    public bool ContainsTime(TimeOnly time) => time >= StartTime && time < EndTime;
+
+    public bool OverlapsWith(WorkingDay other) =>
+        StartTime < other.EndTime && EndTime > other.StartTime;
+
     // Navigation
     public DoctorBranchSchedule Schedule { get; set; } = null!;
 }

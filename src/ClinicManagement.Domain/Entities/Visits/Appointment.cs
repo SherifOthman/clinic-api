@@ -23,6 +23,26 @@ public class Appointment : AuditableEntity, INoAuditLog
 
     public Guid? InvoiceId { get; set; }
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool IsPending    => Status == AppointmentStatus.Pending;
+    public bool IsInProgress => Status == AppointmentStatus.InProgress;
+    public bool IsCompleted  => Status == AppointmentStatus.Completed;
+    public bool IsCancelled  => Status == AppointmentStatus.Cancelled;
+    public bool IsNoShow     => Status == AppointmentStatus.NoShow;
+
+    public bool IsQueued    => Type == AppointmentType.Queue;
+    public bool IsScheduled => Type == AppointmentType.Time;
+
+    public bool CanBeCancelled => Status == AppointmentStatus.Pending || Status == AppointmentStatus.InProgress;
+    public bool IsInvoiced     => InvoiceId.HasValue;
+
+    /// <summary>Applies DiscountPercent to Price and returns the final amount.</summary>
+    public decimal CalculateFinalPrice() =>
+        DiscountPercent.HasValue
+            ? Math.Round(Price * (1 - DiscountPercent.Value / 100m), 2)
+            : Price;
+
     // Navigation
     public ClinicBranch Branch { get; set; } = null!;
     public Patient Patient { get; set; } = null!;

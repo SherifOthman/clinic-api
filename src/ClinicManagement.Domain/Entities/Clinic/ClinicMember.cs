@@ -5,7 +5,6 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// A person's membership at a specific clinic with a specific role.
-/// Replaces the old Staff entity.
 ///
 /// Key design decisions:
 /// - PersonId required — every member is a real person
@@ -23,6 +22,18 @@ public class ClinicMember : AuditableTenantEntity
     public ClinicMemberRole Role { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset JoinedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool IsOwner        => Role == ClinicMemberRole.Owner;
+    public bool IsDoctor       => Role == ClinicMemberRole.Doctor;
+    public bool IsReceptionist => Role == ClinicMemberRole.Receptionist;
+    public bool IsNurse        => Role == ClinicMemberRole.Nurse;
+
+    /// <summary>True once the person has registered an account and linked it to this membership.</summary>
+    public bool HasAccount => UserId.HasValue;
+
+    public int DaysActive => (int)(DateTimeOffset.UtcNow - JoinedAt).TotalDays;
 
     // Navigation
     public Person Person { get; set; } = null!;

@@ -14,6 +14,13 @@ public class VisitType : BaseEntity
     public decimal Price { get; set; }
     public bool IsActive { get; set; } = true;
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool IsFree => Price == 0;
+
+    public string GetName(string languageCode) =>
+        languageCode.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? NameAr : NameEn;
+
     // Navigation
     public DoctorBranchSchedule Schedule { get; set; } = null!;
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();

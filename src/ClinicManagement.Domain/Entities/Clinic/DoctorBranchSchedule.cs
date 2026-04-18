@@ -13,6 +13,15 @@ public class DoctorBranchSchedule : BaseEntity
     public Guid BranchId { get; init; }
     public bool IsActive { get; set; } = true;
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool HasWorkingDays => WorkingDays.Count > 0;
+    public bool HasVisitTypes  => VisitTypes.Count > 0;
+    public bool IsComplete     => HasWorkingDays && HasVisitTypes;
+
+    public bool IsWorkingOn(DayOfWeek day) =>
+        WorkingDays.Any(w => w.Day == day && w.IsAvailable);
+
     // Navigation
     public DoctorInfo DoctorInfo { get; set; } = null!;
     public ClinicBranch Branch { get; set; } = null!;

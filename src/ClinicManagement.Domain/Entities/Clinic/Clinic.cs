@@ -21,10 +21,27 @@ public class Clinic : AuditableEntity
     /// </summary>
     public string? CountryCode { get; set; }
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool IsOnboarded => OnboardingCompleted;
+
+    public bool IsTrialActive(DateTimeOffset now) =>
+        TrialEndDate.HasValue && now < TrialEndDate.Value;
+
+    public bool IsSubscriptionActive(DateTimeOffset now) =>
+        IsActive && (!SubscriptionEndDate.HasValue || now < SubscriptionEndDate.Value);
+
+    /// <summary>Days until subscription expires. Null if no end date. Negative means expired.</summary>
+    public int? DaysUntilSubscriptionEnd(DateTimeOffset now) =>
+        SubscriptionEndDate.HasValue ? (int)(SubscriptionEndDate.Value - now).TotalDays : null;
+
+    /// <summary>Days until trial ends. Null if no trial. Negative means trial expired.</summary>
+    public int? DaysUntilTrialEnd(DateTimeOffset now) =>
+        TrialEndDate.HasValue ? (int)(TrialEndDate.Value - now).TotalDays : null;
+
     // Navigation properties
     public User Owner { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
-
     public ICollection<ClinicBranch> Branches { get; set; } = new List<ClinicBranch>();
     public ICollection<ClinicMember> Members { get; set; } = new List<ClinicMember>();
 }

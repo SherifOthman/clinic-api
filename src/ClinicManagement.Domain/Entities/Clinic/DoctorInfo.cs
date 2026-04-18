@@ -16,6 +16,13 @@ public class DoctorInfo : BaseEntity
     /// <summary>When false, only the clinic owner can edit this doctor's schedule and visit types.</summary>
     public bool CanSelfManageSchedule { get; set; } = true;
 
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    public bool HasSpecialization => SpecializationId.HasValue;
+    public bool HasLicense        => !string.IsNullOrWhiteSpace(LicenseNumber);
+    public bool IsAvailableAtBranch(Guid branchId) =>
+        BranchSchedules.Any(s => s.BranchId == branchId && s.IsActive);
+
     // Navigation
     public ClinicMember ClinicMember { get; set; } = null!;
     public Specialization? Specialization { get; set; }
