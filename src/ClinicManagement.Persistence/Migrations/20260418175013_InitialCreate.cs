@@ -1030,6 +1030,7 @@ namespace ClinicManagement.Persistence.Migrations
                     ClinicMemberId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SpecializationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LicenseNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CanSelfManageSchedule = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -1101,6 +1102,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DoctorInfoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -1128,6 +1130,7 @@ namespace ClinicManagement.Persistence.Migrations
                     NameAr = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     NameEn = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -1151,6 +1154,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Day = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     IsAvailable = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>

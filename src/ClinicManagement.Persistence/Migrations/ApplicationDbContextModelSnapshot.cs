@@ -551,6 +551,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
@@ -572,6 +575,9 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<Guid>("ClinicMemberId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LicenseNumber")
                         .HasMaxLength(100)
@@ -1999,6 +2005,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("NameAr")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2038,6 +2047,9 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("time");
 
                     b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<TimeOnly>("StartTime")
