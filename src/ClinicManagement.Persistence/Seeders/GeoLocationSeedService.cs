@@ -36,25 +36,27 @@ public class GeoLocationSeedService
     {
         _logger.LogInformation("Starting GeoLocation seed...");
 
-        // ── Fast exit: if cities are already seeded, nothing to do ────────────
-        // Checking city count is cheap — avoids reading the 1.5GB zip on every restart.
-        var cityCount = await _db.GeoCities.CountAsync(ct);
-        if (cityCount > 0)
+        // ── Cleanup: remove duplicate GeonameId rows left by previous bad runs ─
+        // Previous versions used allCountries.zip (unfiltered) and could insert
+        // the same GeonameId multiple times across restarts.
+        var totalCityCount    = await _db.GeoCities.CountAsync(ct);
+        var distinctCityCount = await _db.GeoCities.Select(c => c.GeonameId).Distinct().CountAsync(ct);
+        if (totalCityCount != distinctCityCount)
         {
-            _logger.LogInformation("GeoLocation already seeded ({Count:N0} cities). Skipping.", cityCount);
-            return;
+            _logger.LogWarning(
+                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Truncating and re-seeding...",
+                totalCityCount, distinctCityCount);
+            await _db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE GeoCities", ct);
         }
 
         // ── Step 1: Countries ─────────────────────────────────────────────────
 
-        // Load IDs already in the database so we can skip them
         var existingCountryIds = await _db.GeoCountries
             .Select(c => c.GeonameId)
             .ToHashSetAsync(ct);
 
         var allCountries = await _geoNames.GetCountriesAsync(ct);
 
-        // Only keep countries not already in the DB
         var newCountries = allCountries
             .Where(c => !existingCountryIds.Contains(c.GeonameId))
             .Select(c => new GeoCountry
@@ -81,7 +83,6 @@ public class GeoLocationSeedService
             .Select(s => s.GeonameId)
             .ToHashSetAsync(ct);
 
-        // Only insert states whose parent country is already in our DB
         var validCountryIds = await _db.GeoCountries
             .Select(c => c.GeonameId)
             .ToHashSetAsync(ct);
@@ -89,8 +90,8 @@ public class GeoLocationSeedService
         var allStates = await _geoNames.GetStatesAsync(ct);
 
         var newStates = allStates
-            .Where(s => !existingStateIds.Contains(s.GeonameId)       // not already in DB
-                     && validCountryIds.Contains(s.CountryGeonameId))  // parent country exists
+            .Where(s => !existingStateIds.Contains(s.GeonameId)
+                     && validCountryIds.Contains(s.CountryGeonameId))
             .Select(s => new GeoState
             {
                 GeonameId        = s.GeonameId,
@@ -111,47 +112,54 @@ public class GeoLocationSeedService
 
         // ── Step 3: Cities ────────────────────────────────────────────────────
 
-        var existingCityIds = await _db.GeoCities
-            .Select(c => c.GeonameId)
-            .ToHashSetAsync(ct);
-
-        // Only insert cities whose parent state is already in our DB
         var validStateIds = await _db.GeoStates
             .Select(s => s.GeonameId)
             .ToHashSetAsync(ct);
 
+        // Load what's already in the DB — used to skip already-inserted cities
+        var existingCityIds = await _db.GeoCities
+            .Select(c => c.GeonameId)
+            .ToHashSetAsync(ct);
+
         var allCities = await _geoNames.GetCitiesAsync(ct);
 
+        // Build expected set from source (deduped by GeonameId, valid state only),
+        // then exclude any GeonameId already in the DB
         var newCities = allCities
-            .Where(c => !existingCityIds.Contains(c.GeonameId)
-                     && validStateIds.Contains(c.StateGeonameId))
-            .GroupBy(c => c.GeonameId)          // deduplicate same GeonameId
+            .Where(c => validStateIds.Contains(c.StateGeonameId)
+                     && !existingCityIds.Contains(c.GeonameId))
+            .GroupBy(c => c.GeonameId)
             .Select(g => g.First())
-            // deduplicate same name within the same state — keep highest GeonameId (most recent)
-            .GroupBy(c => (c.StateGeonameId, c.NameEn.ToLowerInvariant()))
-            .Select(g => g.OrderByDescending(c => c.GeonameId).First())
             .Select(c => new GeoCity
             {
                 GeonameId      = c.GeonameId,
                 StateGeonameId = c.StateGeonameId,
-                NameEn = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
-                NameAr = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
+                NameEn         = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
+                NameAr         = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
             })
             .ToList();
-
-        // Insert in batches of 10,000
-        const int batchSize = 10_000;
-        for (var i = 0; i < newCities.Count; i += batchSize)
+        if (newCities.Count == 0)
         {
-            var batch = newCities.Skip(i).Take(batchSize).ToList();
-            await _db.GeoCities.AddRangeAsync(batch, ct);
-            await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Cities: inserted {To:N0} of {Total:N0}",
-                Math.Min(i + batchSize, newCities.Count), newCities.Count);
+            _logger.LogInformation("Cities: all {Count:N0} already seeded. Skipping.", existingCityIds.Count);
         }
+        else
+        {
+            _logger.LogInformation("Cities: {Existing:N0} already in DB, inserting {New:N0} missing...",
+                existingCityIds.Count, newCities.Count);
 
-        _logger.LogInformation("Cities: +{Added} added, {Skipped} already existed",
-            newCities.Count, existingCityIds.Count);
+            // Insert in batches of 10,000
+            const int batchSize = 10_000;
+            for (var i = 0; i < newCities.Count; i += batchSize)
+            {
+                var batch = newCities.Skip(i).Take(batchSize).ToList();
+                await _db.GeoCities.AddRangeAsync(batch, ct);
+                await _db.SaveChangesAsync(ct);
+                _logger.LogInformation("Cities: inserted {To:N0} of {Total:N0}",
+                    Math.Min(i + batchSize, newCities.Count), newCities.Count);
+            }
+
+            _logger.LogInformation("Cities: +{Added} added", newCities.Count);
+        }
 
         _logger.LogInformation("GeoLocation seed complete — Countries: {C}, States: {S}, Cities: {Ci}",
             newCountries.Count, newStates.Count, newCities.Count);

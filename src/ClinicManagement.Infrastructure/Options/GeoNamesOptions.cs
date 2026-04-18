@@ -12,8 +12,8 @@ public class GeoNamesOptions
 
     /// <summary>
     /// Local directory where downloaded files are cached.
-    /// Relative to ContentRootPath. Default: SeedData/GeoNames
-    /// On monster.asp.net: upload files here via FTP — they will never be re-downloaded.
+    /// Relative to ContentRootPath. Default: wwwroot/SeedData/GeoNames
+    /// On shared hosting: upload files here via the file manager — they will never be re-downloaded.
     /// </summary>
-    public string CacheDir { get; set; } = "SeedData/GeoNames";
+    public string CacheDir { get; set; } = "wwwroot/SeedData/GeoNames";
 }
