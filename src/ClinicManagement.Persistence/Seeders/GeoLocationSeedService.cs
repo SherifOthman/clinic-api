@@ -170,6 +170,6 @@ public class GeoLocationSeedService
             _logger.LogInformation("Cities: +{Added:N0} added", totalInserted);
 
         _logger.LogInformation("GeoLocation seed complete — Countries: {C}, States: {S}, Cities: {Ci}",
-            newCountries.Count, newStates.Count, newCities.Count);
+            newCountries.Count, newStates.Count, totalInserted);
     }
 }
