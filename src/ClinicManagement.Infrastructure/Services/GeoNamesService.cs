@@ -184,15 +184,38 @@ public class GeoNamesService : IGeoNamesService
                 admin1Map[cols[0].Trim()] = gId;
         }
 
+        // ── Fast path: pre-processed file ────────────────────────────────────
+        // cities_processed.tsv: geonameId \t stateGeonameId \t nameEn \t nameAr
+        // Generated locally from allCountries.zip and uploaded to the server.
+        // This avoids streaming the 1.5 GB zip on the server.
+        var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
+        if (File.Exists(processedPath))
+        {
+            _logger.LogInformation("Reading cities from pre-processed cities_processed.tsv...");
+            var lines  = await File.ReadAllLinesAsync(processedPath, Encoding.UTF8, ct);
+            var result = new List<GeoNamesCityDump>(lines.Length);
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                var cols = line.Split('\t');
+                if (cols.Length < 4) continue;
+                if (!int.TryParse(cols[0], out var gId)) continue;
+                if (!int.TryParse(cols[1], out var sId)) continue;
+                result.Add(new GeoNamesCityDump(gId, sId, cols[2], cols[3]));
+            }
+            _logger.LogInformation("Loaded {Count} cities from cities_processed.tsv", result.Count);
+            return result;
+        }
+
+        // ── Slow path: stream from allCountries.zip ───────────────────────────
         // Feature codes for populated places we want to include
         var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLX" };
 
-        var result   = new List<GeoNamesCityDump>();
-        var seenIds  = new HashSet<int>();  // prevent duplicates from allCountries.txt
-        var zipPath  = Path.Combine(_cacheDir, "allCountries.zip");
+        var cities  = new List<GeoNamesCityDump>();
+        var seenIds = new HashSet<int>();
+        var zipPath = Path.Combine(_cacheDir, "allCountries.zip");
 
-        // Download if not cached
         if (!File.Exists(zipPath))
         {
             _logger.LogInformation("Downloading allCountries.zip (~1.5 GB)...");
@@ -203,7 +226,6 @@ public class GeoNamesService : IGeoNamesService
 
         _logger.LogInformation("Streaming allCountries.txt from zip (line by line)...");
 
-        // Stream line by line — never loads the full 1.5 GB into memory
         using var fs      = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         using var archive = new ZipArchive(fs, ZipArchiveMode.Read);
         var entry = archive.GetEntry("allCountries.txt")
@@ -228,29 +250,34 @@ public class GeoNamesService : IGeoNamesService
             var countryCode  = cols[8];
             var admin1Code   = cols[10];
             var nameEn       = cols[1];
-            long.TryParse(cols[14], out var population);
 
-            // Only populated places (feature class P):
-            // - PPLC, PPLA, PPLA2, PPLA3, PPLA4 — all administrative centers, always included
-            // - PPLX — sections/neighborhoods of populated places (districts, quarters)
-            // - PPL  — all populated places with a state mapping
             if (featureClass != "P") continue;
-            var isAdminCenter = includedCodes.Contains(fcode);
+            var isAdminCenter    = includedCodes.Contains(fcode);
             var isSignificantPPL = fcode == "PPL";
             if (!isAdminCenter && !isSignificantPPL) continue;
-            // Look up the parent state
+
             var admin1Key = $"{countryCode}.{admin1Code}";
             if (!admin1Map.TryGetValue(admin1Key, out var stateGeonameId)) continue;
 
             var nameAr = arNames.GetValueOrDefault(geonameId, nameEn);
-            if (seenIds.Add(geonameId))  // Add returns false if already present
-                result.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
+            if (seenIds.Add(geonameId))
+                cities.Add(new GeoNamesCityDump(geonameId, stateGeonameId, nameEn, nameAr));
+
             if (++lineCount % 500_000 == 0)
-                _logger.LogInformation("Cities: scanned {Lines:N0} lines, {Cities:N0} populated places found so far...", lineCount, result.Count);
+                _logger.LogInformation("Cities: scanned {Lines:N0} lines, {Cities:N0} found so far...", lineCount, cities.Count);
         }
 
-        _logger.LogInformation("Parsed {Count} cities from allCountries.zip", result.Count);
-        return result;
+        _logger.LogInformation("Parsed {Count} cities from allCountries.zip", cities.Count);
+
+        // Save as pre-processed file for future runs
+        _logger.LogInformation("Saving cities_processed.tsv for faster future seeding...");
+        var sb = new StringBuilder();
+        foreach (var c in cities)
+            sb.AppendLine($"{c.GeonameId}\t{c.StateGeonameId}\t{c.NameEn}\t{c.NameAr}");
+        await File.WriteAllTextAsync(processedPath, sb.ToString(), Encoding.UTF8, ct);
+        _logger.LogInformation("Saved cities_processed.tsv ({SizeMB:F1} MB)", new FileInfo(processedPath).Length / 1_048_576.0);
+
+        return cities;
     }
 
 
