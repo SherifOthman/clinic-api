@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260418083547_InitialCreate")]
+    [Migration("20260418090234_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1228,8 +1228,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BloodType")
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<int?>("CityGeonameId")
                         .HasColumnType("int");

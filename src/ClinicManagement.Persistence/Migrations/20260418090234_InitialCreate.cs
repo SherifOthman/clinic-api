@@ -906,7 +906,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BloodType = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: true),
+                    BloodType = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true),
                     CountryGeonameId = table.Column<int>(type: "int", nullable: true),
                     StateGeonameId = table.Column<int>(type: "int", nullable: true),
                     CityGeonameId = table.Column<int>(type: "int", nullable: true),
