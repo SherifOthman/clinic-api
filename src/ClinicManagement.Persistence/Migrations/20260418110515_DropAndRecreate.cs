@@ -6,11 +6,30 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ClinicManagement.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class DropAndRecreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Drop all existing tables to allow clean recreation with the new schema.
+            // This is safe for dev/staging environments where data can be reset.
+            migrationBuilder.Sql(@"
+                DECLARE @sql NVARCHAR(MAX) = N'';
+                -- Drop all FK constraints first
+                SELECT @sql += 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id))
+                    + '.' + QUOTENAME(OBJECT_NAME(parent_object_id))
+                    + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+                FROM sys.foreign_keys;
+                EXEC sp_executesql @sql;
+
+                SET @sql = N'';
+                -- Drop all tables
+                SELECT @sql += 'DROP TABLE IF EXISTS ' + QUOTENAME(TABLE_SCHEMA) + '.' + QUOTENAME(TABLE_NAME) + ';' + CHAR(13)
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_TYPE = 'BASE TABLE';
+                EXEC sp_executesql @sql;
+            ");
+
             migrationBuilder.CreateTable(
                 name: "AuditLogs",
                 columns: table => new
