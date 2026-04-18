@@ -7,11 +7,12 @@ namespace ClinicManagement.Domain.Entities;
 /// Attached 1:1 to a ClinicMember whose Role = Doctor.
 /// Schedule (working days + visit types) is per-branch via DoctorBranchSchedule.
 /// </summary>
-public class DoctorInfo : BaseEntity
+public class DoctorInfo : BaseEntity, ISoftDeletable
 {
     public Guid ClinicMemberId { get; init; }
     public Guid? SpecializationId { get; set; }
     public string? LicenseNumber { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     /// <summary>When false, only the clinic owner can edit this doctor's schedule and visit types.</summary>
     public bool CanSelfManageSchedule { get; set; } = true;

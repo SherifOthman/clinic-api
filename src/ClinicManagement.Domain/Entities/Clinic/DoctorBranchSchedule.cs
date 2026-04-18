@@ -7,10 +7,11 @@ namespace ClinicManagement.Domain.Entities;
 /// Groups working days and visit types together per branch.
 /// A doctor can have different schedules and prices at different branches.
 /// </summary>
-public class DoctorBranchSchedule : BaseEntity
+public class DoctorBranchSchedule : BaseEntity, ISoftDeletable
 {
     public Guid DoctorInfoId { get; init; }
     public Guid BranchId { get; init; }
+    public bool IsDeleted { get; set; } = false;
     public bool IsActive { get; set; } = true;
 
     // ── Computed ──────────────────────────────────────────────────────────────

@@ -108,6 +108,14 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
                     .MakeGenericMethod(clrType)
                     .Invoke(null, [modelBuilder]);
             }
+
+            if (typeof(ISoftDeletable).IsAssignableFrom(clrType) && !typeof(AuditableEntity).IsAssignableFrom(clrType))
+            {
+                typeof(ApplicationDbContext)
+                    .GetMethod(nameof(ApplySoftDeletableFilter), BindingFlags.NonPublic | BindingFlags.Static)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(null, [modelBuilder]);
+            }
         }
     }
 
@@ -124,6 +132,13 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     private static void ApplySoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : AuditableEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(QueryFilterNames.SoftDelete, e => !e.IsDeleted);
+    }
+
+    private static void ApplySoftDeletableFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ISoftDeletable
     {
         modelBuilder.Entity<TEntity>()
             .HasQueryFilter(QueryFilterNames.SoftDelete, e => !e.IsDeleted);
