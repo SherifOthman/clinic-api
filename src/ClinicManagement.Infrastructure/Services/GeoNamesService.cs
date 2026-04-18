@@ -86,7 +86,7 @@ public class GeoNamesService : IGeoNamesService
         return result;
     }
 
-    public async Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
         // ── Fast path: pre-processed file ─────────────────────────────────────
         // Version header on line 1 guards against stale files generated without

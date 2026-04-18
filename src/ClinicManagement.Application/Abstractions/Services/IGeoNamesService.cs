@@ -20,7 +20,7 @@ public interface IGeoNamesService
     /// Downloads cities1000.zip (cities with pop>1000 or PPLA seats) and
     /// alternateNamesV2 filtered to 'ar'. Returns cities grouped by ADM1 geonameId.
     /// </summary>
-    Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default);
+    Task<IEnumerable<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default);
 }
 
 public record GeoNamesCountryDump(int GeonameId, string CountryCode, string NameEn, string NameAr);
