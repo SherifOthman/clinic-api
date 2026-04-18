@@ -12,8 +12,11 @@ public class EmailQueueConfiguration : IEntityTypeConfiguration<EmailQueue>
         builder.Property(eq => eq.ToName).HasMaxLength(200);
         builder.Property(eq => eq.Subject).HasMaxLength(500).IsRequired();
         builder.Property(eq => eq.ErrorMessage).HasMaxLength(1000);
+        builder.Property(eq => eq.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
 
-        // Email processor queries pending emails ordered by priority and schedule
+        builder.ToTable(t => t.HasCheckConstraint("CK_EmailQueue_Status",
+            "[Status] IN ('Pending', 'Sending', 'Sent', 'Failed')"));
+
         builder.HasIndex(eq => new { eq.Status, eq.ScheduledFor });
     }
 }

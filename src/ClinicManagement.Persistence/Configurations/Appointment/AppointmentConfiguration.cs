@@ -11,17 +11,17 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.Price).HasColumnType("decimal(18,2)").IsRequired();
         builder.Property(a => a.DiscountPercent).HasColumnType("decimal(5,2)");
         builder.Property(a => a.FinalPrice).HasColumnType("decimal(18,2)").IsRequired();
-        builder.Property(a => a.Type).HasConversion<short>().HasColumnType("smallint");
-        builder.Property(a => a.Status).HasConversion<short>().HasColumnType("smallint");
+        builder.Property(a => a.Type).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(a => a.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
 
         builder.ToTable(t =>
         {
-            t.HasCheckConstraint("CK_Appointment_Price",         "[Price] >= 0");
-            t.HasCheckConstraint("CK_Appointment_FinalPrice",    "[FinalPrice] >= 0");
-            t.HasCheckConstraint("CK_Appointment_Discount",      "[DiscountPercent] IS NULL OR ([DiscountPercent] >= 0 AND [DiscountPercent] <= 100)");
-            t.HasCheckConstraint("CK_Appointment_QueueNumber",   "[QueueNumber] IS NULL OR [QueueNumber] > 0");
-            t.HasCheckConstraint("CK_Appointment_Type",          "[Type] IN (0, 1)");
-            t.HasCheckConstraint("CK_Appointment_Status",        "[Status] IN (0, 1, 2, 3, 4)");
+            t.HasCheckConstraint("CK_Appointment_Price",       "[Price] >= 0");
+            t.HasCheckConstraint("CK_Appointment_FinalPrice",  "[FinalPrice] >= 0");
+            t.HasCheckConstraint("CK_Appointment_Discount",    "[DiscountPercent] IS NULL OR ([DiscountPercent] >= 0 AND [DiscountPercent] <= 100)");
+            t.HasCheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
+            t.HasCheckConstraint("CK_Appointment_Type",        "[Type] IN ('Queue', 'Time')");
+            t.HasCheckConstraint("CK_Appointment_Status",      "[Status] IN ('Pending', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
         });
 
         builder.HasOne(a => a.Branch)

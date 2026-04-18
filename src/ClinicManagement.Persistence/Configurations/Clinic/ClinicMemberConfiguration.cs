@@ -8,7 +8,10 @@ public class ClinicMemberConfiguration : IEntityTypeConfiguration<ClinicMember>
 {
     public void Configure(EntityTypeBuilder<ClinicMember> builder)
     {
-        builder.Property(m => m.Role).HasConversion<int>().HasColumnType("int");
+        builder.Property(m => m.Role).HasConversion<string>().HasMaxLength(20).IsRequired();
+
+        builder.ToTable(t => t.HasCheckConstraint("CK_ClinicMember_Role",
+            "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')"));
 
         // A person can be a member at multiple clinics, but only once per clinic
         builder.HasIndex(m => new { m.PersonId, m.ClinicId }).IsUnique();

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260418082039_InitialCreate")]
+    [Migration("20260418083547_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -70,11 +70,15 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<TimeOnly?>("ScheduledTime")
                         .HasColumnType("time");
 
-                    b.Property<short>("Status")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<short>("Type")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -111,9 +115,9 @@ namespace ClinicManagement.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
 
-                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN (0, 1, 2, 3, 4)");
+                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN ('Pending', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
 
-                            t.HasCheckConstraint("CK_Appointment_Type", "[Type] IN (0, 1)");
+                            t.HasCheckConstraint("CK_Appointment_Type", "[Type] IN ('Queue', 'Time')");
                         });
                 });
 
@@ -387,8 +391,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("PersonId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -408,7 +414,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("ClinicId", "IsDeleted", "IsActive");
 
-                    b.ToTable("ClinicMember");
+                    b.ToTable("ClinicMember", t =>
+                        {
+                            t.HasCheckConstraint("CK_ClinicMember_Role", "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicSubscription", b =>
@@ -448,8 +457,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateTimeOffset>("StartDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<short>("Status")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<Guid>("SubscriptionPlanId")
                         .HasColumnType("uniqueidentifier");
@@ -473,7 +484,7 @@ namespace ClinicManagement.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_ClinicSubscription_Dates", "[EndDate] IS NULL OR [EndDate] > [StartDate]");
 
-                            t.HasCheckConstraint("CK_ClinicSubscription_Status", "[Status] IN (0, 1, 2, 3, 4)");
+                            t.HasCheckConstraint("CK_ClinicSubscription_Status", "[Status] IN ('Trial', 'Active', 'PastDue', 'Cancelled', 'Expired')");
                         });
                 });
 
@@ -623,8 +634,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Subject")
                         .IsRequired()
@@ -650,7 +663,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("Status", "ScheduledFor");
 
-                    b.ToTable("EmailQueue");
+                    b.ToTable("EmailQueue", t =>
+                        {
+                            t.HasCheckConstraint("CK_EmailQueue_Status", "[Status] IN ('Pending', 'Sending', 'Sent', 'Failed')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCity", b =>
@@ -768,8 +784,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<short>("Status")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<decimal>("TaxAmount")
                         .HasPrecision(18, 2)
@@ -792,7 +810,7 @@ namespace ClinicManagement.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Invoice_DueDate", "[DueDate] IS NULL OR [IssuedDate] IS NULL OR [DueDate] >= [IssuedDate]");
 
-                            t.HasCheckConstraint("CK_Invoice_Status", "[Status] IN (1, 2, 3, 4, 5, 6)");
+                            t.HasCheckConstraint("CK_Invoice_Status", "[Status] IN ('Draft', 'Issued', 'PartiallyPaid', 'FullyPaid', 'Cancelled', 'Overdue')");
 
                             t.HasCheckConstraint("CK_Invoice_TaxAmount", "[TaxAmount] >= 0");
 
@@ -830,8 +848,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid?>("RadiologyOrderId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("SaleUnit")
-                        .HasColumnType("int");
+                    b.Property<string>("SaleUnit")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 2)
@@ -854,6 +873,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.ToTable("InvoiceItem", t =>
                         {
                             t.HasCheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_InvoiceItem_SaleUnit", "[SaleUnit] IS NULL OR [SaleUnit] IN ('Box', 'Strip')");
 
                             t.HasCheckConstraint("CK_InvoiceItem_UnitPrice", "[UnitPrice] >= 0");
                         });
@@ -1138,14 +1159,77 @@ namespace ClinicManagement.Persistence.Migrations
                     b.ToTable("MedicineDispensing");
                 });
 
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notification", t =>
+                        {
+                            t.HasCheckConstraint("CK_Notification_Type", "[Type] IN ('Info', 'Warning', 'Error', 'Success')");
+                        });
+                });
+
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Patient", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("BloodType")
-                        .HasColumnType("int");
+                    b.Property<string>("BloodType")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<int?>("CityGeonameId")
                         .HasColumnType("int");
@@ -1197,7 +1281,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("ClinicId", "IsDeleted", "CreatedAt");
 
-                    b.ToTable("Patient");
+                    b.ToTable("Patient", t =>
+                        {
+                            t.HasCheckConstraint("CK_Patient_BloodType", "[BloodType] IS NULL OR [BloodType] IN ('APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientChronicDisease", b =>
@@ -1281,15 +1368,19 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateTimeOffset>("PaymentDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<short>("PaymentMethod")
-                        .HasColumnType("smallint");
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("ReferenceNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<short>("Status")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -1305,9 +1396,9 @@ namespace ClinicManagement.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_Payment_Amount", "[Amount] > 0");
 
-                            t.HasCheckConstraint("CK_Payment_Method", "[PaymentMethod] IN (1, 2, 3, 4, 5, 6)");
+                            t.HasCheckConstraint("CK_Payment_Method", "[PaymentMethod] IN ('Cash', 'CreditCard', 'DebitCard', 'BankTransfer', 'Check', 'DigitalWallet')");
 
-                            t.HasCheckConstraint("CK_Payment_Status", "[Status] IN (0, 1, 2)");
+                            t.HasCheckConstraint("CK_Payment_Status", "[Status] IN ('Unpaid', 'PartiallyPaid', 'Paid')");
                         });
                 });
 
@@ -1325,8 +1416,10 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<short>("Gender")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -1341,7 +1434,7 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.ToTable("Person", t =>
                         {
-                            t.HasCheckConstraint("CK_Person_Gender", "[Gender] IN (0, 1)");
+                            t.HasCheckConstraint("CK_Person_Gender", "[Gender] IN ('Male', 'Female')");
                         });
                 });
 
@@ -1602,8 +1695,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<short>("Role")
-                        .HasColumnType("smallint");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<Guid?>("SpecializationId")
                         .HasColumnType("uniqueidentifier");
@@ -1627,7 +1722,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("ClinicId", "CreatedAt");
 
-                    b.ToTable("StaffInvitation");
+                    b.ToTable("StaffInvitation", t =>
+                        {
+                            t.HasCheckConstraint("CK_StaffInvitation_Role", "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.SubscriptionPayment", b =>
@@ -1672,8 +1770,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateTimeOffset?>("RefundedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<Guid>("SubscriptionId")
                         .HasColumnType("uniqueidentifier");
@@ -1689,7 +1789,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPayment");
+                    b.ToTable("SubscriptionPayment", t =>
+                        {
+                            t.HasCheckConstraint("CK_SubscriptionPayment_Status", "[Status] IN ('Pending', 'Completed', 'Failed', 'Refunded')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.SubscriptionPlan", b =>

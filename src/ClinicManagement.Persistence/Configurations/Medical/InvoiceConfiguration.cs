@@ -13,7 +13,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.TotalAmount).HasPrecision(18, 2);
         builder.Property(i => i.Discount).HasPrecision(18, 2);
         builder.Property(i => i.TaxAmount).HasPrecision(18, 2);
-        builder.Property(i => i.Status).HasConversion<short>().HasColumnType("smallint");
+        builder.Property(i => i.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
 
         builder.HasIndex(i => new { i.ClinicId, i.InvoiceNumber }).IsUnique();
         builder.HasIndex(i => new { i.PatientId, i.Status });
@@ -24,7 +24,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             t.HasCheckConstraint("CK_Invoice_Discount",    "[Discount] >= 0");
             t.HasCheckConstraint("CK_Invoice_TaxAmount",   "[TaxAmount] >= 0");
             t.HasCheckConstraint("CK_Invoice_DueDate",     "[DueDate] IS NULL OR [IssuedDate] IS NULL OR [DueDate] >= [IssuedDate]");
-            t.HasCheckConstraint("CK_Invoice_Status",      "[Status] IN (1, 2, 3, 4, 5, 6)");
+            t.HasCheckConstraint("CK_Invoice_Status",      "[Status] IN ('Draft', 'Issued', 'PartiallyPaid', 'FullyPaid', 'Cancelled', 'Overdue')");
         });
     }
 }

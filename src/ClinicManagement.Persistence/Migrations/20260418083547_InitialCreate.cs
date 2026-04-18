@@ -84,7 +84,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Subject = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsHtml = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Priority = table.Column<int>(type: "int", nullable: false),
                     Attempts = table.Column<int>(type: "int", nullable: false),
                     MaxAttempts = table.Column<int>(type: "int", nullable: false),
@@ -100,6 +100,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EmailQueue", x => x.Id);
+                    table.CheckConstraint("CK_EmailQueue_Status", "[Status] IN ('Pending', 'Sending', 'Sent', 'Failed')");
                 });
 
             migrationBuilder.CreateTable(
@@ -128,7 +129,7 @@ namespace ClinicManagement.Persistence.Migrations
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Discount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     TaxAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Status = table.Column<short>(type: "smallint", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IssuedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     DueDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
@@ -139,7 +140,7 @@ namespace ClinicManagement.Persistence.Migrations
                     table.PrimaryKey("PK_Invoice", x => x.Id);
                     table.CheckConstraint("CK_Invoice_Discount", "[Discount] >= 0");
                     table.CheckConstraint("CK_Invoice_DueDate", "[DueDate] IS NULL OR [IssuedDate] IS NULL OR [DueDate] >= [IssuedDate]");
-                    table.CheckConstraint("CK_Invoice_Status", "[Status] IN (1, 2, 3, 4, 5, 6)");
+                    table.CheckConstraint("CK_Invoice_Status", "[Status] IN ('Draft', 'Issued', 'PartiallyPaid', 'FullyPaid', 'Cancelled', 'Overdue')");
                     table.CheckConstraint("CK_Invoice_TaxAmount", "[TaxAmount] >= 0");
                     table.CheckConstraint("CK_Invoice_TotalAmount", "[TotalAmount] >= 0");
                 });
@@ -280,6 +281,31 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    ActionUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    ReadAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.CheckConstraint("CK_Notification_Type", "[Type] IN ('Info', 'Warning', 'Error', 'Success')");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Payment",
                 columns: table => new
                 {
@@ -287,8 +313,8 @@ namespace ClinicManagement.Persistence.Migrations
                     InvoiceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     PaymentDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    PaymentMethod = table.Column<short>(type: "smallint", nullable: false),
-                    Status = table.Column<short>(type: "smallint", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Note = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ReferenceNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -301,8 +327,8 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_Payment", x => x.Id);
                     table.CheckConstraint("CK_Payment_Amount", "[Amount] > 0");
-                    table.CheckConstraint("CK_Payment_Method", "[PaymentMethod] IN (1, 2, 3, 4, 5, 6)");
-                    table.CheckConstraint("CK_Payment_Status", "[Status] IN (0, 1, 2)");
+                    table.CheckConstraint("CK_Payment_Method", "[PaymentMethod] IN ('Cash', 'CreditCard', 'DebitCard', 'BankTransfer', 'Check', 'DigitalWallet')");
+                    table.CheckConstraint("CK_Payment_Status", "[Status] IN ('Unpaid', 'PartiallyPaid', 'Paid')");
                 });
 
             migrationBuilder.CreateTable(
@@ -312,14 +338,14 @@ namespace ClinicManagement.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Gender = table.Column<short>(type: "smallint", nullable: false),
+                    Gender = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
                     ProfileImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Person", x => x.Id);
-                    table.CheckConstraint("CK_Person_Gender", "[Gender] IN (0, 1)");
+                    table.CheckConstraint("CK_Person_Gender", "[Gender] IN ('Male', 'Female')");
                 });
 
             migrationBuilder.CreateTable(
@@ -398,7 +424,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PaymentDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PaymentGateway = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -414,6 +440,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SubscriptionPayment", x => x.Id);
+                    table.CheckConstraint("CK_SubscriptionPayment_Status", "[Status] IN ('Pending', 'Completed', 'Failed', 'Refunded')");
                 });
 
             migrationBuilder.CreateTable(
@@ -528,12 +555,13 @@ namespace ClinicManagement.Persistence.Migrations
                     RadiologyOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    SaleUnit = table.Column<int>(type: "int", nullable: true)
+                    SaleUnit = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InvoiceItem", x => x.Id);
                     table.CheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
+                    table.CheckConstraint("CK_InvoiceItem_SaleUnit", "[SaleUnit] IS NULL OR [SaleUnit] IN ('Box', 'Strip')");
                     table.CheckConstraint("CK_InvoiceItem_UnitPrice", "[UnitPrice] >= 0");
                     table.ForeignKey(
                         name: "FK_InvoiceItem_LabTestOrder_LabTestOrderId",
@@ -797,7 +825,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Role = table.Column<int>(type: "int", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     JoinedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -810,6 +838,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClinicMember", x => x.Id);
+                    table.CheckConstraint("CK_ClinicMember_Role", "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')");
                     table.ForeignKey(
                         name: "FK_ClinicMember_Clinic_ClinicId",
                         column: x => x.ClinicId,
@@ -836,7 +865,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubscriptionPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Status = table.Column<short>(type: "smallint", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     StartDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     EndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     TrialEndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -855,7 +884,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_ClinicSubscription", x => x.Id);
                     table.CheckConstraint("CK_ClinicSubscription_Dates", "[EndDate] IS NULL OR [EndDate] > [StartDate]");
-                    table.CheckConstraint("CK_ClinicSubscription_Status", "[Status] IN (0, 1, 2, 3, 4)");
+                    table.CheckConstraint("CK_ClinicSubscription_Status", "[Status] IN ('Trial', 'Active', 'PastDue', 'Cancelled', 'Expired')");
                     table.ForeignKey(
                         name: "FK_ClinicSubscription_Clinic_ClinicId",
                         column: x => x.ClinicId,
@@ -877,7 +906,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BloodType = table.Column<int>(type: "int", nullable: true),
+                    BloodType = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: true),
                     CountryGeonameId = table.Column<int>(type: "int", nullable: true),
                     StateGeonameId = table.Column<int>(type: "int", nullable: true),
                     CityGeonameId = table.Column<int>(type: "int", nullable: true),
@@ -891,6 +920,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Patient", x => x.Id);
+                    table.CheckConstraint("CK_Patient_BloodType", "[BloodType] IS NULL OR [BloodType] IN ('APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative')");
                     table.ForeignKey(
                         name: "FK_Patient_Clinic_ClinicId",
                         column: x => x.ClinicId,
@@ -926,7 +956,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Role = table.Column<short>(type: "smallint", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     SpecializationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     InvitationToken = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -945,6 +975,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_StaffInvitation", x => x.Id);
+                    table.CheckConstraint("CK_StaffInvitation_Role", "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')");
                     table.ForeignKey(
                         name: "FK_StaffInvitation_Clinic_ClinicId",
                         column: x => x.ClinicId,
@@ -1147,8 +1178,8 @@ namespace ClinicManagement.Persistence.Migrations
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     QueueNumber = table.Column<int>(type: "int", nullable: true),
                     ScheduledTime = table.Column<TimeOnly>(type: "time", nullable: true),
-                    Type = table.Column<short>(type: "smallint", nullable: false),
-                    Status = table.Column<short>(type: "smallint", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountPercent = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     FinalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -1166,8 +1197,8 @@ namespace ClinicManagement.Persistence.Migrations
                     table.CheckConstraint("CK_Appointment_FinalPrice", "[FinalPrice] >= 0");
                     table.CheckConstraint("CK_Appointment_Price", "[Price] >= 0");
                     table.CheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
-                    table.CheckConstraint("CK_Appointment_Status", "[Status] IN (0, 1, 2, 3, 4)");
-                    table.CheckConstraint("CK_Appointment_Type", "[Type] IN (0, 1)");
+                    table.CheckConstraint("CK_Appointment_Status", "[Status] IN ('Pending', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
+                    table.CheckConstraint("CK_Appointment_Type", "[Type] IN ('Queue', 'Time')");
                     table.ForeignKey(
                         name: "FK_Appointment_ClinicBranch_BranchId",
                         column: x => x.BranchId,
@@ -1392,6 +1423,11 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "RadiologyOrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_IsRead_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "IsRead", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Patient_CityGeonameId",
                 table: "Patient",
                 column: "CityGeonameId");
@@ -1571,6 +1607,9 @@ namespace ClinicManagement.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "MedicalVisitMeasurement");
+
+            migrationBuilder.DropTable(
+                name: "Notification");
 
             migrationBuilder.DropTable(
                 name: "PatientChronicDisease");

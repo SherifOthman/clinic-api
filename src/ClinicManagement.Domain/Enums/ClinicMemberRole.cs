@@ -8,8 +8,8 @@ namespace ClinicManagement.Domain.Enums;
 /// </summary>
 public enum ClinicMemberRole
 {
-    Owner        = 0,
-    Doctor       = 1,
-    Receptionist = 2,
-    Nurse        = 3,
+    Owner,
+    Doctor,
+    Receptionist,
+    Nurse,
 }

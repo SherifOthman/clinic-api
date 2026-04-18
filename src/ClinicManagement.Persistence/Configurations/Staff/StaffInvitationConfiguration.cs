@@ -10,10 +10,13 @@ public class StaffInvitationConfiguration : IEntityTypeConfiguration<StaffInvita
     {
         builder.Property(si => si.Email).HasMaxLength(256).IsRequired();
         builder.Property(si => si.Role)
-            .HasConversion<short>()
-            .HasColumnType("smallint")
+            .HasConversion<string>()
+            .HasMaxLength(20)
             .IsRequired();
         builder.Property(si => si.InvitationToken).HasMaxLength(100).IsRequired();
+
+        builder.ToTable(t => t.HasCheckConstraint("CK_StaffInvitation_Role",
+            "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')"));
 
         builder.HasIndex(si => si.InvitationToken).IsUnique();
 
