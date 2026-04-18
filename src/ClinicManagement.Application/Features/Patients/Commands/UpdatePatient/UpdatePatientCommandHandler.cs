@@ -28,10 +28,10 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         if (patient is null)
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        patient.Person.FirstName  = request.FullName.Split(' ', 2)[0].Trim();
-        patient.Person.LastName   = request.FullName.Split(' ', 2).Length > 1 ? request.FullName.Split(' ', 2)[1].Trim() : string.Empty;
+        patient.Person.FirstName   = request.FirstName.Trim();
+        patient.Person.LastName    = request.LastName.Trim();
         patient.Person.DateOfBirth = DateOnly.TryParse(request.DateOfBirth, out var dob) ? dob : patient.Person.DateOfBirth;
-        patient.Person.Gender     = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
+        patient.Person.Gender      = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
         patient.CountryGeonameId  = request.CountryGeonameId;
         patient.StateGeonameId    = request.StateGeonameId;
         patient.CityGeonameId     = request.CityGeonameId;

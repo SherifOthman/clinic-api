@@ -13,11 +13,17 @@ public class UpdatePatientCommandValidator : AbstractValidator<UpdatePatientComm
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("Patient ID is required");
 
-        RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage("Full name is required")
-            .MaximumLength(200)
+        RuleFor(x => x.FirstName)
+            .NotEmpty().WithMessage("First name is required")
+            .MaximumLength(100)
             .Matches(@"^[\u0600-\u06FFa-zA-Z\s'\-\.]+$")
-            .WithMessage("Full name must contain only letters, spaces, hyphens, apostrophes, or dots");
+            .WithMessage("First name must contain only letters, spaces, hyphens, apostrophes, or dots");
+
+        RuleFor(x => x.LastName)
+            .NotEmpty().WithMessage("Last name is required")
+            .MaximumLength(100)
+            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'\-\.]+$")
+            .WithMessage("Last name must contain only letters, spaces, hyphens, apostrophes, or dots");
 
         RuleFor(x => x.DateOfBirth)
             .NotEmpty().WithMessage("Date of birth is required")

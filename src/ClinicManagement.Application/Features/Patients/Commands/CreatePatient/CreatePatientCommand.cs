@@ -4,7 +4,8 @@ using MediatR;
 namespace ClinicManagement.Application.Features.Patients.Commands;
 
 public record CreatePatientCommand(
-    string FullName,
+    string FirstName,
+    string LastName,
     string DateOfBirth,
     string Gender,
     int? CountryGeonameId,

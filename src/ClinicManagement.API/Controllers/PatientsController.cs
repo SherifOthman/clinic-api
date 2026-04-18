@@ -109,7 +109,8 @@ public class PatientsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var command = new CreatePatientCommand(
-            request.FullName,
+            request.FirstName,
+            request.LastName,
             request.DateOfBirth,
             request.Gender,
             request.CountryGeonameId,
@@ -138,7 +139,8 @@ public class PatientsController : BaseApiController
     {
         var command = new UpdatePatientCommand(
             id,
-            request.FullName,
+            request.FirstName,
+            request.LastName,
             request.DateOfBirth,
             request.Gender,
             request.CountryGeonameId,

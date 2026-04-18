@@ -67,7 +67,8 @@ public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         await _client.PostAsJsonAsync("/api/patients", new
         {
-            fullName = "Recent Patient",
+            firstName = "Recent",
+            lastName = "Patient",
             dateOfBirth = "1990-01-01",
             gender = "Male",
             phoneNumbers = new[] { "+966500000600" },

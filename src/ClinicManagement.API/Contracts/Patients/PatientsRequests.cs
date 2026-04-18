@@ -1,7 +1,8 @@
 namespace ClinicManagement.API.Contracts.Patients;
 
 public record CreatePatientRequest(
-    string FullName,
+    string FirstName,
+    string LastName,
     string DateOfBirth,
     string Gender,
     int? CountryGeonameId,
@@ -12,7 +13,8 @@ public record CreatePatientRequest(
     List<Guid> ChronicDiseaseIds);
 
 public record UpdatePatientRequest(
-    string FullName,
+    string FirstName,
+    string LastName,
     string DateOfBirth,
     string Gender,
     int? CountryGeonameId,

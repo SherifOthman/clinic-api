@@ -32,7 +32,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     {
         var response = await _factory.CreateClient().PostAsJsonAsync("/api/patients", new
         {
-            fullName = "Test", dateOfBirth = "1990-01-01", gender = "Male",
+            firstName = "Test", lastName = "User", dateOfBirth = "1990-01-01", gender = "Male",
             phoneNumbers = new[] { "+966500000200" },
             chronicDiseaseIds = Array.Empty<Guid>()
         });
@@ -63,7 +63,8 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         var response = await _client.PostAsJsonAsync("/api/patients", new
         {
-            fullName = "Ahmed Ali",
+            firstName = "Ahmed",
+            lastName = "Ali",
             dateOfBirth = "1990-06-15",
             gender = "Male",
             phoneNumbers = new[] { "+966500000300" },
@@ -81,7 +82,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         var response = await _client.PostAsJsonAsync("/api/patients", new
         {
-            // missing fullName, dateOfBirth, gender
+            // missing firstName, lastName, dateOfBirth, gender
             phoneNumbers = Array.Empty<object>()
         });
 
@@ -96,7 +97,8 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         await _client.PostAsJsonAsync("/api/patients", new
         {
-            fullName = "Sara Mohamed",
+            firstName = "Sara",
+            lastName = "Mohamed",
             dateOfBirth = "1985-03-20",
             gender = "Female",
             phoneNumbers = new[] { "+966500000400" },
@@ -119,7 +121,6 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
         _client.SetBearerToken(token);
 
         var response = await _client.GetAsync($"/api/patients/{Guid.NewGuid()}");
-        // HandleResult maps NOT_FOUND error code to 400 BadRequest
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -131,7 +132,8 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         await _client.PostAsJsonAsync("/api/patients", new
         {
-            fullName = "To Delete",
+            firstName = "To",
+            lastName = "Delete",
             dateOfBirth = "1990-01-01",
             gender = "Male",
             phoneNumbers = new[] { "+966500000500" },
@@ -158,7 +160,8 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         await _client.PostAsJsonAsync("/api/patients", new
         {
-            fullName = "Original Name",
+            firstName = "Original",
+            lastName = "Name",
             dateOfBirth = "1990-01-01",
             gender = "Male",
             phoneNumbers = new[] { "+966500000700" },
@@ -171,7 +174,8 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         var updateResponse = await _client.PutAsJsonAsync($"/api/patients/{id}", new
         {
-            fullName = "Updated Name",
+            firstName = "Updated",
+            lastName = "Name",
             dateOfBirth = "1990-01-01",
             gender = "Female",
             phoneNumbers = new[] { "+966500000800" },
@@ -180,7 +184,6 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         updateResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        // Verify the update
         var detail = await _client.GetAsync($"/api/patients/{id}");
         var detailBody = await detail.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         detailBody.GetProperty("fullName").GetString().Should().Be("Updated Name");
@@ -195,7 +198,8 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         await _client.PostAsJsonAsync("/api/patients", new
         {
-            fullName = "Detail Patient",
+            firstName = "Detail",
+            lastName = "Patient",
             dateOfBirth = "1985-06-15",
             gender = "Female",
             phoneNumbers = new[] { "+966500000900" },

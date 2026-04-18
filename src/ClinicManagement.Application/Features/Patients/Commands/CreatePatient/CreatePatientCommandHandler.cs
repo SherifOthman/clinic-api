@@ -27,13 +27,10 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         var gender      = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male;
         var dob         = DateOnly.Parse(request.DateOfBirth);
 
-        // Create Person — the human being
         var person = new Person
         {
-            FirstName   = request.FullName.Split(' ').FirstOrDefault() ?? request.FullName,
-            LastName    = request.FullName.Contains(' ')
-                ? string.Join(' ', request.FullName.Split(' ').Skip(1))
-                : string.Empty,
+            FirstName   = request.FirstName.Trim(),
+            LastName    = request.LastName.Trim(),
             Gender      = gender,
             DateOfBirth = dob,
         };
