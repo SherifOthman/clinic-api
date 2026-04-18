@@ -202,6 +202,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Select(p => new
             {
                 p.Id, p.PatientCode, p.BloodType,
+                FirstName   = p.Person.FirstName,
+                LastName    = p.Person.LastName,
                 FullName    = (p.Person.FirstName + " " + p.Person.LastName).Trim(),
                 DateOfBirth = p.Person.DateOfBirth,
                 Gender      = p.Person.Gender,
@@ -231,6 +233,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return new PatientDetailData(
             Id:             patient.Id,
             PatientCode:    patient.PatientCode,
+            FirstName:      patient.FirstName,
+            LastName:       patient.LastName,
             FullName:       patient.FullName,
             DateOfBirth:    patient.DateOfBirth,
             Gender:         patient.Gender.ToString(),

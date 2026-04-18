@@ -23,6 +23,8 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
         {
             Id               = data.Id.ToString(),
             PatientCode      = data.PatientCode,
+            FirstName        = data.FirstName,
+            LastName         = data.LastName,
             FullName         = data.FullName,
             DateOfBirth      = data.DateOfBirth,
             Gender           = data.Gender,
