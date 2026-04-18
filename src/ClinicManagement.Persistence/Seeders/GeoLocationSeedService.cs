@@ -32,31 +32,15 @@ public class GeoLocationSeedService
         _logger   = logger;
     }
 
-    public async Task SeedAsync(CancellationToken ct = default)
+    public async Task SeedCountriesAndStatesAsync(CancellationToken ct = default)
     {
-        _logger.LogInformation("Starting GeoLocation seed...");
-
-        // ── Cleanup: remove duplicate GeonameId rows left by previous bad runs ─
-        // Previous versions used allCountries.zip (unfiltered) and could insert
-        // the same GeonameId multiple times across restarts.
-        var totalCityCount    = await _db.GeoCities.CountAsync(ct);
-        var distinctCityCount = await _db.GeoCities.Select(c => c.GeonameId).Distinct().CountAsync(ct);
-        if (totalCityCount != distinctCityCount)
-        {
-            _logger.LogWarning(
-                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Truncating and re-seeding...",
-                totalCityCount, distinctCityCount);
-            await _db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE GeoCities", ct);
-        }
-
-        // ── Step 1: Countries ─────────────────────────────────────────────────
+        _logger.LogInformation("Seeding countries and states...");
 
         var existingCountryIds = await _db.GeoCountries
             .Select(c => c.GeonameId)
             .ToHashSetAsync(ct);
 
         var allCountries = await _geoNames.GetCountriesAsync(ct);
-
         var newCountries = allCountries
             .Where(c => !existingCountryIds.Contains(c.GeonameId))
             .Select(c => new GeoCountry
@@ -77,8 +61,6 @@ public class GeoLocationSeedService
         _logger.LogInformation("Countries: +{Added} added, {Skipped} already existed",
             newCountries.Count, existingCountryIds.Count);
 
-        // ── Step 2: States ────────────────────────────────────────────────────
-
         var existingStateIds = await _db.GeoStates
             .Select(s => s.GeonameId)
             .ToHashSetAsync(ct);
@@ -88,7 +70,6 @@ public class GeoLocationSeedService
             .ToHashSetAsync(ct);
 
         var allStates = await _geoNames.GetStatesAsync(ct);
-
         var newStates = allStates
             .Where(s => !existingStateIds.Contains(s.GeonameId)
                      && validCountryIds.Contains(s.CountryGeonameId))
@@ -109,6 +90,25 @@ public class GeoLocationSeedService
 
         _logger.LogInformation("States: +{Added} added, {Skipped} already existed",
             newStates.Count, existingStateIds.Count);
+    }
+
+    public async Task SeedAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Starting GeoLocation seed...");
+
+        // ── Cleanup: remove duplicate GeonameId rows left by previous bad runs ─
+        var totalCityCount    = await _db.GeoCities.CountAsync(ct);
+        var distinctCityCount = await _db.GeoCities.Select(c => c.GeonameId).Distinct().CountAsync(ct);
+        if (totalCityCount != distinctCityCount)
+        {
+            _logger.LogWarning(
+                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Truncating and re-seeding...",
+                totalCityCount, distinctCityCount);
+            await _db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE GeoCities", ct);
+        }
+
+        // Ensure countries and states are seeded first
+        await SeedCountriesAndStatesAsync(ct);
 
         // ── Step 3: Cities ────────────────────────────────────────────────────
 
@@ -169,7 +169,6 @@ public class GeoLocationSeedService
         else
             _logger.LogInformation("Cities: +{Added:N0} added", totalInserted);
 
-        _logger.LogInformation("GeoLocation seed complete — Countries: {C}, States: {S}, Cities: {Ci}",
-            newCountries.Count, newStates.Count, totalInserted);
+        _logger.LogInformation("GeoLocation cities seed complete — {Cities:N0} cities added.", totalInserted);
     }
 }

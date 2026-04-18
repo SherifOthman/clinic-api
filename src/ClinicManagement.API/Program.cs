@@ -61,7 +61,8 @@ try
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
-            await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
+            await services.GetRequiredService<GeoLocationSeedService>().SeedCountriesAndStatesAsync();
+            // Cities seeding runs in background — too large for foreground on shared hosting
 
             Log.Information("Database seeded successfully");
         }
