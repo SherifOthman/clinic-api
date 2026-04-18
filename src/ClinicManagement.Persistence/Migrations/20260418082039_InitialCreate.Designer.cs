@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260417204441_InitialCreate")]
+    [Migration("20260418082039_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -101,7 +101,20 @@ namespace ClinicManagement.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[ScheduledTime] IS NOT NULL");
 
-                    b.ToTable("Appointment");
+                    b.ToTable("Appointment", t =>
+                        {
+                            t.HasCheckConstraint("CK_Appointment_Discount", "[DiscountPercent] IS NULL OR ([DiscountPercent] >= 0 AND [DiscountPercent] <= 100)");
+
+                            t.HasCheckConstraint("CK_Appointment_FinalPrice", "[FinalPrice] >= 0");
+
+                            t.HasCheckConstraint("CK_Appointment_Price", "[Price] >= 0");
+
+                            t.HasCheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
+
+                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN (0, 1, 2, 3, 4)");
+
+                            t.HasCheckConstraint("CK_Appointment_Type", "[Type] IN (0, 1)");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.AuditLog", b =>
@@ -214,7 +227,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("CountryCode")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -407,7 +421,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("CancellationReason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("datetimeoffset");
@@ -433,8 +448,8 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateTimeOffset>("StartDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("SubscriptionPlanId")
                         .HasColumnType("uniqueidentifier");
@@ -450,11 +465,16 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClinicId");
-
                     b.HasIndex("SubscriptionPlanId");
 
-                    b.ToTable("ClinicSubscription");
+                    b.HasIndex("ClinicId", "Status");
+
+                    b.ToTable("ClinicSubscription", t =>
+                        {
+                            t.HasCheckConstraint("CK_ClinicSubscription_Dates", "[EndDate] IS NULL OR [EndDate] > [StartDate]");
+
+                            t.HasCheckConstraint("CK_ClinicSubscription_Status", "[Status] IN (0, 1, 2, 3, 4)");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicUsageMetrics", b =>
@@ -732,7 +752,8 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTimeOffset?>("IssuedDate")
                         .HasColumnType("datetimeoffset");
@@ -741,13 +762,14 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
 
                     b.Property<decimal>("TaxAmount")
                         .HasPrecision(18, 2)
@@ -759,7 +781,23 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invoice");
+                    b.HasIndex("ClinicId", "InvoiceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("PatientId", "Status");
+
+                    b.ToTable("Invoice", t =>
+                        {
+                            t.HasCheckConstraint("CK_Invoice_Discount", "[Discount] >= 0");
+
+                            t.HasCheckConstraint("CK_Invoice_DueDate", "[DueDate] IS NULL OR [IssuedDate] IS NULL OR [DueDate] >= [IssuedDate]");
+
+                            t.HasCheckConstraint("CK_Invoice_Status", "[Status] IN (1, 2, 3, 4, 5, 6)");
+
+                            t.HasCheckConstraint("CK_Invoice_TaxAmount", "[TaxAmount] >= 0");
+
+                            t.HasCheckConstraint("CK_Invoice_TotalAmount", "[TotalAmount] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.InvoiceItem", b =>
@@ -813,7 +851,12 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("RadiologyOrderId");
 
-                    b.ToTable("InvoiceItem");
+                    b.ToTable("InvoiceItem", t =>
+                        {
+                            t.HasCheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_InvoiceItem_UnitPrice", "[UnitPrice] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.LabTestOrder", b =>
@@ -1203,9 +1246,8 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("NationalNumber");
 
-                    b.HasIndex("PatientId");
-
-                    b.HasIndex("PhoneNumber");
+                    b.HasIndex("PatientId", "PhoneNumber")
+                        .IsUnique();
 
                     b.ToTable("PatientPhone");
                 });
@@ -1233,19 +1275,21 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTimeOffset>("PaymentDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("PaymentMethod")
-                        .HasColumnType("int");
+                    b.Property<short>("PaymentMethod")
+                        .HasColumnType("smallint");
 
                     b.Property<string>("ReferenceNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -1255,7 +1299,16 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Payment");
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("Payment", t =>
+                        {
+                            t.HasCheckConstraint("CK_Payment_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_Payment_Method", "[PaymentMethod] IN (1, 2, 3, 4, 5, 6)");
+
+                            t.HasCheckConstraint("CK_Payment_Status", "[Status] IN (0, 1, 2)");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Person", b =>
@@ -1286,7 +1339,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Person");
+                    b.ToTable("Person", t =>
+                        {
+                            t.HasCheckConstraint("CK_Person_Gender", "[Gender] IN (0, 1)");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.RadiologyOrder", b =>
@@ -1739,7 +1795,18 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPlan");
+                    b.ToTable("SubscriptionPlan", t =>
+                        {
+                            t.HasCheckConstraint("CK_SubscriptionPlan_MaxBranches", "[MaxBranches] > 0");
+
+                            t.HasCheckConstraint("CK_SubscriptionPlan_MaxStaff", "[MaxStaff] > 0");
+
+                            t.HasCheckConstraint("CK_SubscriptionPlan_MonthlyFee", "[MonthlyFee] >= 0");
+
+                            t.HasCheckConstraint("CK_SubscriptionPlan_SetupFee", "[SetupFee] >= 0");
+
+                            t.HasCheckConstraint("CK_SubscriptionPlan_YearlyFee", "[YearlyFee] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.User", b =>
@@ -1849,7 +1916,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("DoctorBranchScheduleId", "IsActive");
 
-                    b.ToTable("VisitType");
+                    b.ToTable("VisitType", t =>
+                        {
+                            t.HasCheckConstraint("CK_VisitType_Price", "[Price] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.WorkingDay", b =>
@@ -1875,9 +1945,15 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorBranchScheduleId");
+                    b.HasIndex("DoctorBranchScheduleId", "Day")
+                        .IsUnique();
 
-                    b.ToTable("WorkingDay");
+                    b.ToTable("WorkingDay", t =>
+                        {
+                            t.HasCheckConstraint("CK_WorkingDay_Day", "[Day] BETWEEN 0 AND 6");
+
+                            t.HasCheckConstraint("CK_WorkingDay_TimeRange", "[EndTime] > [StartTime]");
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

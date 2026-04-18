@@ -14,6 +14,16 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.Type).HasConversion<short>().HasColumnType("smallint");
         builder.Property(a => a.Status).HasConversion<short>().HasColumnType("smallint");
 
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_Appointment_Price",         "[Price] >= 0");
+            t.HasCheckConstraint("CK_Appointment_FinalPrice",    "[FinalPrice] >= 0");
+            t.HasCheckConstraint("CK_Appointment_Discount",      "[DiscountPercent] IS NULL OR ([DiscountPercent] >= 0 AND [DiscountPercent] <= 100)");
+            t.HasCheckConstraint("CK_Appointment_QueueNumber",   "[QueueNumber] IS NULL OR [QueueNumber] > 0");
+            t.HasCheckConstraint("CK_Appointment_Type",          "[Type] IN (0, 1)");
+            t.HasCheckConstraint("CK_Appointment_Status",        "[Status] IN (0, 1, 2, 3, 4)");
+        });
+
         builder.HasOne(a => a.Branch)
             .WithMany(b => b.Appointment)
             .HasForeignKey(a => a.BranchId)

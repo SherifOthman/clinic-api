@@ -15,5 +15,14 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.Property(sp => sp.MonthlyFee).HasPrecision(18, 2);
         builder.Property(sp => sp.YearlyFee).HasPrecision(18, 2);
         builder.Property(sp => sp.SetupFee).HasPrecision(18, 2);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_SubscriptionPlan_MonthlyFee",  "[MonthlyFee] >= 0");
+            t.HasCheckConstraint("CK_SubscriptionPlan_YearlyFee",   "[YearlyFee] >= 0");
+            t.HasCheckConstraint("CK_SubscriptionPlan_SetupFee",    "[SetupFee] >= 0");
+            t.HasCheckConstraint("CK_SubscriptionPlan_MaxStaff",    "[MaxStaff] > 0");
+            t.HasCheckConstraint("CK_SubscriptionPlan_MaxBranches", "[MaxBranches] > 0");
+        });
     }
 }

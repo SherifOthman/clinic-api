@@ -10,6 +10,7 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
     {
         builder.Property(c => c.Name).HasMaxLength(200).IsRequired();
         builder.Property(c => c.BillingEmail).HasMaxLength(256);
+        builder.Property(c => c.CountryCode).HasMaxLength(2);
 
         builder.HasIndex(c => c.OwnerUserId).IsUnique();
         builder.HasIndex(c => c.Name);
@@ -24,14 +25,11 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
             .HasForeignKey(c => c.SubscriptionPlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Child relationships — FK configured from child side
-        // ClinicBranch.Clinic nav configured in ClinicBranchConfiguration
         builder.HasMany<Patient>()
             .WithOne()
             .HasForeignKey(p => p.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // ClinicSubscription.SubscriptionPlan nav configured in ClinicSubscriptionConfiguration
         builder.HasMany<ClinicSubscription>()
             .WithOne()
             .HasForeignKey(cs => cs.ClinicId)

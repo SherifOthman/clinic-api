@@ -12,6 +12,8 @@ public class VisitTypeConfiguration : IEntityTypeConfiguration<VisitType>
         builder.Property(v => v.NameEn).HasMaxLength(100).IsRequired();
         builder.Property(v => v.Price).HasColumnType("decimal(18,2)").IsRequired();
 
+        builder.ToTable(t => t.HasCheckConstraint("CK_VisitType_Price", "[Price] >= 0"));
+
         builder.HasOne(v => v.Schedule)
             .WithMany(s => s.VisitTypes)
             .HasForeignKey(v => v.DoctorBranchScheduleId)

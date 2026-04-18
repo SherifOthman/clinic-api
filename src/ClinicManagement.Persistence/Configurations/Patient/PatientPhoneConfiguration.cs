@@ -10,7 +10,9 @@ public class PatientPhoneConfiguration : IEntityTypeConfiguration<PatientPhone>
     {
         builder.Property(pp => pp.PhoneNumber).HasMaxLength(20).IsRequired();
         builder.Property(pp => pp.NationalNumber).HasMaxLength(15).IsRequired().HasDefaultValue("");
-        builder.HasIndex(pp => pp.PhoneNumber);
+
+        // A patient cannot have the same phone number twice
+        builder.HasIndex(pp => new { pp.PatientId, pp.PhoneNumber }).IsUnique();
         builder.HasIndex(pp => pp.NationalNumber);
     }
 }

@@ -13,6 +13,14 @@ public class WorkingDayConfiguration : IEntityTypeConfiguration<WorkingDay>
             .HasForeignKey(w => w.DoctorBranchScheduleId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(w => w.DoctorBranchScheduleId);
+        // One entry per day per schedule
+        builder.HasIndex(w => new { w.DoctorBranchScheduleId, w.Day }).IsUnique();
+
+        builder.ToTable(t =>
+        {
+            // DayOfWeek: 0=Sunday … 6=Saturday
+            t.HasCheckConstraint("CK_WorkingDay_Day",       "[Day] BETWEEN 0 AND 6");
+            t.HasCheckConstraint("CK_WorkingDay_TimeRange",  "[EndTime] > [StartTime]");
+        });
     }
 }

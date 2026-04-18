@@ -12,5 +12,8 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.LastName).HasMaxLength(100).IsRequired();
         builder.Property(p => p.ProfileImageUrl).HasMaxLength(500);
         builder.Property(p => p.Gender).HasConversion<short>().HasColumnType("smallint");
+
+        // Gender must be a valid enum value (0=Male, 1=Female)
+        builder.ToTable(t => t.HasCheckConstraint("CK_Person_Gender", "[Gender] IN (0, 1)"));
     }
 }
