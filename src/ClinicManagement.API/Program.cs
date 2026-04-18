@@ -41,9 +41,15 @@ try
             {
                 await context.Database.MigrateAsync();
             }
-            catch
+            catch (Exception migEx)
             {
-                // Schema mismatch — drop and recreate (safe for dev/staging)
+                Log.Warning(migEx, "Migration failed — this is expected on first deploy after a migration reset. Attempting EnsureCreated as fallback...");
+                // Only drop+recreate in non-production environments
+                if (app.Environment.IsProduction())
+                {
+                    Log.Error("Migration failed in Production. Manual intervention required. Skipping drop/recreate to protect data.");
+                    throw;
+                }
                 await context.Database.EnsureDeletedAsync();
                 await context.Database.MigrateAsync();
             }
