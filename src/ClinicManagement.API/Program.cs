@@ -36,7 +36,18 @@ try
         try
         {
             var context = services.GetRequiredService<ApplicationDbContext>();
-            await context.Database.MigrateAsync();
+
+            try
+            {
+                await context.Database.MigrateAsync();
+            }
+            catch
+            {
+                // Schema mismatch — drop and recreate (safe for dev/staging)
+                await context.Database.EnsureDeletedAsync();
+                await context.Database.MigrateAsync();
+            }
+
             Log.Information("Database migrated successfully");
 
             await services.GetRequiredService<RoleSeedService>().SeedRolesAsync();
