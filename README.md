@@ -28,7 +28,7 @@ Every entity that belongs to a clinic implements `ITenantEntity` with a `ClinicI
 
 ### Location Data
 
-Countries, states/governorates, and cities are seeded from GeoNames bulk dump files at startup. The app downloads the files once (`countryInfo.txt`, `admin1CodesASCII.txt`, `cities1000.zip`, and a pre-extracted `ar_names.tsv` for Arabic names), saves them to `SeedData/GeoNames/`, and never downloads them again. All location data is stored in the database in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query using the seeded tables — no external API calls at runtime.
+Countries, states/governorates, and cities are seeded from GeoNames bulk dump files at startup. The app looks for the files in `wwwroot/SeedData/GeoNames/` — upload them there via FTP/file manager and they will never be re-downloaded. The seeder runs synchronously at startup before the app accepts requests, so the data is always fully available. It compares existing DB rows against the source file and only inserts missing entries, so it's safe to restart mid-seed and it will continue from where it left off. All location data is stored in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query using the seeded tables — no external API calls at runtime.
 
 ### Onboarding Flow
 
@@ -52,8 +52,9 @@ Plans define limits (max branches, max staff, max patients per month, storage) a
 
 ### Background Jobs
 
-Five hosted services run continuously in the background:
+Six hosted services run continuously in the background:
 
+- **GeoLocationBackgroundSeeder** — runs once at startup, seeds countries/states/cities from GeoNames files into the database; skips already-inserted rows so it's safe to restart mid-seed
 - **EmailQueueProcessorJob** — processes up to 50 pending emails every 5 minutes with retry logic and priority ordering
 - **AuditLogCleanupService** — runs at midnight daily, deletes audit logs older than 12 months
 - **RefreshTokenCleanupService** — runs every 6 hours, removes expired and revoked tokens

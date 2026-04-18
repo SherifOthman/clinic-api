@@ -92,6 +92,9 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
 
     public async Task InitializeAsync()
     {
+        // Clean up any leftover test databases from previous crashed runs
+        await DropStaleTestDatabasesAsync();
+
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();
@@ -110,6 +113,42 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.EnsureDeletedAsync();
         await base.DisposeAsync();
+    }
+
+    /// <summary>
+    /// Drops all ClinicTest_* databases left over from previous test runs that crashed
+    /// before DisposeAsync could clean them up.
+    /// </summary>
+    private static async Task DropStaleTestDatabasesAsync()
+    {
+        try
+        {
+            const string masterConn =
+                "Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+
+            using var conn = new Microsoft.Data.SqlClient.SqlConnection(masterConn);
+            await conn.OpenAsync();
+
+            // Find all ClinicTest_* databases
+            var dbNames = new List<string>();
+            using (var cmd = new Microsoft.Data.SqlClient.SqlCommand(
+                "SELECT name FROM sys.databases WHERE name LIKE 'ClinicTest_%'", conn))
+            using (var reader = await cmd.ExecuteReaderAsync())
+                while (await reader.ReadAsync())
+                    dbNames.Add(reader.GetString(0));
+
+            // Drop each one
+            foreach (var name in dbNames)
+            {
+                using var dropCmd = new Microsoft.Data.SqlClient.SqlCommand(
+                    $"ALTER DATABASE [{name}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [{name}]", conn);
+                await dropCmd.ExecuteNonQueryAsync();
+            }
+        }
+        catch
+        {
+            // Non-fatal — if cleanup fails, tests still run fine
+        }
     }
 }
 
