@@ -110,7 +110,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve staff");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = "RequireClinic")]
     [HttpGet("{id:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(StaffDetailDto), StatusCodes.Status200OK)]

@@ -8,11 +8,12 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize(Policy = "RequireClinicOwner")]
 [Route("api/branches")]
 public class BranchesController : BaseApiController
 {
+    // All clinic members can read branches (doctors need the list for their schedule)
     [HttpGet]
+    [Authorize(Policy = "RequireClinic")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<BranchDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBranches(CancellationToken cancellationToken = default)
@@ -22,6 +23,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPost]
+    [Authorize(Policy = "RequireClinicOwner")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -34,6 +36,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "RequireClinicOwner")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -45,6 +48,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPatch("{id:guid}/active-status")]
+    [Authorize(Policy = "RequireClinicOwner")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
