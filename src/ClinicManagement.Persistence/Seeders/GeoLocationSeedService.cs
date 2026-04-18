@@ -102,9 +102,10 @@ public class GeoLocationSeedService
         if (totalCityCount != distinctCityCount)
         {
             _logger.LogWarning(
-                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Truncating and re-seeding...",
+                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Clearing and re-seeding...",
                 totalCityCount, distinctCityCount);
-            await _db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE GeoCities", ct);
+            // DELETE instead of TRUNCATE — TRUNCATE fails when FK constraints exist (e.g. Patient.CityGeonameId)
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM GeoCities", ct);
         }
 
         // Ensure countries and states are seeded first
