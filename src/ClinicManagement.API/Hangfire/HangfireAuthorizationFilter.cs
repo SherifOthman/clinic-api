@@ -3,20 +3,32 @@ using Hangfire.Dashboard;
 namespace ClinicManagement.API.Hangfire;
 
 /// <summary>
-/// Restricts the Hangfire dashboard to SuperAdmin users only.
-/// In development, allows all requests for convenience.
+/// Restricts the Hangfire dashboard.
+/// - Development: open to all
+/// - Production: requires ?key=YOUR_SECRET query param
+///   e.g. https://clinic-api.runasp.net/hangfire?key=YOUR_SECRET
+/// Set HangfireDashboardKey in appsettings.Production.json to enable.
 /// </summary>
 public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
 {
+    private readonly string? _secretKey;
+
+    public HangfireAuthorizationFilter(string? secretKey)
+    {
+        _secretKey = secretKey;
+    }
+
     public bool Authorize(DashboardContext context)
     {
         var httpContext = context.GetHttpContext();
 
-        // Allow in development
         var env = httpContext.RequestServices.GetService<IWebHostEnvironment>();
         if (env?.IsDevelopment() == true) return true;
 
-        return httpContext.User.Identity?.IsAuthenticated == true
-            && httpContext.User.IsInRole("SuperAdmin");
+        // Production: require secret key in query string
+        if (string.IsNullOrWhiteSpace(_secretKey)) return false;
+
+        var provided = httpContext.Request.Query["key"].ToString();
+        return provided == _secretKey;
     }
 }

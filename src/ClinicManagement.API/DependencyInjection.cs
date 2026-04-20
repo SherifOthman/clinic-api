@@ -149,10 +149,11 @@ public static class DependencyInjection
         app.UseAuthorization();
         app.MapControllers();
 
-        // Hangfire dashboard — SuperAdmin only
+        // Hangfire dashboard — open in dev, secret key required in production
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
-            Authorization = [new HangfireAuthorizationFilter()],
+            Authorization = [new HangfireAuthorizationFilter(
+                app.Configuration["HangfireDashboardKey"])],
         });
 
         app.MapOpenApi();
