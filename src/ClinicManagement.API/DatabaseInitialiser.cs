@@ -32,15 +32,12 @@ public static class DatabaseInitialiser
                 }
             }
 
-            // Seed small reference data only — fast, no file I/O, no large memory allocations
             await services.GetRequiredService<RoleSeedService>().SeedRolesAsync();
             await services.GetRequiredService<SpecializationSeedService>().SeedSpecializationsAsync();
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
-
-            // Geo seeding (countries, states, cities) runs via Hangfire after startup
-            // to avoid memory limit and 120s startup timeout on shared hosting.
+            await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
 
             Log.Information("Database seeded successfully");
         }

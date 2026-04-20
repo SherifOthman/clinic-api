@@ -43,9 +43,13 @@ try
     RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");
     RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");
     RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");
+    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *");
+    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *");
+    RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");
+    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");
+    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");
     RecurringJob.RemoveIfExists("city-seed");
-    RecurringJob.RemoveIfExists("geo-seed"); // disabled — server memory limit too low for geo seeding
-    // TODO: re-enable when on a plan with more memory, or seed via SQL import
+    RecurringJob.RemoveIfExists("geo-seed");
 
     Log.Information("Clinic Management API started successfully");
     app.Run();
