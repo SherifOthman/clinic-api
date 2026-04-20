@@ -1,10 +1,12 @@
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.API.Hangfire;
 using ClinicManagement.API.Middleware;
 using ClinicManagement.API.OpenApi;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -28,6 +30,12 @@ public static class DependencyInjection
         services.AddRateLimiting();
 
         services.AddControllers();
+
+        // Hangfire server
+        services.AddHangfireServer(options =>
+        {
+            options.WorkerCount = 2; // Low on shared hosting
+        });
 
         return services;
     }
@@ -140,6 +148,12 @@ public static class DependencyInjection
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // Hangfire dashboard — SuperAdmin only
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = [new HangfireAuthorizationFilter()],
+        });
 
         app.MapOpenApi();
         app.MapScalarApiReference(options =>

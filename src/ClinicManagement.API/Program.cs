@@ -1,8 +1,10 @@
 using ClinicManagement.API;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
+using ClinicManagement.Infrastructure.Services;
 using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Seeders;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -102,6 +104,32 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseAppConfigurations();
+
+    // Register recurring Hangfire jobs
+    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>(
+        "email-queue-processor",
+        job => job.ExecuteAsync(),
+        "*/5 * * * *"); // every 5 minutes
+
+    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>(
+        "refresh-token-cleanup",
+        job => job.ExecuteAsync(),
+        "0 */6 * * *"); // every 6 hours
+
+    RecurringJob.AddOrUpdate<AuditLogCleanupService>(
+        "audit-log-cleanup",
+        job => job.ExecuteAsync(),
+        "0 0 * * *"); // daily at midnight
+
+    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>(
+        "usage-metrics-aggregation",
+        job => job.ExecuteAsync(),
+        "0 1 * * *"); // daily at 1am
+
+    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>(
+        "subscription-expiry-notifications",
+        job => job.ExecuteAsync(),
+        "0 9 * * *"); // daily at 9am
 
     Log.Information("Clinic Management API started successfully");
     app.Run();

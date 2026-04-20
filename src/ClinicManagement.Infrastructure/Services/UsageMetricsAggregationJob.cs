@@ -1,67 +1,29 @@
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class UsageMetricsAggregationJob : BackgroundService
+public class UsageMetricsAggregationJob
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<UsageMetricsAggregationJob> _logger;
 
-    public UsageMetricsAggregationJob(IServiceProvider serviceProvider, ILogger<UsageMetricsAggregationJob> logger)
+    public UsageMetricsAggregationJob(
+        ApplicationDbContext context,
+        ILogger<UsageMetricsAggregationJob> logger)
     {
-        _serviceProvider = serviceProvider;
-        _logger          = logger;
+        _context = context;
+        _logger  = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task ExecuteAsync()
     {
-        _logger.LogInformation("Usage Metrics Aggregation Job started");
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                var now     = DateTimeOffset.UtcNow;
-                var nextRun = GetNextRunTime(now);
-                _logger.LogInformation("Next usage metrics aggregation scheduled for {NextRun} UTC", nextRun);
-                await Task.Delay(nextRun - now, stoppingToken);
-
-                if (!stoppingToken.IsCancellationRequested)
-                    await AggregateUsageMetricsAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during usage metrics aggregation");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-            }
-        }
-    }
-
-    private static DateTimeOffset GetNextRunTime(DateTimeOffset now)
-    {
-        var next = new DateTimeOffset(now.Year, now.Month, now.Day, 1, 0, 0, TimeSpan.Zero);
-        return now >= next ? next.AddDays(1) : next;
-    }
-
-    private async Task AggregateUsageMetricsAsync(CancellationToken cancellationToken)
-    {
-        using var scope      = _serviceProvider.CreateScope();
-        var context          = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var clinics          = context.Set<Clinic>();
-        var members          = context.Set<ClinicMember>();
-        var usageMetrics     = context.Set<ClinicUsageMetrics>();
-
-        var yesterday    = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
-        var activeClinics = await clinics
+        var yesterday     = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
+        var activeClinics = await _context.Set<Clinic>()
             .Where(c => c.IsActive && !c.IsDeleted)
-            .ToListAsync(cancellationToken);
+            .ToListAsync();
 
         _logger.LogInformation("Aggregating metrics for {Count} clinics for {Date}", activeClinics.Count, yesterday);
 
@@ -71,35 +33,34 @@ public class UsageMetricsAggregationJob : BackgroundService
         {
             try
             {
-                var activeStaffCount = await members.CountAsync(m => m.ClinicId == clinic.Id && m.IsActive, cancellationToken);
+                var activeStaffCount = await _context.Set<ClinicMember>()
+                    .CountAsync(m => m.ClinicId == clinic.Id && m.IsActive);
 
-                var metrics = new ClinicUsageMetrics
-                {
-                    ClinicId           = clinic.Id,
-                    MetricDate         = yesterday,
-                    ActiveStaffCount   = activeStaffCount,
-                    NewPatientsCount   = 0,
-                    TotalPatientsCount = 0,
-                    AppointmentsCount  = 0,
-                    InvoicesCount      = 0,
-                    StorageUsedGB      = 0,
-                    UpdatedAt          = DateTimeOffset.UtcNow,
-                };
-
-                var existing = await usageMetrics
-                    .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == yesterday, cancellationToken);
+                var existing = await _context.Set<ClinicUsageMetrics>()
+                    .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == yesterday);
 
                 if (existing is not null)
                 {
-                    existing.ActiveStaffCount = metrics.ActiveStaffCount;
-                    existing.UpdatedAt        = metrics.UpdatedAt;
+                    existing.ActiveStaffCount = activeStaffCount;
+                    existing.UpdatedAt        = DateTimeOffset.UtcNow;
                 }
                 else
                 {
-                    usageMetrics.Add(metrics);
+                    _context.Set<ClinicUsageMetrics>().Add(new ClinicUsageMetrics
+                    {
+                        ClinicId           = clinic.Id,
+                        MetricDate         = yesterday,
+                        ActiveStaffCount   = activeStaffCount,
+                        NewPatientsCount   = 0,
+                        TotalPatientsCount = 0,
+                        AppointmentsCount  = 0,
+                        InvoicesCount      = 0,
+                        StorageUsedGB      = 0,
+                        UpdatedAt          = DateTimeOffset.UtcNow,
+                    });
                 }
 
-                await context.SaveChangesAsync(cancellationToken);
+                await _context.SaveChangesAsync();
                 processed++;
             }
             catch (Exception ex)
@@ -110,11 +71,5 @@ public class UsageMetricsAggregationJob : BackgroundService
         }
 
         _logger.LogInformation("Usage metrics aggregation: {Processed} processed, {Errors} errors", processed, errors);
-    }
-
-    public override async Task StopAsync(CancellationToken stoppingToken)
-    {
-        _logger.LogInformation("Usage Metrics Aggregation Job stopping");
-        await base.StopAsync(stoppingToken);
     }
 }

@@ -1,7 +1,10 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Application.Abstractions.Storage;using ClinicManagement.Infrastructure.Services;
+using ClinicManagement.Application.Abstractions.Storage;
+using ClinicManagement.Infrastructure.Services;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,15 +32,33 @@ public static class DependencyInjection
 
         services.AddHttpClient<GeoNamesService>(client =>
         {
-            // Dump files can be large (alternateNamesV2.zip ~200MB) — allow enough time
             client.Timeout = TimeSpan.FromMinutes(10);
         });
         services.AddScoped<IGeoNamesService>(sp => sp.GetRequiredService<GeoNamesService>());
-        services.AddHostedService<RefreshTokenCleanupService>();
-        services.AddHostedService<AuditLogCleanupService>();
-        services.AddHostedService<UsageMetricsAggregationJob>();
-        services.AddHostedService<EmailQueueProcessorJob>();
-        services.AddHostedService<SubscriptionExpiryNotificationJob>();
+
+        // Hangfire jobs (scoped — resolved per execution by Hangfire's DI scope)
+        services.AddScoped<EmailQueueProcessorJob>();
+        services.AddScoped<AuditLogCleanupService>();
+        services.AddScoped<RefreshTokenCleanupService>();
+        services.AddScoped<UsageMetricsAggregationJob>();
+        services.AddScoped<SubscriptionExpiryNotificationJob>();
+
+        // Hangfire storage config only — server + dashboard registered in API layer
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DefaultConnection is missing");
+
+        GlobalConfiguration.Configuration
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
+                QueuePollInterval            = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks           = true,
+            });
 
         return services;
     }

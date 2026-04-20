@@ -2,71 +2,32 @@ using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class SubscriptionExpiryNotificationJob : BackgroundService
+public class SubscriptionExpiryNotificationJob
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<SubscriptionExpiryNotificationJob> _logger;
 
-    public SubscriptionExpiryNotificationJob(IServiceProvider serviceProvider, ILogger<SubscriptionExpiryNotificationJob> logger)
+    public SubscriptionExpiryNotificationJob(
+        ApplicationDbContext context,
+        ILogger<SubscriptionExpiryNotificationJob> logger)
     {
-        _serviceProvider = serviceProvider;
-        _logger          = logger;
+        _context = context;
+        _logger  = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task ExecuteAsync()
     {
-        _logger.LogInformation("Subscription Expiry Notification Job started");
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                var now     = DateTimeOffset.UtcNow;
-                var nextRun = GetNextRunTime(now);
-                _logger.LogInformation("Next subscription expiry check scheduled for {NextRun} UTC", nextRun);
-                await Task.Delay(nextRun - now, stoppingToken);
-
-                if (!stoppingToken.IsCancellationRequested)
-                    await ProcessExpiringSubscriptionsAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during subscription expiry notification processing");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-            }
-        }
-    }
-
-    private static DateTimeOffset GetNextRunTime(DateTimeOffset now)
-    {
-        var next = new DateTimeOffset(now.Year, now.Month, now.Day, 9, 0, 0, TimeSpan.Zero);
-        return now >= next ? next.AddDays(1) : next;
-    }
-
-    private async Task ProcessExpiringSubscriptionsAsync(CancellationToken cancellationToken)
-    {
-        using var scope         = _serviceProvider.CreateScope();
-        var context             = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var subscriptions       = context.Set<ClinicSubscription>();
-        var clinics             = context.Set<Clinic>();
-        var users               = context.Set<User>();
-        var notifications       = context.Set<Notification>();
-        var emailQueue          = context.Set<EmailQueue>();
-
         var expiryThreshold = DateTimeOffset.UtcNow.AddDays(7);
-        var expiring = await subscriptions
+        var expiring = await _context.Set<ClinicSubscription>()
             .Where(s => s.EndDate.HasValue &&
                         s.EndDate.Value <= expiryThreshold &&
                         s.EndDate.Value > DateTimeOffset.UtcNow &&
                         s.Status == SubscriptionStatus.Active)
-            .ToListAsync(cancellationToken);
+            .ToListAsync();
 
         if (!expiring.Any()) return;
 
@@ -76,19 +37,20 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
         {
             try
             {
-                var clinic = await clinics.FirstOrDefaultAsync(c => c.Id == subscription.ClinicId, cancellationToken);
+                var clinic = await _context.Set<Clinic>()
+                    .FirstOrDefaultAsync(c => c.Id == subscription.ClinicId);
                 if (clinic is null) continue;
 
-                var owner = await users
+                var owner = await _context.Users
                     .Include(u => u.Person)
-                    .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId, cancellationToken);
+                    .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId);
                 if (owner is null) continue;
 
                 var daysLeft = subscription.EndDate.HasValue
                     ? (subscription.EndDate.Value.Date - DateTimeOffset.UtcNow.Date).Days
                     : 0;
 
-                notifications.Add(new Notification
+                _context.Set<Notification>().Add(new Notification
                 {
                     UserId    = owner.Id,
                     Type      = NotificationType.Warning,
@@ -97,7 +59,7 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
                     ActionUrl = "/billing/renew",
                 });
 
-                emailQueue.Add(new EmailQueue
+                _context.Set<EmailQueue>().Add(new EmailQueue
                 {
                     ToEmail  = !string.IsNullOrWhiteSpace(clinic.BillingEmail) ? clinic.BillingEmail : owner.Email!,
                     ToName   = owner.FullName,
@@ -107,7 +69,7 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
                     Priority = 3,
                 });
 
-                await context.SaveChangesAsync(cancellationToken);
+                await _context.SaveChangesAsync();
                 _logger.LogDebug("Notification queued for clinic {ClinicId} (expires in {Days} days)", clinic.Id, daysLeft);
             }
             catch (Exception ex)
@@ -115,11 +77,5 @@ public class SubscriptionExpiryNotificationJob : BackgroundService
                 _logger.LogError(ex, "Error processing subscription {SubscriptionId}", subscription.Id);
             }
         }
-    }
-
-    public override async Task StopAsync(CancellationToken stoppingToken)
-    {
-        _logger.LogInformation("Subscription Expiry Notification Job stopping");
-        await base.StopAsync(stoppingToken);
     }
 }
