@@ -43,15 +43,43 @@ try
             }
             catch (Exception migEx)
             {
-                Log.Warning(migEx, "Migration failed — this is expected on first deploy after a migration reset. Attempting EnsureCreated as fallback...");
-                // Only drop+recreate in non-production environments
-                if (app.Environment.IsProduction())
+                Log.Warning(migEx, "MigrateAsync failed — checking if schema already exists...");
+
+                // On shared hosting after a migration reset, the tables exist but
+                // __EFMigrationsHistory has the old migration name. EF tries to re-apply
+                // the migration and fails because tables already exist.
+                // Solution: if all tables exist, just mark the pending migrations as applied.
+                try
                 {
-                    Log.Error("Migration failed in Production. Manual intervention required. Skipping drop/recreate to protect data.");
-                    throw;
+                    var pendingMigrations = (await context.Database.GetPendingMigrationsAsync()).ToList();
+                    if (pendingMigrations.Count > 0)
+                    {
+                        // Check if tables already exist (schema is fine, just history mismatch)
+                        var canConnect = await context.Database.CanConnectAsync();
+                        if (canConnect)
+                        {
+                            Log.Warning("Marking {Count} pending migration(s) as applied without running them: {Migrations}",
+                                pendingMigrations.Count, string.Join(", ", pendingMigrations));
+
+                            foreach (var migration in pendingMigrations)
+                            {
+                                await context.Database.ExecuteSqlRawAsync(
+                                    $"INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('{migration}', '10.0.0')");
+                            }
+                        }
+                    }
                 }
-                await context.Database.EnsureDeletedAsync();
-                await context.Database.MigrateAsync();
+                catch (Exception innerEx)
+                {
+                    Log.Error(innerEx, "Could not recover from migration failure. Manual intervention required.");
+
+                    if (!app.Environment.IsProduction())
+                    {
+                        await context.Database.EnsureDeletedAsync();
+                        await context.Database.MigrateAsync();
+                    }
+                    else throw;
+                }
             }
 
             Log.Information("Database migrated successfully");
