@@ -7,6 +7,7 @@ using ClinicManagement.API.OpenApi;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
 using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -31,11 +32,24 @@ public static class DependencyInjection
 
         services.AddControllers();
 
-        // Hangfire server
-        services.AddHangfireServer(options =>
-        {
-            options.WorkerCount = 2; // Low on shared hosting
-        });
+        // Hangfire — storage + server (AspNetCore package lives here)
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DefaultConnection is missing");
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
+                QueuePollInterval            = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks           = true,
+            }));
+
+        services.AddHangfireServer(options => options.WorkerCount = 2);
 
         return services;
     }

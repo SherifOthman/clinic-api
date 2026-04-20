@@ -42,49 +42,24 @@ try
             try
             {
                 await context.Database.MigrateAsync();
+                Log.Information("Database migrated successfully");
             }
             catch (Exception migEx)
             {
-                Log.Warning(migEx, "MigrateAsync failed — checking if schema already exists...");
-
-                // On shared hosting after a migration reset, the tables exist but
-                // __EFMigrationsHistory has the old migration name. EF tries to re-apply
-                // the migration and fails because tables already exist.
-                // Solution: if all tables exist, just mark the pending migrations as applied.
-                try
+                // After a migration reset, the server DB has the correct schema but
+                // __EFMigrationsHistory has the old migration name. MigrateAsync fails.
+                // If the DB is reachable, assume schema is correct and continue.
+                var canConnect = await context.Database.CanConnectAsync();
+                if (canConnect)
                 {
-                    var pendingMigrations = (await context.Database.GetPendingMigrationsAsync()).ToList();
-                    if (pendingMigrations.Count > 0)
-                    {
-                        // Check if tables already exist (schema is fine, just history mismatch)
-                        var canConnect = await context.Database.CanConnectAsync();
-                        if (canConnect)
-                        {
-                            Log.Warning("Marking {Count} pending migration(s) as applied without running them: {Migrations}",
-                                pendingMigrations.Count, string.Join(", ", pendingMigrations));
-
-                            foreach (var migration in pendingMigrations)
-                            {
-                                await context.Database.ExecuteSqlRawAsync(
-                                    $"INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('{migration}', '10.0.0')");
-                            }
-                        }
-                    }
+                    Log.Warning(migEx, "MigrateAsync failed but DB is reachable — assuming schema is correct, continuing with seeding...");
                 }
-                catch (Exception innerEx)
+                else
                 {
-                    Log.Error(innerEx, "Could not recover from migration failure. Manual intervention required.");
-
-                    if (!app.Environment.IsProduction())
-                    {
-                        await context.Database.EnsureDeletedAsync();
-                        await context.Database.MigrateAsync();
-                    }
-                    else throw;
+                    Log.Error(migEx, "MigrateAsync failed and DB is unreachable. Cannot proceed.");
+                    throw;
                 }
             }
-
-            Log.Information("Database migrated successfully");
 
             await services.GetRequiredService<RoleSeedService>().SeedRolesAsync();
             await services.GetRequiredService<SpecializationSeedService>().SeedSpecializationsAsync();

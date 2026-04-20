@@ -43,23 +43,6 @@ public static class DependencyInjection
         services.AddScoped<UsageMetricsAggregationJob>();
         services.AddScoped<SubscriptionExpiryNotificationJob>();
 
-        // Hangfire storage config only — server + dashboard registered in API layer
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("DefaultConnection is missing");
-
-        GlobalConfiguration.Configuration
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
-            {
-                CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
-                SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
-                QueuePollInterval            = TimeSpan.Zero,
-                UseRecommendedIsolationLevel = true,
-                DisableGlobalLocks           = true,
-            });
-
         return services;
     }
 }
