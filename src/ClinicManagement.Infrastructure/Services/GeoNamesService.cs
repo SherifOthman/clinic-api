@@ -220,34 +220,15 @@ public class GeoNamesService : IGeoNamesService
         if (_arabicNamesCache is not null) return _arabicNamesCache;
 
         var tsvPath = Path.Combine(_cacheDir, "ar_names.tsv");
-        string[] lines;
 
-        if (File.Exists(tsvPath))
+        if (!File.Exists(tsvPath))
         {
-            lines = (await File.ReadAllTextAsync(tsvPath, Encoding.UTF8, ct)).Split('\n');
+            _logger.LogWarning("ar_names.tsv not found and download skipped — Arabic names will fall back to English. Upload ar_names.tsv to {Dir} to enable Arabic names.", _cacheDir);
+            _arabicNamesCache = new Dictionary<int, string>();
+            return _arabicNamesCache;
         }
-        else
-        {
-            _logger.LogInformation("Downloading alternateNamesV2.zip (~200 MB)...");
-            var bytes = await _http.GetByteArrayAsync(_baseUrl + "/alternateNamesV2.zip", ct);
-            using var ms      = new MemoryStream(bytes);
-            using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
-            var entry  = archive.GetEntry("alternateNamesV2.txt")
-                ?? archive.Entries.First(e => e.Name.Equals("alternateNamesV2.txt", StringComparison.OrdinalIgnoreCase));
-            lines = (await new StreamReader(entry.Open(), Encoding.UTF8).ReadToEndAsync(ct)).Split('\n');
 
-            // Keep only Arabic rows and save
-            var sb = new StringBuilder();
-            foreach (var line in lines)
-            {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-                var cols = line.Split('\t');
-                if (cols.Length >= 3 && cols[2].Equals("ar", StringComparison.OrdinalIgnoreCase))
-                    sb.AppendLine(line);
-            }
-            await File.WriteAllTextAsync(tsvPath, sb.ToString(), Encoding.UTF8, ct);
-            _logger.LogInformation("Saved ar_names.tsv ({MB:F1} MB)", new FileInfo(tsvPath).Length / 1_048_576.0);
-        }
+        var lines = (await File.ReadAllTextAsync(tsvPath, Encoding.UTF8, ct)).Split('\n');
 
         var result    = new Dictionary<int, string>();
         var preferred = new HashSet<int>();
@@ -277,12 +258,21 @@ public class GeoNamesService : IGeoNamesService
     private async Task<string> ReadFileAsync(string fileName, CancellationToken ct)
     {
         var path = Path.Combine(_cacheDir, fileName);
-        if (!File.Exists(path))
+        if (File.Exists(path))
+            return await File.ReadAllTextAsync(path, Encoding.UTF8, ct);
+
+        _logger.LogWarning("File {File} not found at {Path}. Attempting download from {Url}...", fileName, path, _baseUrl);
+        try
         {
-            _logger.LogInformation("Downloading {File}...", fileName);
             var bytes = await _http.GetByteArrayAsync(_baseUrl + "/" + fileName, ct);
             await File.WriteAllBytesAsync(path, bytes, ct);
+            return await File.ReadAllTextAsync(path, Encoding.UTF8, ct);
         }
-        return await File.ReadAllTextAsync(path, Encoding.UTF8, ct);
+        catch (Exception ex)
+        {
+            throw new FileNotFoundException(
+                $"Required GeoNames file '{fileName}' not found at '{path}' and could not be downloaded from '{_baseUrl}'. " +
+                $"Please upload it manually to the server. Error: {ex.Message}", fileName, ex);
+        }
     }
 }
