@@ -7,14 +7,19 @@ namespace ClinicManagement.API.RateLimiting;
 /// <summary>
 /// Named rate limit policies used across the API.
 ///
+/// Algorithm choices:
+///   SlidingWindow  → auth endpoints (per-IP, tight, no burst tolerance)
+///   TokenBucket    → authenticated reads/writes and anon static data (burst-tolerant)
+///   FixedWindow    → upload and one-time actions (hard hourly/daily caps)
+///
 /// Policy naming convention:
-///   "auth-*"       → unauthenticated auth endpoints (per-IP, tight)
-///   "user-reads"   → authenticated GET endpoints (per-user, generous)
-///   "user-writes"  → authenticated write endpoints (per-user, moderate)
-///   "user-deletes" → authenticated delete endpoints (per-user, strict)
-///   "user-upload"  → file upload (per-user, hourly)
-///   "user-once"    → one-time actions like onboarding (per-user, very tight)
-///   "anon-static"  → anonymous static/reference data (per-IP, moderate)
+///   "auth-*"       → unauthenticated auth endpoints (SlidingWindow, per-IP, tight)
+///   "user-reads"   → authenticated GET endpoints (TokenBucket, per-user, burst-tolerant)
+///   "user-writes"  → authenticated write endpoints (TokenBucket, per-user, moderate)
+///   "user-deletes" → authenticated delete endpoints (SlidingWindow, per-user, strict, no burst)
+///   "user-upload"  → file upload (FixedWindow, per-user, hourly hard cap)
+///   "user-once"    → one-time actions like onboarding (FixedWindow, per-user, daily hard cap)
+///   "anon-static"  → anonymous static/reference data (TokenBucket, per-IP, burst-tolerant)
 /// </summary>
 public static class RateLimitPolicies
 {
@@ -136,33 +141,35 @@ public static class RateLimitingExtensions
 
             // ── Authenticated endpoints (per-user via JWT sub claim) ──────────
 
-            // Reads: 120 per minute per user
+            // Reads: 200 per minute per user, burst of 30
+            // TokenBucket: authenticated users legitimately burst (page load fires multiple GETs)
             options.AddPolicy(RateLimitPolicies.UserReads, context =>
-                RateLimitPartition.GetSlidingWindowLimiter(
+                RateLimitPartition.GetTokenBucketLimiter(
                     GetUserId(context),
-                    _ => new SlidingWindowRateLimiterOptions
+                    _ => new TokenBucketRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 3,
-                        PermitLimit       = 120,
-                        QueueLimit        = 0,
-                        AutoReplenishment = true,
+                        TokenLimit          = 200,
+                        TokensPerPeriod     = 200,
+                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                        QueueLimit          = 0,
+                        AutoReplenishment   = true,
                     }));
 
-            // Writes: 60 per minute per user
+            // Writes: 60 per minute per user, burst of 10
+            // TokenBucket: allows short bursts (e.g. saving multiple fields) without penalizing
             options.AddPolicy(RateLimitPolicies.UserWrites, context =>
-                RateLimitPartition.GetSlidingWindowLimiter(
+                RateLimitPartition.GetTokenBucketLimiter(
                     GetUserId(context),
-                    _ => new SlidingWindowRateLimiterOptions
+                    _ => new TokenBucketRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 3,
-                        PermitLimit       = 60,
-                        QueueLimit        = 0,
-                        AutoReplenishment = true,
+                        TokenLimit          = 60,
+                        TokensPerPeriod     = 60,
+                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                        QueueLimit          = 0,
+                        AutoReplenishment   = true,
                     }));
 
-            // Deletes: 20 per minute per user (more destructive)
+            // Deletes: 20 per minute per user — SlidingWindow (no burst tolerance for destructive ops)
             options.AddPolicy(RateLimitPolicies.UserDeletes, context =>
                 RateLimitPartition.GetSlidingWindowLimiter(
                     GetUserId(context),
@@ -175,41 +182,45 @@ public static class RateLimitingExtensions
                         AutoReplenishment = true,
                     }));
 
-            // File upload: 10 per hour per user
+            // File upload: 10 per hour per user — FixedWindow (hourly hard cap)
             options.AddPolicy(RateLimitPolicies.UserUpload, context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     GetUserId(context),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window       = TimeSpan.FromHours(1),
-                        PermitLimit  = 10,
-                        QueueLimit   = 0,
+                        Window            = TimeSpan.FromHours(1),
+                        PermitLimit       = 10,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // One-time actions (onboarding, accept invitation): 3 per day per user
+            // One-time actions (onboarding, accept invitation): 3 per day — FixedWindow (daily hard cap)
             options.AddPolicy(RateLimitPolicies.UserOnce, context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     GetUserId(context),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window       = TimeSpan.FromDays(1),
-                        PermitLimit  = 3,
-                        QueueLimit   = 0,
+                        Window            = TimeSpan.FromDays(1),
+                        PermitLimit       = 3,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
             // ── Anonymous static/reference data (per-IP) ─────────────────────
 
-            // 30 per minute per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AnonStatic, o =>
-            {
-                o.Window          = TimeSpan.FromMinutes(1);
-                o.SegmentsPerWindow = 2;
-                o.PermitLimit     = 30;
-                o.QueueLimit      = 0;
-                o.AutoReplenishment = true;
-            });
+            // TokenBucket: page load fetches countries+states+cities simultaneously (burst of 10)
+            // 60 per minute sustained, burst up to 15
+            options.AddPolicy(RateLimitPolicies.AnonStatic, context =>
+                RateLimitPartition.GetTokenBucketLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new TokenBucketRateLimiterOptions
+                    {
+                        TokenLimit          = 15,
+                        TokensPerPeriod     = 60,
+                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                        QueueLimit          = 0,
+                        AutoReplenishment   = true,
+                    }));
         });
 
         return services;
