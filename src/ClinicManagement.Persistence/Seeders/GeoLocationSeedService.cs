@@ -136,13 +136,12 @@ public class GeoLocationSeedService
     {
         _logger.LogInformation("Starting city seeding pass...");
 
-        // ── Cleanup: remove duplicate GeonameId rows left by previous bad runs ─
+        // ── Cleanup duplicates ────────────────────────────────────────────────
         var totalCityCount    = await _db.GeoCities.CountAsync(ct);
         var distinctCityCount = await _db.GeoCities.Select(c => c.GeonameId).Distinct().CountAsync(ct);
         if (totalCityCount != distinctCityCount)
         {
-            _logger.LogWarning(
-                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Clearing...",
+            _logger.LogWarning("Duplicate cities detected ({Total:N0} rows, {Distinct:N0} distinct). Clearing...",
                 totalCityCount, distinctCityCount);
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM GeoCities", ct);
         }
@@ -153,26 +152,21 @@ public class GeoLocationSeedService
 
         if (validStateIds.Count == 0)
         {
-            _logger.LogWarning("No states found — skipping city seeding. Run countries+states seed first.");
+            _logger.LogWarning("No states found — skipping city seeding.");
             return 0;
         }
 
-        var existingCityIds = await _db.GeoCities
-            .Select(c => c.GeonameId)
-            .ToHashSetAsync(ct);
+        // How many cities are already in the DB — used to decide if we're done
+        var alreadySeeded = await _db.GeoCities.CountAsync(ct);
+        _logger.LogInformation("Cities already in DB: {Count:N0}", alreadySeeded);
 
-        var allCities = _geoNames.StreamCitiesAsync(ct);
+        const int batchSize   = 2_000; // small batches = low memory
+        var batch             = new List<GeoCity>(batchSize);
+        var totalInserted     = 0;
 
-        const int batchSize = 5_000; // smaller batches = less memory pressure
-        var batch           = new List<GeoCity>(batchSize);
-        var totalInserted   = 0;
-        var seenInBatch     = new HashSet<int>();
-
-        await foreach (var c in allCities.WithCancellation(ct))
+        await foreach (var c in _geoNames.StreamCitiesAsync(ct))
         {
             if (!validStateIds.Contains(c.StateGeonameId)) continue;
-            if (existingCityIds.Contains(c.GeonameId)) continue;
-            if (!seenInBatch.Add(c.GeonameId)) continue;
 
             batch.Add(new GeoCity
             {
@@ -184,25 +178,47 @@ public class GeoLocationSeedService
 
             if (batch.Count < batchSize) continue;
 
-            await _db.GeoCities.AddRangeAsync(batch, ct);
-            await _db.SaveChangesAsync(ct);
-            _db.ChangeTracker.Clear(); // free tracked entities
-            foreach (var city in batch) existingCityIds.Add(city.GeonameId);
-            totalInserted += batch.Count;
-            _logger.LogInformation("Cities: inserted {Total:N0} so far...", totalInserted);
+            // Check which IDs in this batch are already in the DB
+            var batchIds    = batch.Select(x => x.GeonameId).ToList();
+            var existingIds = await _db.GeoCities
+                .Where(x => batchIds.Contains(x.GeonameId))
+                .Select(x => x.GeonameId)
+                .ToHashSetAsync(ct);
+
+            var toInsert = batch.Where(x => !existingIds.Contains(x.GeonameId)).ToList();
+            if (toInsert.Count > 0)
+            {
+                await _db.GeoCities.AddRangeAsync(toInsert, ct);
+                await _db.SaveChangesAsync(ct);
+                _db.ChangeTracker.Clear();
+                totalInserted += toInsert.Count;
+                _logger.LogInformation("Cities: inserted {Total:N0} so far...", totalInserted);
+            }
+
             batch.Clear();
         }
 
+        // Flush remaining
         if (batch.Count > 0)
         {
-            await _db.GeoCities.AddRangeAsync(batch, ct);
-            await _db.SaveChangesAsync(ct);
-            _db.ChangeTracker.Clear();
-            totalInserted += batch.Count;
+            var batchIds    = batch.Select(x => x.GeonameId).ToList();
+            var existingIds = await _db.GeoCities
+                .Where(x => batchIds.Contains(x.GeonameId))
+                .Select(x => x.GeonameId)
+                .ToHashSetAsync(ct);
+
+            var toInsert = batch.Where(x => !existingIds.Contains(x.GeonameId)).ToList();
+            if (toInsert.Count > 0)
+            {
+                await _db.GeoCities.AddRangeAsync(toInsert, ct);
+                await _db.SaveChangesAsync(ct);
+                _db.ChangeTracker.Clear();
+                totalInserted += toInsert.Count;
+            }
         }
 
         if (totalInserted == 0)
-            _logger.LogInformation("Cities: all {Count:N0} already seeded.", existingCityIds.Count);
+            _logger.LogInformation("Cities: all already seeded ({Count:N0} in DB).", alreadySeeded);
         else
             _logger.LogInformation("Cities: +{Added:N0} inserted this pass.", totalInserted);
 
