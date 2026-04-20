@@ -66,7 +66,18 @@ try
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
-            await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
+
+            try
+            {
+                await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
+            }
+            catch (Exception geoEx)
+            {
+                // Log full exception details so we can diagnose on the server
+                Log.Error(geoEx, "GEO SEEDING FAILED: {Type} — {Message}", geoEx.GetType().FullName, geoEx.Message);
+                if (geoEx.InnerException != null)
+                    Log.Error("Inner: {Type} — {Message}", geoEx.InnerException.GetType().FullName, geoEx.InnerException.Message);
+            }
 
             Log.Information("Database seeded successfully");
         }
