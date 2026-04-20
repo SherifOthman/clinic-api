@@ -156,8 +156,9 @@ public static class DependencyInjection
     {
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseStaticFiles();
+        app.UseRouting();
 
-        // Hangfire dashboard before CORS — it makes same-origin requests, no CORS needed
+        // Hangfire dashboard — before CORS, after routing so embedded assets are served
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
             Authorization = [new HangfireAuthorizationFilter(
@@ -165,7 +166,6 @@ public static class DependencyInjection
         });
 
         app.UseCors("AllowAll");
-        app.UseRouting();
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
