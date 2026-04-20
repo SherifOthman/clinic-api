@@ -9,18 +9,12 @@ namespace ClinicManagement.Application.Features.Appointments.Commands;
 /// TODO: Implement queue-based appointment creation.
 /// Needs: IAppointmentRepository + IQueueNumberRepository added to IUnitOfWork.
 /// </summary>
-public class CreateQueueNumberAppointmentHandler(IUnitOfWork uow)
+public class CreateQueueNumberAppointmentHandler
     : IRequestHandler<CreateQueueNumberAppointmentCommand, Result<Guid>>
 {
-
     public Task<Result<Guid>> Handle(
         CreateQueueNumberAppointmentCommand request,
         CancellationToken cancellationToken)
-    {
-        var test = new string("test");
-        Console.WriteLine("hello world");
-        
-        return Task.FromResult(
+        => Task.FromResult(
             Result.Failure<Guid>(ErrorCodes.OPERATION_FAILED, "Appointment creation not yet implemented"));
-    }
 }

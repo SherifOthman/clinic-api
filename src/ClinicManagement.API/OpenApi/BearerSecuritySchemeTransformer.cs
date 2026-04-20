@@ -40,13 +40,11 @@ internal sealed class BearerSecuritySchemeTransformer(
             // Create security requirement that references the Bearer scheme
             var securityRequirements = new OpenApiSecurityRequirement
             {
-#pragma warning disable CS8603
                 [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-#pragma warning restore CS8603
             };
 
             // Apply this security requirement globally to all operations
-            foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations))
+            foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations ?? []))
             {
                 operation.Value.Security ??= [];
                 operation.Value.Security.Add(securityRequirements);
