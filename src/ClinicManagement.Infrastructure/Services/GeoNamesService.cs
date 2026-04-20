@@ -246,12 +246,13 @@ public class GeoNamesService : IGeoNamesService
 
         _logger.LogInformation("After dedup: {Count} cities", deduped.Count);
 
-        // Save for future runs with version header
-        var sb = new StringBuilder();
-        sb.AppendLine("#v5");
-        foreach (var c in deduped)
-            sb.AppendLine($"{c.GeonameId}\t{c.StateGeonameId}\t{c.NameEn}\t{c.NameAr}");
-        await File.WriteAllTextAsync(processedPath, sb.ToString(), Encoding.UTF8, ct);
+        // Stream-write to file line by line — avoids giant StringBuilder in memory
+        await using (var writer = new StreamWriter(processedPath, append: false, Encoding.UTF8))
+        {
+            await writer.WriteLineAsync("#v5");
+            foreach (var c in deduped)
+                await writer.WriteLineAsync($"{c.GeonameId}\t{c.StateGeonameId}\t{c.NameEn}\t{c.NameAr}");
+        }
         _logger.LogInformation("Saved cities_processed.tsv ({MB:F1} MB)", new FileInfo(processedPath).Length / 1_048_576.0);
 
         return deduped;
@@ -356,4 +357,5 @@ public class GeoNamesService : IGeoNamesService
         }
     }
 }
+
 
