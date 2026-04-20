@@ -1,3 +1,4 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Contracts.Locations;
 using ClinicManagement.API.Contracts.Patients;
 using ClinicManagement.API.Models;
@@ -6,18 +7,18 @@ using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
-using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/patients")]
 public class PatientsController : BaseApiController
 {
     [HttpGet]
-    [Authorize(Policy = "RequireClinic")]
+    [RequirePermission(Permission.ViewPatients)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<PatientDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPatients(
@@ -36,12 +37,8 @@ public class PatientsController : BaseApiController
         return HandleResult(result, "Failed to retrieve patients");
     }
 
-    // NOTE: /states, /cities, /countries endpoints removed.
-    // The frontend now uses the GeoNames API directly via /api/locations.
-    // Filtering is done by GeoNames ID, not by stored name strings.
-
     [HttpGet("location-options")]
-    [Authorize(Policy = "RequireClinic")]
+    [RequirePermission(Permission.ViewPatients)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<LocationOption>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLocationOptions(
@@ -49,7 +46,7 @@ public class PatientsController : BaseApiController
         [FromQuery] int? stateGeonameId,
         CancellationToken cancellationToken = default)
     {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
+        var isSuperAdmin = User.IsInRole("SuperAdmin");
         var query = new GetPatientLocationOptionsQuery(countryGeonameId, stateGeonameId, isSuperAdmin);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve location options");
@@ -77,7 +74,7 @@ public class PatientsController : BaseApiController
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "RequireClinic")]
+    [RequirePermission(Permission.ViewPatients)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
@@ -87,7 +84,6 @@ public class PatientsController : BaseApiController
         return HandleResult(result, "Failed to retrieve patient detail");
     }
 
-    /// <summary>SuperAdmin: get patient detail bypassing tenant filter.</summary>
     [HttpGet("all/{id:guid}")]
     [Authorize(Policy = "SuperAdmin")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
@@ -100,7 +96,7 @@ public class PatientsController : BaseApiController
     }
 
     [HttpPost]
-    [Authorize(Policy = "RequireClinic")]
+    [RequirePermission(Permission.CreatePatient)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -109,52 +105,34 @@ public class PatientsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var command = new CreatePatientCommand(
-            request.FirstName,
-            request.LastName,
-            request.DateOfBirth,
-            request.Gender,
-            request.CountryGeonameId,
-            request.StateGeonameId,
-            request.CityGeonameId,
-            request.BloodType,
-            request.PhoneNumbers,
-            request.ChronicDiseaseIds);
+            request.FirstName, request.LastName, request.DateOfBirth, request.Gender,
+            request.CountryGeonameId, request.StateGeonameId, request.CityGeonameId,
+            request.BloodType, request.PhoneNumbers, request.ChronicDiseaseIds);
 
         var result = await Sender.Send(command, cancellationToken);
         if (!result.IsSuccess) return HandleResult(result, "Failed to create patient");
-
         return CreatedAtAction(nameof(GetPatientDetail), new { id = result.Value }, null);
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "RequireClinic")]
+    [RequirePermission(Permission.EditPatient)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdatePatient(
         [FromRoute] Guid id,
         [FromBody] UpdatePatientRequest request,
         CancellationToken cancellationToken = default)
     {
         var command = new UpdatePatientCommand(
-            id,
-            request.FirstName,
-            request.LastName,
-            request.DateOfBirth,
-            request.Gender,
-            request.CountryGeonameId,
-            request.StateGeonameId,
-            request.CityGeonameId,
-            request.BloodType,
-            request.PhoneNumbers,
-            request.ChronicDiseaseIds);
-
+            id, request.FirstName, request.LastName, request.DateOfBirth, request.Gender,
+            request.CountryGeonameId, request.StateGeonameId, request.CityGeonameId,
+            request.BloodType, request.PhoneNumbers, request.ChronicDiseaseIds);
         return HandleNoContent(await Sender.Send(command, cancellationToken), "Failed to update patient");
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.DeletePatient)]
     [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
@@ -164,7 +142,6 @@ public class PatientsController : BaseApiController
         return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to delete patient");
     }
 
-    /// <summary>Restore a soft-deleted patient. SuperAdmin only.</summary>
     [HttpPost("{id}/restore")]
     [Authorize(Policy = "SuperAdmin")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]

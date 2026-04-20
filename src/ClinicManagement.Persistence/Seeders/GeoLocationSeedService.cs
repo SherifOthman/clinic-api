@@ -115,6 +115,7 @@ public class GeoLocationSeedService
         {
             _logger.LogWarning("Duplicate cities detected ({Total:N0} rows, {Distinct:N0} distinct). Clearing...", total, distinct);
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM GeoCities", ct);
+            total = 0;
         }
 
         var validStateIds = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
@@ -124,8 +125,13 @@ public class GeoLocationSeedService
             return;
         }
 
-        var alreadySeeded = await _db.GeoCities.CountAsync(ct);
-        _logger.LogInformation("Cities already in DB: {Count:N0}", alreadySeeded);
+        // Count expected cities from source to decide if seeding is needed
+        // If DB already has a substantial number of cities, skip streaming entirely
+        if (total > 100_000)
+        {
+            _logger.LogInformation("Cities: {Count:N0} already in DB — skipping stream.", total);
+            return;
+        }
 
         const int batchSize = 2_000;
         var batch           = new List<GeoCity>(batchSize);
@@ -184,7 +190,7 @@ public class GeoLocationSeedService
         }
 
         if (totalInserted == 0)
-            _logger.LogInformation("Cities: all already seeded ({Count:N0} in DB).", alreadySeeded);
+            _logger.LogInformation("Cities: all already seeded ({Count:N0} in DB).", total);
         else
             _logger.LogInformation("Cities: +{Added:N0} inserted.", totalInserted);
     }

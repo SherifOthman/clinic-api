@@ -1,6 +1,8 @@
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Hangfire;
 using ClinicManagement.API.Middleware;
 using ClinicManagement.API.OpenApi;
@@ -9,6 +11,7 @@ using ClinicManagement.Infrastructure.Options;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
@@ -88,8 +91,11 @@ public static class DependencyInjection
 
     private static void AddAuthorization(IServiceCollection services)
     {
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
         services.AddAuthorization(options =>
         {
+            // ── Clinic-level role policies (kept for route guards) ────────────
             options.AddPolicy("RequireClinic", policy =>
             {
                 policy.RequireAuthenticatedUser();
@@ -110,6 +116,16 @@ public static class DependencyInjection
                 policy.RequireAuthenticatedUser();
                 policy.RequireRole(UserRoles.SuperAdmin);
             });
+
+            // ── Permission-based policies (one per Permission enum value) ─────
+            foreach (var permission in Enum.GetValues<Permission>())
+            {
+                options.AddPolicy($"Permission:{permission}", policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.AddRequirements(new PermissionRequirement(permission.ToString()));
+                });
+            }
         });
     }
 
