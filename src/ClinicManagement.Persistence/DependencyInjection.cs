@@ -46,7 +46,6 @@ public static class DependencyInjection
         services.AddScoped<SubscriptionPlanSeedService>();
         services.AddScoped<DemoUsersSeedService>();
         services.AddScoped<GeoLocationSeedService>();
-        services.AddHostedService<GeoLocationBackgroundSeeder>();
 
         return services;
     }
