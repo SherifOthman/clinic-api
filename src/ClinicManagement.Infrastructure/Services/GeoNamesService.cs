@@ -267,9 +267,34 @@ public class GeoNamesService : IGeoNamesService
 
         if (!File.Exists(tsvPath))
         {
-            _logger.LogWarning("ar_names.tsv not found and download skipped — Arabic names will fall back to English. Upload ar_names.tsv to {Dir} to enable Arabic names.", _cacheDir);
-            _arabicNamesCache = new Dictionary<int, string>();
-            return _arabicNamesCache;
+            _logger.LogInformation("ar_names.tsv not found — downloading alternateNamesV2.zip (~200 MB)...");
+            try
+            {
+                var bytes = await _http.GetByteArrayAsync(_baseUrl + "/alternateNamesV2.zip", ct);
+                using var ms      = new MemoryStream(bytes);
+                using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
+                var entry = archive.GetEntry("alternateNamesV2.txt")
+                    ?? archive.Entries.First(e => e.Name.Equals("alternateNamesV2.txt", StringComparison.OrdinalIgnoreCase));
+                var rawLines = (await new StreamReader(entry.Open(), Encoding.UTF8).ReadToEndAsync(ct)).Split('\n');
+
+                // Keep only Arabic rows and save
+                var sb = new StringBuilder();
+                foreach (var line in rawLines)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var cols = line.Split('\t');
+                    if (cols.Length >= 3 && cols[2].Equals("ar", StringComparison.OrdinalIgnoreCase))
+                        sb.AppendLine(line);
+                }
+                await File.WriteAllTextAsync(tsvPath, sb.ToString(), Encoding.UTF8, ct);
+                _logger.LogInformation("Saved ar_names.tsv ({MB:F1} MB)", new FileInfo(tsvPath).Length / 1_048_576.0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Could not download alternateNamesV2.zip ({Error}). Arabic names will fall back to English. Upload ar_names.tsv manually to enable Arabic names.", ex.Message);
+                _arabicNamesCache = new Dictionary<int, string>();
+                return _arabicNamesCache;
+            }
         }
 
         var lines = (await File.ReadAllTextAsync(tsvPath, Encoding.UTF8, ct)).Split('\n');
