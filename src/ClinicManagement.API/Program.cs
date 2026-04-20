@@ -44,9 +44,8 @@ try
     RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");
     RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");
     RecurringJob.RemoveIfExists("city-seed"); // old job name cleanup
-    // Geo seeding runs in background — enqueue immediately + every 10 min until done
-    BackgroundJob.Enqueue<GeoSeedJob>(j => j.ExecuteAsync());
-    RecurringJob.AddOrUpdate<GeoSeedJob>("geo-seed", j => j.ExecuteAsync(), "*/10 * * * *");
+    // Geo seeding: every 2 min, inserts missing rows, removes itself when done
+    RecurringJob.AddOrUpdate<GeoSeedJob>("geo-seed", j => j.ExecuteAsync(), "*/2 * * * *");
 
     Log.Information("Clinic Management API started successfully");
     app.Run();

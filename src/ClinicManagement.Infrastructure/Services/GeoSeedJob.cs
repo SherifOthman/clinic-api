@@ -1,13 +1,15 @@
 using ClinicManagement.Persistence.Seeders;
 using Hangfire;
+using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
 /// Hangfire job that seeds geo data (countries, states, cities) in the background.
-/// Runs every 10 minutes. Each run inserts only missing rows.
-/// Removes itself from the schedule once all cities are fully seeded.
+/// Runs every 2 minutes. Each run inserts only missing rows.
+/// Uses a distributed lock so concurrent runs never overlap.
+/// Removes itself from the schedule once fully seeded with Arabic names.
 /// </summary>
 public class GeoSeedJob
 {
@@ -20,18 +22,15 @@ public class GeoSeedJob
         _logger = logger;
     }
 
+    [DisableConcurrentExecution(timeoutInSeconds: 0)] // skip if already running
     public async Task ExecuteAsync()
     {
         _logger.LogInformation("GeoSeedJob: starting pass...");
 
-        // Countries + states — always run to insert missing rows and update Arabic names
         await _seeder.SeedCountriesAndStatesAsync();
 
-        // Cities — returns 0 when fully seeded
         var citiesInserted = await _seeder.SeedCitiesAsync();
 
-        // Only remove the job when cities are done AND Arabic names are applied
-        // (NameAr != NameEn for at least some countries means Arabic is working)
         if (citiesInserted == 0)
         {
             var arabicApplied = await _seeder.HasArabicNamesAsync();
