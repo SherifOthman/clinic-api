@@ -54,7 +54,7 @@ Plans define limits (max branches, max staff, max patients per month, storage) a
 
 Six hosted services run continuously in the background:
 
-- **GeoLocationBackgroundSeeder** — runs once at startup, seeds countries/states/cities from GeoNames files into the database; skips already-inserted rows so it's safe to restart mid-seed
+- **GeoLocationSeedService** — runs once at startup, seeds countries/states/cities from GeoNames files; skips already-inserted rows and updates Arabic names if `ar_names.tsv` is available
 - **EmailQueueProcessorJob** — processes up to 50 pending emails every 5 minutes with retry logic and priority ordering
 - **AuditLogCleanupService** — runs at midnight daily, deletes audit logs older than 12 months
 - **RefreshTokenCleanupService** — runs every 6 hours, removes expired and revoked tokens

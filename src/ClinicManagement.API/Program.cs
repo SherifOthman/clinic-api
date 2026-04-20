@@ -3,7 +3,6 @@ using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
 using ClinicManagement.Infrastructure.Services;
 using ClinicManagement.Persistence;
-using ClinicManagement.Persistence.Seeders;
 using Hangfire;
 using Serilog;
 
@@ -38,17 +37,13 @@ try
     app.UseSerilogRequestLogging();
     app.UseAppConfigurations();
 
-    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *");
-    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *");
-    RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");
-    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");
-    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");
-    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *");
-    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *");
-    RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");
-    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");
-    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");
-    RecurringJob.RemoveIfExists("city-seed");
+    // ── Hangfire recurring jobs ───────────────────────────────────────────────
+    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *"); // every 5 min
+    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *"); // every 6h
+    RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");   // daily midnight
+    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");   // daily 1am
+    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
+    RecurringJob.RemoveIfExists("city-seed"); // cleanup old job names
     RecurringJob.RemoveIfExists("geo-seed");
 
     Log.Information("Clinic Management API started successfully");
