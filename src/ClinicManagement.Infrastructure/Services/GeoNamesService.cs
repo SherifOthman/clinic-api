@@ -232,9 +232,11 @@ public class GeoNamesService : IGeoNamesService
 
         var result    = new Dictionary<int, string>();
         var preferred = new HashSet<int>();
+        var lineCount = 0;
         foreach (var line in lines)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
+            lineCount++;
             var cols = line.Split('\t');
             if (cols.Length < 4 || !int.TryParse(cols[1].Trim(), out var id)) continue;
             var name         = cols[3].Trim();
@@ -250,7 +252,12 @@ public class GeoNamesService : IGeoNamesService
             }
         }
 
-        _logger.LogInformation("Loaded {Count} Arabic names", result.Count);
+        _logger.LogInformation("ar_names.tsv: {Lines} lines parsed, {Count} Arabic names loaded (file size: {Size:N0} bytes)",
+            lineCount, result.Count, new FileInfo(tsvPath).Length);
+
+        if (result.Count == 0)
+            _logger.LogWarning("ar_names.tsv loaded 0 names — file may be empty or in wrong format. First line sample: {Sample}",
+                lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l))?[..Math.Min(200, lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l))?.Length ?? 0)] ?? "(empty)");
         _arabicNamesCache = result;
         return result;
     }

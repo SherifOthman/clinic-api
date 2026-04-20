@@ -66,6 +66,8 @@ public class GeoLocationSeedService
             .Where(c => c.NameAr == c.NameEn)
             .ToListAsync(ct);
 
+        _logger.LogInformation("Countries needing Arabic update: {Count}", toUpdate.Count);
+
         var updatedCount = 0;
         foreach (var country in toUpdate)
         {
