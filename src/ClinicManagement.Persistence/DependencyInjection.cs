@@ -2,7 +2,6 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence.Seeders;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
