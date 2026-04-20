@@ -38,13 +38,15 @@ try
     app.UseSerilogRequestLogging();
     app.UseAppConfigurations();
 
-    // ── Hangfire recurring jobs ───────────────────────────────────────────────
-    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *"); // every 5 min
-    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *"); // every 6h
-    RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");   // daily midnight
-    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");   // daily 1am
-    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
-    RecurringJob.RemoveIfExists("city-seed"); // seeding is now foreground
+    RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *");
+    RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *");
+    RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");
+    RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");
+    RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");
+    RecurringJob.RemoveIfExists("city-seed"); // old job name cleanup
+    // Geo seeding runs in background — enqueue immediately + every 10 min until done
+    BackgroundJob.Enqueue<GeoSeedJob>(j => j.ExecuteAsync());
+    RecurringJob.AddOrUpdate<GeoSeedJob>("geo-seed", j => j.ExecuteAsync(), "*/10 * * * *");
 
     Log.Information("Clinic Management API started successfully");
     app.Run();
