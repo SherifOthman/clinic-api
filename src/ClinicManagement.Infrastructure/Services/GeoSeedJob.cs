@@ -24,20 +24,30 @@ public class GeoSeedJob
     {
         _logger.LogInformation("GeoSeedJob: starting pass...");
 
-        // Countries + states are fast — always run to pick up Arabic name updates
+        // Countries + states — always run to insert missing rows and update Arabic names
         await _seeder.SeedCountriesAndStatesAsync();
 
         // Cities — returns 0 when fully seeded
-        var inserted = await _seeder.SeedCitiesAsync();
+        var citiesInserted = await _seeder.SeedCitiesAsync();
 
-        if (inserted == 0)
+        // Only remove the job when cities are done AND Arabic names are applied
+        // (NameAr != NameEn for at least some countries means Arabic is working)
+        if (citiesInserted == 0)
         {
-            _logger.LogInformation("GeoSeedJob: all cities seeded — removing recurring job.");
-            RecurringJob.RemoveIfExists("geo-seed");
+            var arabicApplied = await _seeder.HasArabicNamesAsync();
+            if (arabicApplied)
+            {
+                _logger.LogInformation("GeoSeedJob: fully seeded with Arabic names — removing recurring job.");
+                RecurringJob.RemoveIfExists("geo-seed");
+            }
+            else
+            {
+                _logger.LogWarning("GeoSeedJob: cities done but Arabic names not yet applied — will retry next pass.");
+            }
         }
         else
         {
-            _logger.LogInformation("GeoSeedJob: inserted {Count:N0} cities this pass.", inserted);
+            _logger.LogInformation("GeoSeedJob: inserted {Count:N0} cities this pass.", citiesInserted);
         }
     }
 }

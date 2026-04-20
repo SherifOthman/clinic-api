@@ -325,8 +325,12 @@ public class GeoNamesService : IGeoNamesService
             lineCount, result.Count, new FileInfo(tsvPath).Length);
 
         if (result.Count == 0)
-            _logger.LogWarning("ar_names.tsv loaded 0 names — file may be empty or in wrong format. First line sample: {Sample}",
-                lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l))?[..Math.Min(200, lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l))?.Length ?? 0)] ?? "(empty)");
+        {
+            _logger.LogWarning("ar_names.tsv loaded 0 names — file is empty or corrupt. Deleting to force re-download on next run.");
+            File.Delete(tsvPath);
+            _arabicNamesCache = new Dictionary<int, string>();
+            return _arabicNamesCache;
+        }
         _arabicNamesCache = result;
         return result;
     }

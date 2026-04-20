@@ -128,6 +128,10 @@ public class GeoLocationSeedService
         await SeedCitiesAsync(ct);
     }
 
+    /// <summary>Returns true if at least some countries have Arabic names (NameAr != NameEn).</summary>
+    public async Task<bool> HasArabicNamesAsync(CancellationToken ct = default)
+        => await _db.GeoCountries.AnyAsync(c => c.NameAr != c.NameEn, ct);
+
     /// <summary>
     /// Seeds only cities. Safe to call repeatedly — skips already-inserted GeonameIds.
     /// Returns the number of cities inserted in this pass (0 = fully seeded).
