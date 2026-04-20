@@ -37,12 +37,14 @@ public class GeoLocationSeedService
         _logger.LogInformation("Seeding countries and states...");
 
         var allCountries = await _geoNames.GetCountriesAsync(ct);
+        var allStates    = await _geoNames.GetStatesAsync(ct);
+
+        // ── Countries ─────────────────────────────────────────────────────────
 
         var existingCountryIds = await _db.GeoCountries
             .Select(c => c.GeonameId)
             .ToHashSetAsync(ct);
 
-        // Insert new countries
         var newCountries = allCountries
             .Where(c => !existingCountryIds.Contains(c.GeonameId))
             .Select(c => new GeoCountry
@@ -60,30 +62,23 @@ public class GeoLocationSeedService
             await _db.SaveChangesAsync(ct);
         }
 
-        // Update existing countries where NameAr = NameEn (seeded without Arabic names)
-        var sourceMap = allCountries.ToDictionary(c => c.GeonameId);
-        var toUpdate  = await _db.GeoCountries
-            .Where(c => c.NameAr == c.NameEn)
-            .ToListAsync(ct);
+        // Update Arabic names for existing countries using direct SQL (reliable, no EF tracking issues)
+        var countryUpdates = allCountries
+            .Where(c => existingCountryIds.Contains(c.GeonameId) && c.NameAr != c.NameEn)
+            .ToList();
 
-        _logger.LogInformation("Countries needing Arabic update: {Count}", toUpdate.Count);
-
-        var updatedCount = 0;
-        foreach (var country in toUpdate)
+        var countryUpdated = 0;
+        foreach (var src in countryUpdates)
         {
-            if (!sourceMap.TryGetValue(country.GeonameId, out var src)) continue;
-            if (src.NameAr == src.NameEn) continue; // Arabic still not available
-            country.NameAr = src.NameAr;
-            updatedCount++;
+            countryUpdated += await _db.Database.ExecuteSqlRawAsync(
+                "UPDATE GeoCountries SET NameAr = {0} WHERE GeonameId = {1} AND NameAr = NameEn",
+                src.NameAr, src.GeonameId);
         }
-        if (updatedCount > 0) await _db.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Countries: +{Added} added, {Updated} Arabic names updated, {Skipped} already existed",
-            newCountries.Count, updatedCount, existingCountryIds.Count - updatedCount);
+        _logger.LogInformation("Countries: +{Added} added, {Updated} Arabic names updated",
+            newCountries.Count, countryUpdated);
 
         // ── States ────────────────────────────────────────────────────────────
-
-        var allStates = await _geoNames.GetStatesAsync(ct);
 
         var existingStateIds = await _db.GeoStates
             .Select(s => s.GeonameId)
@@ -111,24 +106,20 @@ public class GeoLocationSeedService
             await _db.SaveChangesAsync(ct);
         }
 
-        // Update existing states where NameAr = NameEn
-        var stateSourceMap = allStates.ToDictionary(s => s.GeonameId);
-        var statesToUpdate  = await _db.GeoStates
-            .Where(s => s.NameAr == s.NameEn)
-            .ToListAsync(ct);
+        var stateUpdates = allStates
+            .Where(s => existingStateIds.Contains(s.GeonameId) && s.NameAr != s.NameEn)
+            .ToList();
 
-        var updatedStateCount = 0;
-        foreach (var state in statesToUpdate)
+        var stateUpdated = 0;
+        foreach (var src in stateUpdates)
         {
-            if (!stateSourceMap.TryGetValue(state.GeonameId, out var src)) continue;
-            if (src.NameAr == src.NameEn) continue;
-            state.NameAr = src.NameAr;
-            updatedStateCount++;
+            stateUpdated += await _db.Database.ExecuteSqlRawAsync(
+                "UPDATE GeoStates SET NameAr = {0} WHERE GeonameId = {1} AND NameAr = NameEn",
+                src.NameAr, src.GeonameId);
         }
-        if (updatedStateCount > 0) await _db.SaveChangesAsync(ct);
 
-        _logger.LogInformation("States: +{Added} added, {Updated} Arabic names updated, {Skipped} already existed",
-            newStates.Count, updatedStateCount, existingStateIds.Count - updatedStateCount);
+        _logger.LogInformation("States: +{Added} added, {Updated} Arabic names updated",
+            newStates.Count, stateUpdated);
     }
 
     public async Task SeedAsync(CancellationToken ct = default)
