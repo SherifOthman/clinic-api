@@ -40,9 +40,11 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
 
+            // Countries + states are fast (~2s) — seed at startup
+            // Cities are seeded in the background via Hangfire CitySeedJob
             try
             {
-                await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
+                await services.GetRequiredService<GeoLocationSeedService>().SeedCountriesAndStatesAsync();
             }
             catch (Exception geoEx)
             {

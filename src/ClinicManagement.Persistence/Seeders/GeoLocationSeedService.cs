@@ -94,7 +94,17 @@ public class GeoLocationSeedService
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        _logger.LogInformation("Starting GeoLocation seed...");
+        await SeedCountriesAndStatesAsync(ct);
+        await SeedCitiesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds only cities. Safe to call repeatedly — skips already-inserted GeonameIds.
+    /// Returns the number of cities inserted in this pass (0 = fully seeded).
+    /// </summary>
+    public async Task<int> SeedCitiesAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Starting city seeding pass...");
 
         // ── Cleanup: remove duplicate GeonameId rows left by previous bad runs ─
         var totalCityCount    = await _db.GeoCities.CountAsync(ct);
@@ -102,31 +112,27 @@ public class GeoLocationSeedService
         if (totalCityCount != distinctCityCount)
         {
             _logger.LogWarning(
-                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Clearing and re-seeding...",
+                "Duplicate cities detected: {Total:N0} rows but only {Distinct:N0} distinct GeonameIds. Clearing...",
                 totalCityCount, distinctCityCount);
-            // DELETE instead of TRUNCATE — TRUNCATE fails when FK constraints exist (e.g. Patient.CityGeonameId)
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM GeoCities", ct);
         }
-
-        // Ensure countries and states are seeded first
-        await SeedCountriesAndStatesAsync(ct);
-
-        // ── Step 3: Cities ────────────────────────────────────────────────────
 
         var validStateIds = await _db.GeoStates
             .Select(s => s.GeonameId)
             .ToHashSetAsync(ct);
 
-        // Load what's already in the DB — used to skip already-inserted cities
+        if (validStateIds.Count == 0)
+        {
+            _logger.LogWarning("No states found — skipping city seeding. Run countries+states seed first.");
+            return 0;
+        }
+
         var existingCityIds = await _db.GeoCities
             .Select(c => c.GeonameId)
             .ToHashSetAsync(ct);
 
         var allCities = await _geoNames.GetCitiesAsync(ct);
 
-        // Build expected set from source (deduped by GeonameId, valid state only),
-        // then exclude any GeonameId already in the DB.
-        // Process in streaming batches to avoid loading 3.8M objects into memory at once.
         const int batchSize = 10_000;
         var batch           = new List<GeoCity>(batchSize);
         var totalInserted   = 0;
@@ -150,14 +156,12 @@ public class GeoLocationSeedService
 
             await _db.GeoCities.AddRangeAsync(batch, ct);
             await _db.SaveChangesAsync(ct);
-            // Add inserted IDs so subsequent batches don't re-insert on restart
             foreach (var city in batch) existingCityIds.Add(city.GeonameId);
             totalInserted += batch.Count;
             _logger.LogInformation("Cities: inserted {Total:N0} so far...", totalInserted);
             batch.Clear();
         }
 
-        // Flush remaining
         if (batch.Count > 0)
         {
             await _db.GeoCities.AddRangeAsync(batch, ct);
@@ -166,10 +170,10 @@ public class GeoLocationSeedService
         }
 
         if (totalInserted == 0)
-            _logger.LogInformation("Cities: all {Count:N0} already seeded. Skipping.", existingCityIds.Count);
+            _logger.LogInformation("Cities: all {Count:N0} already seeded.", existingCityIds.Count);
         else
-            _logger.LogInformation("Cities: +{Added:N0} added", totalInserted);
+            _logger.LogInformation("Cities: +{Added:N0} inserted this pass.", totalInserted);
 
-        _logger.LogInformation("GeoLocation cities seed complete — {Cities:N0} cities added.", totalInserted);
+        return totalInserted;
     }
 }
