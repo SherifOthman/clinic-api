@@ -21,6 +21,12 @@ public interface IGeoNamesService
     /// the entire file into memory. Use this for seeding to avoid OOM on shared hosting.
     /// </summary>
     IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns the expected total city count stored in the cities_processed.tsv header.
+    /// Returns null if the file doesn't exist or has no count in the header.
+    /// </summary>
+    Task<int?> GetExpectedCityCountAsync(CancellationToken ct = default);
 }
 
 public record GeoNamesCountryDump(int GeonameId, string CountryCode, string NameEn, string NameAr);

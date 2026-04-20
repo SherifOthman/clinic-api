@@ -86,10 +86,22 @@ public class GeoNamesService : IGeoNamesService
         return result;
     }
 
+    public async Task<int?> GetExpectedCityCountAsync(CancellationToken ct = default)
+    {
+        var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
+        if (!File.Exists(processedPath)) return null;
+
+        using var reader = new StreamReader(processedPath, Encoding.UTF8);
+        var firstLine = await reader.ReadLineAsync(ct);
+        if (firstLine == null || !firstLine.StartsWith("#v5:")) return null;
+
+        return int.TryParse(firstLine[4..], out var count) ? count : null;
+    }
+
     public async IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
-        const string expectedHeader = "#v5";
+        const string versionPrefix = "#v5";
         var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
 
         // Version check
@@ -98,7 +110,7 @@ public class GeoNamesService : IGeoNamesService
             string? firstLine;
             using (var check = new StreamReader(processedPath, Encoding.UTF8))
                 firstLine = await check.ReadLineAsync(ct);
-            if (firstLine != expectedHeader)
+            if (firstLine == null || !firstLine.StartsWith(versionPrefix))
             {
                 _logger.LogWarning("cities_processed.tsv is stale. Deleting and regenerating...");
                 File.Delete(processedPath);
@@ -136,7 +148,7 @@ public class GeoNamesService : IGeoNamesService
         // Version header on line 1 guards against stale files generated without
         // the feature-code filter (PPLC/PPLA/PPL only). If the version doesn't
         // match, the file is deleted and regenerated from the zip.
-        const string expectedHeader = "#v5";
+        const string versionPrefix = "#v5";
         var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
         if (File.Exists(processedPath))
         {
@@ -144,7 +156,7 @@ public class GeoNamesService : IGeoNamesService
             using (var check = new StreamReader(processedPath, Encoding.UTF8))
                 firstLine = await check.ReadLineAsync(ct);
 
-            if (firstLine != expectedHeader)
+            if (firstLine == null || !firstLine.StartsWith(versionPrefix))
             {
                 _logger.LogWarning("cities_processed.tsv is stale (missing version header). Deleting and regenerating...");
                 File.Delete(processedPath);
@@ -247,9 +259,10 @@ public class GeoNamesService : IGeoNamesService
         _logger.LogInformation("After dedup: {Count} cities", deduped.Count);
 
         // Stream-write to file line by line — avoids giant StringBuilder in memory
+        // Header format: #v5:{count} — stores total for fast "already seeded" check
         await using (var writer = new StreamWriter(processedPath, append: false, Encoding.UTF8))
         {
-            await writer.WriteLineAsync("#v5");
+            await writer.WriteLineAsync($"#v5:{deduped.Count}");
             foreach (var c in deduped)
                 await writer.WriteLineAsync($"{c.GeonameId}\t{c.StateGeonameId}\t{c.NameEn}\t{c.NameAr}");
         }
@@ -357,5 +370,7 @@ public class GeoNamesService : IGeoNamesService
         }
     }
 }
+
+
 
 

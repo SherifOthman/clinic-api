@@ -42,11 +42,15 @@ public class GeoLocationSeedService
     public async Task<int> SeedCitiesJobAsync(CancellationToken ct = default)
     {
         var total = await _db.GeoCities.CountAsync(ct);
-        if (total > 100_000)
+
+        // Compare DB count against the expected count stored in the file header
+        var expected = await _geoNames.GetExpectedCityCountAsync(ct);
+        if (expected.HasValue && total >= expected.Value)
         {
-            _logger.LogInformation("Cities: {Count:N0} already in DB — skipping.", total);
+            _logger.LogInformation("Cities: {Count:N0} in DB matches expected {Expected:N0} — skipping.", total, expected.Value);
             return 0;
         }
+
         await SeedCitiesAsync(ct);
         var inserted = await _db.GeoCities.CountAsync(ct) - total;
         return (int)Math.Max(0, inserted);
@@ -146,13 +150,7 @@ public class GeoLocationSeedService
             return;
         }
 
-        // Count expected cities from source to decide if seeding is needed
-        // If DB already has a substantial number of cities, skip streaming entirely
-        if (total > 100_000)
-        {
-            _logger.LogInformation("Cities: {Count:N0} already in DB — skipping stream.", total);
-            return;
-        }
+        _logger.LogInformation("Cities already in DB: {Count:N0}", total);
 
         const int batchSize = 2_000;
         var batch           = new List<GeoCity>(batchSize);
