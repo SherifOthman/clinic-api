@@ -62,16 +62,13 @@ public class GeoLocationSeedService
             await _db.SaveChangesAsync(ct);
         }
 
-        // Update Arabic names for existing countries using direct SQL (reliable, no EF tracking issues)
-        var countryUpdates = allCountries
-            .Where(c => existingCountryIds.Contains(c.GeonameId) && c.NameAr != c.NameEn)
-            .ToList();
-
+        // Update Arabic names for ALL existing countries where source has Arabic
+        // (runs every time — handles both fresh inserts and re-seeding after ar_names.tsv upload)
         var countryUpdated = 0;
-        foreach (var src in countryUpdates)
+        foreach (var src in allCountries.Where(c => c.NameAr != c.NameEn))
         {
             countryUpdated += await _db.Database.ExecuteSqlRawAsync(
-                "UPDATE GeoCountries SET NameAr = {0} WHERE GeonameId = {1} AND NameAr = NameEn",
+                "UPDATE GeoCountries SET NameAr = {0} WHERE GeonameId = {1} AND NameAr != {0}",
                 src.NameAr, src.GeonameId);
         }
 
@@ -106,15 +103,11 @@ public class GeoLocationSeedService
             await _db.SaveChangesAsync(ct);
         }
 
-        var stateUpdates = allStates
-            .Where(s => existingStateIds.Contains(s.GeonameId) && s.NameAr != s.NameEn)
-            .ToList();
-
         var stateUpdated = 0;
-        foreach (var src in stateUpdates)
+        foreach (var src in allStates.Where(s => s.NameAr != s.NameEn))
         {
             stateUpdated += await _db.Database.ExecuteSqlRawAsync(
-                "UPDATE GeoStates SET NameAr = {0} WHERE GeonameId = {1} AND NameAr = NameEn",
+                "UPDATE GeoStates SET NameAr = {0} WHERE GeonameId = {1} AND NameAr != {0}",
                 src.NameAr, src.GeonameId);
         }
 
