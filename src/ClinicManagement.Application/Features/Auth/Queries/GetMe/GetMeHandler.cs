@@ -21,13 +21,22 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
         string? specializationNameEn = null;
         string? specializationNameAr = null;
         Guid? staffId = null;
+        List<string> permissions = [];
+
+        var member = await _uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
+        if (member is not null)
+        {
+            staffId = member.Id;
+            var memberPermissions = await _uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken);
+            permissions = memberPermissions.Select(p => p.ToString()).ToList();
+        }
+
         if (roles.Any(r => r.RoleName == Roles.Doctor))
         {
             var spec = await _uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
             specializationNameEn = spec?.NameEn;
             specializationNameAr = spec?.NameAr;
-            var member = await _uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
-            staffId = member?.Id;        }
+        }
 
         return new GetMeDto(
             UserName:             profile.UserName,
@@ -37,6 +46,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             PhoneNumber:          profile.PhoneNumber ?? string.Empty,
             ProfileImageUrl:      profile.ProfileImageUrl,
             Roles:                roles.Select(r => r.RoleName).ToList(),
+            Permissions:          permissions,
             EmailConfirmed:       profile.EmailConfirmed,
             OnboardingCompleted:  hasClinic,
             SpecializationNameEn: specializationNameEn,

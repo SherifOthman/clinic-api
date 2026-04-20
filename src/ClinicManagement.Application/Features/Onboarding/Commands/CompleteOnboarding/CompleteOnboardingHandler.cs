@@ -73,6 +73,7 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             });
         }
 
+        await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

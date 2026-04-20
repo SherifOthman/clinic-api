@@ -11,6 +11,7 @@ public interface ICurrentUserService
     string IpAddress { get; }
     string? UserAgent { get; }
     IEnumerable<string> Roles { get; }
+    IEnumerable<string> Permissions { get; }
     bool IsAuthenticated { get; }
     Guid GetRequiredUserId();
     Guid GetRequiredClinicId();

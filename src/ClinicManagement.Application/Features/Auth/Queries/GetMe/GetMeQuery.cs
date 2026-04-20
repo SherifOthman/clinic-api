@@ -12,6 +12,7 @@ public record GetMeDto(
     string PhoneNumber,
     string? ProfileImageUrl,
     List<string> Roles,
+    List<string> Permissions,
     bool EmailConfirmed,
     bool OnboardingCompleted,
     string? SpecializationNameEn,

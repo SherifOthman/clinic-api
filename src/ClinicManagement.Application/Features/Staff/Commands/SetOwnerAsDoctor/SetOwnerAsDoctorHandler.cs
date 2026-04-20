@@ -59,6 +59,8 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
                 IsActive = true,
             };
             await _uow.Members.AddAsync(existingMember);
+            await _uow.SaveChangesAsync(cancellationToken);
+            await _uow.Permissions.SeedDefaultsAsync(existingMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         }
 
         await _uow.DoctorInfos.AddAsync(new DoctorInfo

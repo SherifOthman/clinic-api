@@ -1,0 +1,8 @@
+using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Enums;
+using MediatR;
+
+namespace ClinicManagement.Application.Features.Staff.Commands;
+
+public record SetMemberPermissionsCommand(Guid MemberId, List<Permission> Permissions)
+    : IRequest<Result>;

@@ -6,6 +6,7 @@ using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Features.Staff.Dtos;
 using ClinicManagement.Application.Features.Staff.Queries;
 using ClinicManagement.Domain.Enums;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -219,5 +220,36 @@ public class StaffController : BaseApiController
     {
         var result = await Sender.Send(new SetDoctorScheduleLockCommand(id, request.CanSelfManage), cancellationToken);
         return HandleNoContent(result, "Failed to update schedule lock");
+    }
+
+    // ── Permissions ───────────────────────────────────────────────────────────
+
+    [Authorize(Policy = "RequireClinicOwner")]
+    [HttpGet("{id:guid}/permissions")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPermissions(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetMemberPermissionsQuery(id), cancellationToken);
+        if (result is null) return NotFound();
+        return Ok(result.Select(p => p.ToString()).ToList());
+    }
+
+    [Authorize(Policy = "RequireClinicOwner")]
+    [HttpPut("{id:guid}/permissions")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetPermissions(
+        Guid id, [FromBody] List<string> permissions, CancellationToken cancellationToken)
+    {
+        var parsed = permissions
+            .Where(p => Enum.TryParse<Permission>(p, out _))
+            .Select(p => Enum.Parse<Permission>(p))
+            .ToList();
+
+        var result = await Sender.Send(new SetMemberPermissionsCommand(id, parsed), cancellationToken);
+        return HandleNoContent(result, "Failed to update permissions");
     }
 }

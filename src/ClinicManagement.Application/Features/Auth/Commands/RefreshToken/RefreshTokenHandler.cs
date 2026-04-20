@@ -62,6 +62,8 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
 
             Guid? clinicId = null;
             string? countryCode = null;
+            var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
+
             if (roles.Contains(Roles.ClinicOwner))
             {
                 var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
@@ -70,7 +72,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             }
             else
             {
-                var staff = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
+                var staff = member;
                 clinicId  = staff?.ClinicId;
 
                 if (clinicId.HasValue)
@@ -80,7 +82,9 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
                 }
             }
 
-            var newAccessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId, countryCode);
+            var newAccessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(),
+                member is not null ? await _uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken) : [],
+                clinicId, countryCode);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(userId, null, cancellationToken);
 
             await _refreshTokenService.RevokeRefreshTokenAsync(request.Token, null, newRefreshToken.Token, cancellationToken);
