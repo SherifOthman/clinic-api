@@ -72,7 +72,7 @@ try
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while initializing the database");
+            Log.Error(ex, "An error occurred while initializing the database — app will start but data may be missing");
         }
     }
 
