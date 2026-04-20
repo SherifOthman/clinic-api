@@ -40,11 +40,9 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
 
-            // Countries + states are fast (~2s) — seed at startup
-            // Cities are seeded in the background via Hangfire CitySeedJob
             try
             {
-                await services.GetRequiredService<GeoLocationSeedService>().SeedCountriesAndStatesAsync();
+                await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
             }
             catch (Exception geoEx)
             {
@@ -52,7 +50,6 @@ public static class DatabaseInitialiser
                 if (geoEx.InnerException is not null)
                     Log.Error("  Inner: {Type} — {Message}", geoEx.InnerException.GetType().Name, geoEx.InnerException.Message);
             }
-
             Log.Information("Database seeded successfully");
         }
         catch (Exception ex)
