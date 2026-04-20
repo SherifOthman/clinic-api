@@ -86,6 +86,50 @@ public class GeoNamesService : IGeoNamesService
         return result;
     }
 
+    public async IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    {
+        const string expectedHeader = "#v4";
+        var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
+
+        // Version check
+        if (File.Exists(processedPath))
+        {
+            string? firstLine;
+            using (var check = new StreamReader(processedPath, Encoding.UTF8))
+                firstLine = await check.ReadLineAsync(ct);
+            if (firstLine != expectedHeader)
+            {
+                _logger.LogWarning("cities_processed.tsv is stale. Deleting and regenerating...");
+                File.Delete(processedPath);
+            }
+        }
+
+        // If file doesn't exist, fall back to GetCitiesAsync to generate it first
+        if (!File.Exists(processedPath))
+        {
+            _logger.LogInformation("cities_processed.tsv not found — generating from zip first...");
+            await GetCitiesAsync(ct); // generates and saves the file
+        }
+
+        if (!File.Exists(processedPath))
+        {
+            _logger.LogError("cities_processed.tsv could not be generated. City seeding skipped.");
+            yield break;
+        }
+
+        _logger.LogInformation("Streaming cities from cities_processed.tsv...");
+        using var reader = new StreamReader(processedPath, Encoding.UTF8);
+        string? line;
+        while ((line = await reader.ReadLineAsync(ct)) is not null)
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#')) continue;
+            var cols = line.Split('\t');
+            if (cols.Length < 4 || !int.TryParse(cols[0], out var gId) || !int.TryParse(cols[1], out var sId)) continue;
+            yield return new GeoNamesCityDump(gId, sId, cols[2], cols[3]);
+        }
+    }
+
     public async Task<IEnumerable<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
         // ── Fast path: pre-processed file ─────────────────────────────────────

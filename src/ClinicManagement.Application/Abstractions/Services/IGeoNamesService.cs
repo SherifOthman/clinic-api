@@ -17,10 +17,10 @@ public interface IGeoNamesService
     Task<List<GeoNamesStateDump>> GetStatesAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Downloads cities1000.zip (cities with pop>1000 or PPLA seats) and
-    /// alternateNamesV2 filtered to 'ar'. Returns cities grouped by ADM1 geonameId.
+    /// Streams cities line-by-line from cities_processed.tsv without loading
+    /// the entire file into memory. Use this for seeding to avoid OOM on shared hosting.
     /// </summary>
-    Task<IEnumerable<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default);
+    IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(CancellationToken ct = default);
 }
 
 public record GeoNamesCountryDump(int GeonameId, string CountryCode, string NameEn, string NameAr);

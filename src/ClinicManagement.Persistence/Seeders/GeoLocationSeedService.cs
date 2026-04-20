@@ -170,14 +170,14 @@ public class GeoLocationSeedService
             .Select(c => c.GeonameId)
             .ToHashSetAsync(ct);
 
-        var allCities = await _geoNames.GetCitiesAsync(ct);
+        var allCities = _geoNames.StreamCitiesAsync(ct);
 
-        const int batchSize = 10_000;
+        const int batchSize = 5_000; // smaller batches = less memory pressure
         var batch           = new List<GeoCity>(batchSize);
         var totalInserted   = 0;
         var seenInBatch     = new HashSet<int>();
 
-        foreach (var c in allCities)
+        await foreach (var c in allCities.WithCancellation(ct))
         {
             if (!validStateIds.Contains(c.StateGeonameId)) continue;
             if (existingCityIds.Contains(c.GeonameId)) continue;
@@ -195,6 +195,7 @@ public class GeoLocationSeedService
 
             await _db.GeoCities.AddRangeAsync(batch, ct);
             await _db.SaveChangesAsync(ct);
+            _db.ChangeTracker.Clear(); // free tracked entities
             foreach (var city in batch) existingCityIds.Add(city.GeonameId);
             totalInserted += batch.Count;
             _logger.LogInformation("Cities: inserted {Total:N0} so far...", totalInserted);
@@ -205,6 +206,7 @@ public class GeoLocationSeedService
         {
             await _db.GeoCities.AddRangeAsync(batch, ct);
             await _db.SaveChangesAsync(ct);
+            _db.ChangeTracker.Clear();
             totalInserted += batch.Count;
         }
 
