@@ -156,19 +156,20 @@ public static class DependencyInjection
     {
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseStaticFiles();
+
+        // Hangfire dashboard before CORS — it makes same-origin requests, no CORS needed
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = [new HangfireAuthorizationFilter(
+                app.Configuration["HangfireDashboardKey"])],
+        });
+
         app.UseCors("AllowAll");
         app.UseRouting();
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-
-        // Hangfire dashboard — open in dev, secret key required in production
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions
-        {
-            Authorization = [new HangfireAuthorizationFilter(
-                app.Configuration["HangfireDashboardKey"])],
-        });
 
         app.MapOpenApi();
         app.MapScalarApiReference(options =>
