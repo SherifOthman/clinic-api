@@ -28,7 +28,28 @@ public class GeoLocationSeedService
     public async Task SeedAsync(CancellationToken ct = default)
     {
         await SeedCountriesAndStatesAsync(ct);
+        // Cities are seeded via Hangfire CitySeedJob — not at startup
+    }
+
+    public async Task SeedCountriesAndStatesOnlyAsync(CancellationToken ct = default)
+        => await SeedCountriesAndStatesAsync(ct);
+
+    /// <summary>
+    /// Seeds cities in batches. Safe to call repeatedly — skips already-inserted rows.
+    /// Called by Hangfire CitySeedJob every 2 minutes until complete.
+    /// Returns number of cities inserted (0 = fully seeded).
+    /// </summary>
+    public async Task<int> SeedCitiesJobAsync(CancellationToken ct = default)
+    {
+        var total = await _db.GeoCities.CountAsync(ct);
+        if (total > 100_000)
+        {
+            _logger.LogInformation("Cities: {Count:N0} already in DB — skipping.", total);
+            return 0;
+        }
         await SeedCitiesAsync(ct);
+        var inserted = await _db.GeoCities.CountAsync(ct) - total;
+        return (int)Math.Max(0, inserted);
     }
 
     // ── Countries + States ────────────────────────────────────────────────────
