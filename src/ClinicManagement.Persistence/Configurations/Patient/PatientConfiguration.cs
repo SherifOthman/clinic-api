@@ -8,7 +8,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 {
     public void Configure(EntityTypeBuilder<Patient> builder)
     {
-        builder.Property(p => p.PatientCode).HasMaxLength(50).IsRequired();
+        builder.Property(p => p.PatientCode).HasMaxLength(4).IsRequired();
         builder.Property(p => p.BloodType).HasConversion<string>().HasMaxLength(15);
 
         builder.ToTable(t => t.HasCheckConstraint("CK_Patient_BloodType",

@@ -29,8 +29,8 @@ public class PatientCounterRepository : IPatientCounterRepository
             .SqlQueryRaw<int>(sql, clinicId)
             .FirstAsync(ct);
 
-        // Zero-pad to 7 digits: 1 → "0000001", 9999999 → "9999999"
-        // Supports up to 9,999,999 patients per clinic
-        return result.ToString("D7");
+        // Zero-pad to 4 digits: 1 → "0001", 9999 → "9999"
+        // Supports up to 9,999 patients per clinic
+        return result.ToString("D4");
     }
 }

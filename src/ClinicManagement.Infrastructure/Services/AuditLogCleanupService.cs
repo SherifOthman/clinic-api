@@ -16,8 +16,8 @@ namespace ClinicManagement.Infrastructure.Services;
 /// </summary>
 public class AuditLogCleanupService
 {
-    private const int RetentionMonths         = 12;
-    private const int SecurityRetentionMonths = 24;
+    private const int RetentionMonths         = 1;
+    private const int SecurityRetentionMonths = 3;
     private const int BatchSize               = 5_000;
 
     private readonly ApplicationDbContext _context;
