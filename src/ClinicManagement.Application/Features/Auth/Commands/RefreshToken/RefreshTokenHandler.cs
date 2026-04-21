@@ -84,7 +84,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             }
 
             var newAccessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(),
-                member is not null ? await _uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken) : [],
+                member?.Id,
                 clinicId, countryCode);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(userId, null, cancellationToken);
 

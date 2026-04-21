@@ -3,6 +3,7 @@ namespace ClinicManagement.Application.Abstractions.Services;
 public interface ICurrentUserService
 {
     Guid? UserId { get; }
+    Guid? MemberId { get; }
     Guid? ClinicId { get; }
     string? CountryCode { get; }
     string? FullName { get; }

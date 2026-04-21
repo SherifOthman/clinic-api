@@ -22,5 +22,6 @@ public class DoctorInfoConfiguration : IEntityTypeConfiguration<DoctorInfo>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(d => d.ClinicMemberId).IsUnique();
+        builder.HasIndex(d => d.SpecializationId); // FK — not auto-indexed by SQL Server
     }
 }

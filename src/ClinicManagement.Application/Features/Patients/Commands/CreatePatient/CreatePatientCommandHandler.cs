@@ -23,7 +23,7 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
     public async Task<Result<Guid>> Handle(CreatePatientCommand request, CancellationToken cancellationToken)
     {
         var clinicId    = _currentUser.GetRequiredClinicId();
-        var patientCode = await GenerateUniquePatientCodeAsync(cancellationToken);
+        var patientCode = await _uow.PatientCounters.NextCodeAsync(clinicId, cancellationToken);
         var gender      = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male;
         var dob         = DateOnly.Parse(request.DateOfBirth);
 
@@ -66,15 +66,4 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success(patient.Id);
     }
-
-    private async Task<string> GenerateUniquePatientCodeAsync(CancellationToken ct)
-    {
-        string code;
-        do { code = GeneratePatientCode(); }
-        while (await _uow.Patients.AnyByCodeAsync(code, ct));
-        return code;
-    }
-
-    internal static string GeneratePatientCode()
-        => Random.Shared.Next(1000000, 9999999).ToString();
 }

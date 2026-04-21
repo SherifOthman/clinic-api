@@ -1,22 +1,27 @@
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// Junction table between MedicalVisit and MeasurementAttribute
-/// Stores the actual measurement values for each visit
+/// Stores measurement values for a medical visit as a JSON column.
+///
+/// Replaces the EAV pattern (5 nullable typed columns) with a single
+/// ValuesJson column. This avoids pivot queries, is easier to extend,
+/// and SQL Server 2022+ supports JSON path indexes for querying.
+///
+/// Format: { "weight": 75.5, "bloodPressure": "120/80", "temperature": 37.2 }
+/// Keys are MeasurementAttribute names; values are always stored as strings.
 /// </summary>
 public class MedicalVisitMeasurement : BaseEntity
 {
     public Guid MedicalVisitId { get; set; }
-    public Guid MeasurementAttributeId { get; set; }  
-    
-    public string? StringValue { get; set; }
-    public int? IntValue { get; set; }
-    public decimal? DecimalValue { get; set; }
-    public DateTimeOffset? DateTimeValue { get; set; }
-    public bool? BooleanValue { get; set; }
-    
+    public Guid MeasurementAttributeId { get; set; }
+
+    /// <summary>
+    /// JSON object storing all measurement values for this attribute.
+    /// Use ValuesJson to read/write; parse in the application layer.
+    /// </summary>
+    public string ValuesJson { get; set; } = "{}";
+
     public string? Notes { get; set; }
 }

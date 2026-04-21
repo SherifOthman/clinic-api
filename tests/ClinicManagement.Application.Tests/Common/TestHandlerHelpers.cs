@@ -2,6 +2,7 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
+using ClinicManagement.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,7 +19,8 @@ public static class TestHandlerHelpers
             .Options;
         var context = new ApplicationDbContext(options);
         var cache   = new MemoryCache(new MemoryCacheOptions());
-        return new UnitOfWork(context, cache);
+        var permissions = new PermissionRepository(context, cache);
+        return new UnitOfWork(context, cache, permissions);
     }
 
     public static Mock<UserManager<User>> CreateMockUserManager()

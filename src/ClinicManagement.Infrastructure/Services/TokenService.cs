@@ -28,7 +28,12 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, IEnumerable<Permission> permissions, Guid? clinicId = null, string? countryCode = null)
+    public string GenerateAccessToken(
+        User user,
+        IEnumerable<string> roles,
+        Guid? memberId = null,
+        Guid? clinicId = null,
+        string? countryCode = null)
     {
         var claims = new List<Claim>
         {
@@ -38,7 +43,13 @@ public class TokenService : ITokenService
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-        claims.AddRange(permissions.Select(p => new Claim("permissions", p.ToString())));
+
+        // MemberId is included so the authorization handler can resolve
+        // permissions from cache without an extra DB lookup.
+        // Permissions themselves are NOT stored in the token — this keeps
+        // the token small and avoids stale permission data between refreshes.
+        if (memberId.HasValue)
+            claims.Add(new Claim("MemberId", memberId.Value.ToString()));
 
         if (clinicId.HasValue)
             claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));
@@ -58,10 +69,10 @@ public class TokenService : ITokenService
         );
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-        
-        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId} and roles [{Roles}]", 
+
+        _logger.LogDebug("Generated access token for user {UserId} with clinic {ClinicId} and roles [{Roles}]",
             user.Id, clinicId, string.Join(", ", roles));
-            
+
         return tokenString;
     }
 }

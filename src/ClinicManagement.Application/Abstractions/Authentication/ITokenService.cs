@@ -8,7 +8,7 @@ public interface ITokenService
     string GenerateAccessToken(
         User user,
         IEnumerable<string> roles,
-        IEnumerable<Permission> permissions,
+        Guid? memberId = null,
         Guid? clinicId = null,
         string? countryCode = null);
 }

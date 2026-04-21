@@ -38,7 +38,8 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .HasForeignKey(pcd => pcd.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(p => p.PatientCode).IsUnique();
+        // PatientCode is unique per clinic (not globally) — same code can exist in different clinics
+        builder.HasIndex(p => new { p.ClinicId, p.PatientCode }).IsUnique();
         builder.HasIndex(p => new { p.ClinicId, p.IsDeleted, p.CreatedAt });
         builder.HasIndex(p => p.StateGeonameId);
         builder.HasIndex(p => p.CityGeonameId);

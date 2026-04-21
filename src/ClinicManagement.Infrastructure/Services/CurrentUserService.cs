@@ -25,6 +25,15 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public Guid? MemberId
+    {
+        get
+        {
+            var memberIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("MemberId")?.Value;
+            return Guid.TryParse(memberIdClaim, out var memberId) ? memberId : null;
+        }
+    }
+
     public Guid? ClinicId
     {
         get
@@ -64,7 +73,7 @@ public class CurrentUserService : ICurrentUserService
 
     public IEnumerable<string> Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)?.Select(x => x.Value) ?? Enumerable.Empty<string>();
 
-    public IEnumerable<string> Permissions => _httpContextAccessor.HttpContext?.User?.FindAll("permissions")?.Select(x => x.Value) ?? Enumerable.Empty<string>();
+    public IEnumerable<string> Permissions => Enumerable.Empty<string>(); // Permissions are resolved from cache by PermissionAuthorizationHandler, not from JWT claims.
 
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 

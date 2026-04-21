@@ -1,5 +1,7 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,10 @@ public static class DependencyInjection
 
         // Unit of Work (contains all repositories)
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Register IPermissionRepository directly so it can be resolved
+        // independently by PermissionAuthorizationHandler and DatabaseInitialiser
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
 
         services.AddIdentity<User, Role>(options =>
         {

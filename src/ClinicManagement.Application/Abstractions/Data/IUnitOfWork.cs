@@ -22,6 +22,7 @@ public interface IUnitOfWork
     IClinicSubscriptionRepository ClinicSubscriptions { get; }
     IGeoLocationRepository       GeoLocations       { get; }
     IPermissionRepository        Permissions        { get; }
+    IPatientCounterRepository    PatientCounters    { get; }
 
     // Generic repos for reference/lookup entities (used for seeding in tests)
     IRepository<ChronicDisease>   ChronicDiseases   { get; }

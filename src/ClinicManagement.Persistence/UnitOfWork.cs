@@ -10,11 +10,16 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private readonly IMemoryCache _cache;
+    private readonly IPermissionRepository _permissions;
 
-    public UnitOfWork(ApplicationDbContext context, IMemoryCache cache)
+    public UnitOfWork(
+        ApplicationDbContext context,
+        IMemoryCache cache,
+        IPermissionRepository permissions)
     {
-        _context = context;
-        _cache   = cache;
+        _context     = context;
+        _cache       = cache;
+        _permissions = permissions;
     }
 
     public IPatientRepository            Patients           => field ??= new PatientRepository(_context);
@@ -29,7 +34,11 @@ public class UnitOfWork : IUnitOfWork
     public IReferenceRepository          Reference          => field ??= new ReferenceRepository(_context, _cache);
     public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);
     public IGeoLocationRepository        GeoLocations       => field ??= new GeoLocationRepository(_context);
-    public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context, _cache);
+
+    // Injected via DI — same instance used by PermissionAuthorizationHandler
+    // so the IMemoryCache is shared (no duplicate cache entries)
+    public IPermissionRepository         Permissions        => _permissions;
+    public IPatientCounterRepository     PatientCounters    => field ??= new PatientCounterRepository(_context);
 
     public IRepository<ChronicDisease>   ChronicDiseases   => field ??= new Repository<ChronicDisease>(_context);
     public IRepository<Specialization>   Specializations   => field ??= new Repository<Specialization>(_context);

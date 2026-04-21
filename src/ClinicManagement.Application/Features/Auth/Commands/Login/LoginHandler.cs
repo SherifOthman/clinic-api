@@ -3,7 +3,6 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Enums;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
@@ -121,8 +120,8 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             }
         }
 
-        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), 
-            await LoadPermissionsAsync(user.Id, roles, clinicId, cancellationToken),
+        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(),
+            await GetMemberIdAsync(user.Id, roles, clinicId, cancellationToken),
             clinicId, countryCode);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
@@ -136,12 +135,11 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         return Result.Success(new TokenResponseDto(accessToken, refreshToken.Token));
     }
 
-    private async Task<List<Permission>> LoadPermissionsAsync(
+    private async Task<Guid?> GetMemberIdAsync(
         Guid userId, IList<string> roles, Guid? clinicId, CancellationToken ct)
     {
-        if (clinicId is null) return [];
+        if (clinicId is null) return null;
         var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(userId, ct);
-        if (member is null) return [];
-        return await _uow.Permissions.GetByMemberIdAsync(member.Id, ct);
+        return member?.Id;
     }
 }
