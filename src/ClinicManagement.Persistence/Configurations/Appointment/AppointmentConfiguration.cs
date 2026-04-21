@@ -57,5 +57,6 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.HasIndex(a => new { a.BranchId, a.Date, a.Status });
         builder.HasIndex(a => new { a.PatientId, a.Date });
         builder.HasIndex(a => a.VisitTypeId); // FK — not auto-indexed by SQL Server
+        builder.HasIndex(a => a.ClinicId);    // tenant filter index
     }
 }

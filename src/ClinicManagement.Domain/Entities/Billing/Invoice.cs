@@ -3,7 +3,12 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Invoice : TenantEntity
+/// <summary>
+/// Financial document for services rendered to a patient.
+/// Inherits AuditableTenantEntity to get CreatedAt, UpdatedAt, CreatedBy, UpdatedBy,
+/// IsDeleted, and ClinicId — all required for a financial audit trail.
+/// </summary>
+public class Invoice : AuditableTenantEntity
 {
     public string InvoiceNumber { get; set; } = null!;
     public Guid PatientId { get; set; }

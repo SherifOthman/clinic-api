@@ -3,7 +3,12 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Appointment : AuditableEntity, INoAuditLog
+/// <summary>
+/// Inherits AuditableTenantEntity so the global tenant query filter applies automatically.
+/// Previously used AuditableEntity (no ClinicId), which meant tenant isolation
+/// depended entirely on BranchId — a single-hop FK, not a direct filter.
+/// </summary>
+public class Appointment : AuditableTenantEntity, INoAuditLog
 {
     public Guid BranchId { get; set; }
     public Guid PatientId { get; set; }
@@ -19,7 +24,12 @@ public class Appointment : AuditableEntity, INoAuditLog
 
     public decimal Price { get; set; }
     public decimal? DiscountPercent { get; set; }
-    public decimal FinalPrice { get; set; }
+
+    /// <summary>
+    /// Stored final price — always set via ApplyPrice() to stay in sync with Price and DiscountPercent.
+    /// Never set directly; use ApplyPrice() when creating or updating pricing.
+    /// </summary>
+    public decimal FinalPrice { get; private set; }
 
     public Guid? InvoiceId { get; set; }
 
@@ -37,11 +47,18 @@ public class Appointment : AuditableEntity, INoAuditLog
     public bool CanBeCancelled => Status == AppointmentStatus.Pending || Status == AppointmentStatus.InProgress;
     public bool IsInvoiced     => InvoiceId.HasValue;
 
-    /// <summary>Applies DiscountPercent to Price and returns the final amount.</summary>
-    public decimal CalculateFinalPrice() =>
-        DiscountPercent.HasValue
-            ? Math.Round(Price * (1 - DiscountPercent.Value / 100m), 2)
-            : Price;
+    /// <summary>
+    /// Sets Price and DiscountPercent and immediately recalculates FinalPrice.
+    /// This is the only way to update pricing — keeps FinalPrice always in sync.
+    /// </summary>
+    public void ApplyPrice(decimal price, decimal? discountPercent = null)
+    {
+        Price          = price;
+        DiscountPercent = discountPercent;
+        FinalPrice     = discountPercent.HasValue
+            ? Math.Round(price * (1 - discountPercent.Value / 100m), 2)
+            : price;
+    }
 
     // Navigation
     public ClinicBranch Branch { get; set; } = null!;

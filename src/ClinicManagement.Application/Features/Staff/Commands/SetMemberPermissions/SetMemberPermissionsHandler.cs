@@ -10,11 +10,16 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
+    private readonly ISecurityAuditWriter _auditWriter;
 
-    public SetMemberPermissionsHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public SetMemberPermissionsHandler(
+        IUnitOfWork uow,
+        ICurrentUserService currentUser,
+        ISecurityAuditWriter auditWriter)
     {
         _uow         = uow;
         _currentUser = currentUser;
+        _auditWriter = auditWriter;
     }
 
     public async Task<Result> Handle(SetMemberPermissionsCommand request, CancellationToken cancellationToken)
@@ -29,7 +34,21 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
         if (member.IsOwner)
             return Result.Failure(ErrorCodes.FORBIDDEN, "Owner permissions cannot be modified");
 
+        // Capture before state for audit
+        var previousPermissions = await _uow.Permissions.GetByMemberIdAsync(request.MemberId, cancellationToken);
+
         await _uow.Permissions.SetPermissionsAsync(request.MemberId, request.Permissions, cancellationToken);
+
+        // Audit the change — records who changed what and when
+        var added   = request.Permissions.Except(previousPermissions).Select(p => p.ToString());
+        var removed = previousPermissions.Except(request.Permissions).Select(p => p.ToString());
+        var detail  = $"Granted: [{string.Join(", ", added)}] | Revoked: [{string.Join(", ", removed)}]";
+
+        await _auditWriter.WriteAsync(
+            _currentUser.UserId, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
+            _currentUser.Roles.FirstOrDefault(), clinicId,
+            "PermissionsChanged", detail, cancellationToken);
+
         return Result.Success();
     }
 }
