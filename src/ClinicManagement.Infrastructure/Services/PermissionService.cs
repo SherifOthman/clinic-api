@@ -39,7 +39,8 @@ public class PermissionService : IPermissionService
         if (currentMember.Id != targetMemberId)
             return SchedulePermissionResult.Deny("You can only manage your own schedule");
 
-        return await CheckSelfManageLockAsync(currentMember.Id, ct);
+        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(currentMember.Id, ct);
+        return await CheckSelfManageLockAsync(doctorInfoId, ct);
     }
 
     public async Task<SchedulePermissionResult> CanManageVisitTypesAsync(
