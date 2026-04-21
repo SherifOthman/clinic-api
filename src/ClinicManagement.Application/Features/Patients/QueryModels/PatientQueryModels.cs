@@ -6,7 +6,7 @@ public record PatientListRow(
     string Gender, string? BloodType, int ChronicDiseaseCount,
     string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId, string? ClinicName,
     int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
-    string? CityNameEn, string? CityNameAr   // only city name shown in the table
+    string? CityNameEn, string? CityNameAr
 );
 
 /// <summary>Flat row returned by the recent patients dashboard query.</summary>

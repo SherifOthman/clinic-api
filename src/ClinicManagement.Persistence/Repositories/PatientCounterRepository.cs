@@ -12,9 +12,6 @@ public class PatientCounterRepository : IPatientCounterRepository
 
     public async Task<string> NextCodeAsync(Guid clinicId, CancellationToken ct = default)
     {
-        // Use a raw SQL UPDATE with OUTPUT to atomically increment and return the new value.
-        // This is safe under concurrent inserts — no race condition possible.
-        // UPDLOCK + SERIALIZABLE hint prevents phantom reads during the upsert.
         var sql = """
             MERGE PatientCounters WITH (HOLDLOCK) AS target
             USING (SELECT {0} AS ClinicId) AS source ON target.ClinicId = source.ClinicId
@@ -30,7 +27,7 @@ public class PatientCounterRepository : IPatientCounterRepository
             .FirstAsync(ct);
 
         // Zero-pad to 4 digits: 1 → "0001", 9999 → "9999"
-        // Supports up to 9,999 patients per clinic
+        // Stored as string so StartsWith search works (e.g. "12" finds "0012", "0120", "0121")
         return result.ToString("D4");
     }
 }

@@ -22,7 +22,7 @@ public class GetPatientDetailHandlerTests
         var person = new Person { FirstName = "Test", LastName = "Patient", Gender = gender, DateOfBirth = new DateOnly(1990, 6, 15) };
         return new Patient
         {
-            ClinicId = Guid.NewGuid(), PatientCode = "0000001",
+            ClinicId = Guid.NewGuid(), PatientCode = "0001",
             PersonId = person.Id, Person = person, CreatedAt = DateTimeOffset.UtcNow,
         };
     }
@@ -47,7 +47,7 @@ public class GetPatientDetailHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Value.FullName.Should().Be("Test Patient");
         result.Value.Gender.Should().Be("Female");
-        result.Value.PatientCode.Should().Be("0000001");
+        result.Value.PatientCode.Should().Be("0001");
     }
 
     [Fact]

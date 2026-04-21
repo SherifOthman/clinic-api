@@ -85,7 +85,7 @@ public static class TestHandlerHelpers
     public static Patient CreateTestPatient(
         string firstName = "Test", string lastName = "Patient",
         Gender gender = Gender.Male,
-        string patientCode = "0000001",
+        string patientCode = "0001",
         Guid? clinicId = null)
     {
         var person = new Person

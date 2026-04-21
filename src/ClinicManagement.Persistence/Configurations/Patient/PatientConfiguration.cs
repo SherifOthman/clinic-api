@@ -8,6 +8,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 {
     public void Configure(EntityTypeBuilder<Patient> builder)
     {
+        // PatientCode is string — stored as nvarchar(4) for StartsWith search support
         builder.Property(p => p.PatientCode).HasMaxLength(4).IsRequired();
         builder.Property(p => p.BloodType).HasConversion<string>().HasMaxLength(15);
 

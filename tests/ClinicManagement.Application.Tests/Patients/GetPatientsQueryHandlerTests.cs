@@ -49,9 +49,9 @@ public class GetPatientsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnPaginatedResults()
     {
-        await _uow.Patients.AddAsync(MakePatient("Alice",   Gender.Female, "0000001"));
-        await _uow.Patients.AddAsync(MakePatient("Bob",     Gender.Male,   "0000002"));
-        await _uow.Patients.AddAsync(MakePatient("Charlie", Gender.Male,   "0000003"));
+        await _uow.Patients.AddAsync(MakePatient("Alice",   Gender.Female, "0001"));
+        await _uow.Patients.AddAsync(MakePatient("Bob",     Gender.Male,   "0002"));
+        await _uow.Patients.AddAsync(MakePatient("Charlie", Gender.Male,   "0003"));
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(new GetPatientsQuery(null, 1, 2, null, "asc", null), default);
@@ -64,8 +64,8 @@ public class GetPatientsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldFilterBySearchTerm()
     {
-        await _uow.Patients.AddAsync(MakePatient("Ahmed Ali",    Gender.Male,   "0000001"));
-        await _uow.Patients.AddAsync(MakePatient("Sara Mohamed", Gender.Female, "0000002"));
+        await _uow.Patients.AddAsync(MakePatient("Ahmed Ali",    Gender.Male,   "0001"));
+        await _uow.Patients.AddAsync(MakePatient("Sara Mohamed", Gender.Female, "0002"));
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(new GetPatientsQuery("Ahmed", 1, 10, null, "asc", null), default);
@@ -77,8 +77,8 @@ public class GetPatientsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldFilterByGender()
     {
-        await _uow.Patients.AddAsync(MakePatient("Male Patient",   Gender.Male,   "0000001"));
-        await _uow.Patients.AddAsync(MakePatient("Female Patient", Gender.Female, "0000002"));
+        await _uow.Patients.AddAsync(MakePatient("Male Patient",   Gender.Male,   "0001"));
+        await _uow.Patients.AddAsync(MakePatient("Female Patient", Gender.Female, "0002"));
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(new GetPatientsQuery(null, 1, 10, null, "asc", Gender: "Female"), default);
@@ -90,9 +90,9 @@ public class GetPatientsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldSortByName_Ascending()
     {
-        await _uow.Patients.AddAsync(MakePatient("Zara",    Gender.Male, "0000001"));
-        await _uow.Patients.AddAsync(MakePatient("Ahmed",   Gender.Male, "0000002"));
-        await _uow.Patients.AddAsync(MakePatient("Mohamed", Gender.Male, "0000003"));
+        await _uow.Patients.AddAsync(MakePatient("Zara",    Gender.Male, "0001"));
+        await _uow.Patients.AddAsync(MakePatient("Ahmed",   Gender.Male, "0002"));
+        await _uow.Patients.AddAsync(MakePatient("Mohamed", Gender.Male, "0003"));
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(new GetPatientsQuery(null, 1, 10, "fullName", "asc", null), default);
@@ -103,9 +103,9 @@ public class GetPatientsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldSortByChronicDiseaseCount_Ascending()
     {
-        await _uow.Patients.AddAsync(MakePatient("Three Diseases", Gender.Male,   "0000001", chronicDiseaseCount: 3));
-        await _uow.Patients.AddAsync(MakePatient("No Diseases",    Gender.Female, "0000002", chronicDiseaseCount: 0));
-        await _uow.Patients.AddAsync(MakePatient("One Disease",    Gender.Male,   "0000003", chronicDiseaseCount: 1));
+        await _uow.Patients.AddAsync(MakePatient("Three Diseases", Gender.Male,   "0001", chronicDiseaseCount: 3));
+        await _uow.Patients.AddAsync(MakePatient("No Diseases",    Gender.Female, "0002", chronicDiseaseCount: 0));
+        await _uow.Patients.AddAsync(MakePatient("One Disease",    Gender.Male,   "0003", chronicDiseaseCount: 1));
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(
@@ -119,9 +119,9 @@ public class GetPatientsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldSortByChronicDiseaseCount_Descending()
     {
-        await _uow.Patients.AddAsync(MakePatient("Three Diseases", Gender.Male,   "0000001", chronicDiseaseCount: 3));
-        await _uow.Patients.AddAsync(MakePatient("No Diseases",    Gender.Female, "0000002", chronicDiseaseCount: 0));
-        await _uow.Patients.AddAsync(MakePatient("One Disease",    Gender.Male,   "0000003", chronicDiseaseCount: 1));
+        await _uow.Patients.AddAsync(MakePatient("Three Diseases", Gender.Male,   "0001", chronicDiseaseCount: 3));
+        await _uow.Patients.AddAsync(MakePatient("No Diseases",    Gender.Female, "0002", chronicDiseaseCount: 0));
+        await _uow.Patients.AddAsync(MakePatient("One Disease",    Gender.Male,   "0003", chronicDiseaseCount: 1));
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(
@@ -142,3 +142,4 @@ public class GetPatientsQueryHandlerTests
         result.Value.TotalCount.Should().Be(0);
     }
 }
+
