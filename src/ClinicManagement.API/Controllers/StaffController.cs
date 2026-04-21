@@ -111,7 +111,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve staff");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpGet("{id:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(StaffDetailDto), StatusCodes.Status200OK)]
@@ -148,7 +148,7 @@ public class StaffController : BaseApiController
 
     // ── Schedule endpoints — accessible by clinic owner OR the doctor themselves ──
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpGet("{id:guid}/working-days")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<WorkingDayDto>), StatusCodes.Status200OK)]
@@ -159,7 +159,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve working days");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpPut("{id:guid}/working-days")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -174,7 +174,7 @@ public class StaffController : BaseApiController
         return HandleNoContent(result, "Failed to save working days");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpGet("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<DoctorVisitTypeDto>), StatusCodes.Status200OK)]
@@ -184,7 +184,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve visit types");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpPut("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
@@ -197,7 +197,7 @@ public class StaffController : BaseApiController
         return !result.IsSuccess ? HandleResult(result, "Failed to save visit type") : Ok(result.Value);
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpDelete("{id:guid}/visit-types/{visitTypeId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
