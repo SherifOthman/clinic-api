@@ -1,6 +1,6 @@
 # Clinic Management API
 
-A production-ready multi-tenant SaaS backend for medical clinics, built with .NET 10 and Clean Architecture. This is not a tutorial project — it models a real business domain with proper separation of concerns, a full authentication system, background jobs, audit logging, and a bilingual data layer.
+A production-ready multi-tenant SaaS backend for medical clinics, built with .NET 10 and Clean Architecture. This is not a tutorial project — it models a real business domain with proper separation of concerns, a full authentication system, permission-based authorization, background jobs, audit logging, and a bilingual data layer.
 
 **Live API Docs**: http://clinic-api.runasp.net/scalar/v1  
 **Dashboard**: https://clinic-dashboard-ecru.vercel.app  
@@ -20,7 +20,15 @@ Small and mid-sized medical clinics need a way to manage their patients, staff, 
 
 ### Authentication & Identity
 
-A complete auth system built on top of ASP.NET Identity. Users can register, confirm their email, log in with either email or username, reset their password, and manage their profile including a profile image. Token refresh is handled automatically. The system supports two client types via the `X-Client-Type` header: web clients get HTTP-only refresh token cookies (XSS-safe), mobile clients get tokens in the response body.
+A complete auth system built on top of ASP.NET Identity. Users can register, confirm their email, log in with either email or username, reset their password, and manage their profile including a profile image. Token refresh is handled automatically. The system supports two client types via the `X-Client-Type` header: web clients get HTTP-only refresh token cookies (`SameSite=None; Secure` for cross-site support), mobile clients get tokens in the response body.
+
+### Permission-Based Authorization
+
+Fine-grained access control using a custom RBAC system. Permissions (e.g. `ViewPatients`, `InviteStaff`, `ManageBranches`) are assigned per `ClinicMember` — the same user can have different permissions at different clinics. Role defaults are seeded into a `RoleDefaultPermissions` table; clinic owners can then customize permissions per staff member.
+
+Permissions are resolved from the database on login and cached in `IMemoryCache` per member (10-minute TTL with explicit invalidation on change). The JWT contains only the `MemberId` claim — permissions are resolved from cache on each request by a custom `PermissionAuthorizationHandler`, keeping tokens small and avoiding stale permission data. A dynamic `IAuthorizationPolicyProvider` generates policies on-demand from the `Permission` enum, so adding a new permission requires no DI changes.
+
+Controllers use `[RequirePermission(Permission.X)]` instead of `[Authorize(Roles = "...")]`. Structural operations (managing permissions, locking schedules) use `[Authorize(Policy = "RequireClinicOwner")]`. Platform-level operations use `[Authorize(Policy = "SuperAdmin")]`.
 
 ### Multi-Tenant Clinic Management
 
@@ -28,7 +36,7 @@ Every entity that belongs to a clinic implements `ITenantEntity` with a `ClinicI
 
 ### Location Data
 
-Countries, states/governorates, and cities are seeded from GeoNames bulk dump files at startup. The app looks for the files in `wwwroot/SeedData/GeoNames/` — upload them there via FTP/file manager and they will never be re-downloaded. The seeder runs synchronously at startup before the app accepts requests, so the data is always fully available. It compares existing DB rows against the source file and only inserts missing entries, so it's safe to restart mid-seed and it will continue from where it left off. All location data is stored in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query using the seeded tables — no external API calls at runtime.
+Countries, states/governorates, and cities are seeded from GeoNames bulk dump files. Countries and states seed synchronously at startup (fast). Cities (~3.8M rows) seed in the background via a Hangfire job that runs every 2 minutes, inserts missing rows in batches, and removes itself when complete. All location data is stored in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query — no external API calls at runtime.
 
 ### Onboarding Flow
 
@@ -36,30 +44,30 @@ New clinic owners go through a guided setup: clinic name, branch details, locati
 
 ### Patient Management
 
-Patients have a globally unique 8-digit code, full demographics, multiple phone numbers (validated with libphonenumber-csharp), blood type, date of birth, chronic diseases, and a bilingual location (country/state/city stored in both English and Arabic). Soft-delete is supported — deleted patients are retained in the database and can be restored by a SuperAdmin. Search results are ranked by relevance: exact code match first, then name match, then partial matches.
+Patients have a per-clinic sequential code (e.g. `0001`, `0042`) generated atomically via a `PatientCounters` table using a `MERGE` statement — no race conditions under concurrent inserts. The code is stored as a zero-padded string for `StartsWith` search support. Full demographics, multiple phone numbers (validated with libphonenumber-csharp), blood type, date of birth, chronic diseases, and a bilingual location. Soft-delete is supported — deleted patients are retained and can be restored by a SuperAdmin.
 
 ### Staff & Invitations
 
-Clinic owners invite staff by email with a role (Doctor or Receptionist). The invitation has a 7-day expiry, can be resent or canceled, and contains a secure token. When the invitee clicks the link, they register and are automatically linked to the clinic. Doctors get a `DoctorProfile` with specialization. The clinic owner can also register themselves as a doctor.
+Clinic owners invite staff by email with a role (Doctor or Receptionist). The invitation has a 7-day expiry, can be resent or canceled, and contains a secure token. When the invitee clicks the link, they register and are automatically linked to the clinic with default permissions for their role. Doctors get a `DoctorInfo` with specialization and a per-branch schedule. The clinic owner can also register themselves as a doctor.
 
 ### Audit Trail
 
-Every create, update, and delete on any `AuditableEntity` is captured with field-level diffs — old value, new value, who made the change, when, from which IP, and which browser. Security events (login, logout, failed attempts, account lockouts) are logged separately. The SuperAdmin can query the full audit trail across all clinics. Logs older than 12 months are automatically purged by a background job.
+Every create, update, and delete on any `AuditableEntity` is captured with field-level diffs — old value, new value, who made the change, when, from which IP, and which browser. Security events (login, logout, failed attempts, account lockouts) and permission changes are logged separately. The SuperAdmin can query the full audit trail across all clinics. Standard logs are purged after 1 month, security events after 3 months, via a batched Hangfire job.
 
 ### Subscription Plans
 
 Plans define limits (max branches, max staff, max patients per month, storage) and feature flags (inventory management, reporting, API access, custom branding, priority support). The domain model includes billing logic like yearly discount calculation and limit checks.
 
-### Background Jobs
+### Background Jobs (Hangfire)
 
-Six hosted services run continuously in the background:
-
-- **GeoLocationSeedService** — runs once at startup, seeds countries/states/cities from GeoNames files; skips already-inserted rows and updates Arabic names if `ar_names.tsv` is available
-- **EmailQueueProcessorJob** — processes up to 50 pending emails every 5 minutes with retry logic and priority ordering
-- **AuditLogCleanupService** — runs at midnight daily, deletes audit logs older than 12 months
-- **RefreshTokenCleanupService** — runs every 6 hours, removes expired and revoked tokens
-- **UsageMetricsAggregationJob** — aggregates clinic usage metrics hourly for billing and analytics
-- **SubscriptionExpiryNotificationJob** — sends expiry warnings to clinics approaching their subscription end date
+| Job                                 | Schedule                   | Purpose                                      |
+| ----------------------------------- | -------------------------- | -------------------------------------------- |
+| `CitySeedJob`                       | Every 2 min (self-removes) | Seeds ~3.8M cities in background             |
+| `EmailQueueProcessorJob`            | Every 5 min                | Processes up to 50 pending emails with retry |
+| `AuditLogCleanupService`            | Daily midnight             | Deletes old audit logs in batches of 5,000   |
+| `RefreshTokenCleanupService`        | Every 6 hours              | Removes expired/revoked tokens               |
+| `UsageMetricsAggregationJob`        | Daily 1am                  | Aggregates clinic usage metrics              |
+| `SubscriptionExpiryNotificationJob` | Daily 9am                  | Sends expiry warnings 7 days before end      |
 
 ---
 
@@ -74,31 +82,35 @@ Domain         → Entities, enums, value objects, Result<T>, domain logic
 Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jobs
 ```
 
-**CQRS with MediatR** — every operation is either a Command (write) or a Query (read), dispatched through MediatR. Three pipeline behaviors run on every request: `LoggingBehavior` logs the handler name and duration, `ValidationBehavior` runs all FluentValidation validators and returns structured errors before the handler executes, and `PerformanceBehavior` warns when a handler takes too long.
+**CQRS with MediatR** — every operation is either a Command (write) or a Query (read). Three pipeline behaviors run on every request: `LoggingBehavior`, `ValidationBehavior` (FluentValidation, returns structured errors before the handler executes), and `PerformanceBehavior` (warns on slow handlers).
 
-**Result pattern** — handlers return `Result<T>` instead of throwing exceptions for expected failures. `GlobalExceptionMiddleware` catches anything unexpected and returns RFC 7807 Problem Details with a trace ID. Error codes are string constants that map directly to frontend i18n keys, so the frontend can display the right translated message without any mapping logic.
+**Result pattern** — handlers return `Result<T>` instead of throwing exceptions for expected failures. `GlobalExceptionMiddleware` catches anything unexpected and returns RFC 7807 Problem Details with a trace ID. Error codes are string constants that map directly to frontend i18n keys.
 
-**No generic repository** — handlers access data through `IUnitOfWork`, which exposes typed repositories (`IPatientRepository`, `IGeoLocationRepository`, etc.). No direct DbContext access outside the Persistence layer.
+**No generic repository** — handlers access data through `IUnitOfWork`, which exposes typed repositories. No direct DbContext access outside the Persistence layer.
+
+**Production schema** — all PKs use `Guid.CreateVersion7()` (time-ordered, eliminates SQL Server index fragmentation). Financial entities (`Invoice`, `Appointment`) inherit `AuditableTenantEntity` for full audit trail and automatic tenant filtering. `FinalPrice` on appointments is always set via `ApplyPrice()` to prevent stale values.
 
 ---
 
 ## Tech Stack
 
-| Layer            | Technology                       |
-| ---------------- | -------------------------------- |
-| Runtime          | .NET 10                          |
-| ORM              | Entity Framework Core            |
-| Identity         | ASP.NET Core Identity            |
-| Mediator         | MediatR                          |
-| Validation       | FluentValidation                 |
-| Mapping          | Mapster                          |
-| Auth             | JWT Bearer + HTTP-only cookies   |
-| Logging          | Serilog (console + rolling file) |
-| API Docs         | Scalar (OpenAPI)                 |
-| Email            | MailKit + SMTP queue             |
-| Phone validation | libphonenumber-csharp            |
-| Location data    | GeoNames bulk dumps (seeded DB)  |
-| Database         | SQL Server                       |
+| Layer            | Technology                           |
+| ---------------- | ------------------------------------ |
+| Runtime          | .NET 10                              |
+| ORM              | Entity Framework Core                |
+| Identity         | ASP.NET Core Identity                |
+| Mediator         | MediatR                              |
+| Validation       | FluentValidation                     |
+| Mapping          | Mapster                              |
+| Auth             | JWT Bearer + HTTP-only cookies       |
+| Authorization    | Custom RBAC (permissions + policies) |
+| Background jobs  | Hangfire                             |
+| Logging          | Serilog (console + rolling file)     |
+| API Docs         | Scalar (OpenAPI)                     |
+| Email            | MailKit + SMTP queue                 |
+| Phone validation | libphonenumber-csharp                |
+| Location data    | GeoNames bulk dumps (seeded DB)      |
+| Database         | SQL Server                           |
 
 ---
 
@@ -108,29 +120,40 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 ### Authentication & User Management
 
-| Feature                                | API | Notes                       |
-| -------------------------------------- | --- | --------------------------- |
-| Register, email confirmation, resend   | ✅  | Token-based                 |
-| Login (email or username)              | ✅  |                             |
-| Logout                                 | ✅  | Clears cookie + token       |
-| Forgot / reset / change password       | ✅  |                             |
-| JWT + refresh token (auto-rotate)      | ✅  |                             |
-| HTTP-only cookie mode (web)            | ✅  | XSS-safe                    |
-| Response body token mode (mobile)      | ✅  | Via `X-Client-Type: mobile` |
-| Profile — name, username, phone, image | ✅  |                             |
-| In-app notifications                   | 🗂️  | Entity modeled, no API      |
+| Feature                                | API | Notes                        |
+| -------------------------------------- | --- | ---------------------------- |
+| Register, email confirmation, resend   | ✅  | Token-based                  |
+| Login (email or username)              | ✅  |                              |
+| Logout                                 | ✅  | Clears cookie + token        |
+| Forgot / reset / change password       | ✅  |                              |
+| JWT + refresh token (auto-rotate)      | ✅  |                              |
+| HTTP-only cookie mode (web)            | ✅  | SameSite=None for cross-site |
+| Response body token mode (mobile)      | ✅  | Via `X-Client-Type: mobile`  |
+| Profile — name, username, phone, image | ✅  |                              |
+| In-app notifications                   | 🗂️  | Entity modeled, no API       |
+
+### Permissions & Authorization
+
+| Feature                              | API | Notes                                     |
+| ------------------------------------ | --- | ----------------------------------------- |
+| Permission enum (15 permissions)     | ✅  | Patients, staff, branches, schedule, etc. |
+| Per-member permission assignment     | ✅  | Clinic owner sets per staff member        |
+| Role default permissions (DB-driven) | ✅  | `RoleDefaultPermissions` table            |
+| Dynamic policy provider              | ✅  | No foreach loop — on-demand from enum     |
+| Permission cache (IMemoryCache)      | ✅  | 10-min TTL, invalidated on change         |
+| Permission change audit trail        | ✅  | Logs granted/revoked per change           |
+| MemberId in JWT (not permissions)    | ✅  | Keeps tokens small, no stale data         |
 
 ### Clinic & Branch Management
 
-| Feature                                          | API | Notes                                         |
-| ------------------------------------------------ | --- | --------------------------------------------- |
-| Onboarding wizard (name, branch, location, plan) | ✅  |                                               |
-| View / create / edit / toggle branches           | ✅  | Bilingual location                            |
-| Branch phone numbers                             | ✅  |                                               |
-| Branch appointment pricing                       | 🗂️  | Entity exists                                 |
-| Clinic subscription management                   | 🗂️  | `ClinicSubscription` modeled                  |
-| Subscription payment history                     | 🗂️  | `SubscriptionPayment` modeled                 |
-| Usage metrics / limits tracking                  | 🔧  | Background job aggregates hourly, no endpoint |
+| Feature                                          | API | Notes                                        |
+| ------------------------------------------------ | --- | -------------------------------------------- |
+| Onboarding wizard (name, branch, location, plan) | ✅  |                                              |
+| View / create / edit / toggle branches           | ✅  | Bilingual location                           |
+| Branch phone numbers                             | ✅  |                                              |
+| Clinic subscription management                   | 🗂️  | `ClinicSubscription` modeled                 |
+| Subscription payment history                     | 🗂️  | `SubscriptionPayment` modeled                |
+| Usage metrics / limits tracking                  | 🔧  | Background job aggregates daily, no endpoint |
 
 ### Patient Management
 
@@ -138,7 +161,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | -------------------------------------------------------- | --- | --------------------------------- |
 | Paginated list — search, sort, filter by gender / region | ✅  | Search ranked by relevance        |
 | Create / edit / view / soft-delete / restore             | ✅  | Restore is SuperAdmin only        |
-| Unique 8-digit patient code                              | ✅  | Auto-generated                    |
+| Per-clinic sequential patient code                       | ✅  | Atomic MERGE, StartsWith search   |
 | Multiple phone numbers                                   | ✅  | International format validation   |
 | Blood type, DOB, chronic diseases                        | ✅  |                                   |
 | Bilingual location (country / state / city)              | ✅  | Seeded from GeoNames, EN+AR in DB |
@@ -148,27 +171,29 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 ### Staff Management
 
-| Feature                                 | API | Notes                   |
-| --------------------------------------- | --- | ----------------------- |
-| View staff list                         | ✅  | Role and status filters |
-| Invite by email (Doctor / Receptionist) | ✅  | 7-day expiry token      |
-| Resend / cancel invitation              | ✅  |                         |
-| Accept invitation (register + join)     | ✅  |                         |
-| Activate / deactivate staff             | ✅  |                         |
-| Register owner as doctor                | ✅  |                         |
-| Doctor specialization                   | ✅  | Set during invitation   |
-| Doctor working schedule                 | ✅  |                         |
+| Feature                                 | API | Notes                      |
+| --------------------------------------- | --- | -------------------------- |
+| View staff list                         | ✅  | Role and status filters    |
+| Invite by email (Doctor / Receptionist) | ✅  | 7-day expiry token         |
+| Resend / cancel invitation              | ✅  |                            |
+| Accept invitation (register + join)     | ✅  | Default permissions seeded |
+| Activate / deactivate staff             | ✅  |                            |
+| Register owner as doctor                | ✅  |                            |
+| Doctor specialization                   | ✅  | Set during invitation      |
+| Doctor working schedule                 | ✅  |                            |
+| Set / get staff permissions             | ✅  | Owner only                 |
+| Schedule lock (prevent self-management) | ✅  | Owner only                 |
 
 ### Appointments
 
-| Feature                                                   | API | Notes                                  |
-| --------------------------------------------------------- | --- | -------------------------------------- |
-| Book appointment                                          | 🗂️  | Entity with status, queue number, type |
-| Appointment types (bilingual)                             | 🗂️  |                                        |
-| Status flow (Pending → Confirmed → Completed / Cancelled) | 🗂️  |                                        |
-| Queue management                                          | 🗂️  | `QueueNumber` on appointment           |
-| Calendar view                                             | ❌  |                                        |
-| Link appointment to invoice                               | 🗂️  | FK modeled                             |
+| Feature                                                  | API | Notes                                  |
+| -------------------------------------------------------- | --- | -------------------------------------- |
+| Book appointment                                         | 🗂️  | Entity with status, queue number, type |
+| Appointment types (bilingual)                            | 🗂️  |                                        |
+| Status flow (Pending → InProgress → Completed/Cancelled) | 🗂️  |                                        |
+| Queue management                                         | 🗂️  | `QueueNumber` on appointment           |
+| Auto-create invoice on payment                           | 🗂️  | Flow designed, not implemented         |
+| Calendar view                                            | ❌  |                                        |
 
 ### Medical Visits
 
@@ -178,7 +203,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Prescriptions                              | 🗂️  | Dosage, frequency, duration, instructions                          |
 | Lab test orders                            | 🗂️  | Full lifecycle: Ordered → InProgress → ResultsAvailable → Reviewed |
 | Radiology orders                           | 🗂️  | Same lifecycle, image + report file paths                          |
-| Vital measurements                         | 🗂️  | EAV model — each doctor configures their own fields                |
+| Vital measurements                         | 🗂️  | JSON column per measurement attribute                              |
 | Upload medical files                       | 🗂️  | File type enum                                                     |
 | Lab / radiology test catalogs (per clinic) | 🗂️  |                                                                    |
 
@@ -196,30 +221,32 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 | Feature                                         | API | Notes                                               |
 | ----------------------------------------------- | --- | --------------------------------------------------- |
-| Create invoice                                  | 🗂️  | Linked to appointment or visit                      |
+| Create invoice (standalone or from appointment) | 🗂️  | AppointmentId and MedicalVisitId are nullable       |
 | Line items                                      | 🗂️  | Services, medicines, supplies, lab tests, radiology |
+| Exactly-one-source DB constraint                | ✅  | `CK_InvoiceItem_ExactlyOneSource`                   |
 | Discounts and tax                               | 🗂️  |                                                     |
 | Status flow (Draft → Issued → Paid / Cancelled) | 🗂️  | `IsOverdue` domain method                           |
 | Payments (Cash, Card, etc.)                     | 🗂️  | Reference number supported                          |
 
 ### Dashboard & Analytics
 
-| Feature                                                   | API | Notes                          |
-| --------------------------------------------------------- | --- | ------------------------------ |
-| Clinic stats (patients, staff, invitations, subscription) | ✅  |                                |
-| Recent patients widget                                    | ✅  | Last 5                         |
-| SuperAdmin cross-clinic stats                             | ✅  |                                |
-| Usage metrics                                             | 🔧  | Aggregated hourly, no endpoint |
-| Appointment / revenue reports                             | ❌  |                                |
+| Feature                                                   | API | Notes                         |
+| --------------------------------------------------------- | --- | ----------------------------- |
+| Clinic stats (patients, staff, invitations, subscription) | ✅  |                               |
+| Recent patients widget                                    | ✅  | Last 5                        |
+| SuperAdmin cross-clinic stats                             | ✅  |                               |
+| Usage metrics                                             | 🔧  | Aggregated daily, no endpoint |
+| Appointment / revenue reports                             | ❌  |                               |
 
 ### Audit & Compliance
 
-| Feature                                                        | API | Notes                                    |
-| -------------------------------------------------------------- | --- | ---------------------------------------- |
-| Field-level change tracking                                    | ✅  | All `AuditableEntity` types              |
-| Security event logging                                         | ✅  | Login, logout, failed attempts, lockouts |
-| Audit log query (filter by entity, action, user, clinic, date) | ✅  | SuperAdmin only                          |
-| 12-month retention with auto-cleanup                           | ✅  | Background job                           |
+| Feature                                                         | API | Notes                                    |
+| --------------------------------------------------------------- | --- | ---------------------------------------- |
+| Field-level change tracking                                     | ✅  | All `AuditableEntity` types              |
+| Security event logging                                          | ✅  | Login, logout, failed attempts, lockouts |
+| Permission change logging                                       | ✅  | Granted/revoked diff per change          |
+| Audit log query (filter by entity, action, user, clinic, date)  | ✅  | SuperAdmin only                          |
+| Batched retention cleanup (1 month standard, 3 months security) | ✅  | Hangfire job, 5,000 rows/batch           |
 
 ### Reference Data
 
