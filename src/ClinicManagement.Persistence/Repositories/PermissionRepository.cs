@@ -3,29 +3,50 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ClinicManagement.Persistence.Repositories;
 
 public class PermissionRepository : IPermissionRepository
 {
     private readonly ApplicationDbContext _db;
+    private readonly IMemoryCache _cache;
 
-    public PermissionRepository(ApplicationDbContext db) => _db = db;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
-    public async Task<List<Permission>> GetByMemberIdAsync(Guid memberId, CancellationToken ct = default)
-        => await _db.Set<ClinicMemberPermission>()
+    // Consistent cache key format — scoped per member (multi-tenant safe:
+    // memberId already encodes the clinic context via ClinicMember).
+    private static string CacheKey(Guid memberId) => $"permissions:{memberId}";
+
+    public PermissionRepository(ApplicationDbContext db, IMemoryCache cache)
+    {
+        _db    = db;
+        _cache = cache;
+    }
+
+    public async Task<List<Permission>> GetByMemberIdAsync(
+        Guid memberId, CancellationToken ct = default)
+    {
+        if (_cache.TryGetValue(CacheKey(memberId), out List<Permission>? cached))
+            return cached!;
+
+        var permissions = await _db.Set<ClinicMemberPermission>()
             .Where(p => p.ClinicMemberId == memberId)
             .Select(p => p.Permission)
             .ToListAsync(ct);
 
-    public async Task SetPermissionsAsync(Guid memberId, IEnumerable<Permission> permissions, CancellationToken ct = default)
+        _cache.Set(CacheKey(memberId), permissions, CacheDuration);
+        return permissions;
+    }
+
+    public async Task SetPermissionsAsync(
+        Guid memberId, IEnumerable<Permission> permissions, CancellationToken ct = default)
     {
-        // Delete all existing permissions for this member
+        // Replace the full permission set atomically
         await _db.Set<ClinicMemberPermission>()
             .Where(p => p.ClinicMemberId == memberId)
             .ExecuteDeleteAsync(ct);
 
-        // Insert the new set
         var rows = permissions.Select(p => new ClinicMemberPermission
         {
             ClinicMemberId = memberId,
@@ -33,9 +54,13 @@ public class PermissionRepository : IPermissionRepository
         });
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
         await _db.SaveChangesAsync(ct);
+
+        // Invalidate so the next read reflects the new set
+        InvalidateCache(memberId);
     }
 
-    public async Task SeedDefaultsAsync(Guid memberId, ClinicMemberRole role, CancellationToken ct = default)
+    public async Task SeedDefaultsAsync(
+        Guid memberId, ClinicMemberRole role, CancellationToken ct = default)
     {
         var defaults = DefaultPermissions.ForRole(role);
         var rows = defaults.Select(p => new ClinicMemberPermission
@@ -44,6 +69,10 @@ public class PermissionRepository : IPermissionRepository
             Permission     = p,
         });
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
-        // Caller is responsible for SaveChangesAsync
+        // Caller is responsible for SaveChangesAsync.
+        // No cache invalidation here — member is new, no stale entry exists.
     }
+
+    public void InvalidateCache(Guid memberId)
+        => _cache.Remove(CacheKey(memberId));
 }

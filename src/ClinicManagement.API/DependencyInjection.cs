@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Hangfire;
 using ClinicManagement.API.Middleware;
@@ -93,6 +92,10 @@ public static class DependencyInjection
     {
         services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+        // Dynamic policy provider — generates Permission:X policies on-demand.
+        // Any new Permission enum value is automatically available without touching DI.
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
         services.AddAuthorization(options =>
         {
             // ── Role-based policies ───────────────────────────────────────────
@@ -112,15 +115,8 @@ public static class DependencyInjection
                 policy.RequireRole(UserRoles.SuperAdmin);
             });
 
-            // ── Permission-based policies (one per Permission enum value) ─────
-            foreach (var permission in Enum.GetValues<Permission>())
-            {
-                options.AddPolicy($"Permission:{permission}", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.AddRequirements(new PermissionRequirement(permission.ToString()));
-                });
-            }
+            // Permission:X policies are generated dynamically by PermissionPolicyProvider.
+            // No foreach loop needed here.
         });
     }
 

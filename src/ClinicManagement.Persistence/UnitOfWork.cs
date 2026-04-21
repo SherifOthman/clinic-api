@@ -29,7 +29,7 @@ public class UnitOfWork : IUnitOfWork
     public IReferenceRepository          Reference          => field ??= new ReferenceRepository(_context, _cache);
     public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);
     public IGeoLocationRepository        GeoLocations       => field ??= new GeoLocationRepository(_context);
-    public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context);
+    public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context, _cache);
 
     public IRepository<ChronicDisease>   ChronicDiseases   => field ??= new Repository<ChronicDisease>(_context);
     public IRepository<Specialization>   Specializations   => field ??= new Repository<Specialization>(_context);

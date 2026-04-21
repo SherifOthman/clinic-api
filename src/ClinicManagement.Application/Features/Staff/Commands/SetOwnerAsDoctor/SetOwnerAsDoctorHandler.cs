@@ -70,6 +70,11 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
         });
 
         await _uow.SaveChangesAsync(cancellationToken);
+
+        // Role changed (Doctor added) — invalidate cached permissions so the
+        // next token refresh picks up the updated set.
+        _uow.Permissions.InvalidateCache(existingMember.Id);
+
         return Result.Success();
     }
 }
