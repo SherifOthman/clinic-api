@@ -13,4 +13,16 @@ public interface IPermissionRepository
     /// Call after any operation that changes a member's permissions or role.
     /// </summary>
     void InvalidateCache(Guid memberId);
+
+    /// <summary>
+    /// Returns the default permissions for a role from the database.
+    /// Falls back to DefaultPermissions.cs if the table is empty (migration period).
+    /// </summary>
+    Task<List<Permission>> GetDefaultsForRoleAsync(ClinicMemberRole role, CancellationToken ct = default);
+
+    /// <summary>
+    /// Seeds the RoleDefaultPermissions table from DefaultPermissions.cs.
+    /// Idempotent — safe to call on every startup.
+    /// </summary>
+    Task SeedRoleDefaultsAsync(CancellationToken ct = default);
 }

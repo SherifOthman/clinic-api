@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Seeders;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,8 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
             await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
+            // Seed role → permission defaults into DB (idempotent, replaces DefaultPermissions.cs as source of truth)
+            await services.GetRequiredService<IPermissionRepository>().SeedRoleDefaultsAsync();
             Log.Information("Database seeded successfully");
         }
         catch (Exception ex)

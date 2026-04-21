@@ -14,9 +14,11 @@ public class PermissionRepository : IPermissionRepository
 
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
-    // Consistent cache key format — scoped per member (multi-tenant safe:
-    // memberId already encodes the clinic context via ClinicMember).
-    private static string CacheKey(Guid memberId) => $"permissions:{memberId}";
+    // Cache key format — memberId already encodes the clinic context (multi-tenant safe)
+    private static string MemberCacheKey(Guid memberId) => $"permissions:{memberId}";
+
+    // Separate cache for role defaults — shared across all members of the same role
+    private static string RoleCacheKey(ClinicMemberRole role) => $"role-defaults:{role}";
 
     public PermissionRepository(ApplicationDbContext db, IMemoryCache cache)
     {
@@ -24,10 +26,12 @@ public class PermissionRepository : IPermissionRepository
         _cache = cache;
     }
 
+    // ── Member permissions ────────────────────────────────────────────────────
+
     public async Task<List<Permission>> GetByMemberIdAsync(
         Guid memberId, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKey(memberId), out List<Permission>? cached))
+        if (_cache.TryGetValue(MemberCacheKey(memberId), out List<Permission>? cached))
             return cached!;
 
         var permissions = await _db.Set<ClinicMemberPermission>()
@@ -35,14 +39,13 @@ public class PermissionRepository : IPermissionRepository
             .Select(p => p.Permission)
             .ToListAsync(ct);
 
-        _cache.Set(CacheKey(memberId), permissions, CacheDuration);
+        _cache.Set(MemberCacheKey(memberId), permissions, CacheDuration);
         return permissions;
     }
 
     public async Task SetPermissionsAsync(
         Guid memberId, IEnumerable<Permission> permissions, CancellationToken ct = default)
     {
-        // Replace the full permission set atomically
         await _db.Set<ClinicMemberPermission>()
             .Where(p => p.ClinicMemberId == memberId)
             .ExecuteDeleteAsync(ct);
@@ -55,14 +58,15 @@ public class PermissionRepository : IPermissionRepository
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
         await _db.SaveChangesAsync(ct);
 
-        // Invalidate so the next read reflects the new set
         InvalidateCache(memberId);
     }
 
     public async Task SeedDefaultsAsync(
         Guid memberId, ClinicMemberRole role, CancellationToken ct = default)
     {
-        var defaults = DefaultPermissions.ForRole(role);
+        // Use DB-driven defaults if available, fall back to code constants
+        var defaults = await GetDefaultsForRoleAsync(role, ct);
+
         var rows = defaults.Select(p => new ClinicMemberPermission
         {
             ClinicMemberId = memberId,
@@ -70,9 +74,62 @@ public class PermissionRepository : IPermissionRepository
         });
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
         // Caller is responsible for SaveChangesAsync.
-        // No cache invalidation here — member is new, no stale entry exists.
+        // No cache invalidation — member is new, no stale entry exists.
     }
 
     public void InvalidateCache(Guid memberId)
-        => _cache.Remove(CacheKey(memberId));
+        => _cache.Remove(MemberCacheKey(memberId));
+
+    // ── Role default permissions ──────────────────────────────────────────────
+
+    public async Task<List<Permission>> GetDefaultsForRoleAsync(
+        ClinicMemberRole role, CancellationToken ct = default)
+    {
+        if (_cache.TryGetValue(RoleCacheKey(role), out List<Permission>? cached))
+            return cached!;
+
+        var dbDefaults = await _db.Set<RoleDefaultPermission>()
+            .Where(r => r.Role == role)
+            .Select(r => r.Permission)
+            .ToListAsync(ct);
+
+        // Fallback to code constants during migration period
+        var result = dbDefaults.Count > 0
+            ? dbDefaults
+            : DefaultPermissions.ForRole(role).ToList();
+
+        // Role defaults are stable — cache longer than member permissions
+        _cache.Set(RoleCacheKey(role), result, TimeSpan.FromHours(1));
+        return result;
+    }
+
+    public async Task SeedRoleDefaultsAsync(CancellationToken ct = default)
+    {
+        // Idempotent — skip if already seeded
+        if (await _db.Set<RoleDefaultPermission>().AnyAsync(ct))
+            return;
+
+        var roles = Enum.GetValues<ClinicMemberRole>();
+        var rows  = new List<RoleDefaultPermission>();
+
+        foreach (var role in roles)
+        {
+            var defaults = DefaultPermissions.ForRole(role);
+            rows.AddRange(defaults.Select(p => new RoleDefaultPermission
+            {
+                Role       = role,
+                Permission = p,
+            }));
+        }
+
+        if (rows.Count > 0)
+        {
+            await _db.Set<RoleDefaultPermission>().AddRangeAsync(rows, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        // Invalidate role caches so next read picks up DB values
+        foreach (var role in roles)
+            _cache.Remove(RoleCacheKey(role));
+    }
 }
