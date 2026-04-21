@@ -43,6 +43,34 @@ public static class RateLimitPolicies
 
 public static class RateLimitingExtensions
 {
+    // ── Auth limits (per-IP, unauthenticated) ─────────────────────────────────
+    private const int    LoginPermits          = 10;
+    private const int    LoginWindowMinutes    = 15;
+    private const int    RegisterPermits       = 5;
+    private const int    RegisterWindowHours   = 1;
+    private const int    ForgotPasswordPermits = 3;
+    private const int    ForgotPasswordMinutes = 15;
+    private const int    ResetPermits          = 5;
+    private const int    ResetWindowMinutes    = 15;
+    private const int    RefreshPermits        = 30;
+    private const int    RefreshWindowMinutes  = 1;
+    private const int    EnumerationPermits    = 20;
+    private const int    EnumerationMinutes    = 1;
+
+    // ── Authenticated user limits (per-user JWT sub) ──────────────────────────
+    private const int    UserReadsTokenLimit   = 200;
+    private const int    UserWritesTokenLimit  = 60;
+    private const int    UserDeletesPermits    = 20;
+    private const int    UserDeletesMinutes    = 1;
+    private const int    UserUploadPermits     = 10;
+    private const int    UserUploadHours       = 1;
+    private const int    UserOncePermits       = 3;
+    private const int    UserOnceDays          = 1;
+
+    // ── Anonymous static data (per-IP) ────────────────────────────────────────
+    private const int    AnonStaticBurst       = 15;
+    private const int    AnonStaticReplenish   = 60;
+
     public static IServiceCollection AddRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -64,106 +92,105 @@ public static class RateLimitingExtensions
             // Login: 10 attempts per 15 minutes per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthLogin, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(15);
+                o.Window            = TimeSpan.FromMinutes(LoginWindowMinutes);
                 o.SegmentsPerWindow = 3;
-                o.PermitLimit     = 10;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = LoginPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
             // Register: 5 per hour per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthRegister, o =>
             {
-                o.Window          = TimeSpan.FromHours(1);
+                o.Window            = TimeSpan.FromHours(RegisterWindowHours);
                 o.SegmentsPerWindow = 4;
-                o.PermitLimit     = 5;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = RegisterPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
-            // Forgot password / resend verification: 3 per 15 min per IP
+            // Forgot password: 3 per 15 min per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthForgotPassword, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(15);
+                o.Window            = TimeSpan.FromMinutes(ForgotPasswordMinutes);
                 o.SegmentsPerWindow = 3;
-                o.PermitLimit     = 3;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = ForgotPasswordPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
+            // Resend verification: 3 per 15 min per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthResendVerification, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(15);
+                o.Window            = TimeSpan.FromMinutes(ForgotPasswordMinutes);
                 o.SegmentsPerWindow = 3;
-                o.PermitLimit     = 3;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = ForgotPasswordPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
             // Reset / confirm email: 5 per 15 min per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthResetPassword, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(15);
+                o.Window            = TimeSpan.FromMinutes(ResetWindowMinutes);
                 o.SegmentsPerWindow = 3;
-                o.PermitLimit     = 5;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = ResetPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthConfirmEmail, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(15);
+                o.Window            = TimeSpan.FromMinutes(ResetWindowMinutes);
                 o.SegmentsPerWindow = 3;
-                o.PermitLimit     = 5;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = ResetPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
             // Token refresh: 30 per minute per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthRefresh, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(1);
+                o.Window            = TimeSpan.FromMinutes(RefreshWindowMinutes);
                 o.SegmentsPerWindow = 2;
-                o.PermitLimit     = 30;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = RefreshPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
             // Email/username availability check: 20 per minute per IP
             options.AddSlidingWindowLimiter(RateLimitPolicies.AuthEnumeration, o =>
             {
-                o.Window          = TimeSpan.FromMinutes(1);
+                o.Window            = TimeSpan.FromMinutes(EnumerationMinutes);
                 o.SegmentsPerWindow = 2;
-                o.PermitLimit     = 20;
-                o.QueueLimit      = 0;
+                o.PermitLimit       = EnumerationPermits;
+                o.QueueLimit        = 0;
                 o.AutoReplenishment = true;
             });
 
             // ── Authenticated endpoints (per-user via JWT sub claim) ──────────
 
-            // Reads: 200 per minute per user, burst of 30
-            // TokenBucket: authenticated users legitimately burst (page load fires multiple GETs)
+            // Reads: 200 per minute per user — TokenBucket allows burst (page load fires multiple GETs)
             options.AddPolicy(RateLimitPolicies.UserReads, context =>
                 RateLimitPartition.GetTokenBucketLimiter(
                     GetUserId(context),
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit          = 200,
-                        TokensPerPeriod     = 200,
+                        TokenLimit          = UserReadsTokenLimit,
+                        TokensPerPeriod     = UserReadsTokenLimit,
                         ReplenishmentPeriod = TimeSpan.FromMinutes(1),
                         QueueLimit          = 0,
                         AutoReplenishment   = true,
                     }));
 
-            // Writes: 60 per minute per user, burst of 10
-            // TokenBucket: allows short bursts (e.g. saving multiple fields) without penalizing
+            // Writes: 60 per minute per user — TokenBucket allows short bursts (saving multiple fields)
             options.AddPolicy(RateLimitPolicies.UserWrites, context =>
                 RateLimitPartition.GetTokenBucketLimiter(
                     GetUserId(context),
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit          = 60,
-                        TokensPerPeriod     = 60,
+                        TokenLimit          = UserWritesTokenLimit,
+                        TokensPerPeriod     = UserWritesTokenLimit,
                         ReplenishmentPeriod = TimeSpan.FromMinutes(1),
                         QueueLimit          = 0,
                         AutoReplenishment   = true,
@@ -175,9 +202,9 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromMinutes(1),
+                        Window            = TimeSpan.FromMinutes(UserDeletesMinutes),
                         SegmentsPerWindow = 3,
-                        PermitLimit       = 20,
+                        PermitLimit       = UserDeletesPermits,
                         QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
@@ -188,8 +215,8 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromHours(1),
-                        PermitLimit       = 10,
+                        Window            = TimeSpan.FromHours(UserUploadHours),
+                        PermitLimit       = UserUploadPermits,
                         QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
@@ -200,23 +227,23 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromDays(1),
-                        PermitLimit       = 3,
+                        Window            = TimeSpan.FromDays(UserOnceDays),
+                        PermitLimit       = UserOncePermits,
                         QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
             // ── Anonymous static/reference data (per-IP) ─────────────────────
 
-            // TokenBucket: page load fetches countries+states+cities simultaneously (burst of 10)
+            // TokenBucket: page load fetches countries+states+cities simultaneously (burst of 15)
             // 60 per minute sustained, burst up to 15
             options.AddPolicy(RateLimitPolicies.AnonStatic, context =>
                 RateLimitPartition.GetTokenBucketLimiter(
                     context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit          = 15,
-                        TokensPerPeriod     = 60,
+                        TokenLimit          = AnonStaticBurst,
+                        TokensPerPeriod     = AnonStaticReplenish,
                         ReplenishmentPeriod = TimeSpan.FromMinutes(1),
                         QueueLimit          = 0,
                         AutoReplenishment   = true,
