@@ -4,7 +4,6 @@ using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Application.Features.Onboarding.Commands;
 
@@ -12,13 +11,11 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<User> _userManager;
 
-    public CompleteOnboardingHandler(IUnitOfWork uow, ICurrentUserService currentUserService, UserManager<User> userManager)
+    public CompleteOnboardingHandler(IUnitOfWork uow, ICurrentUserService currentUserService)
     {
         _uow                = uow;
         _currentUserService = currentUserService;
-        _userManager        = userManager;
     }
 
     public async Task<Result> Handle(CompleteOnboarding request, CancellationToken cancellationToken)
@@ -31,10 +28,6 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null)
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
-
-        var userRoles = await _userManager.GetRolesAsync(user);
-        if (!userRoles.Contains(UserRoles.ClinicOwner))
-            return Result.Failure(ErrorCodes.FORBIDDEN, "User must be clinic owner");
 
         if (!await _uow.Reference.SubscriptionPlanExistsAsync(request.SubscriptionPlanId, cancellationToken))
             return Result.Failure(ErrorCodes.PLAN_NOT_FOUND, "The selected subscription plan does not exist");
@@ -73,6 +66,7 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             });
         }
 
+        await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

@@ -4,6 +4,7 @@ using ClinicManagement.Application.Features.Staff.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Infrastructure.Services;
 using FluentAssertions;
 using Moq;
@@ -22,8 +23,17 @@ public class SaveWorkingDaysHandlerTests
 
     private SaveWorkingDaysHandler CreateHandlerAsOwner()
     {
+        var ownerId = Guid.NewGuid();
         var svc = new Mock<ICurrentUserService>();
         svc.Setup(s => s.Roles).Returns([UserRoles.ClinicOwner]);
+        svc.Setup(s => s.GetRequiredUserId()).Returns(ownerId);
+
+        // Seed an owner member so PermissionService.GetCurrentMemberAsync finds it
+        var (_, ownerMember) = TestHandlerHelpers.CreateTestMember(
+            userId: ownerId, role: ClinicMemberRole.Owner);
+        _uow.Members.AddAsync(ownerMember).GetAwaiter().GetResult();
+        _uow.SaveChangesAsync().GetAwaiter().GetResult();
+
         return CreateHandler(svc.Object);
     }
 
@@ -43,6 +53,9 @@ public class SaveWorkingDaysHandlerTests
         var (_, member) = TestHandlerHelpers.CreateTestMember();
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
+
+        // Seed ManageSchedule permission for the doctor
+        await _uow.Permissions.SeedDefaultsAsync(member.Id, ClinicMemberRole.Doctor, default);
 
         var doctorInfo = TestHandlerHelpers.CreateTestDoctorInfo(member.Id, spec.Id);
         await _uow.DoctorInfos.AddAsync(doctorInfo);

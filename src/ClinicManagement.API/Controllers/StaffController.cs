@@ -1,3 +1,4 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Contracts.Staff;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
@@ -17,7 +18,7 @@ public class StaffController : BaseApiController
 {
     // ── Clinic-owner-only endpoints ───────────────────────────────────────────
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.InviteStaff)]
     [HttpPost("invite")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(InviteStaffResponseDto), StatusCodes.Status200OK)]
@@ -30,7 +31,7 @@ public class StaffController : BaseApiController
         return !result.IsSuccess ? HandleResult(result, "Failed to send invitation") : Ok(result.Value);
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ViewStaff)]
     [HttpGet("invitations")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<InvitationDto>), StatusCodes.Status200OK)]
@@ -45,7 +46,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve invitations");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ViewStaff)]
     [HttpGet("invitations/{id:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(InvitationDetailDto), StatusCodes.Status200OK)]
@@ -56,7 +57,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve invitation detail");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.InviteStaff)]
     [HttpPost("invitations/{id:guid}/resend")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -84,7 +85,7 @@ public class StaffController : BaseApiController
         return result.IsSuccess ? NoContent() : HandleResult(result, "Invitation Failed");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.InviteStaff)]
     [HttpDelete("invitations/{id}")]
     [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -95,7 +96,7 @@ public class StaffController : BaseApiController
         return HandleNoContent(result, "Failed to cancel invitation");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ViewStaff)]
     [HttpGet]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<StaffDto>), StatusCodes.Status200OK)]
@@ -110,7 +111,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve staff");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpGet("{id:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(StaffDetailDto), StatusCodes.Status200OK)]
@@ -133,7 +134,7 @@ public class StaffController : BaseApiController
         return HandleNoContent(result, "Failed to set owner as doctor");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ManageStaffStatus)]
     [HttpPatch("{id:guid}/active-status")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -147,7 +148,7 @@ public class StaffController : BaseApiController
 
     // ── Schedule endpoints — accessible by clinic owner OR the doctor themselves ──
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpGet("{id:guid}/working-days")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<WorkingDayDto>), StatusCodes.Status200OK)]
@@ -158,7 +159,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve working days");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpPut("{id:guid}/working-days")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -173,7 +174,7 @@ public class StaffController : BaseApiController
         return HandleNoContent(result, "Failed to save working days");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpGet("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<DoctorVisitTypeDto>), StatusCodes.Status200OK)]
@@ -183,7 +184,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve visit types");
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpPut("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
@@ -196,7 +197,7 @@ public class StaffController : BaseApiController
         return !result.IsSuccess ? HandleResult(result, "Failed to save visit type") : Ok(result.Value);
     }
 
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [HttpDelete("{id:guid}/visit-types/{visitTypeId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -219,5 +220,36 @@ public class StaffController : BaseApiController
     {
         var result = await Sender.Send(new SetDoctorScheduleLockCommand(id, request.CanSelfManage), cancellationToken);
         return HandleNoContent(result, "Failed to update schedule lock");
+    }
+
+    // ── Permissions ───────────────────────────────────────────────────────────
+
+    [Authorize(Policy = "RequireClinicOwner")]
+    [HttpGet("{id:guid}/permissions")]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPermissions(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetMemberPermissionsQuery(id), cancellationToken);
+        if (result is null) return NotFound();
+        return Ok(result.Select(p => p.ToString()).ToList());
+    }
+
+    [Authorize(Policy = "RequireClinicOwner")]
+    [HttpPut("{id:guid}/permissions")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetPermissions(
+        Guid id, [FromBody] List<string> permissions, CancellationToken cancellationToken)
+    {
+        var parsed = permissions
+            .Where(p => Enum.TryParse<Permission>(p, out _))
+            .Select(p => Enum.Parse<Permission>(p))
+            .ToList();
+
+        var result = await Sender.Send(new SetMemberPermissionsCommand(id, parsed), cancellationToken);
+        return HandleNoContent(result, "Failed to update permissions");
     }
 }

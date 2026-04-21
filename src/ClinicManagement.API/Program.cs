@@ -5,7 +5,6 @@ using ClinicManagement.Infrastructure.Services;
 using ClinicManagement.Persistence;
 using Hangfire;
 using Serilog;
-
 // ── Bootstrap logger (before DI is built) ────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -45,6 +44,8 @@ try
     RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
     RecurringJob.RemoveIfExists("city-seed"); // cleanup old job names
     RecurringJob.RemoveIfExists("geo-seed");
+    // City seeding: every 2 min, inserts missing, removes itself when done
+    RecurringJob.AddOrUpdate<CitySeedJob>("city-seed", j => j.ExecuteAsync(), "*/2 * * * *");
 
     Log.Information("Clinic Management API started successfully");
     app.Run();

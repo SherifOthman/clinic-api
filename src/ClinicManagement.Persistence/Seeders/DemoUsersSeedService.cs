@@ -117,7 +117,6 @@ public class DemoUsersSeedService
             StartDate = DateTimeOffset.UtcNow, TrialEndDate = DateTimeOffset.UtcNow.AddDays(14), AutoRenew = true,
         });
 
-        // New model
         var ownerMember = new ClinicMember
         {
             PersonId = owner.PersonId, UserId = owner.Id,
@@ -128,6 +127,11 @@ public class DemoUsersSeedService
         {
             ClinicMemberId = ownerMember.Id, SpecializationId = generalPractice?.Id,
         });
+
+        // Seed default permissions for owner
+        var ownerPermissions = DefaultPermissions.ForRole(ClinicMemberRole.Owner)
+            .Select(p => new ClinicMemberPermission { ClinicMemberId = ownerMember.Id, Permission = p });
+        _context.Set<ClinicMemberPermission>().AddRange(ownerPermissions);
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Demo clinic seeded (ClinicId: {Id})", clinic.Id);
@@ -167,6 +171,11 @@ public class DemoUsersSeedService
         };
         _context.Set<ClinicMember>().Add(member);
         _context.Set<DoctorInfo>().Add(new DoctorInfo { ClinicMemberId = member.Id, SpecializationId = cardiology?.Id });
+
+        var doctorPermissions = DefaultPermissions.ForRole(ClinicMemberRole.Doctor)
+            .Select(p => new ClinicMemberPermission { ClinicMemberId = member.Id, Permission = p });
+        _context.Set<ClinicMemberPermission>().AddRange(doctorPermissions);
+
         await _context.SaveChangesAsync();
     }
 
@@ -195,11 +204,17 @@ public class DemoUsersSeedService
             .AnyAsync(m => m.UserId == receptionist.Id && m.ClinicId == clinic.Id);
         if (alreadyMember) return;
 
-        _context.Set<ClinicMember>().Add(new ClinicMember
+        var receptionistMember = new ClinicMember
         {
             PersonId = receptionist.PersonId, UserId = receptionist.Id,
             ClinicId = clinic.Id, Role = ClinicMemberRole.Receptionist, IsActive = true,
-        });
+        };
+        _context.Set<ClinicMember>().Add(receptionistMember);
+
+        var receptionistPermissions = DefaultPermissions.ForRole(ClinicMemberRole.Receptionist)
+            .Select(p => new ClinicMemberPermission { ClinicMemberId = receptionistMember.Id, Permission = p });
+        _context.Set<ClinicMemberPermission>().AddRange(receptionistPermissions);
+
         await _context.SaveChangesAsync();
     }
 

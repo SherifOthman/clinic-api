@@ -28,7 +28,32 @@ public class GeoLocationSeedService
     public async Task SeedAsync(CancellationToken ct = default)
     {
         await SeedCountriesAndStatesAsync(ct);
+        // Cities are seeded via Hangfire CitySeedJob — not at startup
+    }
+
+    public async Task SeedCountriesAndStatesOnlyAsync(CancellationToken ct = default)
+        => await SeedCountriesAndStatesAsync(ct);
+
+    /// <summary>
+    /// Seeds cities in batches. Safe to call repeatedly — skips already-inserted rows.
+    /// Called by Hangfire CitySeedJob every 2 minutes until complete.
+    /// Returns number of cities inserted (0 = fully seeded).
+    /// </summary>
+    public async Task<int> SeedCitiesJobAsync(CancellationToken ct = default)
+    {
+        var total = await _db.GeoCities.CountAsync(ct);
+
+        // Compare DB count against the expected count stored in the file header
+        var expected = await _geoNames.GetExpectedCityCountAsync(ct);
+        if (expected.HasValue && total >= expected.Value)
+        {
+            _logger.LogInformation("Cities: {Count:N0} in DB matches expected {Expected:N0} — skipping.", total, expected.Value);
+            return 0;
+        }
+
         await SeedCitiesAsync(ct);
+        var inserted = await _db.GeoCities.CountAsync(ct) - total;
+        return (int)Math.Max(0, inserted);
     }
 
     // ── Countries + States ────────────────────────────────────────────────────
@@ -115,6 +140,7 @@ public class GeoLocationSeedService
         {
             _logger.LogWarning("Duplicate cities detected ({Total:N0} rows, {Distinct:N0} distinct). Clearing...", total, distinct);
             await _db.Database.ExecuteSqlRawAsync("DELETE FROM GeoCities", ct);
+            total = 0;
         }
 
         var validStateIds = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
@@ -124,8 +150,7 @@ public class GeoLocationSeedService
             return;
         }
 
-        var alreadySeeded = await _db.GeoCities.CountAsync(ct);
-        _logger.LogInformation("Cities already in DB: {Count:N0}", alreadySeeded);
+        _logger.LogInformation("Cities already in DB: {Count:N0}", total);
 
         const int batchSize = 2_000;
         var batch           = new List<GeoCity>(batchSize);
@@ -184,7 +209,7 @@ public class GeoLocationSeedService
         }
 
         if (totalInserted == 0)
-            _logger.LogInformation("Cities: all already seeded ({Count:N0} in DB).", alreadySeeded);
+            _logger.LogInformation("Cities: all already seeded ({Count:N0} in DB).", total);
         else
             _logger.LogInformation("Cities: +{Added:N0} inserted.", totalInserted);
     }

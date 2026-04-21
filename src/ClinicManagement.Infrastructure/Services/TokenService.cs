@@ -2,6 +2,7 @@ using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Infrastructure.Options;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -27,7 +28,7 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public string GenerateAccessToken(User user, IEnumerable<string> roles, Guid? clinicId = null, string? countryCode = null)
+    public string GenerateAccessToken(User user, IEnumerable<string> roles, IEnumerable<Permission> permissions, Guid? clinicId = null, string? countryCode = null)
     {
         var claims = new List<Claim>
         {
@@ -37,6 +38,7 @@ public class TokenService : ITokenService
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(permissions.Select(p => new Claim("permissions", p.ToString())));
 
         if (clinicId.HasValue)
             claims.Add(new Claim("ClinicId", clinicId.Value.ToString()));

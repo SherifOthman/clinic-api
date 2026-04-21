@@ -74,6 +74,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             });
         }
 
+        await _uow.Permissions.SeedDefaultsAsync(member.Id, invitation.Role, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

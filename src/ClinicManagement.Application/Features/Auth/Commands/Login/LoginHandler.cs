@@ -3,6 +3,7 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
@@ -93,7 +94,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
 
         Guid? clinicId = null;
         string? countryCode = null;
-        if (roles.Contains(Roles.ClinicOwner))
+        if (roles.Contains(UserRoles.ClinicOwner))
         {
             var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
             clinicId    = clinic?.Id;
@@ -120,7 +121,9 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             }
         }
 
-        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), clinicId, countryCode);
+        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), 
+            await LoadPermissionsAsync(user.Id, roles, clinicId, cancellationToken),
+            clinicId, countryCode);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
         await _auditWriter.WriteAsync(user.Id, user.FullName,
@@ -131,5 +134,14 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             user.Id, request.IsMobile ? "mobile" : "web", string.Join(", ", roles));
 
         return Result.Success(new TokenResponseDto(accessToken, refreshToken.Token));
+    }
+
+    private async Task<List<Permission>> LoadPermissionsAsync(
+        Guid userId, IList<string> roles, Guid? clinicId, CancellationToken ct)
+    {
+        if (clinicId is null) return [];
+        var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(userId, ct);
+        if (member is null) return [];
+        return await _uow.Permissions.GetByMemberIdAsync(member.Id, ct);
     }
 }

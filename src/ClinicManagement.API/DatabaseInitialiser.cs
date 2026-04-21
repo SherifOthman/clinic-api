@@ -38,7 +38,6 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
             await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
-
             Log.Information("Database seeded successfully");
         }
         catch (Exception ex)

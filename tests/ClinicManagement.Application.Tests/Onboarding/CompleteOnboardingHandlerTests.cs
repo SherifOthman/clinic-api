@@ -5,7 +5,6 @@ using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using FluentAssertions;
-using Microsoft.AspNetCore.Identity;
 using Moq;
 
 namespace ClinicManagement.Application.Tests.Onboarding;
@@ -14,7 +13,6 @@ public class CompleteOnboardingHandlerTests
 {
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly CompleteOnboardingHandler _handler;
     private readonly User _owner;
     private readonly SubscriptionPlan _plan;
@@ -32,10 +30,8 @@ public class CompleteOnboardingHandlerTests
         _uow.SaveChangesAsync().GetAwaiter().GetResult();
 
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(_owner.Id);
-        _userManagerMock.Setup(x => x.GetRolesAsync(_owner))
-            .ReturnsAsync([UserRoles.ClinicOwner]);
 
-        _handler = new CompleteOnboardingHandler(_uow, _currentUserMock.Object, _userManagerMock.Object);
+        _handler = new CompleteOnboardingHandler(_uow, _currentUserMock.Object);
     }
 
     private CompleteOnboarding MakeCommand(bool provideMedical = true, Guid? specId = null) =>
@@ -108,16 +104,5 @@ public class CompleteOnboardingHandlerTests
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCodes.PLAN_NOT_FOUND);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldFail_WhenUserLacksClinicOwnerRole()
-    {
-        _userManagerMock.Setup(x => x.GetRolesAsync(_owner)).ReturnsAsync(["Doctor"]);
-
-        var result = await _handler.Handle(MakeCommand(), default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorCode.Should().Be(ErrorCodes.FORBIDDEN);
     }
 }

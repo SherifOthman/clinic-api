@@ -1,13 +1,14 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
-/// Single place for all "can user X do action Y?" logic.
-/// To add a new role: update IsOwnerAsync() only.
+/// Centralizes "can the current user do X?" checks for schedule/visit-type management.
+/// Uses the permissions system — checks ClinicMemberPermission rows rather than roles.
 /// </summary>
 public class PermissionService : IPermissionService
 {
@@ -23,23 +24,38 @@ public class PermissionService : IPermissionService
     public async Task<SchedulePermissionResult> CanManageScheduleAsync(
         Guid targetMemberId, CancellationToken ct = default)
     {
-        if (await IsOwnerAsync(ct)) return SchedulePermissionResult.Allow();
+        var currentMember = await GetCurrentMemberAsync(ct);
+        if (currentMember is null) return SchedulePermissionResult.Deny("Not a clinic member");
 
-        var currentMemberId = await GetCurrentMemberIdAsync(ct);
-        if (currentMemberId != targetMemberId)
+        // Owner always allowed
+        if (currentMember.IsOwner) return SchedulePermissionResult.Allow();
+
+        // Must have ManageSchedule permission
+        var permissions = await _uow.Permissions.GetByMemberIdAsync(currentMember.Id, ct);
+        if (!permissions.Contains(Permission.ManageSchedule))
+            return SchedulePermissionResult.Deny("You do not have permission to manage schedules");
+
+        // Non-owners can only manage their own schedule
+        if (currentMember.Id != targetMemberId)
             return SchedulePermissionResult.Deny("You can only manage your own schedule");
 
-        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(targetMemberId, ct);
+        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(currentMember.Id, ct);
         return await CheckSelfManageLockAsync(doctorInfoId, ct);
     }
 
     public async Task<SchedulePermissionResult> CanManageVisitTypesAsync(
         Guid targetMemberId, CancellationToken ct = default)
     {
-        if (await IsOwnerAsync(ct)) return SchedulePermissionResult.Allow();
+        var currentMember = await GetCurrentMemberAsync(ct);
+        if (currentMember is null) return SchedulePermissionResult.Deny("Not a clinic member");
 
-        var currentMemberId = await GetCurrentMemberIdAsync(ct);
-        if (currentMemberId != targetMemberId)
+        if (currentMember.IsOwner) return SchedulePermissionResult.Allow();
+
+        var permissions = await _uow.Permissions.GetByMemberIdAsync(currentMember.Id, ct);
+        if (!permissions.Contains(Permission.ManageVisitTypes))
+            return SchedulePermissionResult.Deny("You do not have permission to manage visit types");
+
+        if (currentMember.Id != targetMemberId)
             return SchedulePermissionResult.Deny("You can only manage your own visit types");
 
         var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(targetMemberId, ct);
@@ -49,13 +65,16 @@ public class PermissionService : IPermissionService
     public async Task<SchedulePermissionResult> CanManageVisitTypesByDoctorIdAsync(
         Guid doctorInfoId, CancellationToken ct = default)
     {
-        if (await IsOwnerAsync(ct)) return SchedulePermissionResult.Allow();
+        var currentMember = await GetCurrentMemberAsync(ct);
+        if (currentMember is null) return SchedulePermissionResult.Deny("Not a clinic member");
 
-        var currentMemberId = await GetCurrentMemberIdAsync(ct);
-        if (currentMemberId == Guid.Empty)
-            return SchedulePermissionResult.Deny("You can only manage your own visit types");
+        if (currentMember.IsOwner) return SchedulePermissionResult.Allow();
 
-        var currentDoctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(currentMemberId, ct);
+        var permissions = await _uow.Permissions.GetByMemberIdAsync(currentMember.Id, ct);
+        if (!permissions.Contains(Permission.ManageVisitTypes))
+            return SchedulePermissionResult.Deny("You do not have permission to manage visit types");
+
+        var currentDoctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(currentMember.Id, ct);
         if (currentDoctorInfoId != doctorInfoId)
             return SchedulePermissionResult.Deny("You can only manage your own visit types");
 
@@ -64,28 +83,15 @@ public class PermissionService : IPermissionService
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private async Task<bool> IsOwnerAsync(CancellationToken ct)
-    {
-        if (_currentUser.Roles.Contains(UserRoles.ClinicOwner)) return true;
-        var member = await _uow.Members.GetByUserIdAsync(_currentUser.GetRequiredUserId(), ct);
-        return member?.Role == ClinicMemberRole.Owner;
-    }
-
-    private async Task<Guid> GetCurrentMemberIdAsync(CancellationToken ct)
-    {
-        var member = await _uow.Members.GetByUserIdAsync(_currentUser.GetRequiredUserId(), ct);
-        return member?.Id ?? Guid.Empty;
-    }
+    private async Task<ClinicMember?> GetCurrentMemberAsync(CancellationToken ct)
+        => await _uow.Members.GetByUserIdAsync(_currentUser.GetRequiredUserId(), ct);
 
     private async Task<SchedulePermissionResult> CheckSelfManageLockAsync(Guid doctorInfoId, CancellationToken ct)
     {
-        if (doctorInfoId == Guid.Empty)
-            return SchedulePermissionResult.Allow();
-
+        if (doctorInfoId == Guid.Empty) return SchedulePermissionResult.Allow();
         var doctorInfo = await _uow.DoctorInfos.GetByIdAsync(doctorInfoId, ct);
-        if (doctorInfo is not null && !doctorInfo.CanSelfManageSchedule)
-            return SchedulePermissionResult.Deny("Schedule management is locked by the clinic owner");
-
-        return SchedulePermissionResult.Allow();
+        return doctorInfo is not null && !doctorInfo.CanSelfManageSchedule
+            ? SchedulePermissionResult.Deny("Schedule management is locked by the clinic owner")
+            : SchedulePermissionResult.Allow();
     }
 }

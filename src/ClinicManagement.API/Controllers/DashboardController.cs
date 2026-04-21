@@ -13,7 +13,7 @@ public class DashboardController : BaseApiController
 {
     /// <summary>Clinic staff dashboard stats — patients, staff, invitations, subscription.</summary>
     [HttpGet("stats")]
-    [Authorize(Policy = "RequireClinic")]
+    [Authorize]
     [ProducesResponseType(typeof(DashboardStatsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats(CancellationToken cancellationToken = default)
     {

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize(Policy = "RequireClinic")]
+[Authorize]
 [Route("api/chronic-diseases")]
 [EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class ChronicDiseasesController : BaseApiController

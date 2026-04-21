@@ -28,19 +28,19 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
         var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null) return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
 
-        var userRoles = await _userManager.GetRolesAsync(user);
-        if (!userRoles.Contains(UserRoles.ClinicOwner))
-            return Result.Failure(ErrorCodes.FORBIDDEN, "Only clinic owners can use this endpoint");
-
+        // Endpoint is guarded by RequireClinicOwner policy — no redundant role check needed here.
         var clinic = await _uow.Clinics.GetByOwnerIdAsync(userId, cancellationToken);
         if (clinic is null)
             return Result.Failure(ErrorCodes.CLINIC_NOT_FOUND, "Clinic not found. Please complete onboarding first.");
 
-        // Check if already a doctor via new model
+        // Check if already a doctor
         var existingMember = await _uow.Members.GetByUserIdAsync(userId, cancellationToken);
         if (existingMember?.DoctorInfo is not null)
             return Result.Failure(ErrorCodes.ALREADY_EXISTS, "You are already registered as a doctor");
 
+        // AddToRoleAsync is still needed — ASP.NET Identity roles are used in JWT claims
+        // for the RequireClinicOwner policy to work on subsequent requests.
+        var userRoles = await _userManager.GetRolesAsync(user);
         if (!userRoles.Contains(UserRoles.Doctor))
         {
             var roleResult = await _userManager.AddToRoleAsync(user, UserRoles.Doctor);
@@ -59,6 +59,8 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
                 IsActive = true,
             };
             await _uow.Members.AddAsync(existingMember);
+            await _uow.SaveChangesAsync(cancellationToken);
+            await _uow.Permissions.SeedDefaultsAsync(existingMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         }
 
         await _uow.DoctorInfos.AddAsync(new DoctorInfo

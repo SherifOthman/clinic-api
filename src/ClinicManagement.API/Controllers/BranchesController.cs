@@ -1,7 +1,9 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Branches.Commands;
 using ClinicManagement.Application.Features.Branches.Queries;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -11,9 +13,8 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/branches")]
 public class BranchesController : BaseApiController
 {
-    // All clinic members can read branches (doctors need the list for their schedule)
     [HttpGet]
-    [Authorize(Policy = "RequireClinic")]
+    [RequirePermission(Permission.ViewBranches)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<BranchDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBranches(CancellationToken cancellationToken = default)
@@ -23,7 +24,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPost]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ManageBranches)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -36,7 +37,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ManageBranches)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -48,7 +49,7 @@ public class BranchesController : BaseApiController
     }
 
     [HttpPatch("{id:guid}/active-status")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ManageBranches)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]

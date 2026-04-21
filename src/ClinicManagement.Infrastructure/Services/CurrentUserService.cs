@@ -64,6 +64,8 @@ public class CurrentUserService : ICurrentUserService
 
     public IEnumerable<string> Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)?.Select(x => x.Value) ?? Enumerable.Empty<string>();
 
+    public IEnumerable<string> Permissions => _httpContextAccessor.HttpContext?.User?.FindAll("permissions")?.Select(x => x.Value) ?? Enumerable.Empty<string>();
+
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
     public Guid GetRequiredUserId()

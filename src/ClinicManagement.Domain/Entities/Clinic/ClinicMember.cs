@@ -39,4 +39,5 @@ public class ClinicMember : AuditableTenantEntity
     public Person Person { get; set; } = null!;
     public User? User { get; set; }
     public DoctorInfo? DoctorInfo { get; set; }
+    public ICollection<ClinicMemberPermission> Permissions { get; set; } = new List<ClinicMemberPermission>();
 }
