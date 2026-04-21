@@ -6,7 +6,8 @@ using MediatR;
 namespace ClinicManagement.Application.Features.Appointments.Commands;
 
 /// <summary>
-/// TODO: Implement queue-based appointment creation.
+/// Placeholder handler for queue-based appointment creation.
+/// Not yet implemented — returns a clear error until the feature is built.
 /// Needs: IAppointmentRepository + IQueueNumberRepository added to IUnitOfWork.
 /// </summary>
 public class CreateQueueNumberAppointmentHandler

@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Queries;
@@ -31,7 +32,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
             permissions = memberPermissions.Select(p => p.ToString()).ToList();
         }
 
-        if (roles.Any(r => r.RoleName == Roles.Doctor))
+        if (roles.Any(r => r.RoleName == UserRoles.Doctor))
         {
             var spec = await _uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
             specializationNameEn = spec?.NameEn;

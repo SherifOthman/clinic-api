@@ -63,11 +63,11 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             return Result.Failure(ErrorCodes.USER_CREATION_FAILED, errors);
         }
 
-        var roleResult = await _userManager.AddToRoleAsync(user, Roles.ClinicOwner);
+        var roleResult = await _userManager.AddToRoleAsync(user, UserRoles.ClinicOwner);
         if (!roleResult.Succeeded)
         {
             var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-            _logger.LogError("Failed to add user {Email} to role {Role}: {Errors}", request.Email, Roles.ClinicOwner, errors);
+            _logger.LogError("Failed to add user {Email} to role {Role}: {Errors}", request.Email, UserRoles.ClinicOwner, errors);
             await _userManager.DeleteAsync(user);
             return Result.Failure(ErrorCodes.ROLE_ASSIGNMENT_FAILED, $"Failed to assign role: {errors}");
         }
@@ -76,9 +76,9 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         catch (Exception ex) { _logger.LogError(ex, "Failed to send confirmation email to {Email}", request.Email); }
 
         await _auditWriter.WriteAsync(user.Id, user.FullName, user.UserName, user.Email,
-            Roles.ClinicOwner, clinicId: null, "Register", cancellationToken: cancellationToken);
+            UserRoles.ClinicOwner, clinicId: null, "Register", cancellationToken: cancellationToken);
 
-        _logger.LogInformation("User registered successfully: {Email} with role {Role}", request.Email, Roles.ClinicOwner);
+        _logger.LogInformation("User registered successfully: {Email} with role {Role}", request.Email, UserRoles.ClinicOwner);
         return Result.Success();
     }
 }

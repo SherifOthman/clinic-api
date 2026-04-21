@@ -95,14 +95,9 @@ public static class DependencyInjection
 
         services.AddAuthorization(options =>
         {
-            // ── Clinic-level role policies (kept for route guards) ────────────
-            options.AddPolicy("RequireClinic", policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole(
-                    UserRoles.ClinicOwner, UserRoles.Doctor,
-                    UserRoles.Receptionist, UserRoles.SuperAdmin);
-            });
+            // ── Role-based policies ───────────────────────────────────────────
+            // Roles are still included in JWT claims so these policies work.
+            // Fine-grained access control uses [RequirePermission] instead.
 
             options.AddPolicy("RequireClinicOwner", policy =>
             {

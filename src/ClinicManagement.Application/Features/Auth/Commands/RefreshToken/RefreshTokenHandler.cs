@@ -4,6 +4,7 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -64,7 +65,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             string? countryCode = null;
             var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
 
-            if (roles.Contains(Roles.ClinicOwner))
+            if (roles.Contains(UserRoles.ClinicOwner))
             {
                 var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
                 clinicId    = clinic?.Id;

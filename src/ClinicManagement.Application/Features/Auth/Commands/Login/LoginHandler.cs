@@ -94,7 +94,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
 
         Guid? clinicId = null;
         string? countryCode = null;
-        if (roles.Contains(Roles.ClinicOwner))
+        if (roles.Contains(UserRoles.ClinicOwner))
         {
             var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
             clinicId    = clinic?.Id;
