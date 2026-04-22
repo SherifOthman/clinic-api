@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260420162730_AddClinicMemberPermissions")]
-    partial class AddClinicMemberPermissions
+    [Migration("20260422175020_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -32,6 +32,9 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClinicId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -90,6 +93,8 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClinicId");
 
                     b.HasIndex("VisitTypeId");
 
@@ -429,6 +434,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("ClinicMemberId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Permission")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -719,6 +727,9 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("StateGeonameId");
 
+                    b.HasIndex("StateGeonameId", "NameEn")
+                        .IsUnique();
+
                     b.ToTable("GeoCities", (string)null);
                 });
 
@@ -787,6 +798,12 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("ClinicId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("Discount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -798,6 +815,9 @@ namespace ClinicManagement.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("IssuedDate")
                         .HasColumnType("datetimeoffset");
@@ -824,6 +844,12 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -886,6 +912,8 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InvoiceId");
+
                     b.HasIndex("LabTestOrderId");
 
                     b.HasIndex("MedicalServiceId");
@@ -900,6 +928,8 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.ToTable("InvoiceItem", t =>
                         {
+                            t.HasCheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
+
                             t.HasCheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
 
                             t.HasCheckConstraint("CK_InvoiceItem_SaleUnit", "[SaleUnit] IS NULL OR [SaleUnit] IN ('Box', 'Strip')");
@@ -1055,19 +1085,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool?>("BooleanValue")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("DateTimeValue")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<decimal?>("DecimalValue")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<int?>("IntValue")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("MeasurementAttributeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1075,12 +1092,19 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("StringValue")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("ValuesJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("{}");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MedicalVisitId", "MeasurementAttributeId")
+                        .IsUnique();
 
                     b.ToTable("MedicalVisitMeasurement");
                 });
@@ -1279,8 +1303,8 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<string>("PatientCode")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
 
                     b.Property<Guid>("PersonId")
                         .HasColumnType("uniqueidentifier");
@@ -1300,12 +1324,12 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("CountryGeonameId");
 
-                    b.HasIndex("PatientCode")
-                        .IsUnique();
-
                     b.HasIndex("PersonId");
 
                     b.HasIndex("StateGeonameId");
+
+                    b.HasIndex("ClinicId", "PatientCode")
+                        .IsUnique();
 
                     b.HasIndex("ClinicId", "IsDeleted", "CreatedAt");
 
@@ -1334,6 +1358,21 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("PatientId");
 
                     b.ToTable("PatientChronicDisease");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientCounter", b =>
+                {
+                    b.Property<Guid>("ClinicId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("LastValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("ClinicId");
+
+                    b.ToTable("PatientCounters", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientPhone", b =>
@@ -1628,6 +1667,32 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.RoleDefaultPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Permission")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Role", "Permission")
+                        .IsUnique();
+
+                    b.ToTable("RoleDefaultPermissions", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Specialization", b =>
@@ -2470,6 +2535,15 @@ namespace ClinicManagement.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("ChronicDisease");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientCounter", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.Clinic", null)
+                        .WithOne()
+                        .HasForeignKey("ClinicManagement.Domain.Entities.PatientCounter", "ClinicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.PatientPhone", b =>
