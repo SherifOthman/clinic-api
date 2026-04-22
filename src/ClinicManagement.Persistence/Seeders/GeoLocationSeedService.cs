@@ -130,24 +130,30 @@ public class GeoLocationSeedService
             return;
         }
 
-        var allCities = await _geoNames.GetCitiesAsync(ct);
+        var allCities   = await _geoNames.GetCitiesAsync(ct);
+        var existingIds = await _db.GeoCities.Select(c => c.GeonameId).ToHashSetAsync(ct);
 
-        var existing = await _db.GeoCities.Select(c => c.GeonameId).ToHashSetAsync(ct);
+        // Track (stateId, nameEn) case-insensitively to prevent duplicate key violations.
+        // SQL Server's unique index is case-insensitive by default collation.
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var toInsert = allCities
-            .Where(c => validStates.Contains(c.StateGeonameId) && !existing.Contains(c.GeonameId))
-            .GroupBy(c => c.GeonameId)                                    // no duplicate GeonameIds
-            .Select(g => g.First())
-            .GroupBy(c => (c.StateGeonameId, c.NameEn.ToLowerInvariant())) // no duplicate name+state
-            .Select(g => g.First())
-            .Select(c => new GeoCity
+        var toInsert = new List<GeoCity>();
+        foreach (var c in allCities)
+        {
+            if (!validStates.Contains(c.StateGeonameId)) continue;
+            if (existingIds.Contains(c.GeonameId)) continue;
+
+            var nameKey = $"{c.StateGeonameId}|{c.NameEn}";
+            if (!seenNames.Add(nameKey)) continue; // same name in same state — skip
+
+            toInsert.Add(new GeoCity
             {
                 GeonameId      = c.GeonameId,
                 StateGeonameId = c.StateGeonameId,
                 NameEn         = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
                 NameAr         = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
-            })
-            .ToList();
+            });
+        }
 
         if (toInsert.Count == 0)
         {
