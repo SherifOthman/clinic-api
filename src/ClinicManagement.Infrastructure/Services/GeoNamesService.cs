@@ -92,7 +92,7 @@ public class GeoNamesService : IGeoNamesService
     /// </summary>
     public async Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
-        const string Version  = "#v7";
+        const string Version  = "#v8"; // v8: dedup uses OrdinalIgnoreCase to match SQL Server collation
         var cachePath = Path.Combine(_cacheDir, "cities_processed.tsv");
 
         // Fast path: cache file exists and is current version
