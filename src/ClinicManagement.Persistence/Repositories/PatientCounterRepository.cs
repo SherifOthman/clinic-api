@@ -22,9 +22,13 @@ public class PatientCounterRepository : IPatientCounterRepository
             OUTPUT inserted.LastValue;
             """;
 
-        var result = await _db.Database
+        // MERGE is non-composable SQL — use AsEnumerable() to pull the OUTPUT
+        // result to the client before calling First(), so EF Core doesn't try
+        // to add a WHERE/ORDER BY on top of the MERGE statement.
+        var result = _db.Database
             .SqlQueryRaw<int>(sql, clinicId)
-            .FirstAsync(ct);
+            .AsEnumerable()
+            .First();
 
         // Zero-pad to 4 digits: 1 → "0001", 9999 → "9999"
         // Stored as string so StartsWith search works (e.g. "12" finds "0012", "0120", "0121")
