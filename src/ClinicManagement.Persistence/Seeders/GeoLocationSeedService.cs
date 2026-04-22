@@ -7,7 +7,8 @@ namespace ClinicManagement.Persistence.Seeders;
 
 /// <summary>
 /// Seeds countries, states, and cities from GeoNames files.
-/// Safe to re-run — existing rows are skipped, Arabic names are updated if available.
+/// Countries and states seed at startup (fast).
+/// Cities seed via Hangfire CitySeedJob in the background.
 /// </summary>
 public class GeoLocationSeedService
 {
@@ -25,50 +26,40 @@ public class GeoLocationSeedService
         _logger   = logger;
     }
 
+    // Called at startup — seeds countries and states only (fast)
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        await SeedCountriesAndStatesAsync(ct);
-        // Cities are seeded via Hangfire CitySeedJob — not at startup
+        await SeedCountriesAsync(ct);
+        await SeedStatesAsync(ct);
     }
 
-    public async Task SeedCountriesAndStatesOnlyAsync(CancellationToken ct = default)
-        => await SeedCountriesAndStatesAsync(ct);
-
-    /// <summary>
-    /// Seeds cities in batches. Safe to call repeatedly — skips already-inserted rows.
-    /// Called by Hangfire CitySeedJob every 2 minutes until complete.
-    /// Returns number of cities inserted (0 = fully seeded).
-    /// </summary>
+    // Called by Hangfire CitySeedJob — returns 0 when fully seeded
     public async Task<int> SeedCitiesJobAsync(CancellationToken ct = default)
     {
-        var total = await _db.GeoCities.CountAsync(ct);
+        var countBefore = await _db.GeoCities.CountAsync(ct);
 
-        // Compare DB count against the expected count stored in the file header
         var expected = await _geoNames.GetExpectedCityCountAsync(ct);
-        if (expected.HasValue && total >= expected.Value)
+        if (expected.HasValue && countBefore >= expected.Value)
         {
-            _logger.LogInformation("Cities: {Count:N0} in DB matches expected {Expected:N0} — skipping.", total, expected.Value);
+            _logger.LogInformation("Cities already seeded ({Count:N0})", countBefore);
             return 0;
         }
 
         await SeedCitiesAsync(ct);
-        var inserted = await _db.GeoCities.CountAsync(ct) - total;
+
+        var inserted = await _db.GeoCities.CountAsync(ct) - countBefore;
         return (int)Math.Max(0, inserted);
     }
 
-    // ── Countries + States ────────────────────────────────────────────────────
+    // ── Countries ─────────────────────────────────────────────────────────────
 
-    private async Task SeedCountriesAndStatesAsync(CancellationToken ct)
+    private async Task SeedCountriesAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Seeding countries and states...");
+        var source   = await _geoNames.GetCountriesAsync(ct);
+        var existing = await _db.GeoCountries.Select(c => c.GeonameId).ToHashSetAsync(ct);
 
-        var allCountries = await _geoNames.GetCountriesAsync(ct);
-        var allStates    = await _geoNames.GetStatesAsync(ct);
-
-        // Countries — insert missing
-        var existingCountryIds = await _db.GeoCountries.Select(c => c.GeonameId).ToHashSetAsync(ct);
-        var newCountries = allCountries
-            .Where(c => !existingCountryIds.Contains(c.GeonameId))
+        var toAdd = source
+            .Where(c => !existing.Contains(c.GeonameId))
             .Select(c => new GeoCountry
             {
                 GeonameId   = c.GeonameId,
@@ -78,29 +69,32 @@ public class GeoLocationSeedService
             })
             .ToList();
 
-        if (newCountries.Count > 0)
+        if (toAdd.Count > 0)
         {
-            await _db.GeoCountries.AddRangeAsync(newCountries, ct);
+            await _db.GeoCountries.AddRangeAsync(toAdd, ct);
             await _db.SaveChangesAsync(ct);
         }
 
-        // Update Arabic names for existing countries where source has Arabic
-        var countryUpdated = 0;
-        foreach (var src in allCountries.Where(c => c.NameAr != c.NameEn))
-        {
-            countryUpdated += await _db.Database.ExecuteSqlRawAsync(
+        // Update Arabic names for existing rows
+        var updated = 0;
+        foreach (var c in source.Where(c => c.NameAr != c.NameEn))
+            updated += await _db.Database.ExecuteSqlRawAsync(
                 "UPDATE GeoCountries SET NameAr = {0} WHERE GeonameId = {1} AND NameAr != {0}",
-                src.NameAr, src.GeonameId);
-        }
+                c.NameAr, c.GeonameId);
 
-        _logger.LogInformation("Countries: +{Added} added, {Updated} Arabic names updated",
-            newCountries.Count, countryUpdated);
+        _logger.LogInformation("Countries: +{Added} added, {Updated} Arabic names updated", toAdd.Count, updated);
+    }
 
-        // States — insert missing
-        var existingStateIds = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
-        var validCountryIds  = await _db.GeoCountries.Select(c => c.GeonameId).ToHashSetAsync(ct);
-        var newStates = allStates
-            .Where(s => !existingStateIds.Contains(s.GeonameId) && validCountryIds.Contains(s.CountryGeonameId))
+    // ── States ────────────────────────────────────────────────────────────────
+
+    private async Task SeedStatesAsync(CancellationToken ct)
+    {
+        var source       = await _geoNames.GetStatesAsync(ct);
+        var existing     = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
+        var validCountry = await _db.GeoCountries.Select(c => c.GeonameId).ToHashSetAsync(ct);
+
+        var toAdd = source
+            .Where(s => !existing.Contains(s.GeonameId) && validCountry.Contains(s.CountryGeonameId))
             .Select(s => new GeoState
             {
                 GeonameId        = s.GeonameId,
@@ -110,107 +104,64 @@ public class GeoLocationSeedService
             })
             .ToList();
 
-        if (newStates.Count > 0)
+        if (toAdd.Count > 0)
         {
-            await _db.GeoStates.AddRangeAsync(newStates, ct);
+            await _db.GeoStates.AddRangeAsync(toAdd, ct);
             await _db.SaveChangesAsync(ct);
         }
 
-        // Update Arabic names for existing states
-        var stateUpdated = 0;
-        foreach (var src in allStates.Where(s => s.NameAr != s.NameEn))
-        {
-            stateUpdated += await _db.Database.ExecuteSqlRawAsync(
+        var updated = 0;
+        foreach (var s in source.Where(s => s.NameAr != s.NameEn))
+            updated += await _db.Database.ExecuteSqlRawAsync(
                 "UPDATE GeoStates SET NameAr = {0} WHERE GeonameId = {1} AND NameAr != {0}",
-                src.NameAr, src.GeonameId);
-        }
+                s.NameAr, s.GeonameId);
 
-        _logger.LogInformation("States: +{Added} added, {Updated} Arabic names updated",
-            newStates.Count, stateUpdated);
+        _logger.LogInformation("States: +{Added} added, {Updated} Arabic names updated", toAdd.Count, updated);
     }
 
     // ── Cities ────────────────────────────────────────────────────────────────
 
     private async Task SeedCitiesAsync(CancellationToken ct)
     {
-        // Remove duplicate GeonameId rows from previous bad runs
-        var total    = await _db.GeoCities.CountAsync(ct);
-        var distinct = await _db.GeoCities.Select(c => c.GeonameId).Distinct().CountAsync(ct);
-        if (total != distinct)
+        var validStates = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
+        if (validStates.Count == 0)
         {
-            _logger.LogWarning("Duplicate cities detected ({Total:N0} rows, {Distinct:N0} distinct). Clearing...", total, distinct);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM GeoCities", ct);
-            total = 0;
-        }
-
-        var validStateIds = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
-        if (validStateIds.Count == 0)
-        {
-            _logger.LogWarning("No states found — skipping city seeding.");
+            _logger.LogWarning("No states in DB — skipping city seeding.");
             return;
         }
 
-        _logger.LogInformation("Cities already in DB: {Count:N0}", total);
+        var allCities = await _geoNames.GetCitiesAsync(ct);
 
-        const int batchSize = 2_000;
-        var batch           = new List<GeoCity>(batchSize);
-        var totalInserted   = 0;
+        var existing = await _db.GeoCities.Select(c => c.GeonameId).ToHashSetAsync(ct);
 
-        await foreach (var c in _geoNames.StreamCitiesAsync(ct))
-        {
-            if (!validStateIds.Contains(c.StateGeonameId)) continue;
-
-            batch.Add(new GeoCity
+        var toInsert = allCities
+            .Where(c => validStates.Contains(c.StateGeonameId) && !existing.Contains(c.GeonameId))
+            .Select(c => new GeoCity
             {
                 GeonameId      = c.GeonameId,
                 StateGeonameId = c.StateGeonameId,
                 NameEn         = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
                 NameAr         = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
-            });
+            })
+            .ToList();
 
-            if (batch.Count < batchSize) continue;
-
-            var batchIds    = batch.Select(x => x.GeonameId).ToList();
-            var existingIds = await _db.GeoCities
-                .Where(x => batchIds.Contains(x.GeonameId))
-                .Select(x => x.GeonameId)
-                .ToHashSetAsync(ct);
-
-            var toInsert = batch.Where(x => !existingIds.Contains(x.GeonameId)).ToList();
-            if (toInsert.Count > 0)
-            {
-                await _db.GeoCities.AddRangeAsync(toInsert, ct);
-                await _db.SaveChangesAsync(ct);
-                _db.ChangeTracker.Clear();
-                totalInserted += toInsert.Count;
-                _logger.LogInformation("Cities: inserted {Total:N0} so far...", totalInserted);
-            }
-
-            batch.Clear();
-        }
-
-        // Flush remaining
-        if (batch.Count > 0)
+        if (toInsert.Count == 0)
         {
-            var batchIds    = batch.Select(x => x.GeonameId).ToList();
-            var existingIds = await _db.GeoCities
-                .Where(x => batchIds.Contains(x.GeonameId))
-                .Select(x => x.GeonameId)
-                .ToHashSetAsync(ct);
-
-            var toInsert = batch.Where(x => !existingIds.Contains(x.GeonameId)).ToList();
-            if (toInsert.Count > 0)
-            {
-                await _db.GeoCities.AddRangeAsync(toInsert, ct);
-                await _db.SaveChangesAsync(ct);
-                _db.ChangeTracker.Clear();
-                totalInserted += toInsert.Count;
-            }
+            _logger.LogInformation("Cities: nothing new to insert.");
+            return;
         }
 
-        if (totalInserted == 0)
-            _logger.LogInformation("Cities: all already seeded ({Count:N0} in DB).", total);
-        else
-            _logger.LogInformation("Cities: +{Added:N0} inserted.", totalInserted);
+        // Insert in batches to avoid giant transactions
+        const int batchSize = 2_000;
+        for (var i = 0; i < toInsert.Count; i += batchSize)
+        {
+            var batch = toInsert.Skip(i).Take(batchSize).ToList();
+            await _db.GeoCities.AddRangeAsync(batch, ct);
+            await _db.SaveChangesAsync(ct);
+            _db.ChangeTracker.Clear();
+            _logger.LogInformation("Cities: inserted {Done:N0}/{Total:N0}...", Math.Min(i + batchSize, toInsert.Count), toInsert.Count);
+        }
+
+        _logger.LogInformation("Cities: +{Count:N0} inserted.", toInsert.Count);
     }
 }

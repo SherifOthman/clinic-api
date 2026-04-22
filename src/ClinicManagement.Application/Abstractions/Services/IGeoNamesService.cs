@@ -17,8 +17,14 @@ public interface IGeoNamesService
     Task<List<GeoNamesStateDump>> GetStatesAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Streams cities line-by-line from cities_processed.tsv without loading
-    /// the entire file into memory. Use this for seeding to avoid OOM on shared hosting.
+    /// Downloads and parses cities500.zip (population > 500, ~200K cities).
+    /// Deduplicates by (state, name) keeping the highest population.
+    /// Results are cached to cities_processed.tsv for fast subsequent reads.
+    /// </summary>
+    Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Streams cities one by one. Delegates to GetCitiesAsync internally.
     /// </summary>
     IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(CancellationToken ct = default);
 
