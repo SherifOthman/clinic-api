@@ -29,23 +29,7 @@ public class GeoLocationSeedService
     {
         await SeedCountriesAsync(ct);
         await SeedStatesAsync(ct);
-    }
-
-    // ── Called by Hangfire CitySeedJob every 2 min until done ─────────────────
-
-    public async Task<int> SeedCitiesJobAsync(CancellationToken ct = default)
-    {
-        var countBefore = await _db.GeoCities.CountAsync(ct);
-        var expected    = await _geoNames.GetExpectedCityCountAsync(ct);
-
-        if (expected.HasValue && countBefore >= expected.Value)
-        {
-            _logger.LogInformation("Cities already seeded ({Count:N0})", countBefore);
-            return 0;
-        }
-
         await SeedCitiesAsync(ct);
-        return (int)Math.Max(0, await _db.GeoCities.CountAsync(ct) - countBefore);
     }
 
     // ── Countries ─────────────────────────────────────────────────────────────

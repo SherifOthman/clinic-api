@@ -42,10 +42,8 @@ try
     RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");   // daily midnight
     RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");   // daily 1am
     RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
-    RecurringJob.RemoveIfExists("city-seed"); // cleanup old job names
+    RecurringJob.RemoveIfExists("city-seed"); // cities now seed at startup
     RecurringJob.RemoveIfExists("geo-seed");
-    // City seeding: every 2 min, inserts missing, removes itself when done
-    RecurringJob.AddOrUpdate<CitySeedJob>("city-seed", j => j.ExecuteAsync(), "*/2 * * * *");
 
     Log.Information("Clinic Management API started successfully");
     app.Run();

@@ -40,7 +40,6 @@ public static class DependencyInjection
         services.AddScoped<RefreshTokenCleanupService>();
         services.AddScoped<UsageMetricsAggregationJob>();
         services.AddScoped<SubscriptionExpiryNotificationJob>();
-        services.AddScoped<CitySeedJob>();
 
         return services;
     }

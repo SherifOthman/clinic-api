@@ -16,7 +16,7 @@ namespace ClinicManagement.Infrastructure.Services;
 ///   admin1CodesASCII.txt   - ~3,800 states/provinces
 ///   cities500.zip          - ~200K cities (population > 500)
 ///   alternateNamesV2.zip   - Arabic name translations
-///   cities_processed.tsv   - processed city cache (upload this to skip re-download on server)
+///   cities_processed.tsv   - processed city cache (upload this to server to skip re-download)
 /// </summary>
 public class GeoNamesService : IGeoNamesService
 {
@@ -92,7 +92,7 @@ public class GeoNamesService : IGeoNamesService
     /// </summary>
     public async Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
-        const string Version   = "#v7";
+        const string Version  = "#v7";
         var cachePath = Path.Combine(_cacheDir, "cities_processed.tsv");
 
         // Fast path: cache file exists and is current version
@@ -124,23 +124,6 @@ public class GeoNamesService : IGeoNamesService
         _logger.LogInformation("Saved {Count:N0} cities to cache ({MB:F1} MB)",
             cities.Count, new FileInfo(cachePath).Length / 1_048_576.0);
         return cities;
-    }
-
-    public async Task<int?> GetExpectedCityCountAsync(CancellationToken ct = default)
-    {
-        var cachePath = Path.Combine(_cacheDir, "cities_processed.tsv");
-        if (!File.Exists(cachePath)) return null;
-        var firstLine = (await File.ReadAllLinesAsync(cachePath, Encoding.UTF8, ct)).FirstOrDefault();
-        var colon = firstLine?.IndexOf(':') ?? -1;
-        return colon >= 0 && int.TryParse(firstLine![(colon + 1)..], out var n) ? n : null;
-    }
-
-    // StreamCitiesAsync kept for interface compatibility — delegates to GetCitiesAsync
-    public async IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
-    {
-        foreach (var city in await GetCitiesAsync(ct))
-            yield return city;
     }
 
     // ── Private: parse cities500.zip ─────────────────────────────────────────
