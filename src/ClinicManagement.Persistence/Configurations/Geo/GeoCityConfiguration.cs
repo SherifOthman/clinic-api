@@ -17,11 +17,9 @@ public class GeoCityConfiguration : IEntityTypeConfiguration<GeoCity>
         // Index for FK lookups
         builder.HasIndex(c => c.StateGeonameId);
 
-        // Unique on (StateGeonameId, NameEn) — prevents duplicate city names
-        // within the same state. The seeder deduplicates by name+state before
-        // inserting, so this is a safety net, not the primary dedup mechanism.
-        builder.HasIndex(c => new { c.StateGeonameId, c.NameEn })
-               .IsUnique();
+        // Note: no unique index on (StateGeonameId, NameEn) — GeoNames data legitimately
+        // has cities with the same name in the same state (e.g. multiple villages named
+        // "Roßbach" in Bavaria). The PK (GeonameId) is the true unique identifier.
 
         builder.HasOne(c => c.State)
                .WithMany(s => s.Cities)
