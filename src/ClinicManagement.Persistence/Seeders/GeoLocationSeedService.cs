@@ -136,6 +136,10 @@ public class GeoLocationSeedService
 
         var toInsert = allCities
             .Where(c => validStates.Contains(c.StateGeonameId) && !existing.Contains(c.GeonameId))
+            .GroupBy(c => c.GeonameId)                                    // no duplicate GeonameIds
+            .Select(g => g.First())
+            .GroupBy(c => (c.StateGeonameId, c.NameEn.ToLowerInvariant())) // no duplicate name+state
+            .Select(g => g.First())
             .Select(c => new GeoCity
             {
                 GeonameId      = c.GeonameId,
