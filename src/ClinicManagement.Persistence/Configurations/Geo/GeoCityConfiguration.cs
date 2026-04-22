@@ -13,7 +13,15 @@ public class GeoCityConfiguration : IEntityTypeConfiguration<GeoCity>
         builder.Property(c => c.GeonameId).ValueGeneratedNever();
         builder.Property(c => c.NameEn).HasMaxLength(150).IsRequired();
         builder.Property(c => c.NameAr).HasMaxLength(150).IsRequired();
+
+        // Index for FK lookups
         builder.HasIndex(c => c.StateGeonameId);
+
+        // Unique on (StateGeonameId, NameEn) — prevents duplicate city names
+        // within the same state. The seeder deduplicates by name+state before
+        // inserting, so this is a safety net, not the primary dedup mechanism.
+        builder.HasIndex(c => new { c.StateGeonameId, c.NameEn })
+               .IsUnique();
 
         builder.HasOne(c => c.State)
                .WithMany(s => s.Cities)

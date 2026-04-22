@@ -12,11 +12,11 @@ namespace ClinicManagement.Infrastructure.Services;
 /// Reads GeoNames data files and returns parsed lists of countries, states, and cities.
 /// Files are downloaded individually on first use and cached on disk.
 /// FILES:
-///   countryInfo.txt       â€” countries (~270 KB)
-///   admin1CodesASCII.txt  â€” states (~120 KB)
-///   ar_names.tsv          â€” Arabic names (~14 MB, pre-extracted from alternateNamesV2.zip)
-///   cities_processed.tsv  â€” pre-processed cities (~187 MB, generated locally and uploaded)
-///   allCountries.zip      â€” fallback if cities_processed.tsv is missing (~1.5 GB)
+///   countryInfo.txt       - countries (~270 KB)
+///   admin1CodesASCII.txt  - states (~120 KB)
+///   ar_names.tsv          - Arabic names (~14 MB, pre-extracted from alternateNamesV2.zip)
+///   cities_processed.tsv  - pre-processed cities (generated locally and uploaded)
+///   cities15000.zip       - fallback source: cities with population > 15,000 (~10 MB)
 /// </summary>
 public class GeoNamesService : IGeoNamesService
 {
@@ -41,7 +41,7 @@ public class GeoNamesService : IGeoNamesService
         Directory.CreateDirectory(_cacheDir);
     }
 
-    // â”€â”€ Public methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Public methods ────────────────────────────────────────────────────────
 
     public async Task<List<GeoNamesCountryDump>> GetCountriesAsync(CancellationToken ct = default)
     {
@@ -54,7 +54,7 @@ public class GeoNamesService : IGeoNamesService
             if (line.StartsWith('#') || string.IsNullOrWhiteSpace(line)) continue;
             var cols = line.Split('\t');
             if (cols.Length < 17 || !int.TryParse(cols[16].Trim(), out var id)) continue;
-            var code  = cols[0].Trim();
+            var code   = cols[0].Trim();
             var nameEn = cols[4].Trim();
             result.Add(new GeoNamesCountryDump(id, code, nameEn, arNames.GetValueOrDefault(id, nameEn)));
         }
@@ -93,35 +93,36 @@ public class GeoNamesService : IGeoNamesService
 
         using var reader = new StreamReader(processedPath, Encoding.UTF8);
         var firstLine = await reader.ReadLineAsync(ct);
-        if (firstLine == null || !firstLine.StartsWith("#v5:")) return null;
+        if (firstLine == null) return null;
 
-        return int.TryParse(firstLine[4..], out var count) ? count : null;
+        // Support both v5 and v6 headers
+        if (firstLine.StartsWith("#v5:") && int.TryParse(firstLine[4..], out var v5count)) return v5count;
+        if (firstLine.StartsWith("#v6:") && int.TryParse(firstLine[4..], out var v6count)) return v6count;
+        return null;
     }
 
     public async IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
-        const string versionPrefix = "#v5";
+        // Accept both v5 and v6 headers when streaming
         var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
 
-        // Version check
         if (File.Exists(processedPath))
         {
             string? firstLine;
             using (var check = new StreamReader(processedPath, Encoding.UTF8))
                 firstLine = await check.ReadLineAsync(ct);
-            if (firstLine == null || !firstLine.StartsWith(versionPrefix))
+            if (firstLine == null || (!firstLine.StartsWith("#v5") && !firstLine.StartsWith("#v6")))
             {
                 _logger.LogWarning("cities_processed.tsv is stale. Deleting and regenerating...");
                 File.Delete(processedPath);
             }
         }
 
-        // If file doesn't exist, fall back to GetCitiesAsync to generate it first
         if (!File.Exists(processedPath))
         {
-            _logger.LogInformation("cities_processed.tsv not found â€” generating from zip first...");
-            await GetCitiesAsync(ct); // generates and saves the file
+            _logger.LogInformation("cities_processed.tsv not found - generating from zip first...");
+            await GetCitiesAsync(ct);
         }
 
         if (!File.Exists(processedPath))
@@ -144,11 +145,10 @@ public class GeoNamesService : IGeoNamesService
 
     public async Task<IEnumerable<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
-        // â”€â”€ Fast path: pre-processed file â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        // Version header on line 1 guards against stale files generated without
-        // the feature-code filter (PPLC/PPLA/PPL only). If the version doesn't
-        // match, the file is deleted and regenerated from the zip.
-        const string versionPrefix = "#v5";
+        // ── Fast path: pre-processed file ─────────────────────────────────────
+        // v6 = cities15000.zip source (population > 15,000), deduplicated by name+state
+        // v5 = old allCountries.zip source — treated as stale, will regenerate
+        const string versionPrefix = "#v6";
         var processedPath = Path.Combine(_cacheDir, "cities_processed.tsv");
         if (File.Exists(processedPath))
         {
@@ -158,7 +158,7 @@ public class GeoNamesService : IGeoNamesService
 
             if (firstLine == null || !firstLine.StartsWith(versionPrefix))
             {
-                _logger.LogWarning("cities_processed.tsv is stale (missing version header). Deleting and regenerating...");
+                _logger.LogWarning("cities_processed.tsv is stale (version mismatch - expected v6). Deleting and regenerating...");
                 File.Delete(processedPath);
             }
         }
@@ -168,9 +168,9 @@ public class GeoNamesService : IGeoNamesService
             _logger.LogInformation("Reading cities from cities_processed.tsv...");
             try
             {
-                var lines  = await File.ReadAllLinesAsync(processedPath, Encoding.UTF8, ct);
-                var cities = new List<GeoNamesCityDump>(lines.Length);
-                foreach (var line in lines)
+                var fileLines = await File.ReadAllLinesAsync(processedPath, Encoding.UTF8, ct);
+                var cities    = new List<GeoNamesCityDump>(fileLines.Length);
+                foreach (var line in fileLines)
                 {
                     if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#')) continue;
                     var cols = line.Split('\t');
@@ -178,18 +178,24 @@ public class GeoNamesService : IGeoNamesService
                     cities.Add(new GeoNamesCityDump(gId, sId, cols[2], cols[3]));
                 }
                 if (cities.Count == 0)
-                    throw new InvalidDataException("cities_processed.tsv parsed 0 cities â€” file is likely corrupted.");
+                    throw new InvalidDataException("cities_processed.tsv parsed 0 cities - file is likely corrupted.");
                 _logger.LogInformation("Loaded {Count} cities from cities_processed.tsv", cities.Count);
                 return cities;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("cities_processed.tsv is corrupted ({Error}). Deleting and regenerating from zip...", ex.Message);
+                _logger.LogWarning("cities_processed.tsv is corrupted ({Error}). Deleting and regenerating...", ex.Message);
                 File.Delete(processedPath);
             }
         }
 
-        // â”€â”€ Slow path: stream from allCountries.zip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Slow path: stream from cities15000.zip ────────────────────────────
+        // cities15000.zip contains only cities with population > 15,000 (~26K cities worldwide).
+        // This avoids the noise of allCountries.zip (~3.8M features including hamlets/villages).
+        //
+        // Deduplication strategy: when the same name appears in the same state,
+        // keep the row with the HIGHEST POPULATION (most important city wins).
+        // This is better than keeping the highest GeonameId (which was arbitrary).
         var arNames    = await GetArabicNamesAsync(ct);
         var admin1Text = await ReadFileAsync("admin1CodesASCII.txt", ct);
         var admin1Map  = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -201,77 +207,76 @@ public class GeoNamesService : IGeoNamesService
                 admin1Map[cols[0].Trim()] = gId;
         }
 
-        var includedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4", "PPLX" };
-
-        var result  = new List<GeoNamesCityDump>();
-        var seenIds = new HashSet<int>();
-        var zipPath = Path.Combine(_cacheDir, "allCountries.zip");
+        var zipFileName = "cities15000.zip";
+        var zipPath     = Path.Combine(_cacheDir, zipFileName);
 
         if (!File.Exists(zipPath))
         {
-            _logger.LogInformation("Downloading allCountries.zip (~1.5 GB)...");
-            var bytes = await _http.GetByteArrayAsync(_baseUrl + "/allCountries.zip", ct);
+            _logger.LogInformation("Downloading {File} (~10 MB)...", zipFileName);
+            var bytes = await _http.GetByteArrayAsync(_baseUrl + "/" + zipFileName, ct);
             await File.WriteAllBytesAsync(zipPath, bytes, ct);
         }
 
-        _logger.LogInformation("Streaming allCountries.txt from zip...");
+        _logger.LogInformation("Streaming cities15000.txt from zip...");
+
+        // key = (stateId, nameEn.ToLower()), value = (geonameId, nameEn, nameAr, population)
+        var best = new Dictionary<(int stateId, string nameLower), (int gId, string nameEn, string nameAr, long pop)>();
+
         try
         {
             using var fs      = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var archive = new ZipArchive(fs, ZipArchiveMode.Read);
-            var entry  = archive.GetEntry("allCountries.txt")
-                ?? archive.Entries.First(e => e.Name.Equals("allCountries.txt", StringComparison.OrdinalIgnoreCase));
+            var entry  = archive.GetEntry("cities15000.txt")
+                ?? archive.Entries.First(e => e.Name.Equals("cities15000.txt", StringComparison.OrdinalIgnoreCase));
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8);
 
             string? line2;
-            var lineCount = 0;
             while ((line2 = await reader.ReadLineAsync(ct)) is not null)
             {
                 if (string.IsNullOrWhiteSpace(line2)) continue;
                 var cols = line2.Split('\t');
+                // columns: 0=geonameId, 1=name, 8=countryCode, 10=admin1Code, 14=population
                 if (cols.Length < 15 || !int.TryParse(cols[0], out var geonameId)) continue;
-                if (cols[6] != "P") continue;
-                if (!includedCodes.Contains(cols[7]) && cols[7] != "PPL") continue;
                 if (!admin1Map.TryGetValue($"{cols[8]}.{cols[10]}", out var stateId)) continue;
-                var nameEn = cols[1];
-                if (seenIds.Add(geonameId))
-                    result.Add(new GeoNamesCityDump(geonameId, stateId, nameEn, arNames.GetValueOrDefault(geonameId, nameEn)));
-                if (++lineCount % 500_000 == 0)
-                    _logger.LogInformation("Cities: scanned {Lines:N0} lines, {Cities:N0} found...", lineCount, result.Count);
+
+                var nameEn = cols[1].Trim();
+                if (string.IsNullOrWhiteSpace(nameEn)) continue;
+
+                long.TryParse(cols[14], out var population);
+                var nameAr = arNames.GetValueOrDefault(geonameId, nameEn);
+                var key    = (stateId, nameEn.ToLowerInvariant());
+
+                // Keep the row with the highest population for this name+state combo
+                if (!best.TryGetValue(key, out var existing) || population > existing.pop)
+                    best[key] = (geonameId, nameEn, nameAr, population);
             }
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException)
         {
-            _logger.LogWarning("allCountries.zip appears corrupted ({Error}). Deleting and will re-download on next startup.", ex.Message);
+            _logger.LogWarning("cities15000.zip appears corrupted ({Error}). Deleting.", ex.Message);
             File.Delete(zipPath);
             throw;
         }
 
-        _logger.LogInformation("Parsed {Count} cities", result.Count);
-
-        // Deduplicate: keep highest GeonameId when same name appears in same state
-        var deduped = result
-            .GroupBy(c => (c.StateGeonameId, c.NameEn.ToLowerInvariant()))
-            .Select(g => g.OrderByDescending(c => c.GeonameId).First())
+        var result = best
+            .Select(kvp => new GeoNamesCityDump(kvp.Value.gId, kvp.Key.stateId, kvp.Value.nameEn, kvp.Value.nameAr))
             .ToList();
 
-        _logger.LogInformation("After dedup: {Count} cities", deduped.Count);
+        _logger.LogInformation("Parsed {Count} cities (deduplicated by name+state, highest population wins)", result.Count);
 
-        // Stream-write to file line by line — avoids giant StringBuilder in memory
-        // Header format: #v5:{count} — stores total for fast "already seeded" check
+        // Write processed file with v6 header
         await using (var writer = new StreamWriter(processedPath, append: false, Encoding.UTF8))
         {
-            await writer.WriteLineAsync($"#v5:{deduped.Count}");
-            foreach (var c in deduped)
+            await writer.WriteLineAsync($"#v6:{result.Count}");
+            foreach (var c in result)
                 await writer.WriteLineAsync($"{c.GeonameId}\t{c.StateGeonameId}\t{c.NameEn}\t{c.NameAr}");
         }
         _logger.LogInformation("Saved cities_processed.tsv ({MB:F1} MB)", new FileInfo(processedPath).Length / 1_048_576.0);
 
-        return deduped;
+        return result;
     }
 
-    // â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task<Dictionary<int, string>> GetArabicNamesAsync(CancellationToken ct)
     {
@@ -281,7 +286,7 @@ public class GeoNamesService : IGeoNamesService
 
         if (!File.Exists(tsvPath))
         {
-            _logger.LogInformation("ar_names.tsv not found â€” downloading alternateNamesV2.zip (~200 MB)...");
+            _logger.LogInformation("ar_names.tsv not found - downloading alternateNamesV2.zip (~200 MB)...");
             try
             {
                 var bytes = await _http.GetByteArrayAsync(_baseUrl + "/alternateNamesV2.zip", ct);
@@ -291,7 +296,6 @@ public class GeoNamesService : IGeoNamesService
                     ?? archive.Entries.First(e => e.Name.Equals("alternateNamesV2.txt", StringComparison.OrdinalIgnoreCase));
                 var rawLines = (await new StreamReader(entry.Open(), Encoding.UTF8).ReadToEndAsync(ct)).Split('\n');
 
-                // Keep only Arabic rows and save
                 var sb = new StringBuilder();
                 foreach (var line in rawLines)
                 {
@@ -305,7 +309,7 @@ public class GeoNamesService : IGeoNamesService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Could not download alternateNamesV2.zip ({Error}). Arabic names will fall back to English. Upload ar_names.tsv manually to enable Arabic names.", ex.Message);
+                _logger.LogWarning("Could not download alternateNamesV2.zip ({Error}). Arabic names will fall back to English.", ex.Message);
                 _arabicNamesCache = new Dictionary<int, string>();
                 return _arabicNamesCache;
             }
@@ -335,12 +339,12 @@ public class GeoNamesService : IGeoNamesService
             }
         }
 
-        _logger.LogInformation("ar_names.tsv: {Lines} lines parsed, {Count} Arabic names loaded (file size: {Size:N0} bytes)",
-            lineCount, result.Count, new FileInfo(tsvPath).Length);
+        _logger.LogInformation("ar_names.tsv: {Lines} lines parsed, {Count} Arabic names loaded",
+            lineCount, result.Count);
 
         if (result.Count == 0)
         {
-            _logger.LogWarning("ar_names.tsv loaded 0 names â€” file is empty or corrupt. Deleting to force re-download on next run.");
+            _logger.LogWarning("ar_names.tsv loaded 0 names - file is empty or corrupt. Deleting to force re-download.");
             File.Delete(tsvPath);
             _arabicNamesCache = new Dictionary<int, string>();
             return _arabicNamesCache;
@@ -370,7 +374,3 @@ public class GeoNamesService : IGeoNamesService
         }
     }
 }
-
-
-
-
