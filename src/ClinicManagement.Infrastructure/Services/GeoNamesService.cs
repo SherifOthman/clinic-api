@@ -11,11 +11,12 @@ namespace ClinicManagement.Infrastructure.Services;
 /// <summary>
 /// Downloads and parses GeoNames data files.
 ///
-/// Files used:
+/// Files (downloaded automatically on first run, cached on disk):
 ///   countryInfo.txt        - ~270 countries
 ///   admin1CodesASCII.txt   - ~3,800 states/provinces
-///   cities500.zip          - ~200K cities (population > 500), downloaded automatically
-///   alternateNamesV2.zip   - Arabic name translations, downloaded automatically
+///   cities500.zip          - ~200K cities (population > 500)
+///   alternateNamesV2.zip   - Arabic name translations
+///   cities_processed.tsv   - processed city cache (upload this to skip re-download on server)
 /// </summary>
 public class GeoNamesService : IGeoNamesService
 {
@@ -26,11 +27,7 @@ public class GeoNamesService : IGeoNamesService
 
     private Dictionary<int, string>? _arabicNamesCache;
 
-    public GeoNamesService(
-        HttpClient http,
-        IHostEnvironment env,
-        ILogger<GeoNamesService> logger,
-        IOptions<GeoNamesOptions> options)
+    public GeoNamesService(HttpClient http, IHostEnvironment env, ILogger<GeoNamesService> logger, IOptions<GeoNamesOptions> options)
     {
         _http     = http;
         _logger   = logger;
@@ -89,46 +86,43 @@ public class GeoNamesService : IGeoNamesService
     // ── Cities ────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns all cities. Downloads cities500.zip if not on disk.
-    /// Deduplicates by (state, name) keeping the city with the highest population.
-    /// Results are cached to cities_processed.tsv for fast subsequent reads.
+    /// Returns all cities. Uses cities_processed.tsv cache if available (upload this to server).
+    /// Otherwise downloads cities500.zip and processes it.
+    /// Deduplicates by (state, name) keeping the highest-population city.
     /// </summary>
     public async Task<List<GeoNamesCityDump>> GetCitiesAsync(CancellationToken ct = default)
     {
-        const string CacheFile    = "cities_processed.tsv";
-        const string CacheVersion = "#v7"; // bump when source or logic changes
+        const string Version   = "#v7";
+        var cachePath = Path.Combine(_cacheDir, "cities_processed.tsv");
 
-        var cachePath = Path.Combine(_cacheDir, CacheFile);
-
-        // ── Fast path: read from cache file ───────────────────────────────────
+        // Fast path: cache file exists and is current version
         if (File.Exists(cachePath))
         {
-            var firstLine = (await File.ReadAllLinesAsync(cachePath, Encoding.UTF8, ct)).FirstOrDefault();
-            if (firstLine?.StartsWith(CacheVersion) == true)
+            var lines = await File.ReadAllLinesAsync(cachePath, Encoding.UTF8, ct);
+            if (lines.FirstOrDefault()?.StartsWith(Version) == true)
             {
-                var cached = ParseCacheFile(cachePath, await File.ReadAllLinesAsync(cachePath, Encoding.UTF8, ct));
+                var cached = ReadCacheLines(lines);
                 if (cached.Count > 0)
                 {
                     _logger.LogInformation("Loaded {Count:N0} cities from cache", cached.Count);
                     return cached;
                 }
             }
-            _logger.LogWarning("Cache file is stale or empty — regenerating...");
+            _logger.LogWarning("Cache file is stale — regenerating...");
             File.Delete(cachePath);
         }
 
-        // ── Slow path: download and parse cities500.zip ───────────────────────
+        // Slow path: parse cities500.zip
         var cities = await ParseCities500Async(ct);
 
-        // Write cache
+        // Save cache so next startup is instant (also upload this file to the server)
         await using var writer = new StreamWriter(cachePath, append: false, Encoding.UTF8);
-        await writer.WriteLineAsync($"{CacheVersion}:{cities.Count}");
+        await writer.WriteLineAsync($"{Version}:{cities.Count}");
         foreach (var c in cities)
             await writer.WriteLineAsync($"{c.GeonameId}\t{c.StateGeonameId}\t{c.NameEn}\t{c.NameAr}");
 
         _logger.LogInformation("Saved {Count:N0} cities to cache ({MB:F1} MB)",
             cities.Count, new FileInfo(cachePath).Length / 1_048_576.0);
-
         return cities;
     }
 
@@ -136,47 +130,40 @@ public class GeoNamesService : IGeoNamesService
     {
         var cachePath = Path.Combine(_cacheDir, "cities_processed.tsv");
         if (!File.Exists(cachePath)) return null;
-
         var firstLine = (await File.ReadAllLinesAsync(cachePath, Encoding.UTF8, ct)).FirstOrDefault();
-        if (firstLine == null) return null;
-
-        var colon = firstLine.IndexOf(':');
-        return colon >= 0 && int.TryParse(firstLine[(colon + 1)..], out var count) ? count : null;
+        var colon = firstLine?.IndexOf(':') ?? -1;
+        return colon >= 0 && int.TryParse(firstLine![(colon + 1)..], out var n) ? n : null;
     }
 
+    // StreamCitiesAsync kept for interface compatibility — delegates to GetCitiesAsync
     public async IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
-        // Load all cities then yield — simple and consistent with GetCitiesAsync
-        var cities = await GetCitiesAsync(ct);
-        foreach (var city in cities)
+        foreach (var city in await GetCitiesAsync(ct))
             yield return city;
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── Private: parse cities500.zip ─────────────────────────────────────────
 
     private async Task<List<GeoNamesCityDump>> ParseCities500Async(CancellationToken ct)
     {
-        var arNames   = await GetArabicNamesAsync(ct);
-        var stateMap  = await BuildStateMapAsync(ct); // "EG.11" -> stateGeonameId
+        var arNames  = await GetArabicNamesAsync(ct);
+        var stateMap = await BuildStateMapAsync(ct); // "EG.11" -> stateGeonameId
 
         var zipPath = Path.Combine(_cacheDir, "cities500.zip");
         if (!File.Exists(zipPath))
         {
             _logger.LogInformation("Downloading cities500.zip (~30 MB)...");
-            var bytes = await _http.GetByteArrayAsync(_baseUrl + "/cities500.zip", ct);
-            await File.WriteAllBytesAsync(zipPath, bytes, ct);
+            await File.WriteAllBytesAsync(zipPath, await _http.GetByteArrayAsync(_baseUrl + "/cities500.zip", ct), ct);
         }
 
         _logger.LogInformation("Parsing cities500.txt...");
 
-        // Deduplicate: (stateId, nameEn.lower) -> keep highest population
+        // key = (stateId, nameEn lower) → keep the row with the highest population
         var best = new Dictionary<(int stateId, string name), (int gId, string nameEn, string nameAr, long pop)>();
 
-        using var fs      = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var archive = new ZipArchive(fs, ZipArchiveMode.Read);
-        var entry  = archive.GetEntry("cities500.txt")
-            ?? archive.Entries.First(e => e.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
+        using var archive = new ZipArchive(new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+        var entry  = archive.GetEntry("cities500.txt") ?? archive.Entries.First(e => e.Name.EndsWith(".txt"));
         using var reader = new StreamReader(entry.Open(), Encoding.UTF8);
 
         string? line;
@@ -184,36 +171,31 @@ public class GeoNamesService : IGeoNamesService
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
             var cols = line.Split('\t');
-            // columns: 0=geonameId, 1=name, 8=countryCode, 10=admin1Code, 14=population
-            if (cols.Length < 15 || !int.TryParse(cols[0], out var geonameId)) continue;
-
-            var stateKey = $"{cols[8]}.{cols[10]}";
-            if (!stateMap.TryGetValue(stateKey, out var stateId)) continue;
+            // 0=geonameId  1=name  8=countryCode  10=admin1Code  14=population
+            if (cols.Length < 15 || !int.TryParse(cols[0], out var gId)) continue;
+            if (!stateMap.TryGetValue($"{cols[8]}.{cols[10]}", out var stateId)) continue;
 
             var nameEn = cols[1].Trim();
             if (string.IsNullOrWhiteSpace(nameEn)) continue;
 
-            long.TryParse(cols[14], out var population);
-            var nameAr = arNames.GetValueOrDefault(geonameId, nameEn);
-            var key    = (stateId, nameEn.ToLowerInvariant());
+            long.TryParse(cols[14], out var pop);
+            var key = (stateId, nameEn.ToLowerInvariant());
 
-            if (!best.TryGetValue(key, out var existing) || population > existing.pop)
-                best[key] = (geonameId, nameEn, nameAr, population);
+            if (!best.TryGetValue(key, out var cur) || pop > cur.pop)
+                best[key] = (gId, nameEn, arNames.GetValueOrDefault(gId, nameEn), pop);
         }
 
-        var result = best
-            .Select(kvp => new GeoNamesCityDump(kvp.Value.gId, kvp.Key.stateId, kvp.Value.nameEn, kvp.Value.nameAr))
-            .ToList();
-
-        _logger.LogInformation("Parsed {Count:N0} cities (deduplicated by name+state)", result.Count);
+        var result = best.Select(kvp => new GeoNamesCityDump(kvp.Value.gId, kvp.Key.stateId, kvp.Value.nameEn, kvp.Value.nameAr)).ToList();
+        _logger.LogInformation("Parsed {Count:N0} cities (deduplicated by name+state, highest population wins)", result.Count);
         return result;
     }
 
+    // ── Private: helpers ──────────────────────────────────────────────────────
+
     private async Task<Dictionary<string, int>> BuildStateMapAsync(CancellationToken ct)
     {
-        var text   = await ReadFileAsync("admin1CodesASCII.txt", ct);
         var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var line in text.Split('\n'))
+        foreach (var line in (await ReadFileAsync("admin1CodesASCII.txt", ct)).Split('\n'))
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
             var cols = line.Split('\t');
@@ -223,7 +205,7 @@ public class GeoNamesService : IGeoNamesService
         return result;
     }
 
-    private static List<GeoNamesCityDump> ParseCacheFile(string path, string[] lines)
+    private static List<GeoNamesCityDump> ReadCacheLines(string[] lines)
     {
         var result = new List<GeoNamesCityDump>(lines.Length);
         foreach (var line in lines)
@@ -248,11 +230,11 @@ public class GeoNamesService : IGeoNamesService
             try
             {
                 var bytes = await _http.GetByteArrayAsync(_baseUrl + "/alternateNamesV2.zip", ct);
-                using var ms      = new MemoryStream(bytes);
-                using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
+                using var archive = new ZipArchive(new MemoryStream(bytes));
                 var entry = archive.GetEntry("alternateNamesV2.txt")
                     ?? archive.Entries.First(e => e.Name.Equals("alternateNamesV2.txt", StringComparison.OrdinalIgnoreCase));
 
+                // Extract only Arabic rows to keep the file small
                 var sb = new StringBuilder();
                 foreach (var line in (await new StreamReader(entry.Open(), Encoding.UTF8).ReadToEndAsync(ct)).Split('\n'))
                 {
@@ -266,7 +248,7 @@ public class GeoNamesService : IGeoNamesService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Could not download Arabic names ({Error}). Names will fall back to English.", ex.Message);
+                _logger.LogWarning("Could not download Arabic names ({Error}). Falling back to English.", ex.Message);
                 return _arabicNamesCache = [];
             }
         }
@@ -306,8 +288,7 @@ public class GeoNamesService : IGeoNamesService
     private async Task<string> ReadFileAsync(string fileName, CancellationToken ct)
     {
         var path = Path.Combine(_cacheDir, fileName);
-        if (File.Exists(path))
-            return await File.ReadAllTextAsync(path, Encoding.UTF8, ct);
+        if (File.Exists(path)) return await File.ReadAllTextAsync(path, Encoding.UTF8, ct);
 
         _logger.LogInformation("Downloading {File}...", fileName);
         var bytes = await _http.GetByteArrayAsync(_baseUrl + "/" + fileName, ct);
