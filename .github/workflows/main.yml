@@ -21,10 +21,10 @@ jobs:
       - name: Build
         run: dotnet build ClinicManagement.slnx --configuration Release --no-restore
 
-      - name: Start SQL Server Express
-        run: |
-          Set-Service -Name 'MSSQL$SQLEXPRESS' -StartupType Manual
-          Start-Service -Name 'MSSQL$SQLEXPRESS'
+      - name: Install SQL Server LocalDB
+        uses: potatoqualitee/mssqlsuite@v1.11
+        with:
+          install: localdb
 
       - name: Test with .NET
         run: dotnet test ClinicManagement.slnx --no-build --configuration Release --verbosity normal
