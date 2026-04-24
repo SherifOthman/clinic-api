@@ -40,6 +40,9 @@ jobs:
             ConnectionStrings = @{
               DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
             }
+            App = @{
+              FrontendUrl = "${{ secrets.FRONTEND_URL }}"
+            }
             Smtp = @{
               Host     = "${{ secrets.SMTP_HOST }}"
               Port     = [int]"${{ secrets.SMTP_PORT }}"
