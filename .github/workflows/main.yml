@@ -32,6 +32,29 @@ jobs:
       - name: Publish
         # Targets the specific API project in your src folder
         run: dotnet publish src/ClinicManagement.API/ClinicManagement.API.csproj --configuration Release --output ./publish --runtime win-x86 --self-contained true
+
+      - name: Write production appsettings
+        shell: pwsh
+        run: |
+          $settings = @{
+            ConnectionStrings = @{
+              DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
+            }
+            Smtp = @{
+              Host     = "${{ secrets.SMTP_HOST }}"
+              Port     = [int]"${{ secrets.SMTP_PORT }}"
+              UserName = "${{ secrets.SMTP_USERNAME }}"
+              Password = "${{ secrets.SMTP_PASSWORD }}"
+              FromName  = "${{ secrets.SMTP_FROM_NAME }}"
+              FromEmail = "${{ secrets.SMTP_FROM_EMAIL }}"
+              FrontendUrl = "${{ secrets.FRONTEND_URL }}"
+            }
+            Cors = @{
+              AllowedOrigins = @("${{ secrets.CORS_ORIGINS }}")
+            }
+            Seed = @{ SeedDemoUsers = $false }
+          } | ConvertTo-Json -Depth 5
+          Set-Content -Path "./publish/appsettings.Production.json" -Value $settings
         
       - name: Deploy to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
