@@ -33,19 +33,41 @@ public static class DatabaseInitialiser
                 }
             }
 
+            // Core seeds — fast, must complete before API serves requests
             await services.GetRequiredService<RoleSeedService>().SeedRolesAsync();
             await services.GetRequiredService<SpecializationSeedService>().SeedSpecializationsAsync();
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
-            await services.GetRequiredService<GeoLocationSeedService>().SeedAsync();
-            // Seed role → permission defaults into DB (idempotent, replaces DefaultPermissions.cs as source of truth)
             await services.GetRequiredService<IPermissionRepository>().SeedRoleDefaultsAsync();
-            Log.Information("Database seeded successfully");
+
+            Log.Information("Core database seeding completed — API is ready");
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Database initialisation failed — app will start but data may be missing");
         }
+
+        // Geo seeding (countries, states, cities) runs entirely in the background.
+        // Countries + states: ~270 + ~3800 rows, fast but still I/O.
+        // Cities: ~225K rows, requires ~200MB download on first run.
+        // The API starts immediately and geo data becomes available within minutes.
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3)); // let the app fully start first
+            await using var bgScope = app.Services.CreateAsyncScope();
+            try
+            {
+                Log.Information("Background geo seeding started...");
+                await bgScope.ServiceProvider
+                    .GetRequiredService<GeoLocationSeedService>()
+                    .SeedAsync();
+                Log.Information("Background geo seeding completed");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Background geo seeding failed");
+            }
+        });
     }
 }

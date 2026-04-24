@@ -36,6 +36,12 @@ public class GeoLocationSeedService
 
     private async Task SeedCountriesAsync(CancellationToken ct)
     {
+        if (await _db.GeoCountries.AnyAsync(ct))
+        {
+            _logger.LogInformation("Countries already seeded — skipping.");
+            return;
+        }
+
         var source      = await _geoNames.GetCountriesAsync(ct);
         var existingIds = await _db.GeoCountries.Select(c => c.GeonameId).ToHashSetAsync(ct);
 
@@ -64,6 +70,12 @@ public class GeoLocationSeedService
 
     private async Task SeedStatesAsync(CancellationToken ct)
     {
+        if (await _db.GeoStates.AnyAsync(ct))
+        {
+            _logger.LogInformation("States already seeded — skipping.");
+            return;
+        }
+
         var source        = await _geoNames.GetStatesAsync(ct);
         var existingIds   = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
         var validCountries = await _db.GeoCountries.Select(c => c.GeonameId).ToHashSetAsync(ct);
@@ -92,9 +104,16 @@ public class GeoLocationSeedService
 
     private async Task SeedCitiesAsync(CancellationToken ct)
     {
+        if (await _db.GeoCities.AnyAsync(ct))
+        {
+            _logger.LogInformation("Cities already seeded — skipping.");
+            return;
+        }
+
         var validStates = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
         if (validStates.Count == 0) { _logger.LogWarning("No states in DB — skipping city seeding."); return; }
 
+        _logger.LogInformation("Starting city seeding in background (~225K rows, may take a few minutes on first run)...");
         var allCities   = await _geoNames.GetCitiesAsync(ct);
         var existingIds = await _db.GeoCities.Select(c => c.GeonameId).ToHashSetAsync(ct);
 
