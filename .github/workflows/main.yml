@@ -31,7 +31,7 @@ jobs:
 
       - name: Publish
         # Targets the specific API project in your src folder
-        run: dotnet publish src/ClinicManagement.API/ClinicManagement.API.csproj --configuration Release --output ./publish --runtime win-x64 --self-contained true
+        run: dotnet publish src/ClinicManagement.API/ClinicManagement.API.csproj --configuration Release --output ./publish --runtime win-x86 --self-contained true
         
       - name: Deploy to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
