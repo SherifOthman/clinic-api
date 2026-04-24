@@ -96,6 +96,7 @@ public static class ClinicHelper
         // Seed default permissions for the owner member
         var permissionRepo = scope.ServiceProvider.GetRequiredService<IPermissionRepository>();
         await permissionRepo.SeedDefaultsAsync(member.Id, ClinicMemberRole.Owner);
+        await db.SaveChangesAsync(); // SeedDefaultsAsync only stages rows — must save explicitly
 
         var token = await AuthHelper.LoginAsync(client, email);
         return token!;

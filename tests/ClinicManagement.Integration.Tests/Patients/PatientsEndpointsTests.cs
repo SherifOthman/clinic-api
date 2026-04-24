@@ -9,13 +9,20 @@ namespace ClinicManagement.Integration.Tests.Patients;
 public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 {
     private readonly IntegrationTestFactory _factory;
-    private readonly HttpClient _client;
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     public PatientsEndpointsTests(IntegrationTestFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+    }
+
+    // Creates a fresh authenticated client for each test to avoid token bleed
+    private async Task<HttpClient> CreateAuthenticatedClientAsync()
+    {
+        var client = _factory.CreateClient();
+        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, client);
+        client.SetBearerToken(token);
+        return client;
     }
 
     // ── Auth guards ───────────────────────────────────────────────────────────
@@ -44,10 +51,9 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetPatients_ShouldReturnOk_WhenClinicOwner()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
+        var response = await client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
@@ -58,10 +64,9 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task CreatePatient_ShouldReturn201_WithValidData()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/patients", new
+        var response = await client.PostAsJsonAsync("/api/patients", new
         {
             firstName = "Ahmed",
             lastName = "Ali",
@@ -77,10 +82,9 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task CreatePatient_ShouldReturn400_WithMissingFields()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/patients", new
+        var response = await client.PostAsJsonAsync("/api/patients", new
         {
             // missing firstName, lastName, dateOfBirth, gender
             phoneNumbers = Array.Empty<object>()
@@ -92,10 +96,9 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task CreateThenGetPatient_ShouldAppearInList()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/patients", new
+        await client.PostAsJsonAsync("/api/patients", new
         {
             firstName = "Sara",
             lastName = "Mohamed",
@@ -105,7 +108,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
-        var listResponse = await _client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
+        var listResponse = await client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
         var body = await listResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
 
         body.GetProperty("totalCount").GetInt32().Should().BeGreaterThan(0);
@@ -117,20 +120,18 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetPatientDetail_ShouldReturn400_WhenNotFound()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.GetAsync($"/api/patients/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/patients/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task DeletePatient_ShouldReturn204_WhenExists()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/patients", new
+        await client.PostAsJsonAsync("/api/patients", new
         {
             firstName = "To",
             lastName = "Delete",
@@ -140,14 +141,14 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
-        var list = await _client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
+        var list = await client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
         var body = await list.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         var id = body.GetProperty("items")[0].GetProperty("id").GetString();
 
-        var deleteResponse = await _client.DeleteAsync($"/api/patients/{id}");
+        var deleteResponse = await client.DeleteAsync($"/api/patients/{id}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var afterDelete = await _client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
+        var afterDelete = await client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
         var afterBody = await afterDelete.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         afterBody.GetProperty("totalCount").GetInt32().Should().Be(0);
     }
@@ -155,10 +156,9 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task UpdatePatient_ShouldReturn204_WhenValid()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/patients", new
+        await client.PostAsJsonAsync("/api/patients", new
         {
             firstName = "Original",
             lastName = "Name",
@@ -168,11 +168,11 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
-        var list = await _client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
+        var list = await client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
         var body = await list.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         var id = body.GetProperty("items")[0].GetProperty("id").GetString();
 
-        var updateResponse = await _client.PutAsJsonAsync($"/api/patients/{id}", new
+        var updateResponse = await client.PutAsJsonAsync($"/api/patients/{id}", new
         {
             firstName = "Updated",
             lastName = "Name",
@@ -184,7 +184,7 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
 
         updateResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var detail = await _client.GetAsync($"/api/patients/{id}");
+        var detail = await client.GetAsync($"/api/patients/{id}");
         var detailBody = await detail.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         detailBody.GetProperty("fullName").GetString().Should().Be("Updated Name");
         detailBody.GetProperty("gender").GetString().Should().Be("Female");
@@ -193,10 +193,9 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetPatientDetail_ShouldReturnDetail_WhenExists()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/patients", new
+        await client.PostAsJsonAsync("/api/patients", new
         {
             firstName = "Detail",
             lastName = "Patient",
@@ -206,11 +205,11 @@ public class PatientsEndpointsTests : IClassFixture<IntegrationTestFactory>
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
-        var list = await _client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
+        var list = await client.GetAsync("/api/patients?pageNumber=1&pageSize=10");
         var listBody = await list.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         var id = listBody.GetProperty("items")[0].GetProperty("id").GetString();
 
-        var response = await _client.GetAsync($"/api/patients/{id}");
+        var response = await client.GetAsync($"/api/patients/{id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);

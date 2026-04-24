@@ -9,13 +9,20 @@ namespace ClinicManagement.Integration.Tests.Staff;
 public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
 {
     private readonly IntegrationTestFactory _factory;
-    private readonly HttpClient _client;
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     public StaffEndpointsTests(IntegrationTestFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+    }
+
+    // Creates a fresh authenticated client for each test to avoid token bleed
+    private async Task<HttpClient> CreateAuthenticatedClientAsync()
+    {
+        var client = _factory.CreateClient();
+        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, client);
+        client.SetBearerToken(token);
+        return client;
     }
 
     // ── Auth guards ───────────────────────────────────────────────────────────
@@ -50,24 +57,21 @@ public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetStaff_ShouldReturnOk_WhenClinicOwner()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.GetAsync("/api/staff?pageNumber=1&pageSize=10");
+        var response = await client.GetAsync("/api/staff?pageNumber=1&pageSize=10");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
-        // The owner themselves should appear as staff
         body.GetProperty("totalCount").GetInt32().Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]
     public async Task InviteStaff_ShouldReturn200_WithValidReceptionistInvite()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/staff/invite", new
+        var response = await client.PostAsJsonAsync("/api/staff/invite", new
         {
             role = "Receptionist",
             email = $"newrec_{Guid.NewGuid():N}@test.com"
@@ -82,10 +86,9 @@ public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task InviteStaff_ShouldReturn400_WithInvalidRole()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/staff/invite", new
+        var response = await client.PostAsJsonAsync("/api/staff/invite", new
         {
             role = "SuperAdmin", // not allowed
             email = "hacker@test.com"
@@ -97,16 +100,15 @@ public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetInvitations_ShouldReturnList_AfterInviting()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/staff/invite", new
+        await client.PostAsJsonAsync("/api/staff/invite", new
         {
             role = "Receptionist",
             email = $"rec_{Guid.NewGuid():N}@test.com"
         });
 
-        var response = await _client.GetAsync("/api/staff/invitations?pageNumber=1&pageSize=10");
+        var response = await client.GetAsync("/api/staff/invitations?pageNumber=1&pageSize=10");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
@@ -116,11 +118,9 @@ public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task CancelInvitation_ShouldReturn204_WhenValid()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        // Create a receptionist invitation (no specialization required)
-        var inviteResponse = await _client.PostAsJsonAsync("/api/staff/invite", new
+        var inviteResponse = await client.PostAsJsonAsync("/api/staff/invite", new
         {
             role = "Receptionist",
             email = $"cancel_{Guid.NewGuid():N}@test.com"
@@ -130,23 +130,20 @@ public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
         var inviteBody = await inviteResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         var invitationId = inviteBody.GetProperty("invitationId").GetString();
 
-        // Cancel it
-        var cancelResponse = await _client.DeleteAsync($"/api/staff/invitations/{invitationId}");
+        var cancelResponse = await client.DeleteAsync($"/api/staff/invitations/{invitationId}");
         cancelResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
     public async Task GetStaffDetail_ShouldReturnDetail_WhenExists()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        // Get staff list to find the owner's staff ID
-        var listResponse = await _client.GetAsync("/api/staff?pageNumber=1&pageSize=10");
+        var listResponse = await client.GetAsync("/api/staff?pageNumber=1&pageSize=10");
         var listBody = await listResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         var staffId = listBody.GetProperty("items")[0].GetProperty("id").GetString();
 
-        var detailResponse = await _client.GetAsync($"/api/staff/{staffId}");
+        var detailResponse = await client.GetAsync($"/api/staff/{staffId}");
 
         detailResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var detail = await detailResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
@@ -157,14 +154,13 @@ public class StaffEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task SetStaffActiveStatus_ShouldReturn204_WhenValid()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var listResponse = await _client.GetAsync("/api/staff?pageNumber=1&pageSize=10");
+        var listResponse = await client.GetAsync("/api/staff?pageNumber=1&pageSize=10");
         var listBody = await listResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
         var staffId = listBody.GetProperty("items")[0].GetProperty("id").GetString();
 
-        var response = await _client.PatchAsJsonAsync($"/api/staff/{staffId}/active-status", new
+        var response = await client.PatchAsJsonAsync($"/api/staff/{staffId}/active-status", new
         {
             isActive = false
         });
