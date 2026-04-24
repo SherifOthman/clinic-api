@@ -92,9 +92,6 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
 
     public async Task InitializeAsync()
     {
-        // Clean up any leftover test databases from previous crashed runs
-        await DropStaleTestDatabasesAsync();
-
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();
