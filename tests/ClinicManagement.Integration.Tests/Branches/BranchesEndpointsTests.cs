@@ -9,13 +9,19 @@ namespace ClinicManagement.Integration.Tests.Branches;
 public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
 {
     private readonly IntegrationTestFactory _factory;
-    private readonly HttpClient _client;
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     public BranchesEndpointsTests(IntegrationTestFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+    }
+
+    private async Task<HttpClient> CreateAuthenticatedClientAsync()
+    {
+        var client = _factory.CreateClient();
+        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, client);
+        client.SetBearerToken(token);
+        return client;
     }
 
     [Fact]
@@ -28,24 +34,21 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetBranches_ShouldReturnList_WhenClinicOwner()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.GetAsync("/api/branches");
+        var response = await client.GetAsync("/api/branches");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
-        // ClinicHelper seeds one main branch
         body.GetArrayLength().Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]
     public async Task CreateBranch_ShouldReturn201_WithValidData()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/branches", new
+        var response = await client.PostAsJsonAsync("/api/branches", new
         {
             name = "North Branch",
             addressLine = "456 North Street",
@@ -60,12 +63,10 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task CreateBranch_ShouldReturn400_WithMissingFields()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/branches", new
+        var response = await client.PostAsJsonAsync("/api/branches", new
         {
-            // missing name and addressLine
             stateGeonameId = 2
         });
 
@@ -75,10 +76,9 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task CreateBranch_ShouldAppearInList()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/branches", new
+        await client.PostAsJsonAsync("/api/branches", new
         {
             name = "South Branch",
             addressLine = "789 South Ave",
@@ -87,7 +87,7 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
             phoneNumbers = Array.Empty<string>()
         });
 
-        var listResponse = await _client.GetAsync("/api/branches");
+        var listResponse = await client.GetAsync("/api/branches");
         var body = await listResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
 
         var names = body.EnumerateArray()
@@ -100,10 +100,9 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task UpdateBranch_ShouldReturn204_WhenValid()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var createResponse = await _client.PostAsJsonAsync("/api/branches", new
+        var createResponse = await client.PostAsJsonAsync("/api/branches", new
         {
             name = "Branch To Update",
             addressLine = "Old Address",
@@ -114,7 +113,7 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         var branchId = (await createResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts))
             .GetString();
 
-        var updateResponse = await _client.PutAsJsonAsync($"/api/branches/{branchId}", new
+        var updateResponse = await client.PutAsJsonAsync($"/api/branches/{branchId}", new
         {
             name = "Updated Branch",
             addressLine = "New Address",
@@ -129,10 +128,9 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task SetBranchActiveStatus_ShouldReturn204_WhenValid()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var createResponse = await _client.PostAsJsonAsync("/api/branches", new
+        var createResponse = await client.PostAsJsonAsync("/api/branches", new
         {
             name = "Branch To Deactivate",
             addressLine = "Some Address",
@@ -143,7 +141,7 @@ public class BranchesEndpointsTests : IClassFixture<IntegrationTestFactory>
         var branchId = (await createResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOpts))
             .GetString();
 
-        var response = await _client.PatchAsJsonAsync($"/api/branches/{branchId}/active-status", new
+        var response = await client.PatchAsJsonAsync($"/api/branches/{branchId}/active-status", new
         {
             isActive = false
         });

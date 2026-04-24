@@ -34,24 +34,28 @@ public static class DependencyInjection
 
         services.AddControllers();
 
-        // Hangfire — storage + server (AspNetCore package lives here)
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("DefaultConnection is missing");
+        // Hangfire — skip in Testing environment (no SQL Server schema setup needed)
+        var env = services.BuildServiceProvider().GetService<IWebHostEnvironment>();
+        if (env?.IsEnvironment("Testing") != true)
+        {
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("DefaultConnection is missing");
 
-        services.AddHangfire(config => config
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
-            {
-                CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
-                SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
-                QueuePollInterval            = TimeSpan.Zero,
-                UseRecommendedIsolationLevel = true,
-                DisableGlobalLocks           = true,
-            }));
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
+                    QueuePollInterval            = TimeSpan.Zero,
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks           = true,
+                }));
 
-        services.AddHangfireServer(options => options.WorkerCount = 2);
+            services.AddHangfireServer(options => options.WorkerCount = 2);
+        }
 
         return services;
     }
@@ -166,11 +170,14 @@ public static class DependencyInjection
         app.UseRouting();
 
         // Hangfire dashboard — before CORS, after routing so embedded assets are served
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        if (!app.Environment.IsEnvironment("Testing"))
         {
-            Authorization = [new HangfireAuthorizationFilter(
-                app.Configuration["HangfireDashboardKey"])],
-        });
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = [new HangfireAuthorizationFilter(
+                    app.Configuration["HangfireDashboardKey"])],
+            });
+        }
 
         app.UseCors("AllowAll");
         app.UseRateLimiter();

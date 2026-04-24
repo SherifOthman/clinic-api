@@ -9,13 +9,19 @@ namespace ClinicManagement.Integration.Tests.Dashboard;
 public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
 {
     private readonly IntegrationTestFactory _factory;
-    private readonly HttpClient _client;
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     public DashboardEndpointsTests(IntegrationTestFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+    }
+
+    private async Task<HttpClient> CreateAuthenticatedClientAsync()
+    {
+        var client = _factory.CreateClient();
+        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, client);
+        client.SetBearerToken(token);
+        return client;
     }
 
     [Fact]
@@ -28,10 +34,9 @@ public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetDashboardStats_ShouldReturnOk_WhenClinicOwner()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.GetAsync("/api/dashboard/stats");
+        var response = await client.GetAsync("/api/dashboard/stats");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
@@ -49,10 +54,9 @@ public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetRecentPatients_ShouldReturnEmptyList_WhenNoPatients()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        var response = await _client.GetAsync("/api/dashboard/recent-patients");
+        var response = await client.GetAsync("/api/dashboard/recent-patients");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
@@ -62,10 +66,9 @@ public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task GetRecentPatients_ShouldReturnPatients_AfterCreating()
     {
-        var token = await ClinicHelper.CreateClinicOwnerAsync(_factory, _client);
-        _client.SetBearerToken(token);
+        var client = await CreateAuthenticatedClientAsync();
 
-        await _client.PostAsJsonAsync("/api/patients", new
+        await client.PostAsJsonAsync("/api/patients", new
         {
             firstName = "Recent",
             lastName = "Patient",
@@ -75,7 +78,7 @@ public class DashboardEndpointsTests : IClassFixture<IntegrationTestFactory>
             chronicDiseaseIds = Array.Empty<Guid>()
         });
 
-        var response = await _client.GetAsync("/api/dashboard/recent-patients");
+        var response = await client.GetAsync("/api/dashboard/recent-patients");
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
 
         body.GetArrayLength().Should().BeGreaterThan(0);
