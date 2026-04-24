@@ -16,13 +16,13 @@ jobs:
           dotnet-version: 10.0
           
       - name: Install dependencies
-        run: dotnet restore
+        run: dotnet restore ClinicManagement.slnx
         
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ClinicManagement.slnx --configuration Release --no-restore
 
       - name: Test with .NET
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test ClinicManagement.slnx --no-build --configuration Release --verbosity normal
 
       - name: Publish
         # Targets the specific API project in your src folder

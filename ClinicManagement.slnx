@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ClinicManagement.API/ClinicManagement.API.csproj" />
+    <Project Path="src/ClinicManagement.Application/ClinicManagement.Application.csproj" />
+    <Project Path="src/ClinicManagement.Domain/ClinicManagement.Domain.csproj" />
+    <Project Path="src/ClinicManagement.Infrastructure/ClinicManagement.Infrastructure.csproj" />
+    <Project Path="src/ClinicManagement.Persistence/ClinicManagement.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ClinicManagement.Application.Tests/ClinicManagement.Application.Tests.csproj" />
+    <Project Path="tests/ClinicManagement.Domain.Tests/ClinicManagement.Domain.Tests.csproj" />
+    <Project Path="tests/ClinicManagement.Integration.Tests/ClinicManagement.Integration.Tests.csproj" />
+  </Folder>
+</Solution>
