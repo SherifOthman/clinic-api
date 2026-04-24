@@ -26,7 +26,7 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
     private readonly string _dbName = $"ClinicTest_{Guid.NewGuid():N}";
 
     private string ConnectionString =>
-        $"Server=(localdb)\\mssqllocaldb;Database={_dbName};Trusted_Connection=True;TrustServerCertificate=True;";
+        $"Server=localhost\\SQLEXPRESS;Database={_dbName};Trusted_Connection=True;TrustServerCertificate=True;";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -124,7 +124,7 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
         try
         {
             const string masterConn =
-                "Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+                "Server=localhost\\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
 
             using var conn = new Microsoft.Data.SqlClient.SqlConnection(masterConn);
             await conn.OpenAsync();
