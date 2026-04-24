@@ -55,7 +55,7 @@ jobs:
             Cors = @{
               AllowedOrigins = @("${{ secrets.CORS_ORIGINS }}")
             }
-            Seed = @{ SeedDemoUsers = $false }
+            Seed = @{ SeedDemoUsers = $true }
           } | ConvertTo-Json -Depth 5
           Set-Content -Path "./publish/appsettings.Production.json" -Value $settings
         
