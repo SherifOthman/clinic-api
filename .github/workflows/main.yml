@@ -36,28 +36,35 @@ jobs:
       - name: Write production appsettings
         shell: pwsh
         run: |
-          $settings = @{
-            ConnectionStrings = @{
+          $settings = [ordered]@{
+            ConnectionStrings = [ordered]@{
               DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
             }
-            App = @{
+            App = [ordered]@{
               FrontendUrl = "${{ secrets.FRONTEND_URL }}"
             }
-            Smtp = @{
-              Host     = "${{ secrets.SMTP_HOST }}"
-              Port     = [int]"${{ secrets.SMTP_PORT }}"
-              UserName = "${{ secrets.SMTP_USERNAME }}"
-              Password = "${{ secrets.SMTP_PASSWORD }}"
+            Smtp = [ordered]@{
+              Host      = "${{ secrets.SMTP_HOST }}"
+              Port      = [int]"${{ secrets.SMTP_PORT }}"
+              UserName  = "${{ secrets.SMTP_USERNAME }}"
+              Password  = "${{ secrets.SMTP_PASSWORD }}"
               FromName  = "${{ secrets.SMTP_FROM_NAME }}"
               FromEmail = "${{ secrets.SMTP_FROM_EMAIL }}"
-              FrontendUrl = "${{ secrets.FRONTEND_URL }}"
             }
-            Cors = @{
+            Cors = [ordered]@{
               AllowedOrigins = @("${{ secrets.CORS_ORIGINS }}")
             }
-            Seed = @{ SeedDemoUsers = $true }
-          } | ConvertTo-Json -Depth 5
-          Set-Content -Path "./publish/appsettings.Production.json" -Value $settings
+            Seed = [ordered]@{ SeedDemoUsers = $true }
+          }
+          $json = $settings | ConvertTo-Json -Depth 5
+          Set-Content -Path "./publish/appsettings.Production.json" -Value $json -Encoding UTF8
+          # Verify the file was written (show structure without secret values)
+          Write-Host "=== appsettings.Production.json written ==="
+          Write-Host "SMTP Host: ${{ secrets.SMTP_HOST }}"
+          Write-Host "SMTP Port: ${{ secrets.SMTP_PORT }}"
+          Write-Host "SMTP FromEmail: ${{ secrets.SMTP_FROM_EMAIL }}"
+          Write-Host "App FrontendUrl: ${{ secrets.FRONTEND_URL }}"
+          Write-Host "CORS Origins: ${{ secrets.CORS_ORIGINS }}"
         
       - name: Deploy to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0

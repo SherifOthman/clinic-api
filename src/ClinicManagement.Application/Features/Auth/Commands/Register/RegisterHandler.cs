@@ -73,7 +73,12 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         }
 
         try { await _emailTokenService.SendConfirmationEmailAsync(user, cancellationToken); }
-        catch (Exception ex) { _logger.LogError(ex, "Failed to send confirmation email to {Email}", request.Email); }
+        catch (Exception ex) 
+        { 
+            // Email failure is non-fatal — user is created but must resend verification manually
+            _logger.LogError(ex, "SMTP ERROR: Failed to send confirmation email to {Email}. SMTP may be misconfigured. Error: {Message}", 
+                request.Email, ex.Message); 
+        }
 
         await _auditWriter.WriteAsync(user.Id, user.FullName, user.UserName, user.Email,
             UserRoles.ClinicOwner, clinicId: null, "Register", cancellationToken: cancellationToken);
