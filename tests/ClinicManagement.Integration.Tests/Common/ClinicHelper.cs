@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
@@ -80,16 +81,21 @@ public static class ClinicHelper
             IsActive = true,
         });
 
-        db.Set<ClinicMember>().Add(new ClinicMember
+        var member = new ClinicMember
         {
             PersonId = user.PersonId,
             UserId   = user.Id,
             ClinicId = clinic.Id,
             Role     = ClinicMemberRole.Owner,
             IsActive = true,
-        });
+        };
+        db.Set<ClinicMember>().Add(member);
 
         await db.SaveChangesAsync();
+
+        // Seed default permissions for the owner member
+        var permissionRepo = scope.ServiceProvider.GetRequiredService<IPermissionRepository>();
+        await permissionRepo.SeedDefaultsAsync(member.Id, ClinicMemberRole.Owner);
 
         var token = await AuthHelper.LoginAsync(client, email);
         return token!;
