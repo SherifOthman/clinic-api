@@ -39,9 +39,12 @@ public class PermissionRepository : IPermissionRepository
     public async Task SetPermissionsAsync(
         Guid memberId, IEnumerable<Permission> permissions, CancellationToken ct = default)
     {
-        await _db.Set<ClinicMemberPermission>()
+        // Load and remove existing — tracked delete stays within the UoW transaction
+        var existing = await _db.Set<ClinicMemberPermission>()
             .Where(p => p.ClinicMemberId == memberId)
-            .ExecuteDeleteAsync(ct);
+            .ToListAsync(ct);
+
+        _db.Set<ClinicMemberPermission>().RemoveRange(existing);
 
         var rows = permissions.Select(p => new ClinicMemberPermission
         {
@@ -50,8 +53,7 @@ public class PermissionRepository : IPermissionRepository
         });
 
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
-        await _db.SaveChangesAsync(ct);
-
+        // Caller is responsible for SaveChangesAsync.
         InvalidateCache(memberId);
     }
 

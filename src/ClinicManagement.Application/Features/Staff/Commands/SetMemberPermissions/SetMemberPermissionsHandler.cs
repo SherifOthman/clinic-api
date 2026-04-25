@@ -33,6 +33,7 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
         // Capture before state for diff — behavior can't do this
         var previousPermissions = await _uow.Permissions.GetByMemberIdAsync(request.MemberId, cancellationToken);
         await _uow.Permissions.SetPermissionsAsync(request.MemberId, request.Permissions, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         var added   = request.Permissions.Except(previousPermissions).Select(p => p.ToString());
         var removed = previousPermissions.Except(request.Permissions).Select(p => p.ToString());
