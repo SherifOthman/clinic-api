@@ -22,7 +22,7 @@ public class PermissionRepository : IPermissionRepository
 
     public PermissionRepository(ApplicationDbContext db, IMemoryCache cache)
     {
-        _db    = db;
+        _db = db;
         _cache = cache;
     }
 
@@ -53,8 +53,9 @@ public class PermissionRepository : IPermissionRepository
         var rows = permissions.Select(p => new ClinicMemberPermission
         {
             ClinicMemberId = memberId,
-            Permission     = p,
+            Permission = p,
         });
+
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
         await _db.SaveChangesAsync(ct);
 
@@ -70,7 +71,7 @@ public class PermissionRepository : IPermissionRepository
         var rows = defaults.Select(p => new ClinicMemberPermission
         {
             ClinicMemberId = memberId,
-            Permission     = p,
+            Permission = p,
         });
         await _db.Set<ClinicMemberPermission>().AddRangeAsync(rows, ct);
         // Caller is responsible for SaveChangesAsync.
@@ -110,14 +111,14 @@ public class PermissionRepository : IPermissionRepository
             return;
 
         var roles = Enum.GetValues<ClinicMemberRole>();
-        var rows  = new List<RoleDefaultPermission>();
+        var rows = new List<RoleDefaultPermission>();
 
         foreach (var role in roles)
         {
             var defaults = DefaultPermissions.ForRole(role);
             rows.AddRange(defaults.Select(p => new RoleDefaultPermission
             {
-                Role       = role,
+                Role = role,
                 Permission = p,
             }));
         }
