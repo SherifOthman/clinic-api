@@ -24,7 +24,7 @@ A complete auth system built on top of ASP.NET Identity. Users can register, con
 
 ### Permission-Based Authorization
 
-Fine-grained access control using a custom RBAC system. Permissions (e.g. `ViewPatients`, `InviteStaff`, `ManageBranches`) are assigned per `ClinicMember` — the same user can have different permissions at different clinics. Role defaults are seeded into a `RoleDefaultPermissions` table; clinic owners can then customize permissions per staff member.
+Fine-grained access control using a custom RBAC system. Permissions (e.g. `ViewPatients`, `InviteStaff`, `ManageBranches`) are assigned per `ClinicMember` — the same user can have different permissions at different clinics. Role defaults are defined in `DefaultPermissions.cs` and seeded when a new staff member joins; clinic owners can then customize permissions per staff member.
 
 Permissions are resolved from the database on login and cached in `IMemoryCache` per member (10-minute TTL with explicit invalidation on change). The JWT contains only the `MemberId` claim — permissions are resolved from cache on each request by a custom `PermissionAuthorizationHandler`, keeping tokens small and avoiding stale permission data. A dynamic `IAuthorizationPolicyProvider` generates policies on-demand from the `Permission` enum, so adding a new permission requires no DI changes.
 
@@ -52,7 +52,7 @@ Clinic owners invite staff by email with a role (Doctor or Receptionist). The in
 
 ### Audit Trail
 
-Every create, update, and delete on any `AuditableEntity` is captured with field-level diffs — old value, new value, who made the change, when, from which IP, and which browser. Security events (login, logout, failed attempts, account lockouts) and permission changes are logged separately. The SuperAdmin can query the full audit trail across all clinics. Standard logs are purged after 1 month, security events after 3 months, via a batched Hangfire job.
+Security events (login, logout, failed attempts, account lockouts) and business events (password changes, staff invitations, permission changes, clinic onboarding) are logged via a MediatR `AuditBehavior` pipeline — any command implementing `IAuditableCommand` is automatically audited on success. Login/logout events are logged manually since they audit failures too. The SuperAdmin can query the full audit trail across all clinics filtered by entity type, action, user, clinic, or date range. Standard logs are purged after 1 month, security events after 3 months, via a batched Hangfire job.
 
 ### Subscription Plans
 
@@ -82,7 +82,7 @@ Domain         → Entities, enums, value objects, Result<T>, domain logic
 Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jobs
 ```
 
-**CQRS with MediatR** — every operation is either a Command (write) or a Query (read). Three pipeline behaviors run on every request: `LoggingBehavior`, `ValidationBehavior` (FluentValidation, returns structured errors before the handler executes), and `PerformanceBehavior` (warns on slow handlers).
+**CQRS with MediatR** — every operation is either a Command (write) or a Query (read). Four pipeline behaviors run on every request: `LoggingBehavior`, `ValidationBehavior` (FluentValidation, returns structured errors before the handler executes), `PerformanceBehavior` (warns on slow handlers), and `AuditBehavior` (writes an `AuditLog` entry after any command implementing `IAuditableCommand` succeeds).
 
 **Result pattern** — handlers return `Result<T>` instead of throwing exceptions for expected failures. `GlobalExceptionMiddleware` catches anything unexpected and returns RFC 7807 Problem Details with a trace ID. Error codes are string constants that map directly to frontend i18n keys.
 
@@ -138,7 +138,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | ------------------------------------ | --- | ----------------------------------------- |
 | Permission enum (15 permissions)     | ✅  | Patients, staff, branches, schedule, etc. |
 | Per-member permission assignment     | ✅  | Clinic owner sets per staff member        |
-| Role default permissions (DB-driven) | ✅  | `RoleDefaultPermissions` table            |
+| Role default permissions (code-only) | ✅  | `DefaultPermissions.cs`, no DB table      |
 | Dynamic policy provider              | ✅  | No foreach loop — on-demand from enum     |
 | Permission cache (IMemoryCache)      | ✅  | 10-min TTL, invalidated on change         |
 | Permission change audit trail        | ✅  | Logs granted/revoked per change           |
@@ -240,13 +240,12 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 ### Audit & Compliance
 
-| Feature                                                         | API | Notes                                    |
-| --------------------------------------------------------------- | --- | ---------------------------------------- |
-| Field-level change tracking                                     | ✅  | All `AuditableEntity` types              |
-| Security event logging                                          | ✅  | Login, logout, failed attempts, lockouts |
-| Permission change logging                                       | ✅  | Granted/revoked diff per change          |
-| Audit log query (filter by entity, action, user, clinic, date)  | ✅  | SuperAdmin only                          |
-| Batched retention cleanup (1 month standard, 3 months security) | ✅  | Hangfire job, 5,000 rows/batch           |
+| Feature                                                         | API | Notes                                                    |
+| --------------------------------------------------------------- | --- | -------------------------------------------------------- |
+| Security & business event logging (MediatR AuditBehavior)       | ✅  | Login, password, staff, permissions, onboarding          |
+| Permission change logging                                       | ✅  | Granted/revoked diff per change                          |
+| Audit log query (filter by entity, action, user, clinic, date)  | ✅  | SuperAdmin only                                          |
+| Batched retention cleanup (1 month standard, 3 months security) | ✅  | Hangfire job, 5,000 rows/batch                           |
 
 ### Reference Data
 
