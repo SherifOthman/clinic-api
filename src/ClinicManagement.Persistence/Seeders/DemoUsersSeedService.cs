@@ -22,10 +22,10 @@ public class DemoUsersSeedService
         ILogger<DemoUsersSeedService> logger,
         IOptions<SeedOptions> options)
     {
-        _context     = context;
+        _context = context;
         _userManager = userManager;
-        _logger      = logger;
-        _options     = options.Value;
+        _logger = logger;
+        _options = options.Value;
     }
 
     public async Task SeedAsync()
@@ -48,12 +48,15 @@ public class DemoUsersSeedService
         var opts = _options.SuperAdmin;
         if (await _userManager.FindByEmailAsync(opts.Email) != null) return;
 
-        var person = new Person { FirstName = "System", LastName = "Administrator", Gender = Gender.Male };
+        var person = new Person { FullName = "System Administrator", Gender = Gender.Male };
         var user = new User
         {
-            UserName = "superadmin", Email = opts.Email,
-            PhoneNumber = "+966500000000", EmailConfirmed = true,
-            PersonId = person.Id, Person = person,
+            UserName = "superadmin",
+            Email = opts.Email,
+            PhoneNumber = "+966500000000",
+            EmailConfirmed = true,
+            PersonId = person.Id,
+            Person = person,
         };
         var result = await _userManager.CreateAsync(user, opts.Password);
         if (!result.Succeeded) { LogError("SuperAdmin", result); return; }
@@ -63,17 +66,20 @@ public class DemoUsersSeedService
 
     private async Task<Clinic?> SeedClinicOwnerAsync()
     {
-        var opts  = _options.ClinicOwner;
+        var opts = _options.ClinicOwner;
         var owner = await _userManager.FindByEmailAsync(opts.Email);
 
         if (owner == null)
         {
-            var person = new Person { FirstName = "John", LastName = "Smith", Gender = Gender.Male };
+            var person = new Person { FullName = "John Smith", Gender = Gender.Male };
             owner = new User
             {
-                UserName = "owner", Email = opts.Email,
-                PhoneNumber = "+1234567890", EmailConfirmed = true,
-                PersonId = person.Id, Person = person,
+                UserName = "owner",
+                Email = opts.Email,
+                PhoneNumber = "+1234567890",
+                EmailConfirmed = true,
+                PersonId = person.Id,
+                Person = person,
             };
             var result = await _userManager.CreateAsync(owner, opts.Password);
             if (!result.Succeeded) { LogError("ClinicOwner", result); return null; }
@@ -94,38 +100,51 @@ public class DemoUsersSeedService
 
         var clinic = new Clinic
         {
-            Name = "Demo Medical Clinic", OwnerUserId = owner.Id,
-            SubscriptionPlanId = basicPlan.Id, OnboardingCompleted = true, IsActive = true,
+            Name = "Demo Medical Clinic",
+            OwnerUserId = owner.Id,
+            SubscriptionPlanId = basicPlan.Id,
+            OnboardingCompleted = true,
+            IsActive = true,
             SubscriptionStartDate = DateTimeOffset.UtcNow,
-            SubscriptionEndDate   = DateTimeOffset.UtcNow.AddMonths(1),
-            TrialEndDate          = DateTimeOffset.UtcNow.AddDays(14),
+            SubscriptionEndDate = DateTimeOffset.UtcNow.AddMonths(1),
+            TrialEndDate = DateTimeOffset.UtcNow.AddDays(14),
         };
         _context.Set<Clinic>().Add(clinic);
 
         _context.Set<ClinicBranch>().Add(new ClinicBranch
         {
-            ClinicId = clinic.Id, Name = "Main Branch",
+            ClinicId = clinic.Id,
+            Name = "Main Branch",
             AddressLine = "123 Medical Street, Downtown",
-            StateGeonameId = 360630, CityGeonameId = 360630,
-            IsMainBranch = true, IsActive = true,
+            StateGeonameId = 360630,
+            CityGeonameId = 360630,
+            IsMainBranch = true,
+            IsActive = true,
         });
 
         _context.Set<ClinicSubscription>().Add(new ClinicSubscription
         {
-            ClinicId = clinic.Id, SubscriptionPlanId = basicPlan.Id,
+            ClinicId = clinic.Id,
+            SubscriptionPlanId = basicPlan.Id,
             Status = SubscriptionStatus.Trial,
-            StartDate = DateTimeOffset.UtcNow, TrialEndDate = DateTimeOffset.UtcNow.AddDays(14), AutoRenew = true,
+            StartDate = DateTimeOffset.UtcNow,
+            TrialEndDate = DateTimeOffset.UtcNow.AddDays(14),
+            AutoRenew = true,
         });
 
         var ownerMember = new ClinicMember
         {
-            PersonId = owner.PersonId, UserId = owner.Id,
-            ClinicId = clinic.Id, Role = ClinicMemberRole.Owner, IsActive = true,
+            PersonId = owner.PersonId,
+            UserId = owner.Id,
+            ClinicId = clinic.Id,
+            Role = ClinicMemberRole.Owner,
+            IsActive = true,
         };
         _context.Set<ClinicMember>().Add(ownerMember);
         _context.Set<DoctorInfo>().Add(new DoctorInfo
         {
-            ClinicMemberId = ownerMember.Id, SpecializationId = generalPractice?.Id,
+            ClinicMemberId = ownerMember.Id,
+            SpecializationId = generalPractice?.Id,
         });
 
         // Seed default permissions for owner
@@ -140,17 +159,20 @@ public class DemoUsersSeedService
 
     private async Task SeedDoctorAsync(Clinic clinic)
     {
-        var opts   = _options.Doctor;
+        var opts = _options.Doctor;
         var doctor = await _userManager.FindByEmailAsync(opts.Email);
 
         if (doctor == null)
         {
-            var person = new Person { FirstName = "Sarah", LastName = "Johnson", Gender = Gender.Female };
+            var person = new Person { FullName = "Sarah Johnson", Gender = Gender.Female };
             doctor = new User
             {
-                UserName = "doctor", Email = opts.Email,
-                PhoneNumber = "+1234567891", EmailConfirmed = true,
-                PersonId = person.Id, Person = person,
+                UserName = "doctor",
+                Email = opts.Email,
+                PhoneNumber = "+1234567891",
+                EmailConfirmed = true,
+                PersonId = person.Id,
+                Person = person,
             };
             var result = await _userManager.CreateAsync(doctor, opts.Password);
             if (!result.Succeeded) { LogError("Doctor", result); return; }
@@ -166,8 +188,11 @@ public class DemoUsersSeedService
         var cardiology = await _context.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
         var member = new ClinicMember
         {
-            PersonId = doctor.PersonId, UserId = doctor.Id,
-            ClinicId = clinic.Id, Role = ClinicMemberRole.Doctor, IsActive = true,
+            PersonId = doctor.PersonId,
+            UserId = doctor.Id,
+            ClinicId = clinic.Id,
+            Role = ClinicMemberRole.Doctor,
+            IsActive = true,
         };
         _context.Set<ClinicMember>().Add(member);
         _context.Set<DoctorInfo>().Add(new DoctorInfo { ClinicMemberId = member.Id, SpecializationId = cardiology?.Id });
@@ -181,17 +206,20 @@ public class DemoUsersSeedService
 
     private async Task SeedReceptionistAsync(Clinic clinic)
     {
-        var opts         = _options.Receptionist;
+        var opts = _options.Receptionist;
         var receptionist = await _userManager.FindByEmailAsync(opts.Email);
 
         if (receptionist == null)
         {
-            var person = new Person { FirstName = "Emily", LastName = "Davis", Gender = Gender.Female };
+            var person = new Person { FullName = "Emily Davis", Gender = Gender.Female };
             receptionist = new User
             {
-                UserName = "receptionist", Email = opts.Email,
-                PhoneNumber = "+1234567892", EmailConfirmed = true,
-                PersonId = person.Id, Person = person,
+                UserName = "receptionist",
+                Email = opts.Email,
+                PhoneNumber = "+1234567892",
+                EmailConfirmed = true,
+                PersonId = person.Id,
+                Person = person,
             };
             var result = await _userManager.CreateAsync(receptionist, opts.Password);
             if (!result.Succeeded) { LogError("Receptionist", result); return; }
@@ -206,8 +234,11 @@ public class DemoUsersSeedService
 
         var receptionistMember = new ClinicMember
         {
-            PersonId = receptionist.PersonId, UserId = receptionist.Id,
-            ClinicId = clinic.Id, Role = ClinicMemberRole.Receptionist, IsActive = true,
+            PersonId = receptionist.PersonId,
+            UserId = receptionist.Id,
+            ClinicId = clinic.Id,
+            Role = ClinicMemberRole.Receptionist,
+            IsActive = true,
         };
         _context.Set<ClinicMember>().Add(receptionistMember);
 

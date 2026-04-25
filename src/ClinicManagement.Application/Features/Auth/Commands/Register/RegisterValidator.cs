@@ -8,13 +8,9 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
 {
     public RegisterValidator(IUnitOfWork uow)
     {
-        RuleFor(x => x.FirstName)
+        RuleFor(x => x.FullName)
             .NotEmpty()
-            .MaximumLength(50);
-
-        RuleFor(x => x.LastName)
-            .NotEmpty()
-            .MaximumLength(50);
+            .MaximumLength(100);
 
         RuleFor(x => x.UserName)
             .NotEmpty()

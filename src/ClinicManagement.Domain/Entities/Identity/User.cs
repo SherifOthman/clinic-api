@@ -18,10 +18,7 @@ public class User : IdentityUser<Guid>
     public DateTimeOffset? LastPasswordChangeAt { get; set; }
 
     public Guid PersonId { get; set; }
-
-    public string FullName => Person is not null
-        ? $"{Person.FirstName} {Person.LastName}".Trim()
-        : string.Empty;
+    
 
     // Navigation
     public Person Person { get; set; } = null!;

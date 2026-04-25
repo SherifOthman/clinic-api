@@ -4,8 +4,7 @@ using MediatR;
 namespace ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
 
 public record UpdateProfileCommand(
-    string FirstName,
-    string LastName,
+    string FullName,
     string userName,
     string? PhoneNumber,
     string Gender

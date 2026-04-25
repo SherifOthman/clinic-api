@@ -9,19 +9,19 @@ namespace ClinicManagement.Persistence.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly DbSet<User>                   _users;
+    private readonly DbSet<User> _users;
     private readonly DbSet<IdentityUserRole<Guid>> _userRoles;
-    private readonly DbSet<Role>                   _roles;
-    private readonly DbSet<ClinicMember>           _members;
-    private readonly DbSet<Clinic>                 _clinics;
+    private readonly DbSet<Role> _roles;
+    private readonly DbSet<ClinicMember> _members;
+    private readonly DbSet<Clinic> _clinics;
 
     public UserRepository(ApplicationDbContext context)
     {
-        _users     = context.Set<User>();
+        _users = context.Set<User>();
         _userRoles = context.Set<IdentityUserRole<Guid>>();
-        _roles     = context.Set<Role>();
-        _members   = context.Set<ClinicMember>();
-        _clinics   = context.Set<Clinic>();
+        _roles = context.Set<Role>();
+        _members = context.Set<ClinicMember>();
+        _clinics = context.Set<Clinic>();
     }
 
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -87,8 +87,7 @@ public class UserRepository : IUserRepository
             .Where(u => u.Id == userId)
             .Select(u => new UserProfileRow(
                 u.UserName!,
-                u.Person.FirstName,
-                u.Person.LastName,
+                u.Person.FullName,
                 u.Email!,
                 u.PhoneNumber,
                 u.Person.ProfileImageUrl,

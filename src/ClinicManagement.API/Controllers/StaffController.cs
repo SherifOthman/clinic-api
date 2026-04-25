@@ -78,7 +78,7 @@ public class StaffController : BaseApiController
         CancellationToken cancellationToken)
     {
         var command = new AcceptInvitationWithRegistrationCommand(
-            token, request.FirstName, request.LastName,
+            token, request.FullName,
             request.UserName, request.Password, request.PhoneNumber, request.Gender);
         var result = await Sender.Send(command, cancellationToken);
         return result.IsSuccess ? NoContent() : HandleResult(result, "Invitation Failed");

@@ -45,7 +45,7 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             request.Email,
             clinic?.Name ?? "Clinic",
             request.Role,
-            inviter?.FullName ?? "Clinic Administrator",
+            inviter?.Person.FullName ?? "Clinic Administrator",
             $"/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 

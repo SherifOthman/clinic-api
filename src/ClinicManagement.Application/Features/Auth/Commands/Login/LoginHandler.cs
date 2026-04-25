@@ -55,7 +55,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
 
             _logger.LogWarning("Login attempt for locked account {UserId}", user.Id);
 
-            await _auditWriter.WriteAsync(user.Id, user.FullName,
+            await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
                 user.UserName, user.Email, null, null,
                 "LoginBlocked", $"Account locked, {remainingMinutes} min remaining", cancellationToken);
 
@@ -72,7 +72,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             {
                 _logger.LogWarning("Account {UserId} locked after multiple failed login attempts", user.Id);
 
-                await _auditWriter.WriteAsync(user.Id, user.FullName,
+                await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
                     user.UserName, user.Email, null, null,
                     "AccountLocked", "Locked after too many failed attempts", cancellationToken);
 
@@ -80,7 +80,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
                     "Account is locked due to multiple failed login attempts. Please try again in 30 minutes.");
             }
 
-            await _auditWriter.WriteAsync(user.Id, user.FullName,
+            await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
                 user.UserName, user.Email, null, null, "LoginFailed", "Invalid password", cancellationToken);
 
             return Result.Failure<TokenResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
@@ -109,7 +109,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             {
                 _logger.LogWarning("Inactive staff {UserId} attempted to log in", user.Id);
 
-                await _auditWriter.WriteAsync(user.Id, user.FullName,
+                await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
                     user.UserName, user.Email, null, clinicId, "LoginFailed", "Account inactive", cancellationToken);
 
                 return Result.Failure<TokenResponseDto>(ErrorCodes.STAFF_INACTIVE,
@@ -129,7 +129,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
 
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
-        await _auditWriter.WriteAsync(user.Id, user.FullName,
+        await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
             user.UserName, user.Email, string.Join(",", roles), clinicId,
             "LoginSuccess", cancellationToken: cancellationToken);
 

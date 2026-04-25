@@ -19,7 +19,7 @@ public class GetPatientDetailHandlerTests
 
     private Patient MakePatient(Gender gender = Gender.Male)
     {
-        var person = new Person { FirstName = "Test", LastName = "Patient", Gender = gender, DateOfBirth = new DateOnly(1990, 6, 15) };
+        var person = new Person { FullName = "Test", LastName = "Patient", Gender = gender, DateOfBirth = new DateOnly(1990, 6, 15) };
         return new Patient
         {
             ClinicId = Guid.NewGuid(),

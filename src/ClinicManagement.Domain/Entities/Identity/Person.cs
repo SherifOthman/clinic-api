@@ -10,15 +10,14 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class Person : BaseEntity
 {
-    public string FirstName { get; set; } = null!;
-    public string LastName { get; set; } = null!;
+
+    public string FullName { get; set; } = null!;
     public Gender Gender { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public string? ProfileImageUrl { get; set; }
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
-    public string FullName => $"{FirstName} {LastName}".Trim();
 
     public bool HasProfileImage => !string.IsNullOrWhiteSpace(ProfileImageUrl);
 
@@ -29,7 +28,7 @@ public class Person : BaseEntity
         {
             if (DateOfBirth is not { } dob) return null;
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var age   = today.Year - dob.Year;
+            var age = today.Year - dob.Year;
             if (dob.AddYears(age) > today) age--;
             return age;
         }

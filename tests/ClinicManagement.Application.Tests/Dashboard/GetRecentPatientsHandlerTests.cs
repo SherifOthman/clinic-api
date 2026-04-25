@@ -22,7 +22,7 @@ public class GetRecentPatientsHandlerTests
         var parts = name.Split(' ', 2);
         var person = new Person
         {
-            FirstName = parts[0],
+            FullName = parts[0],
             LastName = parts.Length > 1 ? parts[1] : string.Empty,
             Gender = gender,
             DateOfBirth = new DateOnly(1990, 1, 1),

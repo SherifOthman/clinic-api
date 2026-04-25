@@ -6,8 +6,7 @@ public record GetMeQuery(Guid UserId) : IRequest<GetMeDto?>;
 
 public record GetMeDto(
     string UserName,
-    string FirstName,
-    string LastName,
+    string FullName,
     string Email,
     string PhoneNumber,
     string? ProfileImageUrl,

@@ -2,7 +2,7 @@ namespace ClinicManagement.Application.Features.Staff.QueryModels;
 
 public record StaffListRow(
     Guid Id, Guid UserId, bool IsActive, DateTimeOffset CreatedAt,
-    string FirstName, string LastName, string Gender, string? ProfileImageUrl
+    string FullName, string Gender, string? ProfileImageUrl
 );
 
 public record StaffDetailRow(

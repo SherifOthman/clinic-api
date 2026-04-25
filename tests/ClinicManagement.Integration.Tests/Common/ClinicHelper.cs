@@ -28,15 +28,15 @@ public static class ClinicHelper
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-        var person = new Person { FirstName = "Clinic", LastName = "Owner", Gender = Gender.Male };
+        var person = new Person { FullName = "Clinic", LastName = "Owner", Gender = Gender.Male };
         var user = new User
         {
-            UserName       = username,
-            Email          = email,
-            PhoneNumber    = "+966500000001",
+            UserName = username,
+            Email = email,
+            PhoneNumber = "+966500000001",
             EmailConfirmed = true,
-            PersonId       = person.Id,
-            Person         = person,
+            PersonId = person.Id,
+            Person = person,
         };
         await userManager.CreateAsync(user, "Test@1234!");
         await userManager.AddToRoleAsync(user, "ClinicOwner");
@@ -47,12 +47,21 @@ public static class ClinicHelper
         {
             plan = new SubscriptionPlan
             {
-                Name = "Test Plan", NameAr = "خطة اختبار",
-                Description = "Test", DescriptionAr = "اختبار",
-                MonthlyFee = 100, YearlyFee = 1000, SetupFee = 0,
-                MaxStaff = 10, MaxBranches = 5, MaxPatientsPerMonth = 100,
-                MaxAppointmentsPerMonth = 500, MaxInvoicesPerMonth = 100,
-                StorageLimitGB = 10, IsActive = true, DisplayOrder = 1,
+                Name = "Test Plan",
+                NameAr = "خطة اختبار",
+                Description = "Test",
+                DescriptionAr = "اختبار",
+                MonthlyFee = 100,
+                YearlyFee = 1000,
+                SetupFee = 0,
+                MaxStaff = 10,
+                MaxBranches = 5,
+                MaxPatientsPerMonth = 100,
+                MaxAppointmentsPerMonth = 500,
+                MaxInvoicesPerMonth = 100,
+                StorageLimitGB = 10,
+                IsActive = true,
+                DisplayOrder = 1,
                 EffectiveDate = DateOnly.FromDateTime(DateTime.Today),
             };
             db.Set<SubscriptionPlan>().Add(plan);
@@ -74,7 +83,7 @@ public static class ClinicHelper
             ClinicId = clinic.Id,
             Name = "Main Branch",
             AddressLine = "123 Test St",
-            
+
             StateGeonameId = 2,
             CityGeonameId = 3,
             IsMainBranch = true,
@@ -84,9 +93,9 @@ public static class ClinicHelper
         var member = new ClinicMember
         {
             PersonId = user.PersonId,
-            UserId   = user.Id,
+            UserId = user.Id,
             ClinicId = clinic.Id,
-            Role     = ClinicMemberRole.Owner,
+            Role = ClinicMemberRole.Owner,
             IsActive = true,
         };
         db.Set<ClinicMember>().Add(member);

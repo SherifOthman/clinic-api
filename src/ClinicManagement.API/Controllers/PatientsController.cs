@@ -120,7 +120,7 @@ public class PatientsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var command = new UpdatePatientCommand(
-            id, request.FirstName, request.LastName, request.DateOfBirth, request.Gender,
+            id, request.FullName, request.DateOfBirth, request.Gender,
             request.CountryGeonameId, request.StateGeonameId, request.CityGeonameId,
             request.BloodType, request.PhoneNumbers, request.ChronicDiseaseIds);
         return HandleNoContent(await Sender.Send(command, cancellationToken), "Failed to update patient");

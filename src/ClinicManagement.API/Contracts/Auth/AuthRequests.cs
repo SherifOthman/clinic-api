@@ -6,8 +6,7 @@ public record LoginRequest(
 );
 
 public record UpdateProfileRequest(
-    string FirstName,
-    string LastName,
+    string FullName,
     string UserName,
     string PhoneNumber,
     string Gender

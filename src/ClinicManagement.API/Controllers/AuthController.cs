@@ -293,7 +293,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken ct)
     {
-        var command = new UpdateProfileCommand(request.FirstName, request.LastName, request.UserName, request.PhoneNumber, request.Gender);
+        var command = new UpdateProfileCommand(request.FullName, request.UserName, request.PhoneNumber, request.Gender);
         var result = await Sender.Send(command, ct);
         return HandleNoContent(result, "Update Failed");
     }

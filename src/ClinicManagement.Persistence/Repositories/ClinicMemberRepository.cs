@@ -16,7 +16,7 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
     public ClinicMemberRepository(ApplicationDbContext context) : base(context)
     {
         _userRoles = context.Set<IdentityUserRole<Guid>>();
-        _roles     = context.Set<Role>();
+        _roles = context.Set<Role>();
     }
 
     public async Task<ClinicMember?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
@@ -56,12 +56,11 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         var projected = query.Select(m => new
         {
             m.Id,
-            UserId          = m.UserId ?? Guid.Empty,
+            UserId = m.UserId ?? Guid.Empty,
             m.IsActive,
             m.JoinedAt,
-            FirstName       = m.Person.FirstName,
-            LastName        = m.Person.LastName,
-            Gender          = m.Person.Gender,
+            FullName = m.Person.FullName,
+            Gender = m.Person.Gender,
             ProfileImageUrl = m.Person.ProfileImageUrl,
         });
 
@@ -69,8 +68,8 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         projected = sortBy?.Trim().ToLower() switch
         {
             "fullname" => desc
-                ? projected.OrderByDescending(m => m.FirstName).ThenByDescending(m => m.LastName)
-                : projected.OrderBy(m => m.FirstName).ThenBy(m => m.LastName),
+                ? projected.OrderByDescending(m => m.FullName)
+                : projected.OrderBy(m => m.FullName),
             "joindate" => desc
                 ? projected.OrderByDescending(m => m.JoinedAt)
                 : projected.OrderBy(m => m.JoinedAt),
@@ -81,7 +80,7 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
 
         var items = pagedRaw.Items.Select(m => new StaffListRow(
             m.Id, m.UserId, m.IsActive, m.JoinedAt,
-            m.FirstName, m.LastName, m.Gender.ToString(), m.ProfileImageUrl
+            m.FullName, m.Gender.ToString(), m.ProfileImageUrl
         )).ToList();
 
         return PaginatedResult<StaffListRow>.Create(items, pagedRaw.TotalCount, pageNumber, pageSize);
@@ -94,15 +93,15 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             .Select(m => new
             {
                 m.Id,
-                UserId          = m.UserId ?? Guid.Empty,
+                UserId = m.UserId ?? Guid.Empty,
                 m.IsActive,
                 m.JoinedAt,
-                FullName        = m.Person.FirstName + " " + m.Person.LastName,
-                Gender          = m.Person.Gender,
-                Email           = m.User != null ? m.User.Email : null,
-                PhoneNumber     = m.User != null ? m.User.PhoneNumber : null,
+                FullName = m.Person.FullName,
+                Gender = m.Person.Gender,
+                Email = m.User != null ? m.User.Email : null,
+                PhoneNumber = m.User != null ? m.User.PhoneNumber : null,
                 ProfileImageUrl = m.Person.ProfileImageUrl,
-                DoctorInfo      = m.DoctorInfo == null ? null : new DoctorDetailRow(
+                DoctorInfo = m.DoctorInfo == null ? null : new DoctorDetailRow(
                     m.DoctorInfo.Id,
                     m.DoctorInfo.Specialization != null ? m.DoctorInfo.Specialization.NameEn : "",
                     m.DoctorInfo.Specialization != null ? m.DoctorInfo.Specialization.NameAr : "",

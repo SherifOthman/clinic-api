@@ -37,16 +37,16 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         int pageSize,
         CancellationToken ct = default)
     {
-        var now   = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var query = DbSet.AsNoTracking();
 
         if (status.HasValue)
             query = status.Value switch
             {
-                InvitationStatus.Pending  => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt > now),
+                InvitationStatus.Pending => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt > now),
                 InvitationStatus.Accepted => query.Where(si => si.IsAccepted),
                 InvitationStatus.Canceled => query.Where(si => si.IsCanceled),
-                InvitationStatus.Expired  => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt <= now),
+                InvitationStatus.Expired => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt <= now),
                 _ => query
             };
 
@@ -58,7 +58,7 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         query = sortBy?.Trim().ToLower() switch
         {
             "email" => desc ? query.OrderByDescending(si => si.Email) : query.OrderBy(si => si.Email),
-            _       => query.OrderByDescending(si => si.CreatedAt),
+            _ => query.OrderByDescending(si => si.CreatedAt),
         };
 
         return await query
@@ -67,7 +67,7 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
                 si.Specialization != null ? si.Specialization.NameEn : null,
                 si.Specialization != null ? si.Specialization.NameAr : null,
                 si.CreatedAt, si.ExpiresAt, si.IsAccepted, si.IsCanceled,
-                (si.CreatedByUser.Person.FirstName + " " + si.CreatedByUser.Person.LastName).Trim()))
+                (si.CreatedByUser.Person.FullName).Trim()))
             .ToPagedAsync(pageNumber, pageSize, ct);
     }
 
@@ -77,13 +77,19 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
             .Where(x => x.Id == id && !x.IsDeleted)
             .Select(x => new
             {
-                x.Id, x.Email, x.Role, x.CreatedAt, x.ExpiresAt,
-                x.IsAccepted, x.IsCanceled, x.AcceptedAt,
+                x.Id,
+                x.Email,
+                x.Role,
+                x.CreatedAt,
+                x.ExpiresAt,
+                x.IsAccepted,
+                x.IsCanceled,
+                x.AcceptedAt,
                 SpecializationNameEn = x.Specialization != null ? x.Specialization.NameEn : null,
                 SpecializationNameAr = x.Specialization != null ? x.Specialization.NameAr : null,
-                CreatedByName        = x.CreatedByUser.Person.FirstName + " " + x.CreatedByUser.Person.LastName,
-                AcceptedByName       = x.AcceptedByUser != null
-                    ? x.AcceptedByUser.Person.FirstName + " " + x.AcceptedByUser.Person.LastName
+                CreatedByName = x.CreatedByUser.Person.FullName,
+                AcceptedByName = x.AcceptedByUser != null
+                    ? x.AcceptedByUser.Person.FullName
                     : null,
             })
             .FirstOrDefaultAsync(ct);

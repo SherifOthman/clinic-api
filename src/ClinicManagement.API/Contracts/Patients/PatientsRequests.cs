@@ -1,8 +1,7 @@
 namespace ClinicManagement.API.Contracts.Patients;
 
 public record UpdatePatientRequest(
-    string FirstName,
-    string LastName,
+    string FullName,
     string DateOfBirth,
     string Gender,
     int? CountryGeonameId,

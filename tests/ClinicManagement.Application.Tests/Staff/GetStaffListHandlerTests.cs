@@ -24,7 +24,7 @@ public class GetStaffListHandlerTests
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
 
-        var person = new Person { FirstName = "Test", LastName = "User", Gender = gender };
+        var person = new Person { FullName = "Test", LastName = "User", Gender = gender };
         var member = new ClinicMember
         {
             PersonId = person.Id,

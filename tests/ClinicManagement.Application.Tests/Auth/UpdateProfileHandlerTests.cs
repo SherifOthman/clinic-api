@@ -46,7 +46,7 @@ public class UpdateProfileHandlerTests
         result.IsSuccess.Should().BeTrue();
 
         var updated = await _uow.Users.GetByIdWithPersonAsync(user.Id);
-        updated!.Person.FirstName.Should().Be("New");
+        updated!.Person.FullName.Should().Be("New");
         updated.UserName.Should().Be("newuser");
         updated.Person.Gender.Should().Be(Gender.Male);
         updated.PhoneNumber.Should().Be("+966500000001");

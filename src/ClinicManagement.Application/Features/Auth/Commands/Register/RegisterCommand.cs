@@ -4,8 +4,7 @@ using MediatR;
 namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
 public record RegisterCommand(
-    string FirstName,
-    string LastName,
+    string FullName,
     string UserName,
     string Email,
     string Password,

@@ -15,7 +15,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
     public AcceptInvitationWithRegistrationHandler(IUnitOfWork uow, UserManager<User> userManager)
     {
-        _uow         = uow;
+        _uow = uow;
         _userManager = userManager;
     }
 
@@ -26,7 +26,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
         var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
-        var person = new Person { FirstName = request.FirstName, LastName = request.LastName, Gender = gender };
+        var person = new Person { FullName = request.FullName, Gender = gender };
 
         // Person must be persisted before UserManager.CreateAsync so the FK is satisfied
         await _uow.Persons.AddAsync(person);
@@ -34,11 +34,11 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
         var user = new User
         {
-            UserName       = request.UserName,
-            Email          = invitation.Email,
-            PhoneNumber    = request.PhoneNumber,
+            UserName = request.UserName,
+            Email = invitation.Email,
+            PhoneNumber = request.PhoneNumber,
             EmailConfirmed = true,
-            PersonId       = person.Id,
+            PersonId = person.Id,
         };
 
         var createResult = await _userManager.CreateAsync(user, request.Password);
@@ -58,9 +58,9 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var member = new ClinicMember
         {
             PersonId = person.Id,
-            UserId   = user.Id,
+            UserId = user.Id,
             ClinicId = invitation.ClinicId,
-            Role     = invitation.Role,
+            Role = invitation.Role,
             IsActive = true,
         };
         await _uow.Members.AddAsync(member);
@@ -69,7 +69,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         {
             await _uow.DoctorInfos.AddAsync(new DoctorInfo
             {
-                ClinicMemberId   = member.Id,
+                ClinicMemberId = member.Id,
                 SpecializationId = invitation.SpecializationId,
             });
         }

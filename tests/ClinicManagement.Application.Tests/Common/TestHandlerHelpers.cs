@@ -18,7 +18,7 @@ public static class TestHandlerHelpers
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var context = new ApplicationDbContext(options);
-        var cache   = new MemoryCache(new MemoryCacheOptions());
+        var cache = new MemoryCache(new MemoryCacheOptions());
         var permissions = new PermissionRepository(context, cache);
         return new UnitOfWork(context, cache, permissions);
     }
@@ -35,26 +35,35 @@ public static class TestHandlerHelpers
 
     public static User CreateTestUser(string email = "test@test.com", bool emailConfirmed = true)
     {
-        var person = new Person { FirstName = "Test", LastName = "User", Gender = Gender.Male };
+        var person = new Person { FullName = "Test", LastName = "User", Gender = Gender.Male };
         return new User
         {
-            Email          = email,
-            UserName       = email,
+            Email = email,
+            UserName = email,
             EmailConfirmed = emailConfirmed,
-            PersonId       = person.Id,
-            Person         = person,
+            PersonId = person.Id,
+            Person = person,
         };
     }
 
     public static SubscriptionPlan CreateTestSubscriptionPlan(string name = "Test Plan") =>
         new()
         {
-            Name = name, NameAr = "خطة اختبار",
-            Description = "Test", DescriptionAr = "اختبار",
-            MonthlyFee = 100, YearlyFee = 1000, SetupFee = 0,
-            MaxStaff = 10, MaxBranches = 5, MaxPatientsPerMonth = 100,
-            MaxAppointmentsPerMonth = 500, MaxInvoicesPerMonth = 100,
-            StorageLimitGB = 10, IsActive = true, DisplayOrder = 1,
+            Name = name,
+            NameAr = "خطة اختبار",
+            Description = "Test",
+            DescriptionAr = "اختبار",
+            MonthlyFee = 100,
+            YearlyFee = 1000,
+            SetupFee = 0,
+            MaxStaff = 10,
+            MaxBranches = 5,
+            MaxPatientsPerMonth = 100,
+            MaxAppointmentsPerMonth = 500,
+            MaxInvoicesPerMonth = 100,
+            StorageLimitGB = 10,
+            IsActive = true,
+            DisplayOrder = 1,
             EffectiveDate = DateOnly.FromDateTime(DateTime.Today),
         };
 
@@ -77,8 +86,10 @@ public static class TestHandlerHelpers
             ClinicId = clinicId ?? Guid.NewGuid(),
             Name = "Main Branch",
             AddressLine = "123 Test Street",
-            StateGeonameId = 2, CityGeonameId = 3,
-            IsMainBranch = isMainBranch, IsActive = true,
+            StateGeonameId = 2,
+            CityGeonameId = 3,
+            IsMainBranch = isMainBranch,
+            IsActive = true,
         };
 
     /// <summary>Creates a Person + Patient for testing.</summary>
@@ -90,18 +101,18 @@ public static class TestHandlerHelpers
     {
         var person = new Person
         {
-            FirstName   = firstName,
-            LastName    = lastName,
-            Gender      = gender,
+            FullName = firstName,
+            LastName = lastName,
+            Gender = gender,
             DateOfBirth = new DateOnly(1990, 1, 1),
         };
         return new Patient
         {
-            ClinicId    = clinicId ?? Guid.NewGuid(),
+            ClinicId = clinicId ?? Guid.NewGuid(),
             PatientCode = patientCode,
-            PersonId    = person.Id,
-            Person      = person,
-            CreatedAt   = DateTimeOffset.UtcNow,
+            PersonId = person.Id,
+            Person = person,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
     }
     public static (Person person, ClinicMember member) CreateTestMember(
@@ -110,15 +121,15 @@ public static class TestHandlerHelpers
         Gender gender = Gender.Male,
         ClinicMemberRole role = ClinicMemberRole.Doctor)
     {
-        var person = new Person { FirstName = firstName, LastName = lastName, Gender = gender };
+        var person = new Person { FullName = firstName, LastName = lastName, Gender = gender };
         var member = new ClinicMember
         {
             PersonId = person.Id,
-            UserId   = userId ?? Guid.NewGuid(),
+            UserId = userId ?? Guid.NewGuid(),
             ClinicId = clinicId ?? Guid.NewGuid(),
-            Role     = role,
+            Role = role,
             IsActive = true,
-            Person   = person,
+            Person = person,
         };
         return (person, member);
     }

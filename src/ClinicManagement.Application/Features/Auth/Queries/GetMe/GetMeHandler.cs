@@ -41,8 +41,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
 
         return new GetMeDto(
             UserName:             profile.UserName,
-            FirstName:            profile.FirstName,
-            LastName:             profile.LastName,
+            FullName:             profile.FullName,
             Email:                profile.Email,
             PhoneNumber:          profile.PhoneNumber ?? string.Empty,
             ProfileImageUrl:      profile.ProfileImageUrl,

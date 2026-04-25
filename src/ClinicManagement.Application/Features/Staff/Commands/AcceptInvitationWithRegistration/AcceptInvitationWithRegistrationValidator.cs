@@ -10,17 +10,11 @@ public class AcceptInvitationWithRegistrationValidator : AbstractValidator<Accep
         RuleFor(x => x.Token)
             .NotEmpty();
 
-        RuleFor(x => x.FirstName)
+        RuleFor(x => x.FullName)
             .NotEmpty()
             .MaximumLength(100)
             .Matches(@"^[\u0600-\u06FFa-zA-Z\s'\-\.]+$")
-            .WithMessage("First name must contain only letters");
-
-        RuleFor(x => x.LastName)
-            .NotEmpty()
-            .MaximumLength(100)
-            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'\-\.]+$")
-            .WithMessage("Last name must contain only letters");
+            .WithMessage("Full name must contain only letters");
 
         RuleFor(x => x.UserName)
             .NotEmpty()

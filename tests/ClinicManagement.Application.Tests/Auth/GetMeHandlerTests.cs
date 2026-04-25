@@ -30,9 +30,9 @@ public class GetMeHandlerTests
     {
         var user = TestHandlerHelpers.CreateTestUser("ahmed@test.com");
         user.UserName = "ahmed.ali";
-        user.Person.FirstName = "Ahmed";
-        user.Person.LastName  = "Ali";
-        user.Person.Gender    = Gender.Male;
+        user.Person.FullName = "Ahmed";
+        user.Person.LastName = "Ali";
+        user.Person.Gender = Gender.Male;
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
 

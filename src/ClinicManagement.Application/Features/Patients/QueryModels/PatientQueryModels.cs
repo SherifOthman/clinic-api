@@ -18,7 +18,7 @@ public record RecentPatientRow(
 /// <summary>Full patient detail including phones, diseases, and audit user names.</summary>
 public record PatientDetailData(
     Guid Id, string PatientCode,
-    string FirstName, string LastName, string FullName,
+    string FullName,
     DateOnly? DateOfBirth,
     string Gender, string? BloodType,
     int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,

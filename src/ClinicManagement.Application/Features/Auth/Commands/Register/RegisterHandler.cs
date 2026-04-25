@@ -38,8 +38,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         // Create Person first — the human being behind the account
         var person = new Person
         {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
+            FullName = request.FullName,
             Gender = Enum.TryParse<Gender>(request.Gender, out var pg) ? pg : Gender.Male,
         };
 
@@ -82,7 +81,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
                 request.Email, ex.Message);
         }
 
-        await _auditWriter.WriteAsync(user.Id, user.FullName, user.UserName, user.Email,
+        await _auditWriter.WriteAsync(user.Id, user.Person.FullName, user.UserName, user.Email,
             UserRoles.ClinicOwner, clinicId: null, "Register", cancellationToken: cancellationToken);
 
         _logger.LogInformation("User registered successfully: {Email} with role {Role}", request.Email, UserRoles.ClinicOwner);

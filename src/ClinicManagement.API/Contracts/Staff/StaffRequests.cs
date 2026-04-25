@@ -1,8 +1,7 @@
 namespace ClinicManagement.API.Contracts.Staff;
 
 public record AcceptInvitationRequest(
-    string FirstName,
-    string LastName,
+    string FullName,
     string UserName,
     string Password,
     string PhoneNumber,

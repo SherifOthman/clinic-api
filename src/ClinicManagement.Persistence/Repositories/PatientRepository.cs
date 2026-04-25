@@ -69,9 +69,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
             query = query.Where(p =>
-                p.Person.FirstName.StartsWith(searchTerm) ||
-                p.Person.LastName.StartsWith(searchTerm) ||
-                (p.Person.FirstName + " " + p.Person.LastName).StartsWith(searchTerm) ||
+                p.Person.FullName.StartsWith(searchTerm) ||
                 p.PatientCode.StartsWith(searchTerm) ||
                 p.Phones.Any(ph =>
                     ph.PhoneNumber.StartsWith(searchTerm) ||
@@ -113,21 +111,21 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         {
             query = query
                 .OrderByDescending(p => p.PatientCode == searchTerm)
-                .ThenByDescending(p => (p.Person.FirstName + " " + p.Person.LastName).Trim() == searchTerm)
+                .ThenByDescending(p => p.Person.FullName == searchTerm)
                 .ThenByDescending(p => p.PatientCode.StartsWith(searchTerm))
-                .ThenByDescending(p => (p.Person.FirstName + " " + p.Person.LastName).Trim().StartsWith(searchTerm))
+                .ThenByDescending(p => p.Person.FullName.StartsWith(searchTerm))
                 .ThenByDescending(p => p.CreatedAt);
         }
         else
         {
             query = sortBy?.Trim().ToLower() switch
             {
-                "fullname"            => desc ? query.OrderByDescending(p => p.Person.LastName).ThenByDescending(p => p.Person.FirstName)
-                                              : query.OrderBy(p => p.Person.LastName).ThenBy(p => p.Person.FirstName),
-                "age"                 => desc ? query.OrderByDescending(p => p.Person.DateOfBirth) : query.OrderBy(p => p.Person.DateOfBirth),
-                "createdat"           => desc ? query.OrderByDescending(p => p.CreatedAt)          : query.OrderBy(p => p.CreatedAt),
+                "fullname" => desc ? query.OrderByDescending(p => p.Person.FullName)
+                                       : query.OrderBy(p => p.Person.FullName),
+                "age" => desc ? query.OrderByDescending(p => p.Person.DateOfBirth) : query.OrderBy(p => p.Person.DateOfBirth),
+                "createdat" => desc ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt),
                 "chronicdiseasecount" => desc ? query.OrderByDescending(p => p.ChronicDiseases.Count) : query.OrderBy(p => p.ChronicDiseases.Count),
-                _                     => query.OrderByDescending(p => p.CreatedAt),
+                _ => query.OrderByDescending(p => p.CreatedAt),
             };
         }
 
@@ -136,43 +134,43 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         var rawPage = await query
             .Select(p => new PatientListRaw(
-                Id:                 p.Id.ToString(),
-                PatientCode:        p.PatientCode,
-                FullName:           (p.Person.FirstName + " " + p.Person.LastName).Trim(),
-                DateOfBirth:        p.Person.DateOfBirth,
-                Gender:             p.Person.Gender,
-                BloodType:          p.BloodType,
+                Id: p.Id.ToString(),
+                PatientCode: p.PatientCode,
+                FullName: p.Person.FullName,
+                DateOfBirth: p.Person.DateOfBirth,
+                Gender: p.Person.Gender,
+                BloodType: p.BloodType,
                 ChronicDiseaseCount: p.ChronicDiseases.Count,
-                PrimaryPhone:       p.Phones.OrderBy(ph => ph.Id).Select(ph => ph.PhoneNumber).FirstOrDefault(),
-                CreatedAt:          p.CreatedAt,
-                ClinicId:           p.ClinicId,
-                CountryGeonameId:   p.CountryGeonameId,
-                StateGeonameId:     p.StateGeonameId,
-                CityGeonameId:      p.CityGeonameId,
-                CityNameEn:         p.City != null ? p.City.NameEn : null,
-                CityNameAr:         p.City != null ? p.City.NameAr : null))
+                PrimaryPhone: p.Phones.OrderBy(ph => ph.Id).Select(ph => ph.PhoneNumber).FirstOrDefault(),
+                CreatedAt: p.CreatedAt,
+                ClinicId: p.ClinicId,
+                CountryGeonameId: p.CountryGeonameId,
+                StateGeonameId: p.StateGeonameId,
+                CityGeonameId: p.CityGeonameId,
+                CityNameEn: p.City != null ? p.City.NameEn : null,
+                CityNameAr: p.City != null ? p.City.NameAr : null))
             .ToPagedAsync(pageNumber, pageSize, ct);
 
         // Clinic names are loaded separately — only for SuperAdmin
         var clinicNames = await LoadClinicNamesAsync(rawPage.Items.Select(p => p.ClinicId), isSuperAdmin, ct);
 
         var items = rawPage.Items.Select(p => new PatientListRow(
-            Id:                 p.Id,
-            PatientCode:        p.PatientCode,
-            FullName:           p.FullName,
-            DateOfBirth:        p.DateOfBirth,
-            Gender:             p.Gender.ToString(),
-            BloodType:          p.BloodType?.ToDisplayString(),
+            Id: p.Id,
+            PatientCode: p.PatientCode,
+            FullName: p.FullName,
+            DateOfBirth: p.DateOfBirth,
+            Gender: p.Gender.ToString(),
+            BloodType: p.BloodType?.ToDisplayString(),
             ChronicDiseaseCount: p.ChronicDiseaseCount,
-            PrimaryPhone:       p.PrimaryPhone,
-            CreatedAt:          p.CreatedAt,
-            ClinicId:           p.ClinicId,
-            ClinicName:         clinicNames.GetValueOrDefault(p.ClinicId),
-            CountryGeonameId:   p.CountryGeonameId,
-            StateGeonameId:     p.StateGeonameId,
-            CityGeonameId:      p.CityGeonameId,
-            CityNameEn:         p.CityNameEn,
-            CityNameAr:         p.CityNameAr)).ToList();
+            PrimaryPhone: p.PrimaryPhone,
+            CreatedAt: p.CreatedAt,
+            ClinicId: p.ClinicId,
+            ClinicName: clinicNames.GetValueOrDefault(p.ClinicId),
+            CountryGeonameId: p.CountryGeonameId,
+            StateGeonameId: p.StateGeonameId,
+            CityGeonameId: p.CityGeonameId,
+            CityNameEn: p.CityNameEn,
+            CityNameAr: p.CityNameAr)).ToList();
 
         return PaginatedResult<PatientListRow>.Create(items, rawPage.TotalCount, pageNumber, pageSize);
     }
@@ -185,7 +183,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Take(count)
             .Select(p => new RecentPatientRow(
                 p.Id.ToString(), p.PatientCode,
-                (p.Person.FirstName + " " + p.Person.LastName).Trim(),
+                p.Person.FullName,
                 p.Person.DateOfBirth, p.Person.Gender.ToString(), p.CreatedAt))
             .ToListAsync(ct);
 
@@ -201,21 +199,27 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Where(p => p.Id == id)
             .Select(p => new
             {
-                p.Id, p.PatientCode, p.BloodType,
-                FirstName   = p.Person.FirstName,
-                LastName    = p.Person.LastName,
-                FullName    = (p.Person.FirstName + " " + p.Person.LastName).Trim(),
+                p.Id,
+                p.PatientCode,
+                p.BloodType,
+                FullName = p.Person.FullName,
                 DateOfBirth = p.Person.DateOfBirth,
-                Gender      = p.Person.Gender,
-                p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
+                Gender = p.Person.Gender,
+                p.CountryGeonameId,
+                p.StateGeonameId,
+                p.CityGeonameId,
                 CountryNameEn = p.Country != null ? p.Country.NameEn : null,
                 CountryNameAr = p.Country != null ? p.Country.NameAr : null,
-                StateNameEn   = p.State   != null ? p.State.NameEn   : null,
-                StateNameAr   = p.State   != null ? p.State.NameAr   : null,
-                CityNameEn    = p.City    != null ? p.City.NameEn    : null,
-                CityNameAr    = p.City    != null ? p.City.NameAr    : null,
-                p.ClinicId, p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
-                Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
+                StateNameEn = p.State != null ? p.State.NameEn : null,
+                StateNameAr = p.State != null ? p.State.NameAr : null,
+                CityNameEn = p.City != null ? p.City.NameEn : null,
+                CityNameAr = p.City != null ? p.City.NameAr : null,
+                p.ClinicId,
+                p.CreatedAt,
+                p.UpdatedAt,
+                p.CreatedBy,
+                p.UpdatedBy,
+                Phones = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
                 Diseases = p.ChronicDiseases
                     .Select(cd => new PatientDiseaseRow(
                         cd.ChronicDiseaseId.ToString().ToLower(),
@@ -231,32 +235,30 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         var clinicName = isSuperAdmin ? await LoadClinicNameAsync(patient.ClinicId, ct) : null;
 
         return new PatientDetailData(
-            Id:             patient.Id,
-            PatientCode:    patient.PatientCode,
-            FirstName:      patient.FirstName,
-            LastName:       patient.LastName,
-            FullName:       patient.FullName,
-            DateOfBirth:    patient.DateOfBirth,
-            Gender:         patient.Gender.ToString(),
-            BloodType:      patient.BloodType?.ToDisplayString(),
+            Id: patient.Id,
+            PatientCode: patient.PatientCode,
+            FullName: patient.FullName,
+            DateOfBirth: patient.DateOfBirth,
+            Gender: patient.Gender.ToString(),
+            BloodType: patient.BloodType?.ToDisplayString(),
             CountryGeonameId: patient.CountryGeonameId,
-            StateGeonameId:   patient.StateGeonameId,
-            CityGeonameId:    patient.CityGeonameId,
-            CountryNameEn:  patient.CountryNameEn,
-            CountryNameAr:  patient.CountryNameAr,
-            StateNameEn:    patient.StateNameEn,
-            StateNameAr:    patient.StateNameAr,
-            CityNameEn:     patient.CityNameEn,
-            CityNameAr:     patient.CityNameAr,
-            ClinicId:       patient.ClinicId,
-            CreatedAt:      patient.CreatedAt,
-            UpdatedAt:      patient.UpdatedAt,
-            CreatedBy:      patient.CreatedBy,
-            UpdatedBy:      patient.UpdatedBy,
-            Phones:         patient.Phones,
-            Diseases:       patient.Diseases,
+            StateGeonameId: patient.StateGeonameId,
+            CityGeonameId: patient.CityGeonameId,
+            CountryNameEn: patient.CountryNameEn,
+            CountryNameAr: patient.CountryNameAr,
+            StateNameEn: patient.StateNameEn,
+            StateNameAr: patient.StateNameAr,
+            CityNameEn: patient.CityNameEn,
+            CityNameAr: patient.CityNameAr,
+            ClinicId: patient.ClinicId,
+            CreatedAt: patient.CreatedAt,
+            UpdatedAt: patient.UpdatedAt,
+            CreatedBy: patient.CreatedBy,
+            UpdatedBy: patient.UpdatedBy,
+            Phones: patient.Phones,
+            Diseases: patient.Diseases,
             AuditUserNames: auditNames,
-            ClinicName:     clinicName);
+            ClinicName: clinicName);
     }
 
     // ── Location filter options ───────────────────────────────────────────────
@@ -314,9 +316,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     // ── Child entity helpers (use navigation properties via Context.Entry) ────
 
-    public void AddPhone(PatientPhone phone)                  => Context.Set<PatientPhone>().Add(phone);
-    public void RemovePhone(PatientPhone phone)               => Context.Set<PatientPhone>().Remove(phone);
-    public void AddChronicDisease(PatientChronicDisease d)    => Context.Set<PatientChronicDisease>().Add(d);
+    public void AddPhone(PatientPhone phone) => Context.Set<PatientPhone>().Add(phone);
+    public void RemovePhone(PatientPhone phone) => Context.Set<PatientPhone>().Remove(phone);
+    public void AddChronicDisease(PatientChronicDisease d) => Context.Set<PatientChronicDisease>().Add(d);
     public void RemoveChronicDisease(PatientChronicDisease d) => Context.Set<PatientChronicDisease>().Remove(d);
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -353,7 +355,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return await Context.Set<User>()
             .AsNoTracking()
             .Where(u => ids.Contains(u.Id))
-            .Select(u => new { u.Id, Name = (u.Person.FirstName + " " + u.Person.LastName).Trim() })
+            .Select(u => new { u.Id, Name = u.Person.FullName })
             .ToDictionaryAsync(u => u.Id, u => u.Name, ct);
     }
 

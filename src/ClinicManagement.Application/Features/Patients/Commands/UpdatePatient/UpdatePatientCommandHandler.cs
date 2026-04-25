@@ -16,8 +16,8 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
 
     public UpdatePatientCommandHandler(IUnitOfWork uow, ICurrentUserService currentUser, IPhoneNormalizer phoneNormalizer)
     {
-        _uow             = uow;
-        _currentUser     = currentUser;
+        _uow = uow;
+        _currentUser = currentUser;
         _phoneNormalizer = phoneNormalizer;
     }
 
@@ -28,14 +28,13 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         if (patient is null)
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        patient.Person.FirstName   = request.FirstName.Trim();
-        patient.Person.LastName    = request.LastName.Trim();
+        patient.Person.FullName = request.FullName.Trim();
         patient.Person.DateOfBirth = DateOnly.TryParse(request.DateOfBirth, out var dob) ? dob : patient.Person.DateOfBirth;
-        patient.Person.Gender      = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
-        patient.CountryGeonameId  = request.CountryGeonameId;
-        patient.StateGeonameId    = request.StateGeonameId;
-        patient.CityGeonameId     = request.CityGeonameId;
-        patient.BloodType         = ParseBloodType(request.BloodType);
+        patient.Person.Gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
+        patient.CountryGeonameId = request.CountryGeonameId;
+        patient.StateGeonameId = request.StateGeonameId;
+        patient.CityGeonameId = request.CityGeonameId;
+        patient.BloodType = ParseBloodType(request.BloodType);
 
         if (request.PhoneNumbers != null)
         {
@@ -48,8 +47,8 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
             foreach (var phone in request.PhoneNumbers)
                 _uow.Patients.AddPhone(new PatientPhone
                 {
-                    PatientId      = patient.Id,
-                    PhoneNumber    = phone,
+                    PatientId = patient.Id,
+                    PhoneNumber = phone,
                     NationalNumber = _phoneNormalizer.GetNationalNumber(phone, countryCode) ?? phone,
                 });
         }

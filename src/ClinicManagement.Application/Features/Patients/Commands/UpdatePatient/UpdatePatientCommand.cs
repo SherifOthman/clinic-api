@@ -5,8 +5,7 @@ namespace ClinicManagement.Application.Features.Patients.Commands;
 
 public record UpdatePatientCommand(
     Guid Id,
-    string FirstName,
-    string LastName,
+    string FullName,
     string DateOfBirth,
     string Gender,
     int? CountryGeonameId,

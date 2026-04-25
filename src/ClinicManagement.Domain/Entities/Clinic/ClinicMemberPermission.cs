@@ -10,8 +10,8 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class ClinicMemberPermission : BaseEntity
 {
-    public Guid       ClinicMemberId { get; init; }
-    public Permission Permission     { get; init; }
+    public Guid ClinicMemberId { get; init; }
+    public Permission Permission { get; init; }
 
     // Navigation
     public ClinicMember ClinicMember { get; set; } = null!;

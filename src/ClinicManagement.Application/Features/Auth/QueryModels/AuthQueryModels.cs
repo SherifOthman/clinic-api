@@ -6,8 +6,7 @@ public record UserSpecializationRow(string NameEn, string NameAr);
 
 public record UserProfileRow(
     string UserName,
-    string FirstName,
-    string LastName,
+    string FullName,
     string Email,
     string? PhoneNumber,
     string? ProfileImageUrl,

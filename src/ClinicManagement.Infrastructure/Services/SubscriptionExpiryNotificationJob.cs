@@ -62,7 +62,7 @@ public class SubscriptionExpiryNotificationJob
                 _context.Set<EmailQueue>().Add(new EmailQueue
                 {
                     ToEmail  = !string.IsNullOrWhiteSpace(clinic.BillingEmail) ? clinic.BillingEmail : owner.Email!,
-                    ToName   = owner.FullName,
+                    ToName   = owner.Person.FullName,
                     Subject  = "Subscription Expiring Soon - Action Required",
                     Body     = $"<p>Your subscription for <strong>{clinic.Name}</strong> expires in {daysLeft} days ({subscription.EndDate:yyyy-MM-dd}). Please renew to avoid interruption.</p>",
                     IsHtml   = true,

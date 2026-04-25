@@ -29,7 +29,7 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
 
         var dtos = result.Items.Select(s => new StaffDto(
             s.Id,
-            $"{s.FirstName} {s.LastName}".Trim(),
+            s.FullName,
             s.Gender,
             s.CreatedAt,
             s.ProfileImageUrl,

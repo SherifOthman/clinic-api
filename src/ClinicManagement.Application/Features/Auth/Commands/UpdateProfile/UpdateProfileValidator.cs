@@ -7,17 +7,11 @@ public class UpdateProfileValidator : AbstractValidator<UpdateProfileCommand>
 {
     public UpdateProfileValidator()
     {
-        RuleFor(x => x.FirstName)
-            .NotEmpty().WithMessage("First name is required")
-            .MaximumLength(50).WithMessage("First name must not exceed 50 characters")
+        RuleFor(x => x.FullName)
+            .NotEmpty().WithMessage("Full name is required")
+            .MaximumLength(100).WithMessage("Full name must not exceed 100 characters")
             .Matches(@"^[\u0600-\u06FFa-zA-Z\s'\-\.]+$")
-            .WithMessage("First name must contain only letters");
-
-        RuleFor(x => x.LastName)
-            .NotEmpty().WithMessage("Last name is required")
-            .MaximumLength(50).WithMessage("Last name must not exceed 50 characters")
-            .Matches(@"^[\u0600-\u06FFa-zA-Z\s'\-\.]+$")
-            .WithMessage("Last name must contain only letters");
+            .WithMessage("Full name must contain only letters");
 
         RuleFor(x => x.userName)
             .NotEmpty().WithMessage("Username is required")
