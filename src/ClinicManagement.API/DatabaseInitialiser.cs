@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Seeders;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +38,6 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
             await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
-            await services.GetRequiredService<IPermissionRepository>().SeedRoleDefaultsAsync();
 
             Log.Information("Core database seeding completed — API is ready");
         }
