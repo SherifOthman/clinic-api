@@ -1,4 +1,3 @@
-using ClinicManagement.API.Contracts.Onboarding;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Onboarding.Commands;
