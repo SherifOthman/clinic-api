@@ -104,6 +104,38 @@ public class PermissionRepository : IPermissionRepository
         return result;
     }
 
+    public async Task<Dictionary<ClinicMemberRole, List<Permission>>> GetAllRoleDefaultsAsync(
+        CancellationToken ct = default)
+    {
+        var rows = await _db.Set<RoleDefaultPermission>()
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        return rows
+            .GroupBy(r => r.Role)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.Permission).ToList());
+    }
+
+    public async Task SetDefaultsForRoleAsync(
+        ClinicMemberRole role, IEnumerable<Permission> permissions, CancellationToken ct = default)
+    {
+        await _db.Set<RoleDefaultPermission>()
+            .Where(r => r.Role == role)
+            .ExecuteDeleteAsync(ct);
+
+        var rows = permissions.Select(p => new RoleDefaultPermission
+        {
+            Role       = role,
+            Permission = p,
+        });
+
+        await _db.Set<RoleDefaultPermission>().AddRangeAsync(rows, ct);
+        await _db.SaveChangesAsync(ct);
+
+        // Invalidate role cache so next member seeding picks up new defaults
+        _cache.Remove(RoleCacheKey(role));
+    }
+
     public async Task SeedRoleDefaultsAsync(CancellationToken ct = default)
     {
         // Idempotent — skip if already seeded

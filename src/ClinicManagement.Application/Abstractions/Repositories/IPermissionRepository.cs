@@ -21,6 +21,16 @@ public interface IPermissionRepository
     Task<List<Permission>> GetDefaultsForRoleAsync(ClinicMemberRole role, CancellationToken ct = default);
 
     /// <summary>
+    /// Returns all role defaults grouped by role — for SuperAdmin management.
+    /// </summary>
+    Task<Dictionary<ClinicMemberRole, List<Permission>>> GetAllRoleDefaultsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Replaces the default permissions for a role. SuperAdmin only.
+    /// </summary>
+    Task SetDefaultsForRoleAsync(ClinicMemberRole role, IEnumerable<Permission> permissions, CancellationToken ct = default);
+
+    /// <summary>
     /// Seeds the RoleDefaultPermissions table from DefaultPermissions.cs.
     /// Idempotent — safe to call on every startup.
     /// </summary>
