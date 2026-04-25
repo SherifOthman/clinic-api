@@ -8,13 +8,14 @@ namespace ClinicManagement.API.RateLimiting;
 /// Named rate limit policies used across the API.
 ///
 /// Algorithm choices:
-///   SlidingWindow  → auth endpoints (per-IP, tight, no burst tolerance)
-///   TokenBucket    → authenticated reads/writes and anon static data (burst-tolerant)
+///   SlidingWindow  → auth endpoints (per-device, tight, no burst tolerance)
+///   TokenBucket    → authenticated writes and anon static data (burst-tolerant)
 ///   FixedWindow    → upload and one-time actions (hard hourly/daily caps)
+///   Concurrency    → authenticated reads (prevents resource exhaustion from concurrent requests)
 ///
 /// Policy naming convention:
-///   "auth-*"       → unauthenticated auth endpoints (SlidingWindow, per-IP, tight)
-///   "user-reads"   → authenticated GET endpoints (TokenBucket, per-user, burst-tolerant)
+///   "auth-*"       → unauthenticated auth endpoints (SlidingWindow, per-device, tight)
+///   "user-reads"   → authenticated GET endpoints (Concurrency, per-user, prevents overload)
 ///   "user-writes"  → authenticated write endpoints (TokenBucket, per-user, moderate)
 ///   "user-deletes" → authenticated delete endpoints (SlidingWindow, per-user, strict, no burst)
 ///   "user-upload"  → file upload (FixedWindow, per-user, hourly hard cap)
@@ -23,54 +24,26 @@ namespace ClinicManagement.API.RateLimiting;
 /// </summary>
 public static class RateLimitPolicies
 {
-    public const string AuthLogin              = "auth-login";
-    public const string AuthRegister           = "auth-register";
-    public const string AuthForgotPassword     = "auth-forgot-password";
+    public const string AuthLogin = "auth-login";
+    public const string AuthRegister = "auth-register";
+    public const string AuthForgotPassword = "auth-forgot-password";
     public const string AuthResendVerification = "auth-resend-verification";
-    public const string AuthResetPassword      = "auth-reset-password";
-    public const string AuthConfirmEmail       = "auth-confirm-email";
-    public const string AuthRefresh            = "auth-refresh";
-    public const string AuthEnumeration        = "auth-enumeration";
+    public const string AuthResetPassword = "auth-reset-password";
+    public const string AuthConfirmEmail = "auth-confirm-email";
+    public const string AuthRefresh = "auth-refresh";
+    public const string AuthEnumeration = "auth-enumeration";
 
-    public const string UserReads   = "user-reads";
-    public const string UserWrites  = "user-writes";
+    public const string UserReads = "user-reads";
+    public const string UserWrites = "user-writes";
     public const string UserDeletes = "user-deletes";
-    public const string UserUpload  = "user-upload";
-    public const string UserOnce    = "user-once";
+    public const string UserUpload = "user-upload";
+    public const string UserOnce = "user-once";
 
     public const string AnonStatic = "anon-static";
 }
 
 public static class RateLimitingExtensions
 {
-    // ── Auth limits (per-IP, unauthenticated) ─────────────────────────────────
-    private const int    LoginPermits          = 10;
-    private const int    LoginWindowMinutes    = 15;
-    private const int    RegisterPermits       = 5;
-    private const int    RegisterWindowHours   = 1;
-    private const int    ForgotPasswordPermits = 3;
-    private const int    ForgotPasswordMinutes = 15;
-    private const int    ResetPermits          = 5;
-    private const int    ResetWindowMinutes    = 15;
-    private const int    RefreshPermits        = 30;
-    private const int    RefreshWindowMinutes  = 1;
-    private const int    EnumerationPermits    = 20;
-    private const int    EnumerationMinutes    = 1;
-
-    // ── Authenticated user limits (per-user JWT sub) ──────────────────────────
-    private const int    UserReadsTokenLimit   = 200;
-    private const int    UserWritesTokenLimit  = 60;
-    private const int    UserDeletesPermits    = 20;
-    private const int    UserDeletesMinutes    = 1;
-    private const int    UserUploadPermits     = 10;
-    private const int    UserUploadHours       = 1;
-    private const int    UserOncePermits       = 3;
-    private const int    UserOnceDays          = 1;
-
-    // ── Anonymous static data (per-IP) ────────────────────────────────────────
-    private const int    AnonStaticBurst       = 15;
-    private const int    AnonStaticReplenish   = 60;
-
     public static IServiceCollection AddRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -89,98 +62,119 @@ public static class RateLimitingExtensions
 
             // ── Unauthenticated auth endpoints (per-IP, tight) ────────────────
 
-            // Login: 10 attempts per 15 minutes per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthLogin, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(LoginWindowMinutes);
-                o.SegmentsPerWindow = 3;
-                o.PermitLimit       = LoginPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Login: 10 attempts per 15 minutes per device
+            options.AddPolicy(RateLimitPolicies.AuthLogin, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(15),
+                        SegmentsPerWindow = 3,
+                        PermitLimit = 10,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // Register: 5 per hour per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthRegister, o =>
-            {
-                o.Window            = TimeSpan.FromHours(RegisterWindowHours);
-                o.SegmentsPerWindow = 4;
-                o.PermitLimit       = RegisterPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Register: 5 per hour per device
+            options.AddPolicy(RateLimitPolicies.AuthRegister, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromHours(1),
+                        SegmentsPerWindow = 4,
+                        PermitLimit = 5,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // Forgot password: 3 per 15 min per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthForgotPassword, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(ForgotPasswordMinutes);
-                o.SegmentsPerWindow = 3;
-                o.PermitLimit       = ForgotPasswordPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Forgot password: 3 per 15 min per device
+            options.AddPolicy(RateLimitPolicies.AuthForgotPassword, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(15),
+                        SegmentsPerWindow = 3,
+                        PermitLimit = 3,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // Resend verification: 3 per 15 min per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthResendVerification, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(ForgotPasswordMinutes);
-                o.SegmentsPerWindow = 3;
-                o.PermitLimit       = ForgotPasswordPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Resend verification: 3 per 15 min per device
+            options.AddPolicy(RateLimitPolicies.AuthResendVerification, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(15),
+                        SegmentsPerWindow = 3,
+                        PermitLimit = 3,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // Reset / confirm email: 5 per 15 min per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthResetPassword, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(ResetWindowMinutes);
-                o.SegmentsPerWindow = 3;
-                o.PermitLimit       = ResetPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Reset / confirm email: 5 per 15 min per device
+            options.AddPolicy(RateLimitPolicies.AuthResetPassword, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(15),
+                        SegmentsPerWindow = 3,
+                        PermitLimit = 5,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthConfirmEmail, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(ResetWindowMinutes);
-                o.SegmentsPerWindow = 3;
-                o.PermitLimit       = ResetPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            options.AddPolicy(RateLimitPolicies.AuthConfirmEmail, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(15),
+                        SegmentsPerWindow = 3,
+                        PermitLimit = 5,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // Token refresh: 30 per minute per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthRefresh, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(RefreshWindowMinutes);
-                o.SegmentsPerWindow = 2;
-                o.PermitLimit       = RefreshPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Token refresh: 30 per minute per device
+            options.AddPolicy(RateLimitPolicies.AuthRefresh, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 2,
+                        PermitLimit = 30,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // Email/username availability check: 20 per minute per IP
-            options.AddSlidingWindowLimiter(RateLimitPolicies.AuthEnumeration, o =>
-            {
-                o.Window            = TimeSpan.FromMinutes(EnumerationMinutes);
-                o.SegmentsPerWindow = 2;
-                o.PermitLimit       = EnumerationPermits;
-                o.QueueLimit        = 0;
-                o.AutoReplenishment = true;
-            });
+            // Email/username availability check: 20 per minute per device
+            options.AddPolicy(RateLimitPolicies.AuthEnumeration, context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetDeviceFingerprint(context),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 2,
+                        PermitLimit = 20,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
             // ── Authenticated endpoints (per-user via JWT sub claim) ──────────
 
-            // Reads: 200 per minute per user — TokenBucket allows burst (page load fires multiple GETs)
+            // Reads: 5 concurrent requests per user — Concurrency (prevents resource exhaustion from multiple tabs)
             options.AddPolicy(RateLimitPolicies.UserReads, context =>
-                RateLimitPartition.GetTokenBucketLimiter(
+                RateLimitPartition.GetConcurrencyLimiter(
                     GetUserId(context),
-                    _ => new TokenBucketRateLimiterOptions
+                    _ => new ConcurrencyLimiterOptions
                     {
-                        TokenLimit          = UserReadsTokenLimit,
-                        TokensPerPeriod     = UserReadsTokenLimit,
-                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                        QueueLimit          = 0,
-                        AutoReplenishment   = true,
+                        PermitLimit = 5,
+                        QueueLimit = 10,
                     }));
 
             // Writes: 60 per minute per user — TokenBucket allows short bursts (saving multiple fields)
@@ -189,11 +183,11 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit          = UserWritesTokenLimit,
-                        TokensPerPeriod     = UserWritesTokenLimit,
+                        TokenLimit = 60,
+                        TokensPerPeriod = 60,
                         ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                        QueueLimit          = 0,
-                        AutoReplenishment   = true,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
                     }));
 
             // Deletes: 20 per minute per user — SlidingWindow (no burst tolerance for destructive ops)
@@ -202,10 +196,10 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromMinutes(UserDeletesMinutes),
+                        Window = TimeSpan.FromMinutes(1),
                         SegmentsPerWindow = 3,
-                        PermitLimit       = UserDeletesPermits,
-                        QueueLimit        = 0,
+                        PermitLimit = 20,
+                        QueueLimit = 0,
                         AutoReplenishment = true,
                     }));
 
@@ -215,9 +209,9 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromHours(UserUploadHours),
-                        PermitLimit       = UserUploadPermits,
-                        QueueLimit        = 0,
+                        Window = TimeSpan.FromHours(1),
+                        PermitLimit = 10,
+                        QueueLimit = 0,
                         AutoReplenishment = true,
                     }));
 
@@ -227,9 +221,9 @@ public static class RateLimitingExtensions
                     GetUserId(context),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromDays(UserOnceDays),
-                        PermitLimit       = UserOncePermits,
-                        QueueLimit        = 0,
+                        Window = TimeSpan.FromDays(1),
+                        PermitLimit = 3,
+                        QueueLimit = 0,
                         AutoReplenishment = true,
                     }));
 
@@ -242,11 +236,11 @@ public static class RateLimitingExtensions
                     context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit          = AnonStaticBurst,
-                        TokensPerPeriod     = AnonStaticReplenish,
+                        TokenLimit = 15,
+                        TokensPerPeriod = 60,
                         ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                        QueueLimit          = 0,
-                        AutoReplenishment   = true,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
                     }));
         });
 
@@ -262,4 +256,17 @@ public static class RateLimitingExtensions
         => context.User.FindFirstValue(ClaimTypes.NameIdentifier)
            ?? context.Connection.RemoteIpAddress?.ToString()
            ?? "unknown";
+
+    /// <summary>
+    /// Generates a device fingerprint for rate limiting unauthenticated requests.
+    /// Combines IP with User-Agent and Accept-Language to differentiate devices
+    /// within the same network while avoiding overly broad blocking.
+    /// </summary>
+    private static string GetDeviceFingerprint(HttpContext context)
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var userAgent = context.Request.Headers.UserAgent.ToString();
+        var acceptLanguage = context.Request.Headers.AcceptLanguage.ToString();
+        return $"{ip}|{userAgent}|{acceptLanguage}";
+    }
 }

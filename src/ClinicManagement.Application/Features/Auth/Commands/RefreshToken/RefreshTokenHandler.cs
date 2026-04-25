@@ -17,23 +17,23 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
     private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _userLocks = new();
 
     private readonly IUnitOfWork _uow;
-    private readonly UserManager<Domain.Entities.User> _userManager;
+    private readonly UserManager<User> _userManager;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ITokenService _tokenService;
     private readonly ILogger<RefreshTokenHandler> _logger;
 
     public RefreshTokenHandler(
         IUnitOfWork uow,
-        UserManager<Domain.Entities.User> userManager,
+        UserManager<User> userManager,
         IRefreshTokenService refreshTokenService,
         ITokenService tokenService,
         ILogger<RefreshTokenHandler> logger)
     {
-        _uow                 = uow;
-        _userManager         = userManager;
+        _uow = uow;
+        _userManager = userManager;
         _refreshTokenService = refreshTokenService;
-        _tokenService        = tokenService;
-        _logger              = logger;
+        _tokenService = tokenService;
+        _logger = logger;
     }
 
     public async Task<Result<TokenResponseDto>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             return Result.Failure<TokenResponseDto>(ErrorCodes.TOKEN_INVALID, "Invalid or expired refresh token");
         }
 
-        var userId   = tokenEntity.UserId;
+        var userId = tokenEntity.UserId;
         var semaphore = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
 
         await semaphore.WaitAsync(cancellationToken);
@@ -67,23 +67,23 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
 
             if (roles.Contains(UserRoles.ClinicOwner))
             {
-                var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
-                clinicId    = clinic?.Id;
+                var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
+                clinicId = clinic?.Id;
                 countryCode = clinic?.CountryCode;
             }
             else
             {
                 var staff = member;
-                clinicId  = staff?.ClinicId;
+                clinicId = staff?.ClinicId;
 
                 if (clinicId.HasValue)
                 {
-                    var clinic  = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
+                    var clinic = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
                     countryCode = clinic?.CountryCode;
                 }
             }
 
-            var newAccessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(),
+            var newAccessToken = _tokenService.GenerateAccessToken(user, roles.ToList(),
                 member?.Id,
                 clinicId, countryCode);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(userId, null, cancellationToken);

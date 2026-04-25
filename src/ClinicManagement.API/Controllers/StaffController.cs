@@ -24,10 +24,9 @@ public class StaffController : BaseApiController
     [ProducesResponseType(typeof(InviteStaffResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> InviteStaff(
-        [FromBody] InviteStaffRequest request, CancellationToken cancellationToken)
+        [FromBody] InviteStaffCommand request, CancellationToken cancellationToken)
     {
-        var command = new InviteStaffCommand(request.Role, request.Email, request.SpecializationId);
-        var result = await Sender.Send(command, cancellationToken);
+        var result = await Sender.Send(request, cancellationToken);
         return !result.IsSuccess ? HandleResult(result, "Failed to send invitation") : Ok(result.Value);
     }
 

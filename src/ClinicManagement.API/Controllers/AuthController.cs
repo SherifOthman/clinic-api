@@ -58,7 +58,7 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Login Failed");
 
-        _logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}", 
+        _logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}",
             request.EmailOrUsername, isMobile, result.Value!.RefreshToken != null);
 
         if (!isMobile && result.Value!.RefreshToken != null)
@@ -80,19 +80,10 @@ public class AuthController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.AuthRegister)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct)
+    public async Task<IActionResult> Register([FromBody] RegisterCommand request, CancellationToken ct)
     {
-        var command = new RegisterCommand(
-            request.FirstName,
-            request.LastName,
-            request.UserName,
-            request.Email,
-            request.Password,
-            request.Gender,
-            request.PhoneNumber
-        );
-        
-        var result = await Sender.Send(command, ct);
+
+        var result = await Sender.Send(request, ct);
         if (result.IsFailure)
             return HandleResult(result, "Registration Failed");
 
@@ -112,10 +103,10 @@ public class AuthController : BaseApiController
         var userId = _currentUser.GetRequiredUserId();
         var query = new GetMeQuery(userId);
         var result = await Sender.Send(query, ct);
-        
+
         if (result == null)
             return NotFound();
-        
+
         return Ok(result);
     }
 
@@ -136,7 +127,7 @@ public class AuthController : BaseApiController
             ? request?.RefreshToken
             : _cookieService.GetRefreshTokenFromCookie();
 
-        _logger.LogInformation("RefreshToken called: isMobile={IsMobile}, HasRefreshToken={HasToken}", 
+        _logger.LogInformation("RefreshToken called: isMobile={IsMobile}, HasRefreshToken={HasToken}",
             isMobile, !string.IsNullOrEmpty(refreshToken));
 
         if (string.IsNullOrEmpty(refreshToken))
@@ -175,10 +166,9 @@ public class AuthController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.AuthConfirmEmail)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request, CancellationToken ct)
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailCommand request, CancellationToken ct)
     {
-        var command = new ConfirmEmailCommand(request.Email, request.Token);
-        var result = await Sender.Send(command, ct);
+        var result = await Sender.Send(request, ct);
         return HandleNoContent(result, "Email Confirmation Failed");
     }
 
@@ -189,10 +179,9 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthForgotPassword)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand request, CancellationToken ct)
     {
-        var command = new ForgotPasswordCommand(request.Email);
-        await Sender.Send(command, ct);
+        await Sender.Send(request, ct);
 
         return NoContent();
     }
@@ -205,10 +194,9 @@ public class AuthController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.AuthResetPassword)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand request, CancellationToken ct)
     {
-        var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
-        var result = await Sender.Send(command, ct);
+        var result = await Sender.Send(request, ct);
         return HandleNoContent(result, "Password Reset Failed");
     }
 
@@ -220,10 +208,9 @@ public class AuthController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand request, CancellationToken ct)
     {
-        var command = new ChangePasswordCommand(request.CurrentPassword, request.NewPassword);
-        var result = await Sender.Send(command, ct);
+        var result = await Sender.Send(request, ct);
         return HandleNoContent(result, "Password Change Failed");
     }
 
@@ -290,10 +277,9 @@ public class AuthController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.AuthResendVerification)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationRequest request, CancellationToken ct)
+    public async Task<IActionResult> ResendEmailVerification([FromBody] ResendEmailVerificationCommand request, CancellationToken ct)
     {
-        var command = new ResendEmailVerificationCommand(request.Email);
-        var result = await Sender.Send(command, ct);
+        var result = await Sender.Send(request, ct);
         return HandleNoContent(result, "Resend Failed");
     }
 

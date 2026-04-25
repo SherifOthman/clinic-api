@@ -28,11 +28,11 @@ public class GetStaffListHandlerTests
         var member = new ClinicMember
         {
             PersonId = person.Id,
-            UserId   = user.Id,
+            UserId = user.Id,
             ClinicId = Guid.NewGuid(),
-            Role     = ClinicMemberRole.Doctor,
+            Role = ClinicMemberRole.Doctor,
             IsActive = isActive,
-            Person   = person,
+            Person = person,
         };
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
@@ -47,7 +47,7 @@ public class GetStaffListHandlerTests
         var result = await _handler.Handle(new GetStaffListQuery(PageNumber: 1, PageSize: 10), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.TotalCount.Should().Be(2);
+        result.Value!.TotalCount.Should().Be(2);
     }
 
     [Fact]
@@ -58,8 +58,8 @@ public class GetStaffListHandlerTests
 
         var result = await _handler.Handle(new GetStaffListQuery(IsActive: true, PageNumber: 1, PageSize: 10), default);
 
-        result.Value.Items.Should().HaveCount(1);
-        result.Value.Items.Single().IsActive.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value!.Items.Single().IsActive.Should().BeTrue();
     }
 
     [Fact]
@@ -68,6 +68,6 @@ public class GetStaffListHandlerTests
         var result = await _handler.Handle(new GetStaffListQuery(PageNumber: 1, PageSize: 10), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.TotalCount.Should().Be(0);
+        result.Value!.TotalCount.Should().Be(0);
     }
 }

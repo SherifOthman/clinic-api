@@ -22,8 +22,11 @@ public class GetPatientDetailHandlerTests
         var person = new Person { FirstName = "Test", LastName = "Patient", Gender = gender, DateOfBirth = new DateOnly(1990, 6, 15) };
         return new Patient
         {
-            ClinicId = Guid.NewGuid(), PatientCode = "0001",
-            PersonId = person.Id, Person = person, CreatedAt = DateTimeOffset.UtcNow,
+            ClinicId = Guid.NewGuid(),
+            PatientCode = "0001",
+            PersonId = person.Id,
+            Person = person,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
     }
 
@@ -45,9 +48,9 @@ public class GetPatientDetailHandlerTests
         var result = await _handler.Handle(new GetPatientDetailQuery(patient.Id), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.FullName.Should().Be("Test Patient");
-        result.Value.Gender.Should().Be("Female");
-        result.Value.PatientCode.Should().Be("0001");
+        result.Value!.FullName.Should().Be("Test Patient");
+        result.Value!.Gender.Should().Be("Female");
+        result.Value!.PatientCode.Should().Be("0001");
     }
 
     [Fact]
@@ -63,8 +66,8 @@ public class GetPatientDetailHandlerTests
 
         var result = await _handler.Handle(new GetPatientDetailQuery(patient.Id), default);
 
-        result.Value.PhoneNumbers.Should().HaveCount(2);
-        result.Value.PhoneNumbers.Should().Contain("+966500000001");
+        result.Value!.PhoneNumbers.Should().HaveCount(2);
+        result.Value!.PhoneNumbers.Should().Contain("+966500000001");
     }
 
     [Fact]
@@ -77,13 +80,13 @@ public class GetPatientDetailHandlerTests
         await _uow.SaveChangesAsync();
 
         _uow.Patients.AddChronicDisease(new PatientChronicDisease
-            { PatientId = patient.Id, ChronicDiseaseId = disease.Id });
+        { PatientId = patient.Id, ChronicDiseaseId = disease.Id });
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(new GetPatientDetailQuery(patient.Id), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.ChronicDiseases.Should().HaveCount(1);
-        result.Value.ChronicDiseases[0].NameEn.Should().Be("Diabetes");
+        result.Value!.ChronicDiseases.Should().HaveCount(1);
+        result.Value!.ChronicDiseases[0].NameEn.Should().Be("Diabetes");
     }
 }

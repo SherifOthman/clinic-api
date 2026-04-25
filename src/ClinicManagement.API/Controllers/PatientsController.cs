@@ -101,15 +101,10 @@ public class PatientsController : BaseApiController
     [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePatient(
-        [FromBody] CreatePatientRequest request,
+        [FromBody] CreatePatientCommand request,
         CancellationToken cancellationToken = default)
     {
-        var command = new CreatePatientCommand(
-            request.FirstName, request.LastName, request.DateOfBirth, request.Gender,
-            request.CountryGeonameId, request.StateGeonameId, request.CityGeonameId,
-            request.BloodType, request.PhoneNumbers, request.ChronicDiseaseIds);
-
-        var result = await Sender.Send(command, cancellationToken);
+        var result = await Sender.Send(request, cancellationToken);
         if (!result.IsSuccess) return HandleResult(result, "Failed to create patient");
         return CreatedAtAction(nameof(GetPatientDetail), new { id = result.Value }, null);
     }

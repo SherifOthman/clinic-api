@@ -1,10 +1,5 @@
 namespace ClinicManagement.API.Contracts.Staff;
 
-public record InviteStaffRequest(
-    string Role,
-    string Email,
-    Guid? SpecializationId = null);
-
 public record AcceptInvitationRequest(
     string FirstName,
     string LastName,

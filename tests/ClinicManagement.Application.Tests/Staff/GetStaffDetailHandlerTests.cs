@@ -43,10 +43,10 @@ public class GetStaffDetailHandlerTests
         var result = await _handler.Handle(new GetStaffDetailQuery(member.Id), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.FullName.Should().Be("Ahmed Ali");
-        result.Value.Gender.Should().Be("Male");
-        result.Value.IsActive.Should().BeTrue();
-        result.Value.DoctorProfile.Should().BeNull();
+        result.Value!.FullName.Should().Be("Ahmed Ali");
+        result.Value!.Gender.Should().Be("Male");
+        result.Value!.IsActive.Should().BeTrue();
+        result.Value!.DoctorProfile.Should().BeNull();
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class GetStaffDetailHandlerTests
         var result = await _handler.Handle(new GetStaffDetailQuery(member.Id), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.DoctorProfile.Should().NotBeNull();
-        result.Value.DoctorProfile!.SpecializationNameEn.Should().Be("Cardiology");
+        result.Value!.DoctorProfile.Should().NotBeNull();
+        result.Value!.DoctorProfile!.SpecializationNameEn.Should().Be("Cardiology");
     }
 }

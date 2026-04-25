@@ -19,21 +19,21 @@ public class GetRecentPatientsHandlerTests
 
     private Patient MakePatient(string name, Gender gender, DateTimeOffset createdAt)
     {
-        var parts  = name.Split(' ', 2);
+        var parts = name.Split(' ', 2);
         var person = new Person
         {
-            FirstName   = parts[0],
-            LastName    = parts.Length > 1 ? parts[1] : string.Empty,
-            Gender      = gender,
+            FirstName = parts[0],
+            LastName = parts.Length > 1 ? parts[1] : string.Empty,
+            Gender = gender,
             DateOfBirth = new DateOnly(1990, 1, 1),
         };
         return new Patient
         {
-            ClinicId    = Guid.NewGuid(),
+            ClinicId = Guid.NewGuid(),
             PatientCode = Guid.NewGuid().ToString()[..7],
-            PersonId    = person.Id,
-            Person      = person,
-            CreatedAt   = createdAt,
+            PersonId = person.Id,
+            Person = person,
+            CreatedAt = createdAt,
         };
     }
 
@@ -69,6 +69,6 @@ public class GetRecentPatientsHandlerTests
 
         var result = await _handler.Handle(new GetRecentPatientsQuery(Count: 5), default);
 
-        result.Value.Single().Gender.Should().Be(expected);
+        result.Value!.Single().Gender.Should().Be(expected);
     }
 }

@@ -4,6 +4,7 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -25,11 +26,11 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         ISecurityAuditWriter auditWriter,
         ILogger<RegisterHandler> logger)
     {
-        _uow               = uow;
-        _userManager       = userManager;
+        _uow = uow;
+        _userManager = userManager;
         _emailTokenService = emailTokenService;
-        _auditWriter       = auditWriter;
-        _logger            = logger;
+        _auditWriter = auditWriter;
+        _logger = logger;
     }
 
     public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -38,9 +39,10 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         var person = new Person
         {
             FirstName = request.FirstName,
-            LastName  = request.LastName,
-            Gender    = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male,
+            LastName = request.LastName,
+            Gender = Enum.TryParse<Gender>(request.Gender, out var pg) ? pg : Gender.Male,
         };
+
 
         // Person must be persisted before UserManager.CreateAsync so the FK is satisfied
         await _uow.Persons.AddAsync(person);
@@ -48,11 +50,11 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 
         var user = new User
         {
-            Email          = request.Email,
-            UserName       = request.UserName ?? request.Email,
-            PhoneNumber    = request.PhoneNumber,
+            Email = request.Email,
+            UserName = request.UserName ?? request.Email,
+            PhoneNumber = request.PhoneNumber,
             EmailConfirmed = false,
-            PersonId       = person.Id,
+            PersonId = person.Id,
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
@@ -73,11 +75,11 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         }
 
         try { await _emailTokenService.SendConfirmationEmailAsync(user, cancellationToken); }
-        catch (Exception ex) 
-        { 
+        catch (Exception ex)
+        {
             // Email failure is non-fatal — user is created but must resend verification manually
-            _logger.LogError(ex, "SMTP ERROR: Failed to send confirmation email to {Email}. SMTP may be misconfigured. Error: {Message}", 
-                request.Email, ex.Message); 
+            _logger.LogError(ex, "SMTP ERROR: Failed to send confirmation email to {Email}. SMTP may be misconfigured. Error: {Message}",
+                request.Email, ex.Message);
         }
 
         await _auditWriter.WriteAsync(user.Id, user.FullName, user.UserName, user.Email,
