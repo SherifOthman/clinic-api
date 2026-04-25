@@ -15,7 +15,7 @@ public class ClinicMemberConfiguration : IEntityTypeConfiguration<ClinicMember>
 
         // A person can be a member at multiple clinics, but only once per clinic
         builder.HasIndex(m => new { m.PersonId, m.ClinicId }).IsUnique();
-        builder.HasIndex(m => new { m.ClinicId, m.IsDeleted, m.IsActive });
+        builder.HasIndex(m => new { m.ClinicId, m.IsActive });
 
         builder.HasOne(m => m.Person)
             .WithMany(p => p.ClinicMemberships)

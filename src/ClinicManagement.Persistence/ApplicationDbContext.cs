@@ -17,8 +17,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     // ── Location reference tables (GeoNames seed) ─────────────────────────────
     public DbSet<GeoCountry> GeoCountries => Set<GeoCountry>();
-    public DbSet<GeoState>   GeoStates    => Set<GeoState>();
-    public DbSet<GeoCity>    GeoCities    => Set<GeoCity>();
+    public DbSet<GeoState> GeoStates => Set<GeoState>();
+    public DbSet<GeoCity> GeoCities => Set<GeoCity>();
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
@@ -32,14 +32,14 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var userId    = _currentUserService?.UserId;
+        var userId = _currentUserService?.UserId;
         var ipAddress = _currentUserService?.IpAddress;
-        var userRole  = _currentUserService?.Roles.FirstOrDefault();
-        var fullName  = _currentUserService?.FullName;
-        var username  = _currentUserService?.Username;
+        var userRole = _currentUserService?.Roles.FirstOrDefault();
+        var fullName = _currentUserService?.FullName;
+        var username = _currentUserService?.Username;
         var userEmail = _currentUserService?.Email;
         var userAgent = _currentUserService?.UserAgent;
-        var now       = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
 
         var auditEntries = _auditEntryBuilder.Build(
             ChangeTracker.Entries<AuditableEntity>(),
@@ -101,15 +101,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
                     .Invoke(this, [modelBuilder]);
             }
 
-            if (typeof(AuditableEntity).IsAssignableFrom(clrType))
-            {
-                typeof(ApplicationDbContext)
-                    .GetMethod(nameof(ApplySoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Static)!
-                    .MakeGenericMethod(clrType)
-                    .Invoke(null, [modelBuilder]);
-            }
-
-            if (typeof(ISoftDeletable).IsAssignableFrom(clrType) && !typeof(AuditableEntity).IsAssignableFrom(clrType))
+            if (typeof(ISoftDeletable).IsAssignableFrom(clrType))
             {
                 typeof(ApplicationDbContext)
                     .GetMethod(nameof(ApplySoftDeletableFilter), BindingFlags.NonPublic | BindingFlags.Static)!
@@ -128,13 +120,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .HasQueryFilter(
                 QueryFilterNames.Tenant,
                 e => _currentUserService == null || e.ClinicId == CurrentClinicId);
-    }
-
-    private static void ApplySoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
-        where TEntity : AuditableEntity
-    {
-        modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(QueryFilterNames.SoftDelete, e => !e.IsDeleted);
     }
 
     private static void ApplySoftDeletableFilter<TEntity>(ModelBuilder modelBuilder)

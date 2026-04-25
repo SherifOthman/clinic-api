@@ -7,9 +7,11 @@ namespace ClinicManagement.Domain.Entities;
 /// A person's medical record at a specific clinic.
 /// All personal data (name, gender, DOB) lives on Person.
 /// </summary>
-public class Patient : AuditableTenantEntity
+public class Patient : AuditableTenantEntity, ISoftDeletable
 {
     public string PatientCode { get; set; } = null!;
+
+    public bool IsDeleted { get; set; } = false;
 
     public Guid PersonId { get; set; }
 
@@ -28,15 +30,15 @@ public class Patient : AuditableTenantEntity
         {
             if (Person?.DateOfBirth is not { } dob) return null;
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var age   = today.Year - dob.Year;
+            var age = today.Year - dob.Year;
             if (dob.AddYears(age) > today) age--;
             return age;
         }
     }
 
     public bool HasChronicDiseases => ChronicDiseases.Count > 0;
-    public bool HasPhones          => Phones.Count > 0;
-    public bool HasLocation        => CountryGeonameId.HasValue;
+    public bool HasPhones => Phones.Count > 0;
+    public bool HasLocation => CountryGeonameId.HasValue;
 
     // Navigation
     public Person Person { get; set; } = null!;

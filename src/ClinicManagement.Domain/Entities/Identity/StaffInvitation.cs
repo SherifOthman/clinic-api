@@ -4,9 +4,11 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class StaffInvitation : AuditableTenantEntity
+public class StaffInvitation : AuditableTenantEntity, ISoftDeletable
 {
     private const int DefaultExpirationDays = 7;
+
+    public bool IsDeleted { get; set; } = false;
 
     public string Email { get; private set; } = null!;
     public ClinicMemberRole Role { get; private set; }
@@ -64,13 +66,13 @@ public class StaffInvitation : AuditableTenantEntity
     {
         return new StaffInvitation
         {
-            ClinicId         = clinicId,
-            Email            = email,
-            Role             = role,
+            ClinicId = clinicId,
+            Email = email,
+            Role = role,
             SpecializationId = specializationId,
-            InvitationToken  = Guid.NewGuid().ToString("N"),
-            ExpiresAt        = DateTimeOffset.UtcNow.AddDays(expirationDays),
-            CreatedByUserId  = createdByUserId,
+            InvitationToken = Guid.NewGuid().ToString("N"),
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(expirationDays),
+            CreatedByUserId = createdByUserId,
         };
     }
 }

@@ -2,13 +2,14 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Clinic : AuditableEntity
+public class Clinic : AuditableEntity, ISoftDeletable
 {
     public string Name { get; set; } = null!;
     public Guid OwnerUserId { get; init; }
     public Guid SubscriptionPlanId { get; set; }
     public bool OnboardingCompleted { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
     public DateTimeOffset? SubscriptionStartDate { get; set; }
     public DateTimeOffset? SubscriptionEndDate { get; set; }
     public DateTimeOffset? TrialEndDate { get; set; }
