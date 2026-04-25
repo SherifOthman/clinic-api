@@ -12,10 +12,7 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
     private readonly ICurrentUserService _currentUser;
     private readonly ISecurityAuditWriter _auditWriter;
 
-    public SetMemberPermissionsHandler(
-        IUnitOfWork uow,
-        ICurrentUserService currentUser,
-        ISecurityAuditWriter auditWriter)
+    public SetMemberPermissionsHandler(IUnitOfWork uow, ICurrentUserService currentUser, ISecurityAuditWriter auditWriter)
     {
         _uow         = uow;
         _currentUser = currentUser;
@@ -30,20 +27,18 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
         if (member is null || member.ClinicId != clinicId)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Staff member not found");
 
-        // Owner permissions cannot be modified
         if (member.IsOwner)
             return Result.Failure(ErrorCodes.FORBIDDEN, "Owner permissions cannot be modified");
 
-        // Capture before state for audit
+        // Capture before state for diff — behavior can't do this
         var previousPermissions = await _uow.Permissions.GetByMemberIdAsync(request.MemberId, cancellationToken);
-
         await _uow.Permissions.SetPermissionsAsync(request.MemberId, request.Permissions, cancellationToken);
 
-        // Audit the change — records who changed what and when
         var added   = request.Permissions.Except(previousPermissions).Select(p => p.ToString());
         var removed = previousPermissions.Except(request.Permissions).Select(p => p.ToString());
         var detail  = $"Granted: [{string.Join(", ", added)}] | Revoked: [{string.Join(", ", removed)}]";
 
+        // Manual audit — needs DB diff that the behavior can't compute
         await _auditWriter.WriteAsync(
             _currentUser.UserId, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
             _currentUser.Roles.FirstOrDefault(), clinicId,

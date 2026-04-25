@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
@@ -13,4 +14,8 @@ public record CompleteOnboarding(
     bool ProvideMedicalServices,
     Guid? SpecializationId,
     string? CountryCode
-) : IRequest<Result>;
+) : IRequest<Result>, IAuditableCommand
+{
+    public string AuditEvent   => "ClinicOnboarded";
+    public string? AuditDetail => $"Clinic: {ClinicName}";
+}

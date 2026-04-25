@@ -13,7 +13,6 @@ namespace ClinicManagement.Persistence;
 public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 {
     private readonly ICurrentUserService? _currentUserService;
-    private readonly AuditEntryBuilder _auditEntryBuilder;
 
     // ── Location reference tables (GeoNames seed) ─────────────────────────────
     public DbSet<GeoCountry> GeoCountries => Set<GeoCountry>();
@@ -27,25 +26,14 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         : base(options)
     {
         _currentUserService = currentUserService;
-        _auditEntryBuilder = new AuditEntryBuilder();
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var userId = _currentUserService?.UserId;
-        var ipAddress = _currentUserService?.IpAddress;
-        var userRole = _currentUserService?.Roles.FirstOrDefault();
-        var fullName = _currentUserService?.FullName;
-        var username = _currentUserService?.Username;
-        var userEmail = _currentUserService?.Email;
-        var userAgent = _currentUserService?.UserAgent;
-        var now = DateTimeOffset.UtcNow;
+        var now    = DateTimeOffset.UtcNow;
 
-        var auditEntries = _auditEntryBuilder.Build(
-            ChangeTracker.Entries<AuditableEntity>(),
-            userId, fullName, username, userEmail, userRole, ipAddress, userAgent, now);
-
-        // Stamp audit fields
+        // Stamp audit fields only — AuditLog writes are handled by AuditBehavior
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)
@@ -60,16 +48,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             }
         }
 
-        var result = await base.SaveChangesAsync(cancellationToken);
-
-        // Persist audit logs after save (so EntityId is available for Added entries)
-        if (auditEntries.Count > 0)
-        {
-            Set<AuditLog>().AddRange(auditEntries);
-            await base.SaveChangesAsync(cancellationToken);
-        }
-
-        return result;
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

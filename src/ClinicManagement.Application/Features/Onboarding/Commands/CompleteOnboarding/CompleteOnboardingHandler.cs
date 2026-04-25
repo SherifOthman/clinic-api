@@ -11,13 +11,11 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ISecurityAuditWriter _auditWriter;
 
-    public CompleteOnboardingHandler(IUnitOfWork uow, ICurrentUserService currentUserService, ISecurityAuditWriter auditWriter)
+    public CompleteOnboardingHandler(IUnitOfWork uow, ICurrentUserService currentUserService)
     {
         _uow                = uow;
         _currentUserService = currentUserService;
-        _auditWriter        = auditWriter;
     }
 
     public async Task<Result> Handle(CompleteOnboarding request, CancellationToken cancellationToken)
@@ -71,22 +69,16 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await _auditWriter.WriteAsync(userId, _currentUserService.FullName, _currentUserService.Username, _currentUserService.Email,
-            _currentUserService.Roles.FirstOrDefault(), clinic.Id,
-            "ClinicOnboarded", $"Clinic: {request.ClinicName} | Plan: {request.SubscriptionPlanId}", cancellationToken);
-
+        // Audit handled by AuditBehavior
         return Result.Success();
     }
 
-    private static ClinicMember CreateOwnerMember(User user, Guid clinicId)
+    private static ClinicMember CreateOwnerMember(User user, Guid clinicId) => new()
     {
-        return new ClinicMember
-        {
-            PersonId = user.PersonId,
-            UserId   = user.Id,
-            ClinicId = clinicId,
-            Role     = Domain.Enums.ClinicMemberRole.Owner,
-            IsActive = true,
-        };
-    }
+        PersonId = user.PersonId,
+        UserId   = user.Id,
+        ClinicId = clinicId,
+        Role     = Domain.Enums.ClinicMemberRole.Owner,
+        IsActive = true,
+    };
 }

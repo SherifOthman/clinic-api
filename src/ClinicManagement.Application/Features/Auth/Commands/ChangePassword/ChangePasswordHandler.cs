@@ -46,6 +46,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         if (!result.Succeeded)
         {
             _logger.LogWarning("Failed to change password for user {UserId}", user.Id);
+            // Audit failure manually — behavior only runs on success
             await _auditWriter.WriteAsync(user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
                 _currentUser.Roles.FirstOrDefault(), null, "PasswordChangeFailed", "Incorrect current password", cancellationToken);
             return Result.Failure(ErrorCodes.INVALID_CREDENTIALS, "Current password is incorrect");
@@ -54,9 +55,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         user.LastPasswordChangeAt = DateTimeOffset.UtcNow;
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await _auditWriter.WriteAsync(user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
-            _currentUser.Roles.FirstOrDefault(), null, "PasswordChanged", cancellationToken: cancellationToken);
-
+        // Success audit handled by AuditBehavior
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);
         return Result.Success();
     }

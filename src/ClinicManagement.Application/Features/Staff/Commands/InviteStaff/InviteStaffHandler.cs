@@ -15,14 +15,12 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
-    private readonly ISecurityAuditWriter _auditWriter;
 
-    public InviteStaffHandler(IUnitOfWork uow, ICurrentUserService currentUserService, IEmailService emailService, ISecurityAuditWriter auditWriter)
+    public InviteStaffHandler(IUnitOfWork uow, ICurrentUserService currentUserService, IEmailService emailService)
     {
         _uow                = uow;
         _currentUserService = currentUserService;
         _emailService       = emailService;
-        _auditWriter        = auditWriter;
     }
 
     public async Task<Result<InviteStaffResponseDto>> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
@@ -53,11 +51,7 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await _auditWriter.WriteAsync(
-            currentUserId, _currentUserService.FullName, _currentUserService.Username, _currentUserService.Email,
-            _currentUserService.Roles.FirstOrDefault(), clinicId,
-            "StaffInvited", $"Invited {request.Email} as {request.Role}", cancellationToken);
-
+        // Audit handled by AuditBehavior
         return Result.Success(new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt));
     }
 }
