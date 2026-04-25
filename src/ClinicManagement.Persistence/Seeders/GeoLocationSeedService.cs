@@ -113,17 +113,14 @@ public class GeoLocationSeedService
         var validStates = await _db.GeoStates.Select(s => s.GeonameId).ToHashSetAsync(ct);
         if (validStates.Count == 0) { _logger.LogWarning("No states in DB — skipping city seeding."); return; }
 
-        _logger.LogInformation("Starting city seeding (~225K rows, may take a few minutes)...");
-
-        // Stream cities in pages to avoid loading all 225K rows into memory at once.
-        // GetCitiesAsync returns a full list, so we process it in chunks and clear
-        // the EF change tracker after each batch to keep memory flat.
+        _logger.LogInformation("Starting city seeding in background (~225K rows, may take a few minutes on first run)...");
         var allCities   = await _geoNames.GetCitiesAsync(ct);
         var existingIds = await _db.GeoCities.Select(c => c.GeonameId).ToHashSetAsync(ct);
 
+        // seenNames prevents duplicate (state, name) pairs before they hit the DB unique index.
+        // OrdinalIgnoreCase matches SQL Server's default case-insensitive collation.
         var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var toInsert  = new List<GeoCity>(2_000);
-        var total     = 0;
+        var toInsert  = new List<GeoCity>();
 
         foreach (var c in allCities)
         {
@@ -138,33 +135,19 @@ public class GeoLocationSeedService
                 NameEn         = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
                 NameAr         = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
             });
-
-            if (toInsert.Count < 2_000) continue;
-
-            await _db.GeoCities.AddRangeAsync(toInsert, ct);
-            await _db.SaveChangesAsync(ct);
-            _db.ChangeTracker.Clear();
-            total += toInsert.Count;
-            toInsert.Clear();
-            _logger.LogInformation("Cities: {Done:N0} inserted so far...", total);
-
-            // Yield to allow GC to reclaim memory between batches
-            await Task.Yield();
         }
 
-        // Flush remaining
-        if (toInsert.Count > 0)
+        if (toInsert.Count == 0) { _logger.LogInformation("Cities: nothing new to insert."); return; }
+
+        const int BatchSize = 2_000;
+        for (var i = 0; i < toInsert.Count; i += BatchSize)
         {
-            await _db.GeoCities.AddRangeAsync(toInsert, ct);
+            await _db.GeoCities.AddRangeAsync(toInsert.Skip(i).Take(BatchSize), ct);
             await _db.SaveChangesAsync(ct);
             _db.ChangeTracker.Clear();
-            total += toInsert.Count;
+            _logger.LogInformation("Cities: {Done:N0}/{Total:N0} inserted...", Math.Min(i + BatchSize, toInsert.Count), toInsert.Count);
         }
 
-        // Release the large list immediately
-        allCities.Clear();
-        allCities.TrimExcess();
-
-        _logger.LogInformation("Cities: +{Count:N0} total inserted.", total);
+        _logger.LogInformation("Cities: +{Count:N0} total inserted.", toInsert.Count);
     }
 }
