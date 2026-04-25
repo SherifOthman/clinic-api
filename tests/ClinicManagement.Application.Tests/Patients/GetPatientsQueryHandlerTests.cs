@@ -25,11 +25,9 @@ public class GetPatientsQueryHandlerTests
 
     private Patient MakePatient(string name, Gender gender, string code, int chronicDiseaseCount = 0)
     {
-        var parts = name.Split(' ', 2);
         var person = new Person
         {
-            FullName = parts[0],
-            LastName = parts.Length > 1 ? parts[1] : string.Empty,
+            FullName = name,
             Gender = gender,
             DateOfBirth = new DateOnly(1990, 1, 1),
         };

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260422175401_InitialCreate")]
+    [Migration("20260425213022_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -57,9 +57,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
@@ -317,9 +314,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsMainBranch")
                         .HasColumnType("bit");
 
@@ -387,9 +381,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<DateTimeOffset>("JoinedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -414,10 +405,10 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("ClinicId", "IsActive");
+
                     b.HasIndex("PersonId", "ClinicId")
                         .IsUnique();
-
-                    b.HasIndex("ClinicId", "IsDeleted", "IsActive");
 
                     b.ToTable("ClinicMember", t =>
                         {
@@ -433,9 +424,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<Guid>("ClinicMemberId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Permission")
                         .IsRequired()
@@ -480,9 +468,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<DateTimeOffset?>("EndDate")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset>("StartDate")
                         .HasColumnType("datetimeoffset");
@@ -652,9 +637,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsHtml")
                         .HasColumnType("bit");
 
@@ -726,9 +708,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasKey("GeonameId");
 
                     b.HasIndex("StateGeonameId");
-
-                    b.HasIndex("StateGeonameId", "NameEn")
-                        .IsUnique();
 
                     b.ToTable("GeoCities", (string)null);
                 });
@@ -815,9 +794,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("IssuedDate")
                         .HasColumnType("datetimeoffset");
@@ -928,7 +904,7 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.ToTable("InvoiceItem", t =>
                         {
-                            t.HasCheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
+                            t.HasCheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
 
                             t.HasCheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
 
@@ -1019,9 +995,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsOperation")
                         .HasColumnType("bit");
 
@@ -1050,9 +1023,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<int>("MinimumStockLevel")
                         .HasColumnType("int");
@@ -1138,9 +1108,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("date");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDiscontinued")
@@ -1229,9 +1196,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<DateTimeOffset?>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
@@ -1425,9 +1389,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -1478,20 +1439,15 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date");
 
-                    b.Property<string>("FirstName")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ProfileImageUrl")
                         .HasMaxLength(500)
@@ -1590,9 +1546,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<DateTimeOffset>("ExpiryTime")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
 
@@ -1669,32 +1622,6 @@ namespace ClinicManagement.Persistence.Migrations
                     b.ToTable("Roles", (string)null);
                 });
 
-            modelBuilder.Entity("ClinicManagement.Domain.Entities.RoleDefaultPermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Permission")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Role", "Permission")
-                        .IsUnique();
-
-                    b.ToTable("RoleDefaultPermissions", (string)null);
-                });
-
             modelBuilder.Entity("ClinicManagement.Domain.Entities.Specialization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1716,9 +1643,6 @@ namespace ClinicManagement.Persistence.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("NameAr")
@@ -1843,9 +1767,6 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<string>("FailureReason")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset>("PaymentDate")
                         .HasColumnType("datetimeoffset");

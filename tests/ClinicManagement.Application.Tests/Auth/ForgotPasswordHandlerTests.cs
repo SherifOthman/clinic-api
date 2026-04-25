@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 using ClinicManagement.Application.Tests.Common;
@@ -17,6 +18,7 @@ public class ForgotPasswordHandlerTests
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<IEmailService> _emailMock = new();
+    private readonly Mock<ISecurityAuditWriter> _auditWriterMock = new();
     private readonly ForgotPasswordHandler _handler;
 
     public ForgotPasswordHandlerTests()
@@ -24,7 +26,7 @@ public class ForgotPasswordHandlerTests
         _handler = new ForgotPasswordHandler(
             _uow, _userManagerMock.Object, _emailMock.Object,
             Options.Create(new AppOptions { FrontendUrl = "https://example.com" }),
-            NullLogger<ForgotPasswordHandler>.Instance);
+            _auditWriterMock.Object, NullLogger<ForgotPasswordHandler>.Instance);
     }
 
     [Fact]

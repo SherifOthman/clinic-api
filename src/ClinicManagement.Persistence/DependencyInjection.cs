@@ -5,6 +5,7 @@ using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,7 +18,10 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options
+                .UseSqlServer(connectionString)
+                .ConfigureWarnings(w => w.Ignore(
+                    CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
 
         // Unit of Work (contains all repositories)
         services.AddScoped<IUnitOfWork, UnitOfWork>();

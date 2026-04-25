@@ -35,7 +35,7 @@ public static class TestHandlerHelpers
 
     public static User CreateTestUser(string email = "test@test.com", bool emailConfirmed = true)
     {
-        var person = new Person { FullName = "Test", LastName = "User", Gender = Gender.Male };
+        var person = new Person { FullName = "Test User", Gender = Gender.Male };
         return new User
         {
             Email = email,
@@ -101,8 +101,7 @@ public static class TestHandlerHelpers
     {
         var person = new Person
         {
-            FullName = firstName,
-            LastName = lastName,
+            FullName = $"{firstName} {lastName}".Trim(),
             Gender = gender,
             DateOfBirth = new DateOnly(1990, 1, 1),
         };
@@ -121,7 +120,7 @@ public static class TestHandlerHelpers
         Gender gender = Gender.Male,
         ClinicMemberRole role = ClinicMemberRole.Doctor)
     {
-        var person = new Person { FullName = firstName, LastName = lastName, Gender = gender };
+        var person = new Person { FullName = $"{firstName} {lastName}".Trim(), Gender = gender };
         var member = new ClinicMember
         {
             PersonId = person.Id,

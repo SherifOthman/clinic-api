@@ -30,7 +30,7 @@ public class UpdatePatientHandlerTests
     public async Task Handle_ShouldFail_WhenPatientNotFound()
     {
         var result = await _handler.Handle(
-            new UpdatePatientCommand(Guid.NewGuid(), "Name", "", "1990-01-01", "Male", null, null, null, null), default);
+            new UpdatePatientCommand(Guid.NewGuid(), "Full Name", "1990-01-01", "Male", null, null, null, null), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -43,7 +43,7 @@ public class UpdatePatientHandlerTests
         await _uow.SaveChangesAsync();
 
         var result = await _handler.Handle(
-            new UpdatePatientCommand(patient.Id, "New", "Name", "1985-06-15", "Female", null, null, null, null), default);
+            new UpdatePatientCommand(patient.Id, "New Name", "1985-06-15", "Female", null, null, null, null), default);
 
         result.IsSuccess.Should().BeTrue();
 
@@ -63,7 +63,7 @@ public class UpdatePatientHandlerTests
         await _uow.SaveChangesAsync();
 
         await _handler.Handle(new UpdatePatientCommand(
-            patient.Id, "Test", "Patient", "1990-01-01", "Male", null, null, null, null,
+            patient.Id, "Test Patient", "1990-01-01", "Male", null, null, null, null,
             ["+966500000001", "+966500000002"],
             null), default);
 

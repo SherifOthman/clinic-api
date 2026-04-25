@@ -391,3 +391,7 @@ FodyWeavers.xsd
 
 # Production settings with sensitive data
 appsettings.Production.json
+
+# Publish output folders
+*sktopwwwroot/
+~/Desktop/wwwroot/

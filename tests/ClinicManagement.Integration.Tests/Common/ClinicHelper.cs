@@ -28,7 +28,7 @@ public static class ClinicHelper
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-        var person = new Person { FullName = "Clinic", LastName = "Owner", Gender = Gender.Male };
+        var person = new Person { FullName = "Clinic Owner", Gender = Gender.Male };
         var user = new User
         {
             UserName = username,

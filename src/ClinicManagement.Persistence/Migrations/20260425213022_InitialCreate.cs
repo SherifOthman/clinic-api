@@ -56,6 +56,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MetricDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     ActiveStaffCount = table.Column<int>(type: "int", nullable: false),
                     NewPatientsCount = table.Column<int>(type: "int", nullable: false),
                     TotalPatientsCount = table.Column<int>(type: "int", nullable: false),
@@ -64,7 +65,6 @@ namespace ClinicManagement.Persistence.Migrations
                     StorageUsedGB = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -93,7 +93,6 @@ namespace ClinicManagement.Persistence.Migrations
                     ScheduledFor = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -135,7 +134,6 @@ namespace ClinicManagement.Persistence.Migrations
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -188,7 +186,6 @@ namespace ClinicManagement.Persistence.Migrations
                     IsOperation = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -209,7 +206,6 @@ namespace ClinicManagement.Persistence.Migrations
                     MinimumStockLevel = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -252,7 +248,6 @@ namespace ClinicManagement.Persistence.Migrations
                     IsDiscontinued = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -296,7 +291,6 @@ namespace ClinicManagement.Persistence.Migrations
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -320,7 +314,6 @@ namespace ClinicManagement.Persistence.Migrations
                     ReferenceNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -337,8 +330,7 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Gender = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
                     ProfileImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
@@ -379,20 +371,6 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RoleDefaultPermissions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Permission = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RoleDefaultPermissions", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Roles",
                 columns: table => new
                 {
@@ -421,7 +399,6 @@ namespace ClinicManagement.Persistence.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -448,7 +425,6 @@ namespace ClinicManagement.Persistence.Migrations
                     RefundAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -575,7 +551,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InvoiceItem", x => x.Id);
-                    table.CheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
+                    table.CheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
                     table.CheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
                     table.CheckConstraint("CK_InvoiceItem_SaleUnit", "[SaleUnit] IS NULL OR [SaleUnit] IN ('Box', 'Strip')");
                     table.CheckConstraint("CK_InvoiceItem_UnitPrice", "[UnitPrice] >= 0");
@@ -662,6 +638,7 @@ namespace ClinicManagement.Persistence.Migrations
                     SubscriptionPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OnboardingCompleted = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     SubscriptionStartDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     SubscriptionEndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     TrialEndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -669,7 +646,6 @@ namespace ClinicManagement.Persistence.Migrations
                     CountryCode = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -705,7 +681,6 @@ namespace ClinicManagement.Persistence.Migrations
                     ReplacedByToken = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -818,7 +793,6 @@ namespace ClinicManagement.Persistence.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -846,7 +820,6 @@ namespace ClinicManagement.Persistence.Migrations
                     JoinedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -891,7 +864,6 @@ namespace ClinicManagement.Persistence.Migrations
                     CancelledBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -921,6 +893,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PatientCode = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     PersonId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BloodType = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true),
                     CountryGeonameId = table.Column<int>(type: "int", nullable: true),
@@ -928,7 +901,6 @@ namespace ClinicManagement.Persistence.Migrations
                     CityGeonameId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -989,6 +961,7 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     SpecializationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1001,7 +974,6 @@ namespace ClinicManagement.Persistence.Migrations
                     CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -1062,8 +1034,7 @@ namespace ClinicManagement.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClinicMemberId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Permission = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    Permission = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1244,7 +1215,6 @@ namespace ClinicManagement.Persistence.Migrations
                     InvoiceId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -1377,9 +1347,9 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "ClinicBranchId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ClinicMember_ClinicId_IsDeleted_IsActive",
+                name: "IX_ClinicMember_ClinicId_IsActive",
                 table: "ClinicMember",
-                columns: new[] { "ClinicId", "IsDeleted", "IsActive" });
+                columns: new[] { "ClinicId", "IsActive" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClinicMember_PersonId_ClinicId",
@@ -1439,12 +1409,6 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "IX_GeoCities_StateGeonameId",
                 table: "GeoCities",
                 column: "StateGeonameId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_GeoCities_StateGeonameId_NameEn",
-                table: "GeoCities",
-                columns: new[] { "StateGeonameId", "NameEn" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_GeoCountries_CountryCode",
@@ -1588,12 +1552,6 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RoleDefaultPermissions_Role_Permission",
-                table: "RoleDefaultPermissions",
-                columns: new[] { "Role", "Permission" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "RoleNameIndex",
                 table: "Roles",
                 column: "NormalizedName",
@@ -1724,9 +1682,6 @@ namespace ClinicManagement.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "RoleClaims");
-
-            migrationBuilder.DropTable(
-                name: "RoleDefaultPermissions");
 
             migrationBuilder.DropTable(
                 name: "StaffInvitation");

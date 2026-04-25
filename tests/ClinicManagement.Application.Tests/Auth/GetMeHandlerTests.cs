@@ -30,8 +30,7 @@ public class GetMeHandlerTests
     {
         var user = TestHandlerHelpers.CreateTestUser("ahmed@test.com");
         user.UserName = "ahmed.ali";
-        user.Person.FullName = "Ahmed";
-        user.Person.LastName = "Ali";
+        user.Person.FullName = "Ahmed Ali";
         user.Person.Gender = Gender.Male;
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
@@ -39,7 +38,7 @@ public class GetMeHandlerTests
         var result = await _handler.Handle(new GetMeQuery(user.Id), default);
 
         result.Should().NotBeNull();
-        result!.FirstName.Should().Be("Ahmed");
+        result!.FullName.Should().Be("Ahmed Ali");
         result.Gender.Should().Be("Male");
         result.OnboardingCompleted.Should().BeFalse();
     }

@@ -26,7 +26,7 @@ public class UpdateProfileHandlerTests
     {
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(Guid.NewGuid());
 
-        var result = await _handler.Handle(new UpdateProfileCommand("A", "B", "ab", null, "Male"), default);
+        var result = await _handler.Handle(new UpdateProfileCommand("A", "ab", null, "Male"), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -41,12 +41,12 @@ public class UpdateProfileHandlerTests
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
 
         var result = await _handler.Handle(
-            new UpdateProfileCommand("New", "Name", "newuser", "+966500000001", "Male"), default);
+            new UpdateProfileCommand("New Name", "newuser", "+966500000001", "Male"), default);
 
         result.IsSuccess.Should().BeTrue();
 
         var updated = await _uow.Users.GetByIdWithPersonAsync(user.Id);
-        updated!.Person.FullName.Should().Be("New");
+        updated!.Person.FullName.Should().Be("New Name");
         updated.UserName.Should().Be("newuser");
         updated.Person.Gender.Should().Be(Gender.Male);
         updated.PhoneNumber.Should().Be("+966500000001");
@@ -62,7 +62,7 @@ public class UpdateProfileHandlerTests
         await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
 
-        await _handler.Handle(new UpdateProfileCommand("Test", "User", "testuser", "   ", "Male"), default);
+        await _handler.Handle(new UpdateProfileCommand("Test User", "testuser", "   ", "Male"), default);
 
         var updated = await _uow.Users.GetByIdAsync(user.Id);
         updated!.PhoneNumber.Should().BeNull();
