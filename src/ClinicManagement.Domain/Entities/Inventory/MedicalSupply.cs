@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// Medical supply entity - simple quantity and price
 /// </summary>
-public class MedicalSupply : AuditableEntity, INoAuditLog
+public class MedicalSupply : AuditableEntity
 {
     public Guid ClinicBranchId { get; set; } // Linked to branch, not clinic
     public string Name { get; set; } = null!; // Supply name only (gauze, syringes, etc.)

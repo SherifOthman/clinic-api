@@ -6,7 +6,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// Tracks subscription payment history.
 /// </summary>
-public class SubscriptionPayment : AuditableEntity, INoAuditLog
+public class SubscriptionPayment : AuditableEntity
 {
     public Guid SubscriptionId { get; set; }
     public decimal Amount { get; set; }

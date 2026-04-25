@@ -4,7 +4,7 @@ using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class PatientMedicalFile : AuditableEntity, INoAuditLog
+public class PatientMedicalFile : AuditableEntity
 {
     public Guid PatientId { get; set; }
     public Guid? VisitId { get; set; }

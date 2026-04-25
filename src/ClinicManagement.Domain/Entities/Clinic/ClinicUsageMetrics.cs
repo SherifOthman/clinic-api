@@ -5,7 +5,7 @@ namespace ClinicManagement.Domain.Entities;
 /// <summary>
 /// Tracks daily/monthly usage metrics against plan limits.
 /// </summary>
-public class ClinicUsageMetrics : AuditableTenantEntity, INoAuditLog, ISoftDeletable
+public class ClinicUsageMetrics : AuditableTenantEntity, ISoftDeletable
 {
     public DateOnly MetricDate { get; set; }
     public bool IsDeleted { get; set; } = false;

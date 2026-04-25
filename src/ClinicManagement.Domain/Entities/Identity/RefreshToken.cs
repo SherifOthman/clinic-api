@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class RefreshToken : AuditableEntity, INoAuditLog
+public class RefreshToken : AuditableEntity
 {
     public string Token { get; private set; } = string.Empty;
     public Guid UserId { get; private set; }
