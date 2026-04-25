@@ -114,40 +114,44 @@ public class GeoLocationSeedService
         if (validStates.Count == 0) { _logger.LogWarning("No states in DB — skipping city seeding."); return; }
 
         _logger.LogInformation("Starting city seeding in background (~225K rows, may take a few minutes on first run)...");
-        var allCities   = await _geoNames.GetCitiesAsync(ct);
+
         var existingIds = await _db.GeoCities.Select(c => c.GeonameId).ToHashSetAsync(ct);
+        var seenNames   = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var batch       = new List<GeoCity>(2_000);
+        var total       = 0;
 
-        // seenNames prevents duplicate (state, name) pairs before they hit the DB unique index.
-        // OrdinalIgnoreCase matches SQL Server's default case-insensitive collation.
-        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var toInsert  = new List<GeoCity>();
-
-        foreach (var c in allCities)
+        await foreach (var c in _geoNames.StreamCitiesAsync(ct))
         {
             if (!validStates.Contains(c.StateGeonameId)) continue;
             if (existingIds.Contains(c.GeonameId)) continue;
             if (!seenNames.Add($"{c.StateGeonameId}|{c.NameEn}")) continue;
 
-            toInsert.Add(new GeoCity
+            batch.Add(new GeoCity
             {
                 GeonameId      = c.GeonameId,
                 StateGeonameId = c.StateGeonameId,
                 NameEn         = c.NameEn.Length > 150 ? c.NameEn[..150] : c.NameEn,
                 NameAr         = c.NameAr.Length > 150 ? c.NameAr[..150] : c.NameAr,
             });
-        }
 
-        if (toInsert.Count == 0) { _logger.LogInformation("Cities: nothing new to insert."); return; }
+            if (batch.Count < 2_000) continue;
 
-        const int BatchSize = 2_000;
-        for (var i = 0; i < toInsert.Count; i += BatchSize)
-        {
-            await _db.GeoCities.AddRangeAsync(toInsert.Skip(i).Take(BatchSize), ct);
+            await _db.GeoCities.AddRangeAsync(batch, ct);
             await _db.SaveChangesAsync(ct);
             _db.ChangeTracker.Clear();
-            _logger.LogInformation("Cities: {Done:N0}/{Total:N0} inserted...", Math.Min(i + BatchSize, toInsert.Count), toInsert.Count);
+            total += batch.Count;
+            batch.Clear();
+            _logger.LogInformation("Cities: {Done:N0} inserted so far...", total);
         }
 
-        _logger.LogInformation("Cities: +{Count:N0} total inserted.", toInsert.Count);
+        if (batch.Count > 0)
+        {
+            await _db.GeoCities.AddRangeAsync(batch, ct);
+            await _db.SaveChangesAsync(ct);
+            _db.ChangeTracker.Clear();
+            total += batch.Count;
+        }
+
+        _logger.LogInformation("Cities: +{Count:N0} total inserted.", total);
     }
 }

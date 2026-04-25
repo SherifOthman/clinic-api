@@ -9,7 +9,11 @@ public interface IGeoNamesService
 {
     Task<List<GeoNamesCountryDump>> GetCountriesAsync(CancellationToken ct = default);
     Task<List<GeoNamesStateDump>>   GetStatesAsync(CancellationToken ct = default);
-    Task<List<GeoNamesCityDump>>    GetCitiesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Streams cities one at a time — never holds the full 225K list in memory.
+    /// </summary>
+    IAsyncEnumerable<GeoNamesCityDump> StreamCitiesAsync(CancellationToken ct = default);
 }
 
 public record GeoNamesCountryDump(int GeonameId, string CountryCode, string NameEn, string NameAr);
