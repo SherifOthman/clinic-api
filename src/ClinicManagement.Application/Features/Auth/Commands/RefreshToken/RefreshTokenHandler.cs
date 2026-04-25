@@ -51,7 +51,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
         await semaphore.WaitAsync(cancellationToken);
         try
         {
-            var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+            var user = await _uow.Users.GetByIdWithPersonAsync(userId, cancellationToken);
 
             if (user is null)
             {
