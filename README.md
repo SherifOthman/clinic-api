@@ -36,7 +36,7 @@ Every entity that belongs to a clinic implements `ITenantEntity` with a `ClinicI
 
 ### Location Data
 
-Countries, states/governorates, and cities are seeded from GeoNames bulk dump files. Countries and states seed synchronously at startup (fast). Cities (~3.8M rows) seed in the background via a Hangfire job that runs every 2 minutes, inserts missing rows in batches, and removes itself when complete. All location data is stored in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query — no external API calls at runtime.
+Countries, states/governorates, and cities are seeded from GeoNames bulk dump files (`cities500.zip` — cities with population > 500, ~225K rows after deduplication). All geo seeding runs in a background thread 3 seconds after startup — the API is ready immediately. Cities are deduplicated by (state, name) keeping the highest-population entry. All location data is stored in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query — no external API calls at runtime.
 
 ### Onboarding Flow
 
@@ -60,14 +60,13 @@ Plans define limits (max branches, max staff, max patients per month, storage) a
 
 ### Background Jobs (Hangfire)
 
-| Job                                 | Schedule                   | Purpose                                      |
-| ----------------------------------- | -------------------------- | -------------------------------------------- |
-| `CitySeedJob`                       | Every 2 min (self-removes) | Seeds ~3.8M cities in background             |
-| `EmailQueueProcessorJob`            | Every 5 min                | Processes up to 50 pending emails with retry |
-| `AuditLogCleanupService`            | Daily midnight             | Deletes old audit logs in batches of 5,000   |
-| `RefreshTokenCleanupService`        | Every 6 hours              | Removes expired/revoked tokens               |
-| `UsageMetricsAggregationJob`        | Daily 1am                  | Aggregates clinic usage metrics              |
-| `SubscriptionExpiryNotificationJob` | Daily 9am                  | Sends expiry warnings 7 days before end      |
+| Job                                 | Schedule      | Purpose                                      |
+| ----------------------------------- | ------------- | -------------------------------------------- |
+| `EmailQueueProcessorJob`            | Every 5 min   | Processes up to 50 pending emails with retry |
+| `AuditLogCleanupService`            | Daily midnight| Deletes old audit logs in batches of 5,000   |
+| `RefreshTokenCleanupService`        | Every 6 hours | Removes expired/revoked tokens               |
+| `UsageMetricsAggregationJob`        | Daily 1am     | Aggregates clinic usage metrics              |
+| `SubscriptionExpiryNotificationJob` | Daily 9am     | Sends expiry warnings 7 days before end      |
 
 ---
 
