@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
@@ -16,6 +17,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
     private readonly UserManager<User> _userManager;
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
+    private readonly ISecurityAuditWriter _auditWriter;
     private readonly ILogger<ForgotPasswordHandler> _logger;
 
     public ForgotPasswordHandler(
@@ -23,12 +25,14 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         UserManager<User> userManager,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
+        ISecurityAuditWriter auditWriter,
         ILogger<ForgotPasswordHandler> logger)
     {
         _uow         = uow;
         _userManager = userManager;
         _emailService = emailService;
         _appOptions  = appOptions.Value;
+        _auditWriter = auditWriter;
         _logger      = logger;
     }
 
@@ -55,6 +59,9 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         {
             _logger.LogError(ex, "Failed to send password reset email to: {Email}", user.Email);
         }
+
+        await _auditWriter.WriteAsync(user.Id, user.Person.FullName, user.UserName, user.Email,
+            null, null, "PasswordResetRequested", cancellationToken: cancellationToken);
 
         return Result.Success();
     }

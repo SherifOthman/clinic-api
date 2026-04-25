@@ -14,17 +14,20 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
     private readonly ICurrentUserService _currentUser;
+    private readonly ISecurityAuditWriter _auditWriter;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
         IUnitOfWork uow,
         UserManager<User> userManager,
         ICurrentUserService currentUser,
+        ISecurityAuditWriter auditWriter,
         ILogger<ChangePasswordHandler> logger)
     {
         _uow         = uow;
         _userManager = userManager;
         _currentUser = currentUser;
+        _auditWriter = auditWriter;
         _logger      = logger;
     }
 
@@ -43,11 +46,16 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         if (!result.Succeeded)
         {
             _logger.LogWarning("Failed to change password for user {UserId}", user.Id);
+            await _auditWriter.WriteAsync(user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
+                _currentUser.Roles.FirstOrDefault(), null, "PasswordChangeFailed", "Incorrect current password", cancellationToken);
             return Result.Failure(ErrorCodes.INVALID_CREDENTIALS, "Current password is incorrect");
         }
 
         user.LastPasswordChangeAt = DateTimeOffset.UtcNow;
         await _uow.SaveChangesAsync(cancellationToken);
+
+        await _auditWriter.WriteAsync(user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
+            _currentUser.Roles.FirstOrDefault(), null, "PasswordChanged", cancellationToken: cancellationToken);
 
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);
         return Result.Success();

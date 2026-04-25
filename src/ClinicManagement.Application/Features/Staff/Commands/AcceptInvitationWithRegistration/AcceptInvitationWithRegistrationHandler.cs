@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -12,11 +13,13 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 {
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
+    private readonly ISecurityAuditWriter _auditWriter;
 
-    public AcceptInvitationWithRegistrationHandler(IUnitOfWork uow, UserManager<User> userManager)
+    public AcceptInvitationWithRegistrationHandler(IUnitOfWork uow, UserManager<User> userManager, ISecurityAuditWriter auditWriter)
     {
-        _uow = uow;
+        _uow         = uow;
         _userManager = userManager;
+        _auditWriter = auditWriter;
     }
 
     public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
@@ -28,7 +31,6 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
         var person = new Person { FullName = request.FullName, Gender = gender };
 
-        // Person must be persisted before UserManager.CreateAsync so the FK is satisfied
         await _uow.Persons.AddAsync(person);
         await _uow.SaveChangesAsync(cancellationToken);
 
@@ -76,6 +78,11 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
         await _uow.Permissions.SeedDefaultsAsync(member.Id, invitation.Role, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
+
+        await _auditWriter.WriteAsync(user.Id, person.FullName, user.UserName, user.Email,
+            invitation.Role.ToString(), invitation.ClinicId,
+            "StaffInvitationAccepted", $"Role: {invitation.Role}", cancellationToken);
+
         return Result.Success();
     }
 }

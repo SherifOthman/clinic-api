@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -12,12 +13,14 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
 {
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
+    private readonly ISecurityAuditWriter _auditWriter;
     private readonly ILogger<ResetPasswordHandler> _logger;
 
-    public ResetPasswordHandler(IUnitOfWork uow, UserManager<User> userManager, ILogger<ResetPasswordHandler> logger)
+    public ResetPasswordHandler(IUnitOfWork uow, UserManager<User> userManager, ISecurityAuditWriter auditWriter, ILogger<ResetPasswordHandler> logger)
     {
         _uow         = uow;
         _userManager = userManager;
+        _auditWriter = auditWriter;
         _logger      = logger;
     }
 
@@ -37,11 +40,16 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             _logger.LogWarning("Invalid password reset token for user: {Email} - {Errors}", request.Email, errors);
+            await _auditWriter.WriteAsync(user.Id, user.Person?.FullName, user.UserName, user.Email,
+                null, null, "PasswordResetFailed", "Invalid or expired token", cancellationToken);
             return Result.Failure(ErrorCodes.TOKEN_INVALID, "Invalid or expired reset token");
         }
 
         user.LastPasswordChangeAt = DateTimeOffset.UtcNow;
         await _uow.SaveChangesAsync(cancellationToken);
+
+        await _auditWriter.WriteAsync(user.Id, user.Person?.FullName, user.UserName, user.Email,
+            null, null, "PasswordReset", cancellationToken: cancellationToken);
 
         _logger.LogInformation("Password reset successfully for user: {UserId}", user.Id);
         return Result.Success();
