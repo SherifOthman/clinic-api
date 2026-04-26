@@ -1,5 +1,4 @@
 using ClinicManagement.API.Authorization;
-using ClinicManagement.API.Contracts.Locations;
 using ClinicManagement.API.Contracts.Patients;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
@@ -8,11 +7,11 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-namespace ClinicManagement.API.Controllers;
+using Microsoft.AspNetCore.RateLimiting;namespace ClinicManagement.API.Controllers;
 
 [Route("api/patients")]
 public class PatientsController : BaseApiController
@@ -46,7 +45,7 @@ public class PatientsController : BaseApiController
         [FromQuery] int? stateGeonameId,
         CancellationToken cancellationToken = default)
     {
-        var isSuperAdmin = User.IsInRole("SuperAdmin");
+        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
         var query = new GetPatientLocationOptionsQuery(countryGeonameId, stateGeonameId, isSuperAdmin);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve location options");

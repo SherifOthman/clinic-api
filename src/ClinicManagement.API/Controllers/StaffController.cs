@@ -234,7 +234,6 @@ public class StaffController : BaseApiController
         if (result is null) return NotFound();
         return Ok(result.Select(p => p.ToString()).ToList());
     }
-
     [Authorize(Policy = "RequireClinicOwner")]
     [HttpPut("{id:guid}/permissions")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
