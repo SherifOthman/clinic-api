@@ -23,7 +23,7 @@ public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
         string? specializationNameAr = null;
         Guid? staffId = null;
         List<string> permissions = [];
-
+        
         var member = await _uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
         if (member is not null)
         {

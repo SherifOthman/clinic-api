@@ -31,7 +31,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
         var person = new Person { FullName = request.FullName, Gender = gender };
 
-        await _uow.Persons.AddAsync(person);
+        await _uow.Persons.AddAsync(person,cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         var user = new User
