@@ -5,36 +5,32 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Queries;
 
-public class GetMeHandler : IRequestHandler<GetMeQuery, GetMeDto?>
+public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDto?>
 {
-    private readonly IUnitOfWork _uow;
-
-    public GetMeHandler(IUnitOfWork uow) => _uow = uow;
-
     public async Task<GetMeDto?> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
-        var profile = await _uow.Users.GetProfileAsync(request.UserId, cancellationToken);
+        var profile = await uow.Users.GetProfileAsync(request.UserId, cancellationToken);
         if (profile is null) return null;
 
-        var roles     = await _uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
-        var hasClinic = await _uow.Users.HasClinicAsync(request.UserId, cancellationToken);
+        var roles     = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
+        var hasClinic = await uow.Users.HasClinicAsync(request.UserId, cancellationToken);
 
         string? specializationNameEn = null;
         string? specializationNameAr = null;
         Guid? staffId = null;
         List<string> permissions = [];
         
-        var member = await _uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
+        var member = await uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
         if (member is not null)
         {
             staffId = member.Id;
-            var memberPermissions = await _uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken);
+            var memberPermissions = await uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken);
             permissions = memberPermissions.Select(p => p.ToString()).ToList();
         }
 
         if (roles.Any(r => r.RoleName == UserRoles.Doctor))
         {
-            var spec = await _uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
+            var spec = await uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
             specializationNameEn = spec?.NameEn;
             specializationNameAr = spec?.NameAr;
         }
