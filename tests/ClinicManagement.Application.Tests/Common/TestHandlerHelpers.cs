@@ -19,8 +19,7 @@ public static class TestHandlerHelpers
             .Options;
         var context = new ApplicationDbContext(options);
         var cache = new MemoryCache(new MemoryCacheOptions());
-        var permissions = new PermissionRepository(context, cache);
-        return new UnitOfWork(context, cache, permissions);
+        return new UnitOfWork(context, cache);
     }
 
     public static Mock<UserManager<User>> CreateMockUserManager()

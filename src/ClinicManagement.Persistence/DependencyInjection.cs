@@ -27,8 +27,9 @@ public static class DependencyInjection
         // Unit of Work (contains all repositories)
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Register IPermissionRepository directly so it can be resolved
-        // independently by PermissionAuthorizationHandler and DatabaseInitialiser
+        // IPermissionRepository registered separately so PermissionAuthorizationHandler
+        // can resolve it directly (it runs outside MediatR, before IUnitOfWork is created).
+        // Both this instance and the one inside UnitOfWork share the same IMemoryCache singleton.
         services.AddScoped<IPermissionRepository, PermissionRepository>();
 
         services.AddIdentity<User, Role>(options =>
