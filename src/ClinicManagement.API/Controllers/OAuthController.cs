@@ -91,11 +91,5 @@ public class OAuthController : BaseApiController
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private string GetLoginUrl()
-    {
-        // Next.js auth app URL — strip "app." subdomain if present, or use env
-        var frontend = _appOptions.FrontendUrl ?? "http://localhost:3001";
-        return frontend.Contains("app.")
-            ? frontend.Replace("app.", "") + "/en/login"
-            : "http://localhost:3001/en/login";
-    }
+        => $"{_appOptions.AuthUrl.TrimEnd('/')}/en/login";
 }
