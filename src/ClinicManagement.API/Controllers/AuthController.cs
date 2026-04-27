@@ -58,18 +58,19 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
             return HandleResult(result, "Login Failed");
 
-        _logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}, RefreshToken={HasToken}",
-            request.EmailOrUsername, isMobile, result.Value!.RefreshToken != null);
+        _logger.LogInformation("Login successful for {Email}, isMobile={IsMobile}",
+            request.EmailOrUsername, isMobile);
 
         if (!isMobile && result.Value!.RefreshToken != null)
         {
-            _logger.LogInformation("Setting refresh token cookie for web client");
+            // Web clients: both tokens go in HttpOnly cookies — no tokens in response body
+            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, 60);
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
+            return Ok(new TokenResponseDto(null, null));
         }
 
-        return Ok(new TokenResponseDto(
-            result.Value!.AccessToken,
-            isMobile ? result.Value.RefreshToken : null));
+        // Mobile clients: tokens returned in body (no cookies)
+        return Ok(new TokenResponseDto(result.Value!.AccessToken, result.Value.RefreshToken));
     }
 
     /// <summary>
@@ -142,14 +143,16 @@ public class AuthController : BaseApiController
         if (result.IsFailure)
         {
             _logger.LogWarning("RefreshToken failed: {Error}", result.ErrorMessage);
-            if (!isMobile) _cookieService.ClearRefreshTokenCookie();
+            if (!isMobile) _cookieService.ClearAllAuthCookies();
             return Unauthorized();
         }
 
         if (!isMobile && result.Value!.RefreshToken != null)
         {
-            _logger.LogInformation("Setting new refresh token cookie");
+            // Web: rotate both cookies, return nothing in body
+            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, 60);
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
+            return Ok(new TokenResponseDto(null, null));
         }
 
         return Ok(new TokenResponseDto(
@@ -262,9 +265,7 @@ public class AuthController : BaseApiController
         await Sender.Send(command, ct);
 
         if (!isMobile)
-        {
-            _cookieService.ClearRefreshTokenCookie();
-        }
+            _cookieService.ClearAllAuthCookies();
 
         return NoContent();
     }

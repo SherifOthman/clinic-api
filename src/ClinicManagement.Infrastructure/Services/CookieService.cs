@@ -1,6 +1,4 @@
 using ClinicManagement.Infrastructure.Options;
-using ClinicManagement.Domain.Common.Constants;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,65 +12,71 @@ public class CookieService
     private readonly ILogger<CookieService> _logger;
 
     public CookieService(
-        IHttpContextAccessor httpContextAccessor, 
+        IHttpContextAccessor httpContextAccessor,
         IOptions<CookieSettings> cookieSettings,
         ILogger<CookieService> logger)
     {
         _httpContextAccessor = httpContextAccessor;
-        _cookieSettings = cookieSettings.Value;
-        _logger = logger;
+        _cookieSettings      = cookieSettings.Value;
+        _logger              = logger;
     }
+
+    // ── Access token ──────────────────────────────────────────────────────────
+
+    public void SetAccessTokenCookie(string accessToken, int expiryMinutes)
+    {
+        if (string.IsNullOrEmpty(accessToken)) return;
+        var options = CreateSecureCookieOptions(TimeSpan.FromMinutes(expiryMinutes));
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(
+            CookieConstants.AccessToken, accessToken, options);
+    }
+
+    public string? GetAccessTokenFromCookie()
+        => _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.AccessToken];
+
+    public void ClearAccessTokenCookie()
+        => _httpContextAccessor.HttpContext?.Response.Cookies.Append(
+            CookieConstants.AccessToken, "", CreateSecureCookieOptions(TimeSpan.FromDays(-1)));
+
+    // ── Refresh token ─────────────────────────────────────────────────────────
 
     public void SetRefreshTokenCookie(string refreshToken)
     {
-        if (string.IsNullOrEmpty(refreshToken))
-        {
-            _logger.LogWarning("Attempted to set empty refresh token cookie");
-            return;
-        }
-
-        var cookieOptions = CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays));
+        if (string.IsNullOrEmpty(refreshToken)) return;
+        var options = CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays));
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(
-            CookieConstants.RefreshToken, 
-            refreshToken, 
-            cookieOptions);
-        
-        _logger.LogInformation("Refresh token cookie set with options: HttpOnly={HttpOnly}, Secure={Secure}, SameSite={SameSite}, Expires={Expires}", 
-            cookieOptions.HttpOnly, cookieOptions.Secure, cookieOptions.SameSite, cookieOptions.Expires);
+            CookieConstants.RefreshToken, refreshToken, options);
     }
 
     public string? GetRefreshTokenFromCookie()
-    {
-        return _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.RefreshToken];
-    }
+        => _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.RefreshToken];
 
     public void ClearRefreshTokenCookie()
-    {
-        var context = _httpContextAccessor.HttpContext;
-        if (context == null)
-        {
-            _logger.LogWarning("Cannot clear cookie: HttpContext is null");
-            return;
-        }
+        => _httpContextAccessor.HttpContext?.Response.Cookies.Append(
+            CookieConstants.RefreshToken, "", CreateSecureCookieOptions(TimeSpan.FromDays(-1)));
 
-        var expiredOptions = CreateSecureCookieOptions(TimeSpan.FromDays(-1));
-        context.Response.Cookies.Append(CookieConstants.RefreshToken, "", expiredOptions);
-        
-        _logger.LogInformation("Refresh token cookie cleared");
+    // ── Clear both ────────────────────────────────────────────────────────────
+
+    public void ClearAllAuthCookies()
+    {
+        ClearAccessTokenCookie();
+        ClearRefreshTokenCookie();
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private CookieOptions CreateSecureCookieOptions(TimeSpan expiry)
     {
         var isProduction = _cookieSettings.IsProduction;
-
         return new CookieOptions
         {
-            HttpOnly = true,
-            Secure = isProduction,                                          // HTTPS only in production
-            SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax, // None required for cross-site (Vercel → API)
-            Expires = DateTimeOffset.UtcNow.Add(expiry),
-            Path = "/",
-            IsEssential = true
+            HttpOnly  = true,
+            Secure    = isProduction,
+            SameSite  = isProduction ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires   = DateTimeOffset.UtcNow.Add(expiry),
+            Domain    = _cookieSettings.CookieDomain,   // e.g. ".yourapp.com" for cross-subdomain
+            Path      = "/",
+            IsEssential = true,
         };
     }
 }

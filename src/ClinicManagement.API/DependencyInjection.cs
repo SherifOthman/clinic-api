@@ -181,6 +181,7 @@ public static class DependencyInjection
 
         app.UseCors("AllowAll");
         app.UseRateLimiter();
+        app.UseMiddleware<CookieTokenMiddleware>(); // inject cookie access token as Bearer header
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
