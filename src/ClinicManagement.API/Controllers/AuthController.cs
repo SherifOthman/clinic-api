@@ -301,7 +301,7 @@ public class AuthController : BaseApiController
     /// <summary>
     /// Upload profile image
     /// </summary>
-    [HttpPost("profile/image/upload")]
+    [HttpPut("profile/image")]
     [Authorize]
     [EnableRateLimiting(RateLimitPolicies.UserUpload)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

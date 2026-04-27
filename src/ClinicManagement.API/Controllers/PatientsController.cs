@@ -136,7 +136,7 @@ public class PatientsController : BaseApiController
         return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to delete patient");
     }
 
-    [HttpPost("{id}/restore")]
+    [HttpPatch("{id}/restore")]
     [Authorize(Policy = "SuperAdmin")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

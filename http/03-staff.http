@@ -108,7 +108,7 @@ Authorization: Bearer {{ownerToken}}
 ###
 
 # ── Resend invitation ─────────────────────────────────────────
-POST {{baseUrl}}/staff/invitations/INVITATION_ID/resend
+PATCH {{baseUrl}}/staff/invitations/INVITATION_ID/resend
 Authorization: Bearer {{ownerToken}}
 
 ###
@@ -135,7 +135,7 @@ Content-Type: application/json
 ###
 
 # ── Set owner as doctor ───────────────────────────────────────
-POST {{baseUrl}}/staff/set-owner-as-doctor
+PATCH {{baseUrl}}/staff/me/doctor-profile
 Content-Type: application/json
 Authorization: Bearer {{ownerToken}}
 

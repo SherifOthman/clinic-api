@@ -141,7 +141,7 @@ Authorization: Bearer {{superAdminToken}}
 ###
 
 # ── SuperAdmin: restore deleted patient ──────────────────────
-POST {{baseUrl}}/patients/PATIENT_ID/restore
+PATCH {{baseUrl}}/patients/PATIENT_ID/restore
 Authorization: Bearer {{superAdminToken}}
 
 ###

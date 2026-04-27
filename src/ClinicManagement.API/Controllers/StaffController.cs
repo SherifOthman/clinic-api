@@ -57,7 +57,7 @@ public class StaffController : BaseApiController
     }
 
     [RequirePermission(Permission.InviteStaff)]
-    [HttpPost("invitations/{id:guid}/resend")]
+    [HttpPatch("invitations/{id:guid}/resend")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
@@ -122,7 +122,7 @@ public class StaffController : BaseApiController
     }
 
     [Authorize(Policy = "RequireClinicOwner")]
-    [HttpPost("set-owner-as-doctor")]
+    [HttpPatch("me/doctor-profile")]
     [EnableRateLimiting(RateLimitPolicies.UserOnce)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
