@@ -1,0 +1,68 @@
+### ============================================================
+### ONBOARDING
+### Run after registering a fresh clinic owner who hasn't
+### completed onboarding yet.
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+
+# ── Login as owner first ──────────────────────────────────────
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "ClinicOwner123!"
+}
+
+###
+
+@ownerToken = {{loginOwner.response.body.accessToken}}
+
+# ── Get subscription plans (needed for onboarding form) ───────
+GET {{baseUrl}}/subscription-plans
+
+###
+
+# ── Get specializations (needed for onboarding form) ──────────
+GET {{baseUrl}}/specializations
+
+###
+
+# ── Complete onboarding ───────────────────────────────────────
+# Replace subscriptionPlanId and specializationId with real IDs
+# from the responses above.
+POST {{baseUrl}}/onboarding/complete
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "clinicName": "Demo Medical Clinic",
+  "subscriptionPlanId": "REPLACE_WITH_PLAN_ID",
+  "branchName": "Main Branch",
+  "addressLine": "123 Medical Street, Downtown",
+  "stateGeonameId": null,
+  "cityGeonameId": null,
+  "countryCode": "EG",
+  "provideMedicalServices": "yes",
+  "specializationId": "REPLACE_WITH_SPECIALIZATION_ID"
+}
+
+###
+
+# ── ERROR: Already onboarded → 400 ───────────────────────────
+POST {{baseUrl}}/onboarding/complete
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "clinicName": "Demo Medical Clinic",
+  "subscriptionPlanId": "REPLACE_WITH_PLAN_ID",
+  "branchName": "Main Branch",
+  "addressLine": "123 Medical Street",
+  "provideMedicalServices": "no"
+}
+
+###

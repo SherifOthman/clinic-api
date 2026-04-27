@@ -1,0 +1,57 @@
+### ============================================================
+### REFERENCE DATA
+### Subscription plans, specializations, chronic diseases,
+### and locations — mostly public/anonymous endpoints.
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "ClinicOwner123!"
+}
+
+###
+
+@ownerToken = {{loginOwner.response.body.accessToken}}
+
+# ── Subscription plans (anonymous) ───────────────────────────
+GET {{baseUrl}}/subscription-plans
+
+###
+
+# ── Specializations (anonymous) ──────────────────────────────
+GET {{baseUrl}}/specializations
+
+###
+
+# ── Chronic diseases (requires auth) ─────────────────────────
+GET {{baseUrl}}/chronic-diseases
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Locations: all countries (anonymous) ─────────────────────
+GET {{baseUrl}}/locations/countries
+
+###
+
+# ── Locations: states in Egypt (geonameId=357994) ────────────
+GET {{baseUrl}}/locations/countries/357994/states
+
+###
+
+# ── Locations: cities in Cairo state (geonameId=360630) ──────
+GET {{baseUrl}}/locations/states/360630/cities
+
+###
+
+# ── Locations: states in Saudi Arabia (geonameId=102358) ─────
+GET {{baseUrl}}/locations/countries/102358/states
+
+###

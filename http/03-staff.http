@@ -1,0 +1,272 @@
+### ============================================================
+### STAFF & INVITATIONS
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "ClinicOwner123!"
+}
+
+###
+
+@ownerToken = {{loginOwner.response.body.accessToken}}
+
+# @name loginDoctor
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "doctor@clinic.com",
+  "password": "Doctor123!"
+}
+
+###
+
+@doctorToken = {{loginDoctor.response.body.accessToken}}
+
+# ── Get specializations (needed for invite form) ──────────────
+GET {{baseUrl}}/specializations
+
+###
+
+# ── List staff ────────────────────────────────────────────────
+GET {{baseUrl}}/staff?pageNumber=1&pageSize=10
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── List staff filtered by role ───────────────────────────────
+GET {{baseUrl}}/staff?role=Doctor&pageNumber=1&pageSize=10
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── List staff filtered by active status ─────────────────────
+GET {{baseUrl}}/staff?isActive=true&pageNumber=1&pageSize=10
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Get staff detail ──────────────────────────────────────────
+# Replace STAFF_ID with a real member ID
+GET {{baseUrl}}/staff/STAFF_ID
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Invite a doctor ───────────────────────────────────────────
+# @name inviteDoctor
+POST {{baseUrl}}/staff/invite
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "role": "Doctor",
+  "email": "newdoctor@example.com",
+  "specializationId": "REPLACE_WITH_SPECIALIZATION_ID"
+}
+
+###
+
+# ── Invite a receptionist ─────────────────────────────────────
+POST {{baseUrl}}/staff/invite
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "role": "Receptionist",
+  "email": "newreceptionist@example.com"
+}
+
+###
+
+# ── List invitations ──────────────────────────────────────────
+GET {{baseUrl}}/staff/invitations?pageNumber=1&pageSize=10
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── List invitations filtered by status ──────────────────────
+# Status: 0=Pending, 1=Accepted, 2=Canceled, 3=Expired
+GET {{baseUrl}}/staff/invitations?status=0&pageNumber=1&pageSize=10
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Get invitation detail ─────────────────────────────────────
+GET {{baseUrl}}/staff/invitations/INVITATION_ID
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Resend invitation ─────────────────────────────────────────
+POST {{baseUrl}}/staff/invitations/INVITATION_ID/resend
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Cancel invitation ─────────────────────────────────────────
+DELETE {{baseUrl}}/staff/invitations/INVITATION_ID
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Accept invitation with registration (anonymous) ──────────
+# Replace TOKEN with the token from the invitation email
+POST {{baseUrl}}/staff/invitations/INVITATION_TOKEN/accept-with-registration
+Content-Type: application/json
+
+{
+  "fullName": "New Doctor Name",
+  "userName": "newdoctor",
+  "password": "NewDoctor@123!",
+  "phoneNumber": "+966500000010",
+  "gender": "Male"
+}
+
+###
+
+# ── Set owner as doctor ───────────────────────────────────────
+POST {{baseUrl}}/staff/set-owner-as-doctor
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "specializationId": "REPLACE_WITH_SPECIALIZATION_ID"
+}
+
+###
+
+# ── Deactivate staff member ───────────────────────────────────
+PATCH {{baseUrl}}/staff/STAFF_ID/active-status
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "isActive": false
+}
+
+###
+
+# ── Reactivate staff member ───────────────────────────────────
+PATCH {{baseUrl}}/staff/STAFF_ID/active-status
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "isActive": true
+}
+
+###
+
+# ── Get staff permissions ─────────────────────────────────────
+GET {{baseUrl}}/staff/STAFF_ID/permissions
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Set staff permissions ─────────────────────────────────────
+PUT {{baseUrl}}/staff/STAFF_ID/permissions
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+[
+  "ViewPatients",
+  "CreatePatient",
+  "EditPatient"
+]
+
+###
+
+# ── Get working days ──────────────────────────────────────────
+GET {{baseUrl}}/staff/STAFF_ID/working-days?branchId=BRANCH_ID
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Save working days ─────────────────────────────────────────
+PUT {{baseUrl}}/staff/STAFF_ID/working-days
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "branchId": "REPLACE_WITH_BRANCH_ID",
+  "days": [
+    { "day": "Monday",    "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
+    { "day": "Tuesday",   "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
+    { "day": "Wednesday", "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
+    { "day": "Thursday",  "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
+    { "day": "Friday",    "startTime": "09:00", "endTime": "13:00", "isAvailable": true },
+    { "day": "Saturday",  "startTime": "09:00", "endTime": "13:00", "isAvailable": false },
+    { "day": "Sunday",    "startTime": "09:00", "endTime": "13:00", "isAvailable": false }
+  ]
+}
+
+###
+
+# ── Get visit types ───────────────────────────────────────────
+GET {{baseUrl}}/staff/STAFF_ID/visit-types?branchId=BRANCH_ID
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Upsert visit type ─────────────────────────────────────────
+PUT {{baseUrl}}/staff/STAFF_ID/visit-types
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "branchId": "REPLACE_WITH_BRANCH_ID",
+  "visitTypeId": null,
+  "nameAr": "استشارة عامة",
+  "nameEn": "General Consultation",
+  "price": 150.00,
+  "isActive": true
+}
+
+###
+
+# ── Lock doctor schedule (owner only) ────────────────────────
+PATCH {{baseUrl}}/staff/STAFF_ID/schedule-lock
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "canSelfManage": false
+}
+
+###
+
+# ── ERROR CASES ───────────────────────────────────────────────
+
+# Invite with missing specialization for Doctor → 400
+POST {{baseUrl}}/staff/invite
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "role": "Doctor",
+  "email": "nodoc@example.com"
+}
+
+###
+
+# Non-owner trying to invite → 403
+POST {{baseUrl}}/staff/invite
+Content-Type: application/json
+Authorization: Bearer {{doctorToken}}
+
+{
+  "role": "Receptionist",
+  "email": "test@example.com"
+}
+
+###

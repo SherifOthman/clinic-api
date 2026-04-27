@@ -1,0 +1,161 @@
+### ============================================================
+### AUTH
+### Using X-Client-Type: mobile so refresh token comes in the
+### response body (not a cookie) — works in .http files.
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+
+# ── Login as Clinic Owner ─────────────────────────────────────
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "ClinicOwner123!"
+}
+
+###
+
+@ownerToken        = {{loginOwner.response.body.accessToken}}
+@ownerRefreshToken = {{loginOwner.response.body.refreshToken}}
+
+# ── Login as Doctor ───────────────────────────────────────────
+# @name loginDoctor
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "doctor@clinic.com",
+  "password": "Doctor123!"
+}
+
+###
+
+@doctorToken = {{loginDoctor.response.body.accessToken}}
+
+# ── Login as SuperAdmin ───────────────────────────────────────
+# @name loginSuperAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "superadmin@clinic.com",
+  "password": "SuperAdmin123!"
+}
+
+###
+
+@superAdminToken = {{loginSuperAdmin.response.body.accessToken}}
+
+# ── Get current user (me) ─────────────────────────────────────
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Refresh access token ──────────────────────────────────────
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "refreshToken": "{{ownerRefreshToken}}"
+}
+
+###
+
+# ── Check email availability ──────────────────────────────────
+GET {{baseUrl}}/auth/check-email?email=newuser@test.com
+
+###
+
+# ── Check username availability ───────────────────────────────
+GET {{baseUrl}}/auth/check-username?username=newuser123
+
+###
+
+# ── Register new user ─────────────────────────────────────────
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Test User",
+  "userName": "testuser123",
+  "email": "testuser@example.com",
+  "password": "Test@1234!",
+  "phoneNumber": "+966500000099",
+  "gender": "Male"
+}
+
+###
+
+# ── Update profile ────────────────────────────────────────────
+PUT {{baseUrl}}/auth/profile
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "fullName": "John Smith",
+  "userName": "owner",
+  "phoneNumber": "+1234567890",
+  "gender": "Male"
+}
+
+###
+
+# ── Change password ───────────────────────────────────────────
+POST {{baseUrl}}/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "currentPassword": "ClinicOwner123!",
+  "newPassword": "ClinicOwner123!"
+}
+
+###
+
+# ── Forgot password (always returns 204 — no email leak) ──────
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "owner@clinic.com"
+}
+
+###
+
+# ── Logout ────────────────────────────────────────────────────
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+X-Client-Type: mobile
+
+{
+  "refreshToken": "{{ownerRefreshToken}}"
+}
+
+###
+
+# ── ERROR CASES ───────────────────────────────────────────────
+
+# Wrong password → 400
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "WrongPassword!"
+}
+
+###
+
+# No token → 401
+GET {{baseUrl}}/auth/me
+
+###

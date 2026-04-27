@@ -1,0 +1,89 @@
+### ============================================================
+### AUDIT LOGS (SuperAdmin only)
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+
+# @name loginSuperAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "superadmin@clinic.com",
+  "password": "SuperAdmin123!"
+}
+
+###
+
+@superAdminToken = {{loginSuperAdmin.response.body.accessToken}}
+
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "ClinicOwner123!"
+}
+
+###
+
+@ownerToken = {{loginOwner.response.body.accessToken}}
+
+# ── Get all audit logs ────────────────────────────────────────
+GET {{baseUrl}}/audit?pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── Filter by entity type ─────────────────────────────────────
+GET {{baseUrl}}/audit?entityType=Patient&pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── Filter by action ──────────────────────────────────────────
+# Actions: 0=Create, 1=Update, 2=Delete, 3=Login, etc.
+GET {{baseUrl}}/audit?action=0&pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── Filter by date range ──────────────────────────────────────
+GET {{baseUrl}}/audit?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── Search by user ────────────────────────────────────────────
+GET {{baseUrl}}/audit?userSearch=owner&pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── Search by clinic ──────────────────────────────────────────
+GET {{baseUrl}}/audit?clinicSearch=demo&pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── Filter by specific entity ID ─────────────────────────────
+GET {{baseUrl}}/audit?entityId=PATIENT_ID&pageNumber=1&pageSize=20
+Authorization: Bearer {{superAdminToken}}
+
+###
+
+# ── ERROR CASES ───────────────────────────────────────────────
+
+# Clinic owner trying to access audit → 403
+GET {{baseUrl}}/audit?pageNumber=1&pageSize=20
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# No token → 401
+GET {{baseUrl}}/audit?pageNumber=1&pageSize=20
+
+###
