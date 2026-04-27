@@ -9,6 +9,7 @@ using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -68,6 +69,8 @@ public static class DependencyInjection
         var jwtOptions = configuration.GetSection(JwtOptions.Section).Get<JwtOptions>()
             ?? throw new InvalidOperationException("JWT configuration is missing");
 
+        var googleOptions = configuration.GetSection(GoogleOAuthOptions.Section).Get<GoogleOAuthOptions>();
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -89,6 +92,17 @@ public static class DependencyInjection
                 ValidateLifetime         = true,
                 ClockSkew                = TimeSpan.Zero,
             };
+        })
+        .AddGoogle(options =>
+        {
+            options.ClientId     = googleOptions?.ClientId     ?? configuration["Google:ClientId"]     ?? "";
+            options.ClientSecret = googleOptions?.ClientSecret ?? configuration["Google:ClientSecret"] ?? "";
+            options.CallbackPath = "/api/auth/oauth/google/callback";
+            // Request email and profile scopes
+            options.Scope.Add("email");
+            options.Scope.Add("profile");
+            // Save tokens so we can access the Google ID token if needed
+            options.SaveTokens = false;
         });
     }
 
@@ -136,6 +150,7 @@ public static class DependencyInjection
         services.Configure<GeoNamesOptions>(configuration.GetSection(GeoNamesOptions.Section));
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.Section));
         services.Configure<CookieSettings>(configuration.GetSection(CookieSettings.Section));
+        services.Configure<GoogleOAuthOptions>(configuration.GetSection(GoogleOAuthOptions.Section));
     }
 
     private static void AddCors(IServiceCollection services, IConfiguration configuration)
