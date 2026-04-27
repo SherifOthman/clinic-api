@@ -29,6 +29,7 @@ public interface IUnitOfWork
     IRepository<Specialization>   Specializations   { get; }
     IRepository<SubscriptionPlan> SubscriptionPlans { get; }
     IRepository<Person>           Persons           { get; }
+    IRefreshTokenRepository       RefreshTokens     { get; }
     IUserSeedRepository           UserEntities      { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);

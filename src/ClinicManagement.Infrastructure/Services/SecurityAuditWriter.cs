@@ -1,23 +1,20 @@
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Persistence;
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace ClinicManagement.Infrastructure.Services;
 
 public class SecurityAuditWriter : ISecurityAuditWriter
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUserService;
-    private readonly DbSet<AuditLog> _auditLogs;
 
-    public SecurityAuditWriter(ApplicationDbContext context, ICurrentUserService currentUserService)
+    public SecurityAuditWriter(IUnitOfWork uow, ICurrentUserService currentUserService)
     {
-        _context            = context;
+        _uow                = uow;
         _currentUserService = currentUserService;
-        _auditLogs          = context.Set<AuditLog>();
     }
 
     public async Task WriteAsync(
@@ -29,7 +26,7 @@ public class SecurityAuditWriter : ISecurityAuditWriter
         if (!string.IsNullOrEmpty(detail))
             changes["detail"] = detail;
 
-        _auditLogs.Add(new AuditLog
+        await _uow.AuditLogs.AddAsync(new AuditLog
         {
             Timestamp  = DateTimeOffset.UtcNow,
             ClinicId   = clinicId,
@@ -44,8 +41,8 @@ public class SecurityAuditWriter : ISecurityAuditWriter
             Action     = AuditAction.Security,
             IpAddress  = _currentUserService.IpAddress,
             Changes    = JsonSerializer.Serialize(changes),
-        });
+        }, cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

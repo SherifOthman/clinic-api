@@ -3,7 +3,7 @@ using ClinicManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ClinicManagement.Infrastructure.Services;
+namespace ClinicManagement.Persistence.Jobs;
 
 public class UsageMetricsAggregationJob
 {

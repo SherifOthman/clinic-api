@@ -35,11 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IGeoNamesService>(sp => sp.GetRequiredService<GeoNamesService>());
 
         // Hangfire jobs (scoped — resolved per execution by Hangfire's DI scope)
-        services.AddScoped<EmailQueueProcessorJob>();
-        services.AddScoped<AuditLogCleanupService>();
         services.AddScoped<RefreshTokenCleanupService>();
-        services.AddScoped<UsageMetricsAggregationJob>();
-        services.AddScoped<SubscriptionExpiryNotificationJob>();
 
         return services;
     }

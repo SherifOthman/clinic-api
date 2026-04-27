@@ -44,6 +44,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Specialization>   Specializations   => field ??= new Repository<Specialization>(_context);
     public IRepository<SubscriptionPlan> SubscriptionPlans => field ??= new Repository<SubscriptionPlan>(_context);
     public IRepository<Person>           Persons           => field ??= new Repository<Person>(_context);
+    public IRefreshTokenRepository       RefreshTokens     => field ??= new RefreshTokenRepository(_context);
     public IUserSeedRepository           UserEntities      => field ??= new UserSeedRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)

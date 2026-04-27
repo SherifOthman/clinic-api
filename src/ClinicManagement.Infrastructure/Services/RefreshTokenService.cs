@@ -1,9 +1,8 @@
 using ClinicManagement.Application.Abstractions.Authentication;
+using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Infrastructure.Options;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Persistence;
-using Microsoft.EntityFrameworkCore;
+using ClinicManagement.Infrastructure.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,22 +10,20 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class RefreshTokenService : IRefreshTokenService
 {
-    private readonly ApplicationDbContext _context;
-    private readonly DbSet<RefreshToken>  _refreshTokens;
-    private readonly ICurrentUserService  _currentUserService;
-    private readonly DateTimeProvider     _dateTimeProvider;
-    private readonly JwtOptions           _jwtOptions;
+    private readonly IUnitOfWork _uow;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly DateTimeProvider _dateTimeProvider;
+    private readonly JwtOptions _jwtOptions;
     private readonly ILogger<RefreshTokenService> _logger;
 
     public RefreshTokenService(
-        ApplicationDbContext context,
+        IUnitOfWork uow,
         ICurrentUserService currentUserService,
         DateTimeProvider dateTimeProvider,
         IOptions<JwtOptions> jwtOptions,
         ILogger<RefreshTokenService> logger)
     {
-        _context            = context;
-        _refreshTokens      = context.Set<RefreshToken>();
+        _uow                = uow;
         _currentUserService = currentUserService;
         _dateTimeProvider   = dateTimeProvider;
         _jwtOptions         = jwtOptions.Value;
@@ -42,8 +39,8 @@ public class RefreshTokenService : IRefreshTokenService
 
         var refreshToken = RefreshToken.Create(userId, expiryTime, ipAddress ?? _currentUserService.IpAddress);
 
-        _refreshTokens.Add(refreshToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _uow.RefreshTokens.AddAsync(refreshToken, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Generated refresh token for user {UserId}, expires in {Minutes} minutes",
             userId, (expiryTime - now).TotalMinutes);
@@ -52,9 +49,7 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<RefreshToken?> GetActiveRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
-        var now          = _dateTimeProvider.UtcNow;
-        var refreshToken = await _refreshTokens.FirstOrDefaultAsync(rt => rt.Token == token, cancellationToken);
-        return refreshToken is { IsRevoked: false } && refreshToken.ExpiryTime > now ? refreshToken : null;
+        return await _uow.RefreshTokens.GetActiveTokenAsync(token, _dateTimeProvider.UtcNow, cancellationToken);
     }
 
     public async Task RevokeRefreshTokenAsync(string token, string? ipAddress = null, string? replacedByToken = null, CancellationToken cancellationToken = default)
@@ -63,35 +58,25 @@ public class RefreshTokenService : IRefreshTokenService
         if (refreshToken is null) return;
 
         refreshToken.Revoke(ipAddress ?? _currentUserService.IpAddress, _dateTimeProvider.UtcNow, replacedByToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Revoked refresh token for user {UserId}", refreshToken.UserId);
     }
 
     public async Task RevokeAllUserRefreshTokensAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
-        var now      = _dateTimeProvider.UtcNow;
-        var revokeIp = ipAddress ?? _currentUserService.IpAddress;
+        await _uow.RefreshTokens.RevokeAllForUserAsync(
+            userId,
+            ipAddress ?? _currentUserService.IpAddress,
+            _dateTimeProvider.UtcNow,
+            cancellationToken);
 
-        var count = await _refreshTokens
-            .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiryTime > now)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(rt => rt.IsRevoked, true)
-                .SetProperty(rt => rt.RevokedAt, now)
-                .SetProperty(rt => rt.RevokedByIp, revokeIp),
-                cancellationToken);
-
-        if (count > 0)
-            _logger.LogInformation("Revoked {Count} refresh tokens for user {UserId}", count, userId);
+        _logger.LogInformation("Revoked refresh tokens for user {UserId}", userId);
     }
 
     public async Task<int> CleanupExpiredTokensAsync(CancellationToken cancellationToken = default)
     {
-        var now   = _dateTimeProvider.UtcNow;
-        var count = await _refreshTokens
-            .Where(rt => rt.IsRevoked || rt.ExpiryTime <= now)
-            .ExecuteDeleteAsync(cancellationToken);
-
+        var count = await _uow.RefreshTokens.DeleteExpiredAsync(_dateTimeProvider.UtcNow, cancellationToken);
         if (count > 0)
             _logger.LogInformation("Cleaned up {Count} expired/revoked refresh tokens", count);
         return count;
