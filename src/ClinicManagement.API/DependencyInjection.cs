@@ -9,6 +9,7 @@ using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -73,8 +74,18 @@ public static class DependencyInjection
 
         services.AddAuthentication(options =>
         {
+            // JWT is the default for API endpoints
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+            // Cookie scheme is used only for the OAuth state/callback flow
+            options.DefaultSignInScheme       = CookieAuthenticationDefaults.AuthenticationScheme;
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            // Short-lived — only used to carry OAuth state between redirect and callback
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         })
         .AddJwtBearer(options =>
         {
@@ -98,10 +109,8 @@ public static class DependencyInjection
             options.ClientId     = googleOptions?.ClientId     ?? configuration["Google:ClientId"]     ?? "";
             options.ClientSecret = googleOptions?.ClientSecret ?? configuration["Google:ClientSecret"] ?? "";
             options.CallbackPath = "/api/auth/oauth/google/callback";
-            // Request email and profile scopes
             options.Scope.Add("email");
             options.Scope.Add("profile");
-            // Save tokens so we can access the Google ID token if needed
             options.SaveTokens = false;
         });
     }
