@@ -41,7 +41,8 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         GoogleLoginCommand request, CancellationToken cancellationToken)
     {
         // ── Find or create user ───────────────────────────────────────────────
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        // Use IUserRepository (not UserManager) so Person navigation is loaded
+        var user = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
 
         if (user is null)
         {
@@ -52,13 +53,27 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         }
         else if (!user.EmailConfirmed)
         {
-            // Google already verified the email — mark it confirmed
             user.EmailConfirmed = true;
             await _userManager.UpdateAsync(user);
         }
 
-        // ── Check if staff member is active ───────────────────────────────────
-        var roles = await _userManager.GetRolesAsync(user);
+        // ── Reload user with Person if navigation is null (safety net) ────────
+        if (user.Person is null)
+        {
+            user = await _uow.Users.GetByIdWithPersonAsync(user.Id, cancellationToken);
+            if (user is null)
+                return Result.Failure<TokenResponseDto>(ErrorCodes.USER_NOT_FOUND, "User not found");
+        }
+
+        // ── Get roles (reload from DB to ensure fresh after creation) ─────────
+        var roles = (await _userManager.GetRolesAsync(user)).ToList();
+
+        // New Google users get ClinicOwner — if roles empty, assign it
+        if (!roles.Any())
+        {
+            await _userManager.AddToRoleAsync(user, UserRoles.ClinicOwner);
+            roles = [UserRoles.ClinicOwner];
+        }
 
         Guid? clinicId    = null;
         Guid? memberId    = null;
@@ -149,8 +164,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
             return null;
         }
 
-        await _userManager.AddToRoleAsync(user, UserRoles.ClinicOwner);
-        _logger.LogInformation("Created new ClinicOwner from Google OAuth: {Email}", request.Email);
+        _logger.LogInformation("Created new user from Google OAuth: {Email}", request.Email);
         return user;
     }
 
