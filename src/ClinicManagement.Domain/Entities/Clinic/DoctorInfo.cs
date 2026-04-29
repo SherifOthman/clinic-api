@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
@@ -16,6 +17,13 @@ public class DoctorInfo : BaseEntity, ISoftDeletable
 
     /// <summary>When false, only the clinic owner can edit this doctor's schedule and visit types.</summary>
     public bool CanSelfManageSchedule { get; set; } = true;
+
+    /// <summary>
+    /// How this doctor handles appointments.
+    /// Queue = patients arrive and get a queue number (no fixed time).
+    /// Time  = patients book a specific date + time slot.
+    /// </summary>
+    public AppointmentType AppointmentType { get; set; } = AppointmentType.Queue;
 
     // ── Computed ──────────────────────────────────────────────────────────────
 

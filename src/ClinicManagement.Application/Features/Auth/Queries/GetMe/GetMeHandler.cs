@@ -14,6 +14,7 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDt
 
         var roles     = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
         var hasClinic = await uow.Users.HasClinicAsync(request.UserId, cancellationToken);
+        var hasPassword = profile.HasPassword;
 
         string? specializationNameEn = null;
         string? specializationNameAr = null;
@@ -45,6 +46,7 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDt
             Permissions:          permissions,
             EmailConfirmed:       profile.EmailConfirmed,
             OnboardingCompleted:  hasClinic,
+            HasPassword:          hasPassword,
             SpecializationNameEn: specializationNameEn,
             SpecializationNameAr: specializationNameAr,
             Gender:               profile.Gender,

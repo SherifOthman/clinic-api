@@ -1,0 +1,144 @@
+### ============================================================
+### APPOINTMENTS
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+@today   = 2026-04-29
+
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "ClinicOwner123!"
+}
+
+###
+
+@ownerToken = {{loginOwner.response.body.accessToken}}
+
+# ── Get doctors for a branch ──────────────────────────────────────────────────
+
+# @name getDoctors
+GET {{baseUrl}}/appointments/doctors?branchId={{branchId}}
+Authorization: Bearer {{ownerToken}}
+
+###
+
+@branchId    = 00000000-0000-0000-0000-000000000000
+@doctorInfoId = 00000000-0000-0000-0000-000000000000
+@patientId   = 00000000-0000-0000-0000-000000000000
+@visitTypeId = 00000000-0000-0000-0000-000000000000
+
+# ── Get appointments for today (all doctors) ──────────────────────────────────
+
+GET {{baseUrl}}/appointments?date={{today}}
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Get appointments for specific doctors ─────────────────────────────────────
+
+GET {{baseUrl}}/appointments?date={{today}}&doctorInfoIds={{doctorInfoId}}
+Authorization: Bearer {{ownerToken}}
+
+###
+
+# ── Create queue appointment ──────────────────────────────────────────────────
+
+# @name createQueue
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "branchId":     "{{branchId}}",
+  "patientId":    "{{patientId}}",
+  "doctorInfoId": "{{doctorInfoId}}",
+  "visitTypeId":  "{{visitTypeId}}",
+  "date":         "{{today}}",
+  "type":         "Queue",
+  "scheduledTime": null,
+  "discountPercent": null
+}
+
+###
+
+@appointmentId = {{createQueue.response.body}}
+
+# ── Create time-based appointment ─────────────────────────────────────────────
+
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "branchId":      "{{branchId}}",
+  "patientId":     "{{patientId}}",
+  "doctorInfoId":  "{{doctorInfoId}}",
+  "visitTypeId":   "{{visitTypeId}}",
+  "date":          "{{today}}",
+  "type":          "Time",
+  "scheduledTime": "10:00",
+  "discountPercent": null
+}
+
+###
+
+# ── Update appointment status ─────────────────────────────────────────────────
+
+PATCH {{baseUrl}}/appointments/{{appointmentId}}/status
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "status": "InProgress"
+}
+
+###
+
+PATCH {{baseUrl}}/appointments/{{appointmentId}}/status
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "status": "Completed"
+}
+
+###
+
+PATCH {{baseUrl}}/appointments/{{appointmentId}}/status
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "status": "Cancelled"
+}
+
+###
+
+# ── Set doctor appointment type ───────────────────────────────────────────────
+
+@memberId = 00000000-0000-0000-0000-000000000000
+
+PATCH {{baseUrl}}/appointments/doctors/{{memberId}}/appointment-type
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "appointmentType": "Time"
+}
+
+###
+
+PATCH {{baseUrl}}/appointments/doctors/{{memberId}}/appointment-type
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "appointmentType": "Queue"
+}
+
+###

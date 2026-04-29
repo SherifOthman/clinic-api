@@ -11,8 +11,6 @@ public record CompleteOnboarding(
     string AddressLine,
     int? StateGeonameId,
     int? CityGeonameId,
-    bool ProvideMedicalServices,
-    Guid? SpecializationId,
     string? CountryCode
 ) : IRequest<Result>, IAuditableCommand
 {

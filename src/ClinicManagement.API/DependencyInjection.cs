@@ -84,7 +84,7 @@ public static class DependencyInjection
         {
             // Short-lived — only used to carry OAuth state between redirect and callback
             options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
-            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         })
         .AddJwtBearer(options =>

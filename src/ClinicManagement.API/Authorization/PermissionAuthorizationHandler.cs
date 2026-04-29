@@ -30,6 +30,13 @@ public class PermissionAuthorizationHandler
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
+        // ClinicOwner has implicit access to all permissions — they own the clinic
+        if (context.User.IsInRole("ClinicOwner"))
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         var memberIdClaim = context.User.FindFirst("MemberId")?.Value;
 
         // No MemberId — user has no clinic membership (SuperAdmin, unregistered user)

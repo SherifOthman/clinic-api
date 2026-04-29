@@ -14,6 +14,7 @@ public record GetMeDto(
     List<string> Permissions,
     bool EmailConfirmed,
     bool OnboardingCompleted,
+    bool HasPassword,
     string? SpecializationNameEn,
     string? SpecializationNameAr,
     string Gender,

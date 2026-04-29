@@ -166,9 +166,9 @@ public class StaffController : BaseApiController
     public async Task<IActionResult> SaveWorkingDays(
         Guid id, [FromBody] SaveWorkingDaysRequest request, CancellationToken cancellationToken)
     {
-        if (request.BranchId == Guid.Empty)
-            return BadRequest("BranchId is required");
-        var days = request.Days.Select(d => new WorkingDayInput(d.Day, d.StartTime, d.EndTime, d.IsAvailable)).ToList();
+        var days = request.Days
+            .Select(d => new WorkingDayInput(d.Day, d.StartTime, d.EndTime, d.IsAvailable))
+            .ToList();
         var result = await Sender.Send(new SaveWorkingDaysCommand(id, request.BranchId, days), cancellationToken);
         return HandleNoContent(result, "Failed to save working days");
     }
@@ -242,12 +242,7 @@ public class StaffController : BaseApiController
     public async Task<IActionResult> SetPermissions(
         Guid id, [FromBody] List<string> permissions, CancellationToken cancellationToken)
     {
-        var parsed = permissions
-            .Where(p => Enum.TryParse<Permission>(p, out _))
-            .Select(p => Enum.Parse<Permission>(p))
-            .ToList();
-
-        var result = await Sender.Send(new SetMemberPermissionsCommand(id, parsed), cancellationToken);
+        var result = await Sender.Send(new SetMemberPermissionsCommand(id, permissions), cancellationToken);
         return HandleNoContent(result, "Failed to update permissions");
     }
 }

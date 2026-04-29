@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -5,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-public class CookieService
+public class CookieService : ICookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CookieSettings _cookieSettings;

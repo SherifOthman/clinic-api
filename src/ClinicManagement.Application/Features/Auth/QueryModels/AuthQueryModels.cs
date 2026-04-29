@@ -11,5 +11,6 @@ public record UserProfileRow(
     string? PhoneNumber,
     string? ProfileImageUrl,
     bool EmailConfirmed,
-    string Gender
+    string Gender,
+    bool HasPassword
 );

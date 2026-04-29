@@ -11,7 +11,7 @@ public record StaffDetailRow(
     string? ProfileImageUrl, DoctorDetailRow? DoctorProfile
 );
 
-public record DoctorDetailRow(Guid Id, string SpecializationNameEn, string SpecializationNameAr, bool CanSelfManageSchedule);
+public record DoctorDetailRow(Guid Id, string SpecializationNameEn, string SpecializationNameAr, bool CanSelfManageSchedule, string AppointmentType);
 
 public record StaffRoleRow(Guid UserId, string RoleName);
 
@@ -29,3 +29,5 @@ public record InvitationDetailRow(
 );
 
 public record WorkingDayRow(int Day, string StartTime, string EndTime, bool IsAvailable, Guid BranchId);
+
+public record DoctorForBranchRow(Guid DoctorInfoId, Guid MemberId, string FullName, string? ProfileImageUrl, string AppointmentType);

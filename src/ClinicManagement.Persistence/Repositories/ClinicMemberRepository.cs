@@ -105,7 +105,8 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
                     m.DoctorInfo.Id,
                     m.DoctorInfo.Specialization != null ? m.DoctorInfo.Specialization.NameEn : "",
                     m.DoctorInfo.Specialization != null ? m.DoctorInfo.Specialization.NameAr : "",
-                    m.DoctorInfo.CanSelfManageSchedule),
+                    m.DoctorInfo.CanSelfManageSchedule,
+                    m.DoctorInfo.AppointmentType.ToString()),
             })
             .FirstOrDefaultAsync(ct);
 

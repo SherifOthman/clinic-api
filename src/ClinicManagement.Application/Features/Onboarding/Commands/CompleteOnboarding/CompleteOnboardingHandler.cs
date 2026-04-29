@@ -57,15 +57,6 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         var ownerMember = CreateOwnerMember(user, clinic.Id);
         await _uow.Members.AddAsync(ownerMember);
 
-        if (request.ProvideMedicalServices)
-        {
-            await _uow.DoctorInfos.AddAsync(new DoctorInfo
-            {
-                ClinicMemberId   = ownerMember.Id,
-                SpecializationId = request.SpecializationId,
-            });
-        }
-
         await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 

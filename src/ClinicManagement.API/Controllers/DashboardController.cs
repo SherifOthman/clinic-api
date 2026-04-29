@@ -11,6 +11,17 @@ namespace ClinicManagement.API.Controllers;
 [EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class DashboardController : BaseApiController
 {
+    /// <summary>Public aggregate stats for the marketing website — no auth required.</summary>
+    [HttpGet("stats/public")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AnonStatic)]
+    [ProducesResponseType(typeof(PublicStatsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPublicStats(CancellationToken cancellationToken = default)
+    {
+        var result = await Sender.Send(new GetPublicStatsQuery(), cancellationToken);
+        return Ok(result);
+    }
+
     /// <summary>Clinic staff dashboard stats — patients, staff, invitations, subscription.</summary>
     [HttpGet("stats")]
     [Authorize]
