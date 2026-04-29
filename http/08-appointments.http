@@ -142,3 +142,74 @@ Authorization: Bearer {{ownerToken}}
 }
 
 ###
+
+# ── Doctor check-in ───────────────────────────────────────────────────────────
+
+# @name checkIn
+POST {{baseUrl}}/appointments/sessions/check-in
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "doctorInfoId": "{{doctorInfoId}}",
+  "branchId":     "{{branchId}}"
+}
+
+###
+
+@sessionId = {{checkIn.response.body.sessionId}}
+
+# ── Handle delay (if doctor is late) ─────────────────────────────────────────
+
+# Option 1: Auto-shift all appointments forward
+POST {{baseUrl}}/appointments/sessions/{{sessionId}}/handle-delay
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "option": "AutoShift"
+}
+
+###
+
+# Option 2: Mark past appointments as missed
+POST {{baseUrl}}/appointments/sessions/{{sessionId}}/handle-delay
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "option": "MarkMissed"
+}
+
+###
+
+# Option 3: Manual — receptionist handles each appointment
+POST {{baseUrl}}/appointments/sessions/{{sessionId}}/handle-delay
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "option": "Manual"
+}
+
+###
+
+# ── Create appointment with duration override ─────────────────────────────────
+
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Authorization: Bearer {{ownerToken}}
+
+{
+  "branchId":              "{{branchId}}",
+  "patientId":             "{{patientId}}",
+  "doctorInfoId":          "{{doctorInfoId}}",
+  "visitTypeId":           "{{visitTypeId}}",
+  "date":                  "{{today}}",
+  "type":                  "Time",
+  "scheduledTime":         "14:00",
+  "discountPercent":       null,
+  "visitDurationMinutes":  45
+}
+
+###

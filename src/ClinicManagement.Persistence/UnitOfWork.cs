@@ -42,6 +42,7 @@ public class UnitOfWork : IUnitOfWork
     public IContactMessageRepository     ContactMessages   => field ??= new ContactMessageRepository(_context);
     public IAppointmentRepository        Appointments      => field ??= new AppointmentRepository(_context);
     public IQueueCounterRepository       QueueCounters     => field ??= new QueueCounterRepository(_context);
+    public IDoctorSessionRepository      DoctorSessions    => field ??= new DoctorSessionRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
         => _context.SaveChangesAsync(ct);

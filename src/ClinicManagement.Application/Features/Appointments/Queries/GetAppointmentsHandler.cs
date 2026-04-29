@@ -21,11 +21,10 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List
 
         if (request.DoctorInfoIds is { Count: > 0 })
             appointments = await _uow.Appointments.GetByDoctorsAndDateAsync(request.DoctorInfoIds, request.Date, ct);
+        else if (request.BranchId.HasValue)
+            appointments = await _uow.Appointments.GetByBranchAndDateAsync(request.BranchId.Value, request.Date, ct);
         else
-        {
-            // All doctors — need branch context; fall back to empty if no branch
             appointments = [];
-        }
 
         return appointments.Select(a => new AppointmentDto(
             a.Id,
@@ -36,9 +35,12 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List
             a.Patient?.PatientCode,
             a.QueueNumber,
             a.ScheduledTime?.ToString("HH:mm"),
+            a.EndTime?.ToString("HH:mm"),
+            a.VisitDurationMinutes,
             a.Type.ToString(),
             a.Status.ToString(),
-            a.VisitType?.GetName("en") ?? "—",
+            a.VisitType?.NameEn ?? "—",
+            a.VisitType?.NameAr ?? "—",
             a.FinalPrice,
             a.CreatedAt
         )).ToList();

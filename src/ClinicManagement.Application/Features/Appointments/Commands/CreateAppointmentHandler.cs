@@ -40,18 +40,33 @@ public class CreateAppointmentHandler : IRequestHandler<CreateAppointmentCommand
                 return Result.Failure<Guid>(ErrorCodes.CONFLICT, "This time slot is already booked");
         }
 
+        // Get doctor's default visit duration for endTime calculation
+        var doctorInfo = await _uow.DoctorSchedules.GetScheduleAsync(request.DoctorInfoId, request.BranchId, ct);
+        // Load DoctorInfo for defaultVisitDuration
+        var doctorInfoEntity = visitType.Schedule?.DoctorInfo;
+
         var appointment = new Appointment
         {
-            ClinicId      = clinicId,
-            BranchId      = request.BranchId,
-            PatientId     = request.PatientId,
-            DoctorInfoId  = request.DoctorInfoId,
-            VisitTypeId   = request.VisitTypeId,
-            Date          = request.Date,
-            Type          = request.Type,
-            ScheduledTime = request.Type == AppointmentType.Time ? request.ScheduledTime : null,
-            Status        = AppointmentStatus.Pending,
+            ClinicId             = clinicId,
+            BranchId             = request.BranchId,
+            PatientId            = request.PatientId,
+            DoctorInfoId         = request.DoctorInfoId,
+            VisitTypeId          = request.VisitTypeId,
+            Date                 = request.Date,
+            Type                 = request.Type,
+            ScheduledTime        = request.Type == AppointmentType.Time ? request.ScheduledTime : null,
+            VisitDurationMinutes = request.VisitDurationMinutes,
+            Status               = AppointmentStatus.Pending,
         };
+
+        // Calculate endTime for time-based appointments
+        if (request.Type == AppointmentType.Time && request.ScheduledTime.HasValue)
+        {
+            var duration = request.VisitDurationMinutes
+                ?? doctorInfoEntity?.DefaultVisitDurationMinutes
+                ?? 30;
+            appointment.EndTime = request.ScheduledTime.Value.AddMinutes(duration);
+        }
 
         // Auto-assign queue number for queue-based using atomic counter
         if (request.Type == AppointmentType.Queue)

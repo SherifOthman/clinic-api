@@ -17,5 +17,6 @@ public record CreateAppointmentCommand(
     DateOnly Date,
     AppointmentType Type,
     TimeOnly? ScheduledTime,
-    decimal? DiscountPercent
+    decimal? DiscountPercent,
+    int? VisitDurationMinutes = null
 ) : IRequest<Result<Guid>>;

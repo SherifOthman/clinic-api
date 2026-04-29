@@ -21,9 +21,13 @@ public class UpdateAppointmentStatusHandler : IRequestHandler<UpdateAppointmentS
         // Validate transitions
         var valid = (appt.Status, request.Status) switch
         {
-            (AppointmentStatus.Pending,    AppointmentStatus.InProgress) => true,
+            (AppointmentStatus.Pending,    AppointmentStatus.Waiting)    => true,  // patient arrived
+            (AppointmentStatus.Pending,    AppointmentStatus.InProgress) => true,  // direct to in-progress (queue)
             (AppointmentStatus.Pending,    AppointmentStatus.Cancelled)  => true,
             (AppointmentStatus.Pending,    AppointmentStatus.NoShow)     => true,
+            (AppointmentStatus.Waiting,    AppointmentStatus.InProgress) => true,  // called in
+            (AppointmentStatus.Waiting,    AppointmentStatus.Cancelled)  => true,
+            (AppointmentStatus.Waiting,    AppointmentStatus.NoShow)     => true,
             (AppointmentStatus.InProgress, AppointmentStatus.Completed)  => true,
             (AppointmentStatus.InProgress, AppointmentStatus.Cancelled)  => true,
             _ => false,

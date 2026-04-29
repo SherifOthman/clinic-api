@@ -38,7 +38,8 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
                 s.DoctorInfo.ClinicMemberId,
                 s.DoctorInfo.ClinicMember.Person.FullName,
                 s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
-                s.DoctorInfo.AppointmentType.ToString()))
+                s.DoctorInfo.AppointmentType.ToString(),
+                s.DoctorInfo.DefaultVisitDurationMinutes))
             .ToListAsync(ct);
 
     public async Task<List<WorkingDayRow>> GetWorkingDaysByDoctorInfoIdAsync(Guid doctorInfoId, CancellationToken ct = default)

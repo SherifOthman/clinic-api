@@ -35,6 +35,7 @@ public interface IUnitOfWork
     IContactMessageRepository     ContactMessages   { get; }
     IAppointmentRepository        Appointments      { get; }
     IQueueCounterRepository       QueueCounters     { get; }
+    IDoctorSessionRepository      DoctorSessions    { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

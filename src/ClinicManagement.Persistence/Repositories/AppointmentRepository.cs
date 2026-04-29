@@ -37,6 +37,17 @@ public class AppointmentRepository : IAppointmentRepository
                .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
                .ToListAsync(ct);
 
+    public Task<List<Appointment>> GetByBranchAndDateAsync(Guid branchId, DateOnly date, CancellationToken ct = default)
+        => _set.AsNoTracking()
+               .Include(a => a.Patient).ThenInclude(p => p.Person)
+               .Include(a => a.VisitType)
+               .Include(a => a.Doctor).ThenInclude(d => d.ClinicMember).ThenInclude(m => m.Person)
+               .Where(a => a.BranchId == branchId && a.Date == date)
+               .OrderBy(a => a.DoctorInfoId)
+               .ThenBy(a => a.QueueNumber ?? 0)
+               .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
+               .ToListAsync(ct);
+
     public Task<bool> TimeSlotTakenAsync(Guid doctorInfoId, DateOnly date, TimeOnly time, Guid? excludeId, CancellationToken ct = default)
         => _set.AsNoTracking()
                .AnyAsync(a =>

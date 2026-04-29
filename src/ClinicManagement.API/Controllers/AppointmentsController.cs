@@ -4,6 +4,7 @@ using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Appointments.Commands;
 using ClinicManagement.Application.Features.Appointments.Queries;
+using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,13 +25,14 @@ public class AppointmentsController : BaseApiController
     [ProducesResponseType(typeof(List<AppointmentDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAppointments(
         [FromQuery] string date,
+        [FromQuery] Guid? branchId,
         [FromQuery] List<Guid>? doctorInfoIds,
         CancellationToken ct)
     {
         if (!DateOnly.TryParse(date, out var parsedDate))
             return BadRequest("Invalid date format. Use YYYY-MM-DD.");
 
-        var result = await Sender.Send(new GetAppointmentsQuery(parsedDate, doctorInfoIds), ct);
+        var result = await Sender.Send(new GetAppointmentsQuery(parsedDate, branchId, doctorInfoIds), ct);
         return Ok(result);
     }
 
@@ -71,7 +73,8 @@ public class AppointmentsController : BaseApiController
 
         var command = new CreateAppointmentCommand(
             request.BranchId, request.PatientId, request.DoctorInfoId,
-            request.VisitTypeId, date, type, scheduledTime, request.DiscountPercent);
+            request.VisitTypeId, date, type, scheduledTime, request.DiscountPercent,
+            request.VisitDurationMinutes);
 
         var result = await Sender.Send(command, ct);
         if (result.IsFailure) return HandleResult(result, "Failed to create appointment");
@@ -106,5 +109,34 @@ public class AppointmentsController : BaseApiController
 
         var result = await Sender.Send(new SetDoctorAppointmentTypeCommand(memberId, apptType), ct);
         return HandleNoContent(result, "Failed to set appointment type");
+    }
+
+    // ── Doctor sessions ───────────────────────────────────────────────────────
+
+    /// <summary>Doctor checks in for the day. Returns delay info if late.</summary>
+    [HttpPost("sessions/check-in")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(typeof(DoctorCheckInResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CheckIn([FromBody] CheckInRequest request, CancellationToken ct)
+    {
+        var result = await Sender.Send(new DoctorCheckInCommand(request.DoctorInfoId, request.BranchId), ct);
+        return result.IsFailure ? HandleResult(result, "Check-in failed") : Ok(result.Value);
+    }
+
+    /// <summary>Handle a doctor delay — auto-shift, mark missed, or manual.</summary>
+    [HttpPost("sessions/{sessionId:guid}/handle-delay")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> HandleDelay(Guid sessionId, [FromBody] HandleDelayRequest request, CancellationToken ct)
+    {
+        if (!Enum.TryParse<DelayHandlingOption>(request.Option, out var option))
+            return BadRequest("Invalid option. Use 'AutoShift', 'MarkMissed', or 'Manual'.");
+
+        var result = await Sender.Send(new HandleDelayCommand(sessionId, option), ct);
+        return HandleNoContent(result, "Failed to handle delay");
     }
 }

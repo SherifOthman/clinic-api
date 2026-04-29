@@ -25,6 +25,12 @@ public class DoctorInfo : BaseEntity, ISoftDeletable
     /// </summary>
     public AppointmentType AppointmentType { get; set; } = AppointmentType.Queue;
 
+    /// <summary>
+    /// Default visit duration in minutes for time-based appointments.
+    /// Used to auto-calculate endTime when booking. Can be overridden per appointment.
+    /// </summary>
+    public int DefaultVisitDurationMinutes { get; set; } = 30;
+
     // ── Computed ──────────────────────────────────────────────────────────────
 
     public bool HasSpecialization => SpecializationId.HasValue;

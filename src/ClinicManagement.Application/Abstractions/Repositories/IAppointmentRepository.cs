@@ -8,6 +8,7 @@ public interface IAppointmentRepository
     Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<List<Appointment>> GetByDoctorAndDateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default);
     Task<List<Appointment>> GetByDoctorsAndDateAsync(List<Guid> doctorInfoIds, DateOnly date, CancellationToken ct = default);
+    Task<List<Appointment>> GetByBranchAndDateAsync(Guid branchId, DateOnly date, CancellationToken ct = default);
     Task<bool> TimeSlotTakenAsync(Guid doctorInfoId, DateOnly date, TimeOnly time, Guid? excludeId, CancellationToken ct = default);
 
     // ── Writes ────────────────────────────────────────────────────────────────

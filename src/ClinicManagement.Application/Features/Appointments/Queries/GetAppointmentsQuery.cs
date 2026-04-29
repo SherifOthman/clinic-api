@@ -5,7 +5,8 @@ namespace ClinicManagement.Application.Features.Appointments.Queries;
 /// <summary>Get appointments for one or more doctors on a given date.</summary>
 public record GetAppointmentsQuery(
     DateOnly Date,
-    List<Guid>? DoctorInfoIds = null  // null = all doctors in branch
+    Guid? BranchId = null,
+    List<Guid>? DoctorInfoIds = null
 ) : IRequest<List<AppointmentDto>>;
 
 public record AppointmentDto(
@@ -16,10 +17,13 @@ public record AppointmentDto(
     string PatientName,
     string? PatientCode,
     int? QueueNumber,
-    string? ScheduledTime,   // "HH:mm"
-    string Type,             // "Queue" | "Time"
-    string Status,           // "Pending" | "InProgress" | "Completed" | "Cancelled" | "NoShow"
-    string VisitTypeName,
+    string? ScheduledTime,      // "HH:mm"
+    string? EndTime,            // "HH:mm"
+    int? VisitDurationMinutes,
+    string Type,                // "Queue" | "Time"
+    string Status,
+    string VisitTypeNameEn,
+    string VisitTypeNameAr,
     decimal FinalPrice,
     DateTimeOffset CreatedAt
 );
