@@ -29,8 +29,12 @@ public class DemoAppointmentSeed
         ClinicBranch branch,
         DoctorInfo ownerDoctor,
         DoctorInfo staffDoctor,
+        DoctorInfo doctor3,
+        DoctorInfo doctor4,
         VisitType ownerVt1, VisitType ownerVt2, VisitType ownerVt3,
         VisitType staffVt1, VisitType staffVt2, VisitType staffVt3,
+        VisitType doc3Vt1,  VisitType doc3Vt2,
+        VisitType doc4Vt1,  VisitType doc4Vt2,
         List<Patient> patients)
     {
         var today     = DateOnly.FromDateTime(DateTime.Today);
@@ -38,6 +42,7 @@ public class DemoAppointmentSeed
         var tomorrow  = today.AddDays(1);
         var nextWeek  = today.AddDays(7);
         var lastWeek  = today.AddDays(-7);
+        var twoDaysAgo = today.AddDays(-2);
 
         // ── QUEUE appointments (owner doctor) ─────────────────────────────────
 
@@ -66,7 +71,6 @@ public class DemoAppointmentSeed
         }
 
         // Day before yesterday — 6 completed, 1 no-show, 1 cancelled
-        var twoDaysAgo = today.AddDays(-2);
         for (var i = 0; i < 6; i++)
             AddQueueAppt(clinicId, branch.Id, patients[i].Id, ownerDoctor.Id, ownerVt1, twoDaysAgo, i + 1, AppointmentStatus.Completed, null);
         AddQueueAppt(clinicId, branch.Id, patients[6].Id, ownerDoctor.Id, ownerVt2, twoDaysAgo, 7, AppointmentStatus.NoShow, null);
@@ -143,14 +147,64 @@ public class DemoAppointmentSeed
         foreach (var (time, p, vt, dur) in timeSlotsNextWeek)
             AddTimeAppt(clinicId, branch.Id, p.Id, staffDoctor.Id, vt, nextWeek, time, dur, AppointmentStatus.Pending, null);
 
+        // ── DOCTOR 3: Queue (Pediatrics) ─────────────────────────────────────
+
+        // Today — 8 appointments
+        var doc3Today = new[]
+        {
+            (patients[0],  doc3Vt1, AppointmentStatus.Completed,  1,  null as decimal?),
+            (patients[1],  doc3Vt2, AppointmentStatus.Completed,  2,  null),
+            (patients[2],  doc3Vt1, AppointmentStatus.Completed,  3,  null),
+            (patients[3],  doc3Vt2, AppointmentStatus.InProgress, 4,  null),
+            (patients[4],  doc3Vt1, AppointmentStatus.Waiting,    5,  null),
+            (patients[5],  doc3Vt2, AppointmentStatus.Pending,    6,  null),
+            (patients[6],  doc3Vt1, AppointmentStatus.Pending,    7,  null),
+            (patients[7],  doc3Vt2, AppointmentStatus.Pending,    8,  10m),
+        };
+        foreach (var (p, vt, status, q, disc) in doc3Today)
+            AddQueueAppt(clinicId, branch.Id, p.Id, doctor3.Id, vt, today, q, status, disc);
+
+        // Tomorrow — 5 pending
+        for (var i = 0; i < 5; i++)
+            AddQueueAppt(clinicId, branch.Id, patients[i + 5].Id, doctor3.Id,
+                i % 2 == 0 ? doc3Vt1 : doc3Vt2, tomorrow, i + 1, AppointmentStatus.Pending, null);
+
+        // ── DOCTOR 4: Time (Dermatology) ──────────────────────────────────────
+
+        // Today — 6 appointments
+        var doc4Today = new[]
+        {
+            ("09:00", patients[10], doc4Vt1, AppointmentStatus.Completed,  20, null as decimal?),
+            ("09:20", patients[11], doc4Vt2, AppointmentStatus.Completed,  40, null),
+            ("10:00", patients[12], doc4Vt1, AppointmentStatus.InProgress, 20, null),
+            ("10:20", patients[13], doc4Vt1, AppointmentStatus.Waiting,    20, null),
+            ("10:40", patients[14], doc4Vt2, AppointmentStatus.Pending,    40, null),
+            ("11:20", patients[15], doc4Vt1, AppointmentStatus.Pending,    20, 15m),
+        };
+        foreach (var (time, p, vt, status, dur, disc) in doc4Today)
+            AddTimeAppt(clinicId, branch.Id, p.Id, doctor4.Id, vt, today, time, dur, status, disc);
+
+        // Tomorrow — 4 pending
+        var doc4Tomorrow = new[]
+        {
+            ("09:00", patients[16], doc4Vt1, 20),
+            ("09:20", patients[17], doc4Vt2, 40),
+            ("10:00", patients[18], doc4Vt1, 20),
+            ("10:20", patients[19], doc4Vt1, 20),
+        };
+        foreach (var (time, p, vt, dur) in doc4Tomorrow)
+            AddTimeAppt(clinicId, branch.Id, p.Id, doctor4.Id, vt, tomorrow, time, dur, AppointmentStatus.Pending, null);
+
         // ── QueueCounters ─────────────────────────────────────────────────────
         _db.Set<QueueCounter>().AddRange(
-            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = today,     LastValue = 10 },
-            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = yesterday, LastValue = 8  },
-            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = twoDaysAgo,LastValue = 8  },
-            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = lastWeek,  LastValue = 5  },
-            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = tomorrow,  LastValue = 6  },
-            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = nextWeek,  LastValue = 4  }
+            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = today,      LastValue = 10 },
+            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = yesterday,  LastValue = 8  },
+            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = twoDaysAgo, LastValue = 8  },
+            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = lastWeek,   LastValue = 5  },
+            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = tomorrow,   LastValue = 6  },
+            new QueueCounter { DoctorInfoId = ownerDoctor.Id, Date = nextWeek,   LastValue = 4  },
+            new QueueCounter { DoctorInfoId = doctor3.Id,     Date = today,      LastValue = 8  },
+            new QueueCounter { DoctorInfoId = doctor3.Id,     Date = tomorrow,   LastValue = 5  }
         );
 
         await _db.SaveChangesAsync();

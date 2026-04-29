@@ -62,12 +62,16 @@ public class DemoDataOrchestrator
         var clinicResult = await clinicSeed.SeedAsync();
         if (clinicResult is null) return;
 
-        var (clinic, mainBranch, westBranch, ownerDoctor, staffDoctor, ownerUser) = clinicResult.Value;
+        var (clinic, mainBranch, westBranch, ownerDoctor, staffDoctor, doctor3, doctor4, ownerUser) = clinicResult.Value;
 
         // 2. Schedules and visit types
         var scheduleSeed = new DemoScheduleSeed(_db, _logger.CreateLogger<DemoScheduleSeed>());
-        var (ownerSched, staffSched, ownerVt1, ownerVt2, ownerVt3, staffVt1, staffVt2, staffVt3) =
-            await scheduleSeed.SeedAsync(ownerDoctor, staffDoctor, mainBranch);
+        var (ownerSched, staffSched, doc3Sched, doc4Sched,
+             ownerVt1, ownerVt2, ownerVt3,
+             staffVt1, staffVt2, staffVt3,
+             doc3Vt1, doc3Vt2,
+             doc4Vt1, doc4Vt2) =
+            await scheduleSeed.SeedAsync(ownerDoctor, staffDoctor, doctor3, doctor4, mainBranch);
 
         // 3. Patients (25 with phones and chronic diseases)
         var patientSeed = new DemoPatientSeed(_db, _logger.CreateLogger<DemoPatientSeed>());
@@ -75,8 +79,13 @@ public class DemoDataOrchestrator
 
         // 4. Appointments (queue + time, multiple days, all statuses)
         var apptSeed = new DemoAppointmentSeed(_db, _logger.CreateLogger<DemoAppointmentSeed>());
-        await apptSeed.SeedAsync(clinic.Id, mainBranch, ownerDoctor, staffDoctor,
-            ownerVt1, ownerVt2, ownerVt3, staffVt1, staffVt2, staffVt3, patients);
+        await apptSeed.SeedAsync(clinic.Id, mainBranch,
+            ownerDoctor, staffDoctor, doctor3, doctor4,
+            ownerVt1, ownerVt2, ownerVt3,
+            staffVt1, staffVt2, staffVt3,
+            doc3Vt1, doc3Vt2,
+            doc4Vt1, doc4Vt2,
+            patients);
 
         // 5. Staff invitations
         var inviteSeed = new DemoInvitationSeed(_db, _logger.CreateLogger<DemoInvitationSeed>());

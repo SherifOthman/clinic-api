@@ -29,7 +29,9 @@ public class DemoClinicSeed
 
     /// <summary>Returns the seeded clinic, or null if already seeded.</summary>
     public async Task<(Clinic clinic, ClinicBranch mainBranch, ClinicBranch westBranch,
-        DoctorInfo ownerDoctor, DoctorInfo staffDoctor, User ownerUser)?> SeedAsync()
+        DoctorInfo ownerDoctor, DoctorInfo staffDoctor,
+        DoctorInfo doctor3, DoctorInfo doctor4,
+        User ownerUser)?> SeedAsync()
     {
         // ── SuperAdmin ────────────────────────────────────────────────────────
         await SeedSuperAdminAsync();
@@ -57,6 +59,8 @@ public class DemoClinicSeed
 
         var generalPractice = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "General Practice");
         var cardiology      = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
+        var pediatrics      = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Pediatrics");
+        var dermatology     = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Dermatology");
 
         // ── Clinic ────────────────────────────────────────────────────────────
         var clinic = new Clinic
@@ -181,13 +185,67 @@ public class DemoClinicSeed
             AddPermissions(receptionistMember.Id, ClinicMemberRole.Receptionist);
         }
 
+        // ── Doctor 3: Pediatrics, Queue-based ────────────────────────────────
+        var doctor3User = await EnsureUserAsync(
+            "doctor3@clinic.com", "doctor3", "Dr. Omar Hassan", "+201334567890",
+            Gender.Male, _opts.Doctor.Password, UserRoles.Doctor);
+        DoctorInfo doctor3 = null!;
+        if (doctor3User is not null)
+        {
+            var doctor3Member = new ClinicMember
+            {
+                PersonId = doctor3User.PersonId,
+                UserId   = doctor3User.Id,
+                ClinicId = clinic.Id,
+                Role     = ClinicMemberRole.Doctor,
+                IsActive = true,
+            };
+            _db.Set<ClinicMember>().Add(doctor3Member);
+            doctor3 = new DoctorInfo
+            {
+                ClinicMemberId              = doctor3Member.Id,
+                SpecializationId            = pediatrics?.Id,
+                AppointmentType             = AppointmentType.Queue,
+                DefaultVisitDurationMinutes = 15,
+            };
+            _db.Set<DoctorInfo>().Add(doctor3);
+            AddPermissions(doctor3Member.Id, ClinicMemberRole.Doctor);
+        }
+
+        // ── Doctor 4: Dermatology, Time-based ────────────────────────────────
+        var doctor4User = await EnsureUserAsync(
+            "doctor4@clinic.com", "doctor4", "Dr. Layla Nasser", "+201445678901",
+            Gender.Female, _opts.Doctor.Password, UserRoles.Doctor);
+        DoctorInfo doctor4 = null!;
+        if (doctor4User is not null)
+        {
+            var doctor4Member = new ClinicMember
+            {
+                PersonId = doctor4User.PersonId,
+                UserId   = doctor4User.Id,
+                ClinicId = clinic.Id,
+                Role     = ClinicMemberRole.Doctor,
+                IsActive = true,
+            };
+            _db.Set<ClinicMember>().Add(doctor4Member);
+            doctor4 = new DoctorInfo
+            {
+                ClinicMemberId              = doctor4Member.Id,
+                SpecializationId            = dermatology?.Id,
+                AppointmentType             = AppointmentType.Time,
+                DefaultVisitDurationMinutes = 20,
+            };
+            _db.Set<DoctorInfo>().Add(doctor4);
+            AddPermissions(doctor4Member.Id, ClinicMemberRole.Doctor);
+        }
+
         // ── PatientCounter ────────────────────────────────────────────────────
         _db.Set<PatientCounter>().Add(new PatientCounter { ClinicId = clinic.Id, LastValue = 0 });
 
         await _db.SaveChangesAsync();
         _logger.LogInformation("Demo clinic seeded: {Name} (Id: {Id})", clinic.Name, clinic.Id);
 
-        return (clinic, mainBranch, westBranch, ownerDoctor, staffDoctor, ownerUser);
+        return (clinic, mainBranch, westBranch, ownerDoctor, staffDoctor, doctor3, doctor4, ownerUser);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
