@@ -29,7 +29,18 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
         return schedule;
     }
 
-    // ── Working days ──────────────────────────────────────────────────────────
+    public Task<List<DoctorForBranchRow>> GetDoctorsForBranchAsync(Guid branchId, CancellationToken ct = default)
+        => _db.Set<DoctorBranchSchedule>()
+            .AsNoTracking()
+            .Where(s => s.BranchId == branchId && s.IsActive)
+            .Select(s => new DoctorForBranchRow(
+                s.DoctorInfoId,
+                s.DoctorInfo.ClinicMemberId,
+                s.DoctorInfo.ClinicMember.Person.FullName,
+                s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
+                s.DoctorInfo.AppointmentType.ToString(),
+                s.DoctorInfo.DefaultVisitDurationMinutes))
+            .ToListAsync(ct);
 
     public async Task<List<WorkingDayRow>> GetWorkingDaysByDoctorInfoIdAsync(Guid doctorInfoId, CancellationToken ct = default)
         => await _db.Set<WorkingDay>()
@@ -55,7 +66,7 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
     public Task<List<VisitType>> GetVisitTypesByScheduleAsync(Guid scheduleId, CancellationToken ct = default)
         => _db.Set<VisitType>()
             .Where(v => v.DoctorBranchScheduleId == scheduleId)
-            .OrderBy(v => v.NameEn)
+            .OrderBy(v => v.Name)
             .ToListAsync(ct);
 
     public Task<VisitType?> GetVisitTypeByIdAsync(Guid visitTypeId, CancellationToken ct = default)

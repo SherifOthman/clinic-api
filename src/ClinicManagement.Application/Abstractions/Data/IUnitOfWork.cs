@@ -31,6 +31,11 @@ public interface IUnitOfWork
     IRepository<Person>           Persons           { get; }
     IRefreshTokenRepository       RefreshTokens     { get; }
     IUserSeedRepository           UserEntities      { get; }
+    ITestimonialRepository        Testimonials      { get; }
+    IContactMessageRepository     ContactMessages   { get; }
+    IAppointmentRepository        Appointments      { get; }
+    IQueueCounterRepository       QueueCounters     { get; }
+    IDoctorSessionRepository      DoctorSessions    { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

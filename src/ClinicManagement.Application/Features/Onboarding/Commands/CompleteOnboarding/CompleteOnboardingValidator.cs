@@ -20,12 +20,5 @@ public class CompleteOnboardingValidator : AbstractValidator<CompleteOnboarding>
         RuleFor(x => x.AddressLine)
             .NotEmpty()
             .MaximumLength(500);
-
-        When(x => x.ProvideMedicalServices, () =>
-        {
-            RuleFor(x => x.SpecializationId)
-                .NotEmpty()
-                .WithMessage("Specialization is required when providing medical services");
-        });
     }
 }

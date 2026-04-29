@@ -14,6 +14,9 @@ public interface IDoctorScheduleRepository
     Task<DoctorBranchSchedule?> GetScheduleAsync(Guid doctorInfoId, Guid branchId, CancellationToken ct = default);
     Task<DoctorBranchSchedule> GetOrCreateScheduleAsync(Guid doctorInfoId, Guid branchId, CancellationToken ct = default);
 
+    /// <summary>Returns all active doctors (with DoctorInfo) for a given branch.</summary>
+    Task<List<DoctorForBranchRow>> GetDoctorsForBranchAsync(Guid branchId, CancellationToken ct = default);
+
     // ── Working days ──────────────────────────────────────────────────────────
 
     Task<List<WorkingDayRow>> GetWorkingDaysByDoctorInfoIdAsync(Guid doctorInfoId, CancellationToken ct = default);

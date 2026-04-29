@@ -8,6 +8,9 @@ public class AppOptions
 {
     public const string Section = "App";
 
-    /// <summary>Frontend base URL — used to build links in emails (password reset, invitations).</summary>
+    /// <summary>Dashboard URL — where users land after login.</summary>
     public string FrontendUrl { get; set; } = "http://localhost:3000";
+
+    /// <summary>Next.js auth app URL — where users are sent for login/error pages.</summary>
+    public string AuthUrl { get; set; } = "http://localhost:3001";
 }

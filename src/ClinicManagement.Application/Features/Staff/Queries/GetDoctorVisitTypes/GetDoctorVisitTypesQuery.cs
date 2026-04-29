@@ -8,8 +8,7 @@ public record GetDoctorVisitTypesQuery(Guid StaffId, Guid BranchId)
 
 public record DoctorVisitTypeDto(
     Guid Id,
-    string NameAr,
-    string NameEn,
+    string Name,
     decimal Price,
     bool IsActive
 );

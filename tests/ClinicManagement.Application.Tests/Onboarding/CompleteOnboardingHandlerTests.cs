@@ -16,17 +16,14 @@ public class CompleteOnboardingHandlerTests
     private readonly CompleteOnboardingHandler _handler;
     private readonly User _owner;
     private readonly SubscriptionPlan _plan;
-    private readonly Specialization _spec;
 
     public CompleteOnboardingHandlerTests()
     {
         _owner = TestHandlerHelpers.CreateTestUser("owner@test.com");
         _plan  = TestHandlerHelpers.CreateTestSubscriptionPlan();
-        _spec  = TestHandlerHelpers.CreateTestSpecialization();
 
         _uow.UserEntities.Add(_owner);
         _uow.SubscriptionPlans.AddAsync(_plan).GetAwaiter().GetResult();
-        _uow.Specializations.AddAsync(_spec).GetAwaiter().GetResult();
         _uow.SaveChangesAsync().GetAwaiter().GetResult();
 
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(_owner.Id);
@@ -34,8 +31,8 @@ public class CompleteOnboardingHandlerTests
         _handler = new CompleteOnboardingHandler(_uow, _currentUserMock.Object);
     }
 
-    private CompleteOnboarding MakeCommand(bool provideMedical = true, Guid? specId = null) =>
-        new("Test Clinic", _plan.Id, "Main Branch", "123 Test St", 2, 3, provideMedical, specId ?? _spec.Id, null);
+    private CompleteOnboarding MakeCommand() =>
+        new("Test Clinic", _plan.Id, "Main Branch", "123 Test St", 2, 3, null);
 
     [Fact]
     public async Task Handle_ShouldCreateClinicBranchAndMember_WhenDoctorOnboarding()
@@ -53,23 +50,18 @@ public class CompleteOnboardingHandlerTests
 
         var member = await _uow.Members.GetByUserIdAsync(_owner.Id);
         member.Should().NotBeNull();
-
-        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(member!.Id);
-        doctorInfoId.Should().NotBe(Guid.Empty);
     }
 
     [Fact]
-    public async Task Handle_ShouldCreateMemberWithoutDoctorInfo_WhenAdminOnboarding()
+    public async Task Handle_ShouldCreateMemberForOwner_WhenOnboarding()
     {
-        var result = await _handler.Handle(MakeCommand(provideMedical: false), default);
+        var result = await _handler.Handle(MakeCommand(), default);
 
         result.IsSuccess.Should().BeTrue();
 
         var member = await _uow.Members.GetByUserIdAsync(_owner.Id);
         member.Should().NotBeNull();
-
-        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(member!.Id);
-        doctorInfoId.Should().Be(Guid.Empty);
+        member!.IsOwner.Should().BeTrue();
     }
 
     [Fact]
@@ -98,7 +90,7 @@ public class CompleteOnboardingHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenSubscriptionPlanNotFound()
     {
-        var cmd = new CompleteOnboarding("Clinic", Guid.NewGuid(), "Branch", "Addr", 1, 2, false, null, null);
+        var cmd = new CompleteOnboarding("Clinic", Guid.NewGuid(), "Branch", "Addr", 1, 2, null);
 
         var result = await _handler.Handle(cmd, default);
 

@@ -9,6 +9,8 @@ using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -68,10 +70,22 @@ public static class DependencyInjection
         var jwtOptions = configuration.GetSection(JwtOptions.Section).Get<JwtOptions>()
             ?? throw new InvalidOperationException("JWT configuration is missing");
 
+        var googleOptions = configuration.GetSection(GoogleOAuthOptions.Section).Get<GoogleOAuthOptions>();
+
         services.AddAuthentication(options =>
         {
+            // JWT is the default for API endpoints
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+            // Cookie scheme is used only for the OAuth state/callback flow
+            options.DefaultSignInScheme       = CookieAuthenticationDefaults.AuthenticationScheme;
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            // Short-lived — only used to carry OAuth state between redirect and callback
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         })
         .AddJwtBearer(options =>
         {
@@ -89,6 +103,15 @@ public static class DependencyInjection
                 ValidateLifetime         = true,
                 ClockSkew                = TimeSpan.Zero,
             };
+        })
+        .AddGoogle(options =>
+        {
+            options.ClientId     = googleOptions?.ClientId     ?? configuration["Google:ClientId"]     ?? "";
+            options.ClientSecret = googleOptions?.ClientSecret ?? configuration["Google:ClientSecret"] ?? "";
+            options.CallbackPath = "/api/auth/oauth/google/callback";
+            options.Scope.Add("email");
+            options.Scope.Add("profile");
+            options.SaveTokens = false;
         });
     }
 
@@ -136,6 +159,7 @@ public static class DependencyInjection
         services.Configure<GeoNamesOptions>(configuration.GetSection(GeoNamesOptions.Section));
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.Section));
         services.Configure<CookieSettings>(configuration.GetSection(CookieSettings.Section));
+        services.Configure<GoogleOAuthOptions>(configuration.GetSection(GoogleOAuthOptions.Section));
     }
 
     private static void AddCors(IServiceCollection services, IConfiguration configuration)
@@ -181,6 +205,7 @@ public static class DependencyInjection
 
         app.UseCors("AllowAll");
         app.UseRateLimiter();
+        app.UseMiddleware<CookieTokenMiddleware>(); // inject cookie access token as Bearer header
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

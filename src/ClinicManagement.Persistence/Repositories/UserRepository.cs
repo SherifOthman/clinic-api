@@ -92,6 +92,7 @@ public class UserRepository : IUserRepository
                 u.PhoneNumber,
                 u.Person.ProfileImageUrl,
                 u.EmailConfirmed,
-                u.Person.Gender.ToString()))
+                u.Person.Gender.ToString(),
+                u.PasswordHash != null))
             .FirstOrDefaultAsync(ct);
 }

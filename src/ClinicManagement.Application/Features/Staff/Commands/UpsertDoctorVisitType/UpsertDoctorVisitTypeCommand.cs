@@ -11,9 +11,8 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 public record UpsertDoctorVisitTypeCommand(
     Guid StaffId,
     Guid BranchId,
-    Guid? VisitTypeId,   // null = create new
-    string NameAr,
-    string NameEn,
+    Guid? VisitTypeId,
+    string Name,
     decimal Price,
     bool IsActive = true
 ) : IRequest<Result<Guid>>;

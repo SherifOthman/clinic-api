@@ -18,6 +18,10 @@ public class Appointment : AuditableTenantEntity
     public DateOnly Date { get; set; }
     public int? QueueNumber { get; set; }
     public TimeOnly? ScheduledTime { get; set; }
+    /// <summary>Calculated end time = ScheduledTime + visit duration. Null for queue appointments.</summary>
+    public TimeOnly? EndTime { get; set; }
+    /// <summary>Per-appointment duration override in minutes. Null = use doctor's default.</summary>
+    public int? VisitDurationMinutes { get; set; }
 
     public AppointmentType Type { get; set; } = AppointmentType.Queue;
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
@@ -36,6 +40,7 @@ public class Appointment : AuditableTenantEntity
     // ── Computed ──────────────────────────────────────────────────────────────
 
     public bool IsPending    => Status == AppointmentStatus.Pending;
+    public bool IsWaiting    => Status == AppointmentStatus.Waiting;
     public bool IsInProgress => Status == AppointmentStatus.InProgress;
     public bool IsCompleted  => Status == AppointmentStatus.Completed;
     public bool IsCancelled  => Status == AppointmentStatus.Cancelled;
@@ -44,7 +49,7 @@ public class Appointment : AuditableTenantEntity
     public bool IsQueued    => Type == AppointmentType.Queue;
     public bool IsScheduled => Type == AppointmentType.Time;
 
-    public bool CanBeCancelled => Status == AppointmentStatus.Pending || Status == AppointmentStatus.InProgress;
+    public bool CanBeCancelled => Status is AppointmentStatus.Pending or AppointmentStatus.Waiting or AppointmentStatus.InProgress;
     public bool IsInvoiced     => InvoiceId.HasValue;
 
     /// <summary>

@@ -1,5 +1,8 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.Application.Common.Options;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace ClinicManagement.API.Middleware;
@@ -8,11 +11,16 @@ public class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
+    private readonly AppOptions _appOptions;
 
-    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+    public GlobalExceptionMiddleware(
+        RequestDelegate next,
+        ILogger<GlobalExceptionMiddleware> logger,
+        IOptions<AppOptions> appOptions)
     {
         _next = next;
         _logger = logger;
+        _appOptions = appOptions.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -20,6 +28,17 @@ public class GlobalExceptionMiddleware
         try
         {
             await _next(context);
+        }
+        catch (AuthenticationFailureException ex)
+        {
+            // OAuth callback failures should redirect to login with an error, not return 500 JSON
+            _logger.LogWarning(ex, "OAuth authentication failure: {Message}", ex.Message);
+
+            if (!context.Response.HasStarted)
+            {
+                var loginUrl = $"{_appOptions.AuthUrl.TrimEnd('/')}/en/login";
+                context.Response.Redirect($"{loginUrl}?error=oauth_failed");
+            }
         }
         catch (Exception ex)
         {

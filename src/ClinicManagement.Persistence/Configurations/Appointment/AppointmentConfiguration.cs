@@ -21,7 +21,7 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             t.HasCheckConstraint("CK_Appointment_Discount",    "[DiscountPercent] IS NULL OR ([DiscountPercent] >= 0 AND [DiscountPercent] <= 100)");
             t.HasCheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
             t.HasCheckConstraint("CK_Appointment_Type",        "[Type] IN ('Queue', 'Time')");
-            t.HasCheckConstraint("CK_Appointment_Status",      "[Status] IN ('Pending', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
+            t.HasCheckConstraint("CK_Appointment_Status",      "[Status] IN ('Pending', 'Waiting', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
         });
 
         builder.HasOne(a => a.Branch)

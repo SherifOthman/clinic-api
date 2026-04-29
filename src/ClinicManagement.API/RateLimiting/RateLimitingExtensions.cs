@@ -5,41 +5,40 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace ClinicManagement.API.RateLimiting;
 
 /// <summary>
-/// Named rate limit policies used across the API.
+/// Rate limit policies — practical limits based on real usage patterns.
 ///
-/// Algorithm choices:
-///   SlidingWindow  → auth endpoints (per-device, tight, no burst tolerance)
-///   TokenBucket    → authenticated writes and anon static data (burst-tolerant)
-///   FixedWindow    → upload and one-time actions (hard hourly/daily caps)
-///   Concurrency    → authenticated reads (prevents resource exhaustion from concurrent requests)
-///
-/// Policy naming convention:
-///   "auth-*"       → unauthenticated auth endpoints (SlidingWindow, per-device, tight)
-///   "user-reads"   → authenticated GET endpoints (Concurrency, per-user, prevents overload)
-///   "user-writes"  → authenticated write endpoints (TokenBucket, per-user, moderate)
-///   "user-deletes" → authenticated delete endpoints (SlidingWindow, per-user, strict, no burst)
-///   "user-upload"  → file upload (FixedWindow, per-user, hourly hard cap)
-///   "user-once"    → one-time actions like onboarding (FixedWindow, per-user, daily hard cap)
-///   "anon-static"  → anonymous static/reference data (TokenBucket, per-IP, burst-tolerant)
+/// Guiding principles:
+///   - Auth endpoints: tight, per-device fingerprint (IP + UA) to prevent brute-force
+///   - Authenticated reads: generous sliding window per-user (multiple tabs, fast navigation)
+///   - Authenticated writes: moderate token bucket per-user (burst-tolerant for form saves)
+///   - Destructive ops: stricter sliding window (no burst tolerance)
+///   - One-time actions: hard daily cap (onboarding, invitation accept)
+///   - Public/anon: per-IP token bucket (burst-tolerant for page loads)
+///   - Contact form: separate from UserOnce — public, per-IP, a few per hour
 /// </summary>
 public static class RateLimitPolicies
 {
-    public const string AuthLogin = "auth-login";
-    public const string AuthRegister = "auth-register";
-    public const string AuthForgotPassword = "auth-forgot-password";
+    // Auth (unauthenticated)
+    public const string AuthLogin              = "auth-login";
+    public const string AuthRegister           = "auth-register";
+    public const string AuthForgotPassword     = "auth-forgot-password";
     public const string AuthResendVerification = "auth-resend-verification";
-    public const string AuthResetPassword = "auth-reset-password";
-    public const string AuthConfirmEmail = "auth-confirm-email";
-    public const string AuthRefresh = "auth-refresh";
-    public const string AuthEnumeration = "auth-enumeration";
+    public const string AuthResetPassword      = "auth-reset-password";
+    public const string AuthConfirmEmail       = "auth-confirm-email";
+    public const string AuthRefresh            = "auth-refresh";
+    public const string AuthEnumeration        = "auth-enumeration";
 
-    public const string UserReads = "user-reads";
-    public const string UserWrites = "user-writes";
+    // Authenticated
+    public const string UserReads   = "user-reads";
+    public const string UserWrites  = "user-writes";
     public const string UserDeletes = "user-deletes";
-    public const string UserUpload = "user-upload";
-    public const string UserOnce = "user-once";
+    public const string UserUpload  = "user-upload";
+    public const string UserOnce    = "user-once";    // onboarding, accept-invitation
+    public const string UserLogout  = "user-logout";  // logout — very generous
 
-    public const string AnonStatic = "anon-static";
+    // Public / anonymous
+    public const string AnonStatic  = "anon-static";  // reference data, pricing, stats
+    public const string AnonContact = "anon-contact"; // contact form — per-IP, hourly cap
 }
 
 public static class RateLimitingExtensions
@@ -48,198 +47,232 @@ public static class RateLimitingExtensions
     {
         services.AddRateLimiter(options =>
         {
-            // Return 429 with Retry-After header
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, ct) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                    context.HttpContext.Response.Headers.RetryAfter = retryAfter.TotalSeconds.ToString("0");
+                    context.HttpContext.Response.Headers.RetryAfter =
+                        retryAfter.TotalSeconds.ToString("0");
                 await context.HttpContext.Response.WriteAsJsonAsync(
                     new { error = "Too many requests. Please slow down.", retryAfter = retryAfter.TotalSeconds },
                     ct);
             };
 
-            // ── Unauthenticated auth endpoints (per-IP, tight) ────────────────
+            // ── Auth endpoints (unauthenticated, per-device fingerprint) ──────
 
-            // Login: 10 attempts per 15 minutes per device
-            options.AddPolicy(RateLimitPolicies.AuthLogin, context =>
+            // Login: 30 attempts per 15 min — enough for normal use, blocks brute-force
+            // A real user might mistype their password a few times; 30 is generous
+            options.AddPolicy(RateLimitPolicies.AuthLogin, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(15),
+                        Window            = TimeSpan.FromMinutes(15),
                         SegmentsPerWindow = 3,
-                        PermitLimit = 10,
-                        QueueLimit = 0,
+                        PermitLimit       = 30,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // Register: 5 per hour per device
-            options.AddPolicy(RateLimitPolicies.AuthRegister, context =>
+            // Register: 10 per hour — prevents mass account creation
+            options.AddPolicy(RateLimitPolicies.AuthRegister, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromHours(1),
+                        Window            = TimeSpan.FromHours(1),
                         SegmentsPerWindow = 4,
-                        PermitLimit = 5,
-                        QueueLimit = 0,
+                        PermitLimit       = 10,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // Forgot password: 3 per 15 min per device
-            options.AddPolicy(RateLimitPolicies.AuthForgotPassword, context =>
+            // Forgot password: 5 per 15 min — user might try multiple emails
+            options.AddPolicy(RateLimitPolicies.AuthForgotPassword, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(15),
+                        Window            = TimeSpan.FromMinutes(15),
                         SegmentsPerWindow = 3,
-                        PermitLimit = 3,
-                        QueueLimit = 0,
+                        PermitLimit       = 5,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // Resend verification: 3 per 15 min per device
-            options.AddPolicy(RateLimitPolicies.AuthResendVerification, context =>
+            // Resend verification: 5 per 15 min
+            options.AddPolicy(RateLimitPolicies.AuthResendVerification, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(15),
+                        Window            = TimeSpan.FromMinutes(15),
                         SegmentsPerWindow = 3,
-                        PermitLimit = 3,
-                        QueueLimit = 0,
+                        PermitLimit       = 5,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // Reset / confirm email: 5 per 15 min per device
-            options.AddPolicy(RateLimitPolicies.AuthResetPassword, context =>
+            // Reset / confirm email: 10 per 15 min — link clicks from email
+            options.AddPolicy(RateLimitPolicies.AuthResetPassword, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(15),
+                        Window            = TimeSpan.FromMinutes(15),
                         SegmentsPerWindow = 3,
-                        PermitLimit = 5,
-                        QueueLimit = 0,
+                        PermitLimit       = 10,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            options.AddPolicy(RateLimitPolicies.AuthConfirmEmail, context =>
+            options.AddPolicy(RateLimitPolicies.AuthConfirmEmail, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(15),
+                        Window            = TimeSpan.FromMinutes(15),
                         SegmentsPerWindow = 3,
-                        PermitLimit = 5,
-                        QueueLimit = 0,
+                        PermitLimit       = 10,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // Token refresh: 30 per minute per device
-            options.AddPolicy(RateLimitPolicies.AuthRefresh, context =>
+            // Token refresh: 60 per minute — silent middleware refresh fires on every expired request
+            options.AddPolicy(RateLimitPolicies.AuthRefresh, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 2,
-                        PermitLimit = 30,
-                        QueueLimit = 0,
+                        Window            = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 4,
+                        PermitLimit       = 60,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // Email/username availability check: 20 per minute per device
-            options.AddPolicy(RateLimitPolicies.AuthEnumeration, context =>
+            // Email/username availability check: 60 per minute — fires on every keystroke (debounced)
+            options.AddPolicy(RateLimitPolicies.AuthEnumeration, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetDeviceFingerprint(context),
+                    GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 2,
-                        PermitLimit = 20,
-                        QueueLimit = 0,
+                        Window            = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 4,
+                        PermitLimit       = 60,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // ── Authenticated endpoints (per-user via JWT sub claim) ──────────
+            // ── Authenticated endpoints (per-user JWT sub) ────────────────────
 
-            // Reads: 5 concurrent requests per user — Concurrency (prevents resource exhaustion from multiple tabs)
-            options.AddPolicy(RateLimitPolicies.UserReads, context =>
-                RateLimitPartition.GetConcurrencyLimiter(
-                    GetUserId(context),
-                    _ => new ConcurrencyLimiterOptions
+            // Reads: 300 per minute per user — generous sliding window
+            // Multiple browser tabs, fast navigation, dashboard polling all need headroom
+            // Concurrency limiter was wrong here — it blocked parallel tab loads
+            options.AddPolicy(RateLimitPolicies.UserReads, ctx =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetUserId(ctx),
+                    _ => new SlidingWindowRateLimiterOptions
                     {
-                        PermitLimit = 5,
-                        QueueLimit = 10,
+                        Window            = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 6,
+                        PermitLimit       = 300,
+                        QueueLimit        = 0,
+                        AutoReplenishment = true,
                     }));
 
-            // Writes: 60 per minute per user — TokenBucket allows short bursts (saving multiple fields)
-            options.AddPolicy(RateLimitPolicies.UserWrites, context =>
+            // Writes: 120 per minute per user — token bucket allows short bursts
+            // (saving a form, bulk-updating patients, inviting multiple staff)
+            options.AddPolicy(RateLimitPolicies.UserWrites, ctx =>
                 RateLimitPartition.GetTokenBucketLimiter(
-                    GetUserId(context),
+                    GetUserId(ctx),
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit = 60,
-                        TokensPerPeriod = 60,
-                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0,
-                        AutoReplenishment = true,
+                        TokenLimit          = 30,   // burst: up to 30 at once
+                        TokensPerPeriod     = 30,   // refill 30 every 15s = 120/min sustained
+                        ReplenishmentPeriod = TimeSpan.FromSeconds(15),
+                        QueueLimit          = 0,
+                        AutoReplenishment   = true,
                     }));
 
-            // Deletes: 20 per minute per user — SlidingWindow (no burst tolerance for destructive ops)
-            options.AddPolicy(RateLimitPolicies.UserDeletes, context =>
+            // Deletes: 30 per minute per user — stricter, no burst
+            // Bulk patient deletion is a real use case but should be deliberate
+            options.AddPolicy(RateLimitPolicies.UserDeletes, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    GetUserId(context),
+                    GetUserId(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 3,
-                        PermitLimit = 20,
-                        QueueLimit = 0,
+                        Window            = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 4,
+                        PermitLimit       = 30,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // File upload: 10 per hour per user — FixedWindow (hourly hard cap)
-            options.AddPolicy(RateLimitPolicies.UserUpload, context =>
+            // File upload: 20 per hour per user — profile images, documents
+            options.AddPolicy(RateLimitPolicies.UserUpload, ctx =>
                 RateLimitPartition.GetFixedWindowLimiter(
-                    GetUserId(context),
+                    GetUserId(ctx),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromHours(1),
-                        PermitLimit = 10,
-                        QueueLimit = 0,
+                        Window            = TimeSpan.FromHours(1),
+                        PermitLimit       = 20,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // One-time actions (onboarding, accept invitation): 3 per day — FixedWindow (daily hard cap)
-            options.AddPolicy(RateLimitPolicies.UserOnce, context =>
+            // One-time actions: 5 per day — onboarding complete, accept invitation
+            // These are genuinely once-per-lifetime actions; 5 allows retries on error
+            options.AddPolicy(RateLimitPolicies.UserOnce, ctx =>
                 RateLimitPartition.GetFixedWindowLimiter(
-                    GetUserId(context),
+                    GetUserId(ctx),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        Window = TimeSpan.FromDays(1),
-                        PermitLimit = 3,
-                        QueueLimit = 0,
+                        Window            = TimeSpan.FromDays(1),
+                        PermitLimit       = 5,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
 
-            // ── Anonymous static/reference data (per-IP) ─────────────────────
+            // Logout: 20 per minute — should never be blocked in practice
+            options.AddPolicy(RateLimitPolicies.UserLogout, ctx =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    GetUserId(ctx),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window            = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 2,
+                        PermitLimit       = 20,
+                        QueueLimit        = 0,
+                        AutoReplenishment = true,
+                    }));
 
-            // TokenBucket: page load fetches countries+states+cities simultaneously (burst of 15)
-            // 60 per minute sustained, burst up to 15
-            options.AddPolicy(RateLimitPolicies.AnonStatic, context =>
+            // ── Anonymous / public endpoints (per-IP) ─────────────────────────
+
+            // Static reference data: pricing, locations, stats, subscription plans
+            // Page load fetches several simultaneously — burst of 30, 120/min sustained
+            options.AddPolicy(RateLimitPolicies.AnonStatic, ctx =>
                 RateLimitPartition.GetTokenBucketLimiter(
-                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     _ => new TokenBucketRateLimiterOptions
                     {
-                        TokenLimit = 15,
-                        TokensPerPeriod = 60,
-                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0,
+                        TokenLimit          = 30,   // burst: 30 simultaneous page-load requests
+                        TokensPerPeriod     = 30,   // refill 30 every 15s = 120/min sustained
+                        ReplenishmentPeriod = TimeSpan.FromSeconds(15),
+                        QueueLimit          = 0,
+                        AutoReplenishment   = true,
+                    }));
+
+            // Contact form: 5 per hour per IP — prevents spam, allows genuine retries
+            options.AddPolicy(RateLimitPolicies.AnonContact, ctx =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        Window            = TimeSpan.FromHours(1),
+                        PermitLimit       = 5,
+                        QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
         });
@@ -247,26 +280,16 @@ public static class RateLimitingExtensions
         return services;
     }
 
-    /// <summary>
-    /// Partition key for authenticated endpoints.
-    /// Uses the JWT sub (user ID) so limits are per-user, not per-IP.
-    /// Falls back to IP if somehow called unauthenticated.
-    /// </summary>
     private static string GetUserId(HttpContext context)
         => context.User.FindFirstValue(ClaimTypes.NameIdentifier)
            ?? context.Connection.RemoteIpAddress?.ToString()
            ?? "unknown";
 
-    /// <summary>
-    /// Generates a device fingerprint for rate limiting unauthenticated requests.
-    /// Combines IP with User-Agent and Accept-Language to differentiate devices
-    /// within the same network while avoiding overly broad blocking.
-    /// </summary>
     private static string GetDeviceFingerprint(HttpContext context)
     {
-        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var userAgent = context.Request.Headers.UserAgent.ToString();
-        var acceptLanguage = context.Request.Headers.AcceptLanguage.ToString();
-        return $"{ip}|{userAgent}|{acceptLanguage}";
+        var ip          = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var userAgent   = context.Request.Headers.UserAgent.ToString();
+        var acceptLang  = context.Request.Headers.AcceptLanguage.ToString();
+        return $"{ip}|{userAgent}|{acceptLang}";
     }
 }

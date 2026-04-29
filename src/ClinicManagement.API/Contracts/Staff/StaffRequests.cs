@@ -22,8 +22,7 @@ public record WorkingDayRequest(
 public record UpsertDoctorVisitTypeRequest(
     Guid BranchId,
     Guid? VisitTypeId,
-    string NameAr,
-    string NameEn,
+    string Name,
     decimal Price,
     bool IsActive = true);
 

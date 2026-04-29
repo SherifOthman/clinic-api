@@ -36,8 +36,7 @@ public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTyp
             if (existing is null || existing.DoctorBranchScheduleId != schedule.Id)
                 return Result.Failure<Guid>(ErrorCodes.NOT_FOUND, "Visit type not found");
 
-            existing.NameAr   = request.NameAr;
-            existing.NameEn   = request.NameEn;
+            existing.Name     = request.Name;
             existing.Price    = request.Price;
             existing.IsActive = request.IsActive;
             await _uow.SaveChangesAsync(ct);
@@ -47,8 +46,7 @@ public class UpsertDoctorVisitTypeHandler : IRequestHandler<UpsertDoctorVisitTyp
         var visitType = new VisitType
         {
             DoctorBranchScheduleId = schedule.Id,
-            NameAr   = request.NameAr,
-            NameEn   = request.NameEn,
+            Name     = request.Name,
             Price    = request.Price,
             IsActive = request.IsActive,
         };
