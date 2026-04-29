@@ -1,5 +1,6 @@
 using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Seeders;
+using ClinicManagement.Persistence.Seeders.Demo;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -37,7 +38,9 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<SpecializationSeedService>().SeedSpecializationsAsync();
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
-            await services.GetRequiredService<DemoUsersSeedService>().SeedAsync();
+
+            // Demo data — structured, one class per concern
+            await services.GetRequiredService<DemoDataOrchestrator>().SeedAsync();
 
             Log.Information("Core database seeding completed — API is ready");
         }

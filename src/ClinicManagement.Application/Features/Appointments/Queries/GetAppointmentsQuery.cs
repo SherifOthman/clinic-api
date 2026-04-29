@@ -17,13 +17,12 @@ public record AppointmentDto(
     string PatientName,
     string? PatientCode,
     int? QueueNumber,
-    string? ScheduledTime,      // "HH:mm"
-    string? EndTime,            // "HH:mm"
+    string? ScheduledTime,
+    string? EndTime,
     int? VisitDurationMinutes,
-    string Type,                // "Queue" | "Time"
+    string Type,
     string Status,
-    string VisitTypeNameEn,
-    string VisitTypeNameAr,
+    string VisitTypeName,
     decimal FinalPrice,
     DateTimeOffset CreatedAt
 );

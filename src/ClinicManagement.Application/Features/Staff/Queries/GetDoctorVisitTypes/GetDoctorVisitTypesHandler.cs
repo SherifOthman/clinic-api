@@ -20,7 +20,7 @@ public class GetDoctorVisitTypesHandler : IRequestHandler<GetDoctorVisitTypesQue
         if (schedule is null) return Result.Success(new List<DoctorVisitTypeDto>());
 
         var items = await _uow.DoctorSchedules.GetVisitTypesByScheduleAsync(schedule.Id, ct);
-        var dtos  = items.Select(v => new DoctorVisitTypeDto(v.Id, v.NameAr, v.NameEn, v.Price, v.IsActive)).ToList();
+        var dtos  = items.Select(v => new DoctorVisitTypeDto(v.Id, v.Name, v.Price, v.IsActive)).ToList();
         return Result.Success(dtos);
     }
 }

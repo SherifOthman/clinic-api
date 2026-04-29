@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260428231714_AddAppointmentsModule")]
-    partial class AddAppointmentsModule
+    [Migration("20260429201600_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -52,6 +52,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("DoctorInfoId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
                     b.Property<decimal>("FinalPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -86,6 +89,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("VisitDurationMinutes")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("VisitTypeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -117,7 +123,7 @@ namespace ClinicManagement.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
 
-                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN ('Pending', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
+                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN ('Pending', 'Waiting', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
 
                             t.HasCheckConstraint("CK_Appointment_Type", "[Type] IN ('Queue', 'Time')");
                         });
@@ -651,6 +657,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<Guid>("ClinicMemberId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("DefaultVisitDurationMinutes")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -669,6 +678,59 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("SpecializationId");
 
                     b.ToTable("DoctorInfo");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CheckedInAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("CheckedOutAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ClinicId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("DelayHandling")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("DoctorInfoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly?>("ScheduledStartTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("DoctorInfoId", "BranchId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("DoctorSessions", (string)null);
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.EmailQueue", b =>
@@ -2158,12 +2220,7 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("NameAr")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("NameEn")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -2479,6 +2536,25 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Navigation("ClinicMember");
 
                     b.Navigation("Specialization");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.DoctorSession", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.ClinicBranch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ClinicManagement.Domain.Entities.DoctorInfo", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorInfoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Doctor");
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.GeoCity", b =>

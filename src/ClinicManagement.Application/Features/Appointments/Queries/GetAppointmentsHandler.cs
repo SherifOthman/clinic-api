@@ -39,8 +39,7 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List
             a.VisitDurationMinutes,
             a.Type.ToString(),
             a.Status.ToString(),
-            a.VisitType?.NameEn ?? "—",
-            a.VisitType?.NameAr ?? "—",
+            a.VisitType?.Name ?? "—",
             a.FinalPrice,
             a.CreatedAt
         )).ToList();

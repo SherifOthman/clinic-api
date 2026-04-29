@@ -27,7 +27,7 @@ public class CreateAppointmentHandlerTests
     {
         _visitType = new VisitType
         {
-            NameEn = "Consultation", NameAr = "كشف",
+            Name = "Consultation",
             Price = 100, IsActive = true,
         };
 

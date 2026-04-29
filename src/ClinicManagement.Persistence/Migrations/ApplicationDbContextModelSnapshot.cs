@@ -120,7 +120,7 @@ namespace ClinicManagement.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Appointment_QueueNumber", "[QueueNumber] IS NULL OR [QueueNumber] > 0");
 
-                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN ('Pending', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
+                            t.HasCheckConstraint("CK_Appointment_Status", "[Status] IN ('Pending', 'Waiting', 'InProgress', 'Completed', 'Cancelled', 'NoShow')");
 
                             t.HasCheckConstraint("CK_Appointment_Type", "[Type] IN ('Queue', 'Time')");
                         });
@@ -2217,12 +2217,7 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("NameAr")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("NameEn")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");

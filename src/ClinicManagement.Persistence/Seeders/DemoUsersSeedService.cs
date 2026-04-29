@@ -322,12 +322,12 @@ public class DemoUsersSeedService
 
         // ── Visit types ───────────────────────────────────────────────────────
 
-        var ownerVt1 = new VisitType { DoctorBranchScheduleId = ownerSchedule.Id, NameEn = "Consultation", NameAr = "كشف",     Price = 150, IsActive = true };
-        var ownerVt2 = new VisitType { DoctorBranchScheduleId = ownerSchedule.Id, NameEn = "Follow-up",    NameAr = "متابعة",  Price = 80,  IsActive = true };
-        var ownerVt3 = new VisitType { DoctorBranchScheduleId = ownerSchedule.Id, NameEn = "Emergency",    NameAr = "طوارئ",   Price = 250, IsActive = true };
-        var staffVt1 = new VisitType { DoctorBranchScheduleId = staffSchedule.Id, NameEn = "Consultation", NameAr = "كشف",     Price = 200, IsActive = true };
-        var staffVt2 = new VisitType { DoctorBranchScheduleId = staffSchedule.Id, NameEn = "ECG",          NameAr = "رسم قلب", Price = 120, IsActive = true };
-        var staffVt3 = new VisitType { DoctorBranchScheduleId = staffSchedule.Id, NameEn = "Echo",         NameAr = "إيكو",    Price = 300, IsActive = true };
+        var ownerVt1 = new VisitType { DoctorBranchScheduleId = ownerSchedule.Id, Name = "Consultation", Price = 150, IsActive = true };
+        var ownerVt2 = new VisitType { DoctorBranchScheduleId = ownerSchedule.Id, Name = "Follow-up",    Price = 80,  IsActive = true };
+        var ownerVt3 = new VisitType { DoctorBranchScheduleId = ownerSchedule.Id, Name = "Emergency",    Price = 250, IsActive = true };
+        var staffVt1 = new VisitType { DoctorBranchScheduleId = staffSchedule.Id, Name = "Consultation", Price = 200, IsActive = true };
+        var staffVt2 = new VisitType { DoctorBranchScheduleId = staffSchedule.Id, Name = "ECG",          Price = 120, IsActive = true };
+        var staffVt3 = new VisitType { DoctorBranchScheduleId = staffSchedule.Id, Name = "Echo",         Price = 300, IsActive = true };
         _context.Set<VisitType>().AddRange(ownerVt1, ownerVt2, ownerVt3, staffVt1, staffVt2, staffVt3);
 
         // ── 20 Patients ───────────────────────────────────────────────────────

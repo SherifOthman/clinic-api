@@ -191,7 +191,7 @@ public class StaffController : BaseApiController
     public async Task<IActionResult> UpsertVisitType(
         Guid id, [FromBody] UpsertDoctorVisitTypeRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpsertDoctorVisitTypeCommand(id, request.BranchId, request.VisitTypeId, request.NameAr, request.NameEn, request.Price, request.IsActive);
+        var command = new UpsertDoctorVisitTypeCommand(id, request.BranchId, request.VisitTypeId, request.Name, request.Price, request.IsActive);
         var result = await Sender.Send(command, cancellationToken);
         return !result.IsSuccess ? HandleResult(result, "Failed to save visit type") : Ok(result.Value);
     }

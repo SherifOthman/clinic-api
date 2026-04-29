@@ -66,7 +66,7 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
     public Task<List<VisitType>> GetVisitTypesByScheduleAsync(Guid scheduleId, CancellationToken ct = default)
         => _db.Set<VisitType>()
             .Where(v => v.DoctorBranchScheduleId == scheduleId)
-            .OrderBy(v => v.NameEn)
+            .OrderBy(v => v.Name)
             .ToListAsync(ct);
 
     public Task<VisitType?> GetVisitTypeByIdAsync(Guid visitTypeId, CancellationToken ct = default)
