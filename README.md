@@ -1,6 +1,6 @@
 # Clinic Management API
 
-A production-ready multi-tenant SaaS backend for medical clinics, built with .NET 10 and Clean Architecture. This is not a tutorial project — it models a real business domain with proper separation of concerns, a full authentication system, permission-based authorization, background jobs, audit logging, and a bilingual data layer.
+A production-ready multi-tenant SaaS backend for medical clinics, built with .NET 10 and Clean Architecture. Models a real business domain with proper separation of concerns, a full authentication system, permission-based authorization, background jobs, audit logging, and a bilingual data layer.
 
 **Live API Docs**: http://clinic-api.runasp.net/scalar/v1  
 **Dashboard**: https://clinic-dashboard-ecru.vercel.app  
@@ -12,7 +12,7 @@ A production-ready multi-tenant SaaS backend for medical clinics, built with .NE
 
 ## The Problem It Solves
 
-Small and mid-sized medical clinics need a way to manage their patients, staff, and operations — but off-the-shelf solutions are either too expensive, too generic, or don't support Arabic. This platform lets a clinic owner sign up, set up their clinic in minutes, invite their team, and start managing patients immediately. Multiple clinics run on the same platform with complete data isolation between them.
+Small and mid-sized medical clinics need a way to manage their patients, staff, and operations — but off-the-shelf solutions are either too expensive, too generic, or don't support Arabic. This platform lets a clinic owner sign up, set up their clinic in minutes, invite their team, and start managing patients and appointments immediately. Multiple clinics run on the same platform with complete data isolation between them.
 
 ---
 
@@ -20,7 +20,7 @@ Small and mid-sized medical clinics need a way to manage their patients, staff, 
 
 ### Authentication & Identity
 
-A complete auth system built on top of ASP.NET Identity. Users can register, confirm their email, log in with either email or username, reset their password, and manage their profile including a profile image. Token refresh is handled automatically. The system supports two client types via the `X-Client-Type` header: web clients get HTTP-only refresh token cookies (`SameSite=None; Secure` for cross-site support), mobile clients get tokens in the response body.
+A complete auth system built on top of ASP.NET Identity. Users can register, confirm their email, log in with either email or username, reset their password, and manage their profile including a profile image. Google OAuth is supported. Token refresh is handled automatically. The system supports two client types via the `X-Client-Type` header: web clients get HTTP-only refresh token cookies (`SameSite=None; Secure` for cross-site support), mobile clients get tokens in the response body.
 
 ### Permission-Based Authorization
 
@@ -28,19 +28,25 @@ Fine-grained access control using a custom RBAC system. Permissions (e.g. `ViewP
 
 Permissions are resolved from the database on login and cached in `IMemoryCache` per member (10-minute TTL with explicit invalidation on change). The JWT contains only the `MemberId` claim — permissions are resolved from cache on each request by a custom `PermissionAuthorizationHandler`, keeping tokens small and avoiding stale permission data. A dynamic `IAuthorizationPolicyProvider` generates policies on-demand from the `Permission` enum, so adding a new permission requires no DI changes.
 
-Controllers use `[RequirePermission(Permission.X)]` instead of `[Authorize(Roles = "...")]`. Structural operations (managing permissions, locking schedules) use `[Authorize(Policy = "RequireClinicOwner")]`. Platform-level operations use `[Authorize(Policy = "SuperAdmin")]`.
+Controllers use `[RequirePermission(Permission.X)]` instead of `[Authorize(Roles = "...")]`. Structural operations use `[Authorize(Policy = "RequireClinicOwner")]`. Platform-level operations use `[Authorize(Policy = "SuperAdmin")]`.
 
 ### Multi-Tenant Clinic Management
 
 Every entity that belongs to a clinic implements `ITenantEntity` with a `ClinicId`. EF Core global query filters enforce tenant isolation automatically — a query from Clinic A can never return data from Clinic B. The `ICurrentUserService` extracts the `ClinicId` from JWT claims and injects it into every scoped operation. The `SuperAdmin` role bypasses these filters to see across all clinics.
 
+### Appointments
+
+A full appointment management system supporting two modes per doctor:
+
+**Queue-based**: Patients are assigned sequential queue numbers. No scheduled time — the doctor works through the queue in order.
+
+**Time-based**: Appointments have a specific scheduled time and duration. The system tracks doctor sessions with check-in, delay detection, and delay resolution (auto-shift remaining appointments, mark as missed, or manual handling).
+
+The appointment status workflow is: `Pending → Waiting → InProgress → Completed / Cancelled / NoShow`. Each appointment stores a `FinalPrice` calculated from the visit type base price and an optional discount percent. Visit types are configured per doctor per branch with custom names and pricing.
+
 ### Location Data
 
 Countries, states/governorates, and cities are seeded from GeoNames bulk dump files (`cities500.zip` — cities with population > 500, ~225K rows after deduplication). All geo seeding runs in a background thread 3 seconds after startup — the API is ready immediately. Cities are deduplicated by (state, name) keeping the highest-population entry. All location data is stored in both English and Arabic. Patient and branch records store GeoNames integer IDs as foreign keys; names are resolved server-side on every query — no external API calls at runtime.
-
-### Onboarding Flow
-
-New clinic owners go through a guided setup: clinic name, branch details, location (country/state/city from the seeded GeoNames database), subscription plan selection, and medical specialization. The clinic is marked as active only after onboarding completes.
 
 ### Patient Management
 
@@ -54,19 +60,19 @@ Clinic owners invite staff by email with a role (Doctor or Receptionist). The in
 
 Security events (login, logout, failed attempts, account lockouts) and business events (password changes, staff invitations, permission changes, clinic onboarding) are logged via a MediatR `AuditBehavior` pipeline — any command implementing `IAuditableCommand` is automatically audited on success. Login/logout events are logged manually since they audit failures too. The SuperAdmin can query the full audit trail across all clinics filtered by entity type, action, user, clinic, or date range. Standard logs are purged after 1 month, security events after 3 months, via a batched Hangfire job.
 
-### Subscription Plans
+### Contact & Testimonials
 
-Plans define limits (max branches, max staff, max patients per month, storage) and feature flags (inventory management, reporting, API access, custom branding, priority support). The domain model includes billing logic like yearly discount calculation and limit checks.
+A public contact form stores messages for SuperAdmin review. Clinic owners can submit testimonials that appear on the marketing website after SuperAdmin approval.
 
 ### Background Jobs (Hangfire)
 
-| Job                                 | Schedule      | Purpose                                      |
-| ----------------------------------- | ------------- | -------------------------------------------- |
-| `EmailQueueProcessorJob`            | Every 5 min   | Processes up to 50 pending emails with retry |
-| `AuditLogCleanupService`            | Daily midnight| Deletes old audit logs in batches of 5,000   |
-| `RefreshTokenCleanupService`        | Every 6 hours | Removes expired/revoked tokens               |
-| `UsageMetricsAggregationJob`        | Daily 1am     | Aggregates clinic usage metrics              |
-| `SubscriptionExpiryNotificationJob` | Daily 9am     | Sends expiry warnings 7 days before end      |
+| Job                                 | Schedule       | Purpose                                      |
+| ----------------------------------- | -------------- | -------------------------------------------- |
+| `EmailQueueProcessorJob`            | Every 5 min    | Processes up to 50 pending emails with retry |
+| `AuditLogCleanupService`            | Daily midnight | Deletes old audit logs in batches of 5,000   |
+| `RefreshTokenCleanupService`        | Every 6 hours  | Removes expired/revoked tokens               |
+| `UsageMetricsAggregationJob`        | Daily 1am      | Aggregates clinic usage metrics              |
+| `SubscriptionExpiryNotificationJob` | Daily 9am      | Sends expiry warnings 7 days before end      |
 
 ---
 
@@ -87,7 +93,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 **No generic repository** — handlers access data through `IUnitOfWork`, which exposes typed repositories. No direct DbContext access outside the Persistence layer.
 
-**Production schema** — all PKs use `Guid.CreateVersion7()` (time-ordered, eliminates SQL Server index fragmentation). Financial entities (`Invoice`, `Appointment`) inherit `AuditableTenantEntity` for full audit trail and automatic tenant filtering. `FinalPrice` on appointments is always set via `ApplyPrice()` to prevent stale values.
+**Production schema** — all PKs use `Guid.CreateVersion7()` (time-ordered, eliminates SQL Server index fragmentation). Financial entities inherit `AuditableTenantEntity` for full audit trail and automatic tenant filtering. `FinalPrice` on appointments is always set via `ApplyPrice()` to prevent stale values.
 
 ---
 
@@ -102,6 +108,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Validation       | FluentValidation                     |
 | Mapping          | Mapster                              |
 | Auth             | JWT Bearer + HTTP-only cookies       |
+| OAuth            | Google OAuth 2.0                     |
 | Authorization    | Custom RBAC (permissions + policies) |
 | Background jobs  | Hangfire                             |
 | Logging          | Serilog (console + rolling file)     |
@@ -125,6 +132,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Login (email or username)              | ✅  |                              |
 | Logout                                 | ✅  | Clears cookie + token        |
 | Forgot / reset / change password       | ✅  |                              |
+| Google OAuth                           | ✅  |                              |
 | JWT + refresh token (auto-rotate)      | ✅  |                              |
 | HTTP-only cookie mode (web)            | ✅  | SameSite=None for cross-site |
 | Response body token mode (mobile)      | ✅  | Via `X-Client-Type: mobile`  |
@@ -150,9 +158,10 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Onboarding wizard (name, branch, location, plan) | ✅  |                                              |
 | View / create / edit / toggle branches           | ✅  | Bilingual location                           |
 | Branch phone numbers                             | ✅  |                                              |
-| Clinic subscription management                   | 🗂️  | `ClinicSubscription` modeled                 |
-| Subscription payment history                     | 🗂️  | `SubscriptionPayment` modeled                |
-| Usage metrics / limits tracking                  | 🔧  | Background job aggregates daily, no endpoint |
+| Clinic settings (week start day)                 | ✅  |                                              |
+| Clinic subscription management                  | 🗂️  | `ClinicSubscription` modeled                 |
+| Subscription payment history                    | 🗂️  | `SubscriptionPayment` modeled                |
+| Usage metrics / limits tracking                 | 🔧  | Background job aggregates daily, no endpoint |
 
 ### Patient Management
 
@@ -187,10 +196,14 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 | Feature                                                  | API | Notes                                  |
 | -------------------------------------------------------- | --- | -------------------------------------- |
-| Book appointment                                         | 🗂️  | Entity with status, queue number, type |
-| Appointment types (bilingual)                            | 🗂️  |                                        |
-| Status flow (Pending → InProgress → Completed/Cancelled) | 🗂️  |                                        |
-| Queue management                                         | 🗂️  | `QueueNumber` on appointment           |
+| Book appointment (queue or time-based)                   | ✅  |                                        |
+| Visit types with pricing per doctor per branch           | ✅  |                                        |
+| Status flow (Pending → InProgress → Completed/Cancelled) | ✅  |                                        |
+| Doctor check-in with delay detection                     | ✅  |                                        |
+| Delay handling (auto-shift / mark missed / manual)       | ✅  |                                        |
+| Set appointment type per doctor (Queue vs Time)          | ✅  |                                        |
+| Queue number assignment (atomic, no race conditions)     | ✅  |                                        |
+| Discount support on appointments                         | ✅  |                                        |
 | Auto-create invoice on payment                           | 🗂️  | Flow designed, not implemented         |
 | Calendar view                                            | ❌  |                                        |
 
@@ -233,9 +246,20 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | --------------------------------------------------------- | --- | ----------------------------- |
 | Clinic stats (patients, staff, invitations, subscription) | ✅  |                               |
 | Recent patients widget                                    | ✅  | Last 5                        |
+| Public stats (for marketing website)                      | ✅  | Anonymous endpoint            |
 | SuperAdmin cross-clinic stats                             | ✅  |                               |
 | Usage metrics                                             | 🔧  | Aggregated daily, no endpoint |
 | Appointment / revenue reports                             | ❌  |                               |
+
+### Contact & Testimonials
+
+| Feature                              | API | Notes                          |
+| ------------------------------------ | --- | ------------------------------ |
+| Public contact form                  | ✅  |                                |
+| SuperAdmin contact message viewer    | ✅  |                                |
+| Clinic owner testimonial submission  | ✅  |                                |
+| SuperAdmin testimonial approval      | ✅  | Toggle published/unpublished   |
+| Public testimonials endpoint         | ✅  | For marketing website          |
 
 ### Audit & Compliance
 
