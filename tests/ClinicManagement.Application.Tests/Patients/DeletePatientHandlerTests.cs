@@ -1,8 +1,7 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Tests.Common;
-using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
+using ClinicManagement.Domain.Common.Constants;
 using FluentAssertions;
 
 namespace ClinicManagement.Application.Tests.Patients;
@@ -22,7 +21,8 @@ public class DeletePatientHandlerTests
     {
         var result = await _handler.Handle(new DeletePatientCommand(Guid.NewGuid()), default);
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.PATIENT_NOT_FOUND);
     }
 
     [Fact]

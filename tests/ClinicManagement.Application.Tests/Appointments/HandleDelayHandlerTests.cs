@@ -62,17 +62,107 @@ public class HandleDelayHandlerTests
     [InlineData(DelayHandlingOption.AutoShift)]
     [InlineData(DelayHandlingOption.MarkMissed)]
     [InlineData(DelayHandlingOption.Manual)]
-    public async Task Handle_ShouldSucceed_ForAllOptions(DelayHandlingOption option)
+    public async Task Handle_ShouldSucceed_WhenDelayAlreadyHandled_ReturnsFail(DelayHandlingOption option)
     {
-        // Make session appear late by setting CheckedInAt 1 hour after scheduled
-        _lateSession.CheckedInAt = DateTimeOffset.UtcNow;
-        // Note: DelayMinutes computed property needs actual time difference
-        // For test purposes, we verify the handler doesn't throw
+        // Arrange: session that already has a handling decision
+        _lateSession.DelayHandling = DelayHandlingOption.Manual;
 
         var result = await _handler.Handle(new HandleDelayCommand(_lateSession.Id, option), default);
 
-        // Session not actually late in test (CheckedInAt ≈ now, ScheduledStartTime = 8:00 past)
-        // So it may return OPERATION_NOT_ALLOWED — that's correct behavior
-        result.Should().NotBeNull();
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.ALREADY_EXISTS);
+    }
+
+    [Fact]
+    public async Task Handle_AutoShift_ShouldShiftPendingTimeAppointments_ByDelayMinutes()
+    {
+        // Arrange: a session with a known stored delay
+        var session = new DoctorSession
+        {
+            DoctorInfoId       = Guid.NewGuid(),
+            BranchId           = Guid.NewGuid(),
+            Date               = DateOnly.FromDateTime(DateTime.Today),
+            CheckedInAt        = DateTimeOffset.UtcNow,
+            ScheduledStartTime = new TimeOnly(8, 0),
+            StoredDelayMinutes = 30,
+        };
+
+        var pendingAppt = new Appointment
+        {
+            DoctorInfoId  = session.DoctorInfoId,
+            Date          = session.Date,
+            Type          = AppointmentType.Time,
+            Status        = AppointmentStatus.Pending,
+            ScheduledTime = new TimeOnly(9, 0),
+            EndTime       = new TimeOnly(9, 30),
+        };
+        pendingAppt.ApplyPrice(100);
+
+        var sessionRepoMock = new Mock<IDoctorSessionRepository>();
+        sessionRepoMock
+            .Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        var apptRepoMock = new Mock<IAppointmentRepository>();
+        apptRepoMock
+            .Setup(r => r.GetByDoctorAndDateAsync(session.DoctorInfoId, session.Date, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([pendingAppt]);
+
+        _uowMock.Setup(u => u.DoctorSessions).Returns(sessionRepoMock.Object);
+        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
+
+        var handler = new HandleDelayHandler(_uowMock.Object);
+
+        // Act
+        var result = await handler.Handle(new HandleDelayCommand(session.Id, DelayHandlingOption.AutoShift), default);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        pendingAppt.ScheduledTime.Should().Be(new TimeOnly(9, 30)); // shifted +30 min
+        pendingAppt.EndTime.Should().Be(new TimeOnly(10, 0));       // shifted +30 min
+    }
+
+    [Fact]
+    public async Task Handle_MarkMissed_ShouldMarkPastPendingAppointments_AsNoShow()
+    {
+        var session = new DoctorSession
+        {
+            DoctorInfoId       = Guid.NewGuid(),
+            BranchId           = Guid.NewGuid(),
+            Date               = DateOnly.FromDateTime(DateTime.Today),
+            CheckedInAt        = DateTimeOffset.UtcNow,
+            StoredDelayMinutes = 20,
+        };
+
+        // An appointment scheduled in the past (before now)
+        var pastAppt = new Appointment
+        {
+            DoctorInfoId  = session.DoctorInfoId,
+            Date          = session.Date,
+            Type          = AppointmentType.Time,
+            Status        = AppointmentStatus.Pending,
+            ScheduledTime = new TimeOnly(0, 1), // 00:01 — always in the past
+        };
+        pastAppt.ApplyPrice(100);
+
+        var sessionRepoMock = new Mock<IDoctorSessionRepository>();
+        sessionRepoMock
+            .Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        var apptRepoMock = new Mock<IAppointmentRepository>();
+        apptRepoMock
+            .Setup(r => r.GetByDoctorAndDateAsync(session.DoctorInfoId, session.Date, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([pastAppt]);
+
+        _uowMock.Setup(u => u.DoctorSessions).Returns(sessionRepoMock.Object);
+        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
+
+        var handler = new HandleDelayHandler(_uowMock.Object);
+
+        var result = await handler.Handle(new HandleDelayCommand(session.Id, DelayHandlingOption.MarkMissed), default);
+
+        result.IsSuccess.Should().BeTrue();
+        pastAppt.Status.Should().Be(AppointmentStatus.NoShow);
     }
 }

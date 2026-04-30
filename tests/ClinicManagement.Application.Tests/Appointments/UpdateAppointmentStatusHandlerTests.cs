@@ -46,13 +46,18 @@ public class UpdateAppointmentStatusHandlerTests
     }
 
     [Theory]
+    [InlineData(AppointmentStatus.Pending,    AppointmentStatus.Waiting,    true)]
     [InlineData(AppointmentStatus.Pending,    AppointmentStatus.InProgress, true)]
     [InlineData(AppointmentStatus.Pending,    AppointmentStatus.Cancelled,  true)]
     [InlineData(AppointmentStatus.Pending,    AppointmentStatus.NoShow,     true)]
+    [InlineData(AppointmentStatus.Waiting,    AppointmentStatus.InProgress, true)]
+    [InlineData(AppointmentStatus.Waiting,    AppointmentStatus.Cancelled,  true)]
+    [InlineData(AppointmentStatus.Waiting,    AppointmentStatus.NoShow,     true)]
     [InlineData(AppointmentStatus.InProgress, AppointmentStatus.Completed,  true)]
     [InlineData(AppointmentStatus.InProgress, AppointmentStatus.Cancelled,  true)]
     [InlineData(AppointmentStatus.Completed,  AppointmentStatus.Pending,    false)]
     [InlineData(AppointmentStatus.Cancelled,  AppointmentStatus.Pending,    false)]
+    [InlineData(AppointmentStatus.NoShow,     AppointmentStatus.Pending,    false)]
     public async Task Handle_ShouldRespectValidTransitions(
         AppointmentStatus from, AppointmentStatus to, bool shouldSucceed)
     {

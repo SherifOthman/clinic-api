@@ -43,11 +43,10 @@ public class InviteStaffHandlerTests
     [Fact]
     public async Task Handle_ShouldSucceed_ForDoctorWithSpecialization()
     {
-        var spec = TestHandlerHelpers.CreateTestSpecialization();
-        await _uow.Specializations.AddAsync(spec);
-        await _uow.SaveChangesAsync();
-
-        var result = await _handler.Handle(new InviteStaffCommand("Doctor", "doc@test.com", spec.Id), default);
+        // The handler stores the specializationId as-is without validating it exists.
+        // Validation (Doctor requires specialization) is enforced by InviteStaffValidator.
+        var result = await _handler.Handle(
+            new InviteStaffCommand("Doctor", "doc@test.com", Guid.NewGuid()), default);
 
         result.IsSuccess.Should().BeTrue();
     }

@@ -128,15 +128,29 @@ public class CreateAppointmentHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldApplyDiscount()
+    public async Task Handle_ShouldApplyDiscount_AndCalculateCorrectFinalPrice()
     {
+        Appointment? savedAppt = null;
+        var apptRepoMock = new Mock<IAppointmentRepository>();
+        apptRepoMock
+            .Setup(r => r.AddAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()))
+            .Callback<Appointment, CancellationToken>((a, _) => savedAppt = a)
+            .Returns(Task.CompletedTask);
+        apptRepoMock
+            .Setup(r => r.TimeSlotTakenAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<TimeOnly>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
+
         var cmd = new CreateAppointmentCommand(
             _branchId, _patientId, _doctorId, _visitType.Id,
             DateOnly.FromDateTime(DateTime.Today),
-            AppointmentType.Queue, null, 10m);
+            AppointmentType.Queue, null, 10m); // 10% discount on price 100
 
         var result = await _handler.Handle(cmd, default);
 
         result.IsSuccess.Should().BeTrue();
+        savedAppt.Should().NotBeNull();
+        savedAppt!.FinalPrice.Should().Be(90m); // 100 - 10% = 90
+        savedAppt.DiscountPercent.Should().Be(10m);
     }
 }
