@@ -21,5 +21,6 @@ public record GetMeDto(
     string Gender,
     Guid? StaffId,
     Guid? MemberId,
-    string? AppointmentType
+    string? AppointmentType,
+    int WeekStartDay
 );

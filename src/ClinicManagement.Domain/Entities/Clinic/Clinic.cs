@@ -22,6 +22,12 @@ public class Clinic : AuditableEntity, ISoftDeletable
     /// </summary>
     public string? CountryCode { get; set; }
 
+    /// <summary>
+    /// First day of the week for calendar display (0 = Sunday … 6 = Saturday).
+    /// Defaults to 6 (Saturday) — common in Middle-East clinics.
+    /// </summary>
+    public int WeekStartDay { get; set; } = 6;
+
     // ── Computed ──────────────────────────────────────────────────────────────
 
     public bool IsOnboarded => OnboardingCompleted;

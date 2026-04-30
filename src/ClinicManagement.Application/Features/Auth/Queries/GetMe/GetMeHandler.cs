@@ -23,6 +23,7 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
         Guid? staffId = null;
         Guid? memberId = null;
         string? appointmentType = null;
+        int weekStartDay = 6; // default Saturday
         List<string> permissions = [];
 
         var member = await uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
@@ -31,6 +32,18 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
             staffId = member.Id;
             var memberPermissions = await uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken);
             permissions = memberPermissions.Select(p => p.ToString()).ToList();
+        }
+
+        // Load clinic WeekStartDay (works for both owner and staff)
+        var clinic = await uow.Clinics.GetByOwnerIdAsync(request.UserId, cancellationToken);
+        if (clinic is null && member is not null)
+        {
+            var memberClinic = await uow.Clinics.GetByIdAsync(member.ClinicId, cancellationToken);
+            weekStartDay = memberClinic?.WeekStartDay ?? 6;
+        }
+        else if (clinic is not null)
+        {
+            weekStartDay = clinic.WeekStartDay;
         }
 
         if (roles.Any(r => r.RoleName == UserRoles.Doctor))
@@ -66,7 +79,8 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
             Gender:               profile.Gender,
             StaffId:              staffId,
             MemberId:             memberId,
-            AppointmentType:      appointmentType
+            AppointmentType:      appointmentType,
+            WeekStartDay:         weekStartDay
         ));
     }
 }
