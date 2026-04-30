@@ -1,0 +1,6 @@
+@baseUrl = http://localhost:5000
+
+### ── Get all subscription plans (public, no auth required) ──────────────────
+
+GET {{baseUrl}}/api/subscription-plans
+

@@ -22,5 +22,6 @@ public record DoctorDetailDto(
     Guid DoctorProfileId,
     string SpecializationNameEn,
     string SpecializationNameAr,
-    bool CanSelfManageSchedule
+    bool CanSelfManageSchedule,
+    string AppointmentType
 );

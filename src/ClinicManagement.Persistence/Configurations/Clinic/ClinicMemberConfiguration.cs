@@ -17,6 +17,11 @@ public class ClinicMemberConfiguration : IEntityTypeConfiguration<ClinicMember>
         builder.HasIndex(m => new { m.PersonId, m.ClinicId }).IsUnique();
         builder.HasIndex(m => new { m.ClinicId, m.IsActive });
 
+        // Only one Owner per clinic — enforced at DB level
+        builder.HasIndex(m => new { m.ClinicId, m.Role })
+            .IsUnique()
+            .HasFilter("[Role] = 'Owner'");
+
         builder.HasOne(m => m.Person)
             .WithMany(p => p.ClinicMemberships)
             .HasForeignKey(m => m.PersonId)

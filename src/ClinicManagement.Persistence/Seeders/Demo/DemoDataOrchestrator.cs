@@ -1,5 +1,6 @@
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -49,7 +50,9 @@ public class DemoDataOrchestrator
                 .AnyAsync(c => c.OwnerUserId == ownerExists.Id);
             if (clinicExists)
             {
-                _logger.LogInformation("Demo data already seeded — skipping");
+                _logger.LogInformation("Demo data already seeded — checking permissions...");
+                // Ensure existing demo users have all current default permissions
+                await EnsureDemoPermissionsAsync(ownerExists.Id);
                 return;
             }
         }
@@ -96,6 +99,79 @@ public class DemoDataOrchestrator
         await contentSeed.SeedAsync(clinic.Id, ownerUser.Id, clinic.Name);
 
         _logger.LogInformation("Demo data seeding complete ✓");
+    }
+
+    /// <summary>
+    /// Adds any missing default permissions to existing demo clinic members,
+    /// and creates missing DoctorBranchSchedule entries for demo doctors.
+    /// Runs on every startup so new permissions and schedules are automatically
+    /// added to demo accounts without a full re-seed.
+    /// </summary>
+    private async Task EnsureDemoPermissionsAsync(Guid ownerUserId)
+    {
+        var clinic = await _db.Set<Clinic>()
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .FirstOrDefaultAsync(c => c.OwnerUserId == ownerUserId);
+        if (clinic is null) return;
+
+        var branch = await _db.Set<ClinicBranch>()
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .FirstOrDefaultAsync(b => b.ClinicId == clinic.Id && b.IsMainBranch);
+
+        var members = await _db.Set<ClinicMember>()
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .Include(m => m.Permissions)
+            .Where(m => m.ClinicId == clinic.Id)
+            .ToListAsync();
+
+        int added = 0;
+        foreach (var member in members)
+        {
+            // ── Ensure permissions ────────────────────────────────────────────
+            var defaults = DefaultPermissions.ForRole(member.Role);
+            var existing = member.Permissions.Select(p => p.Permission).ToHashSet();
+            var missing  = defaults.Where(p => !existing.Contains(p)).ToList();
+            if (missing.Count > 0)
+            {
+                _db.Set<ClinicMemberPermission>().AddRange(
+                    missing.Select(p => new ClinicMemberPermission { ClinicMemberId = member.Id, Permission = p }));
+                added += missing.Count;
+            }
+        }
+
+        // ── Ensure DoctorBranchSchedule for all doctors ───────────────────────
+        if (branch is not null)
+        {
+            var doctorInfos = await _db.Set<DoctorInfo>()
+                .IgnoreQueryFilters([QueryFilterNames.Tenant])
+                .Where(d => d.ClinicMember.ClinicId == clinic.Id)
+                .ToListAsync();
+
+            foreach (var doctor in doctorInfos)
+            {
+                var hasSchedule = await _db.Set<DoctorBranchSchedule>()
+                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
+                    .AnyAsync(s => s.DoctorInfoId == doctor.Id && s.BranchId == branch.Id);
+
+                if (!hasSchedule)
+                {
+                    _db.Set<DoctorBranchSchedule>().Add(new DoctorBranchSchedule
+                    {
+                        DoctorInfoId = doctor.Id,
+                        BranchId     = branch.Id,
+                        IsActive     = true,
+                    });
+                    _logger.LogInformation("Created missing DoctorBranchSchedule for DoctorInfoId={Id}", doctor.Id);
+                    added++;
+                }
+            }
+        }
+
+        if (added > 0)
+        {
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Fixed {Count} missing item(s) for demo clinic members", added);
+        }
     }
 }
 

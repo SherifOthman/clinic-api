@@ -1,8 +1,9 @@
+using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Queries;
 
-public record GetMeQuery(Guid UserId) : IRequest<GetMeDto?>;
+public record GetMeQuery(Guid UserId) : IRequest<Result<GetMeDto>>;
 
 public record GetMeDto(
     string UserName,
@@ -18,5 +19,7 @@ public record GetMeDto(
     string? SpecializationNameEn,
     string? SpecializationNameAr,
     string Gender,
-    Guid? StaffId
+    Guid? StaffId,
+    Guid? MemberId,
+    string? AppointmentType
 );

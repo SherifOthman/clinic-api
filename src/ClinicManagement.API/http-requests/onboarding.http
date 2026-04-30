@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:5000
+
+### ── Login as new owner (not yet onboarded) ─────────────────────────────────
+
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "newowner@clinic.com",
+  "password": "Password123!"
+}
+
+@token = {{login.response.body.$.accessToken}}
+
+### ── Complete onboarding ─────────────────────────────────────────────────────
+# Requires: authenticated ClinicOwner who has NOT yet completed onboarding.
+# SubscriptionPlanId must be a valid plan from GET /api/subscription-plans.
+
+POST {{baseUrl}}/api/onboarding/complete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clinicName": "Al-Shifa Medical Center",
+  "subscriptionPlanId": "00000000-0000-0000-0000-000000000001",
+  "branchName": "Main Branch",
+  "addressLine": "123 King Fahd Road, Riyadh",
+  "stateGeonameId": 101628,
+  "cityGeonameId": 108410,
+  "countryCode": "SA"
+}
+
+### ── Minimal onboarding (no location) ───────────────────────────────────────
+
+POST {{baseUrl}}/api/onboarding/complete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clinicName": "City Clinic",
+  "subscriptionPlanId": "00000000-0000-0000-0000-000000000001",
+  "branchName": "Main Branch",
+  "addressLine": "456 Main Street",
+  "stateGeonameId": null,
+  "cityGeonameId": null,
+  "countryCode": "SA"
+}
+

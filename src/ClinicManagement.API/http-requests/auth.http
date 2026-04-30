@@ -1,0 +1,153 @@
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Register a new clinic owner
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "owner@clinic.com",
+  "password": "Password123!",
+  "fullName": "Ahmed Al-Rashid",
+  "gender": "Male"
+}
+
+### Login (web — tokens set as HttpOnly cookies)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
+}
+
+@token = {{login.response.body.$.accessToken}}
+
+### Login (mobile — tokens returned in body)
+# @name loginMobile
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
+}
+
+@mobileToken = {{loginMobile.response.body.$.accessToken}}
+
+### Get current user (me)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Update profile
+PUT {{baseUrl}}/api/auth/profile
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "fullName": "Ahmed Al-Rashid",
+  "userName": "ahmed.rashid",
+  "phoneNumber": "+966501234567",
+  "gender": "Male"
+}
+
+### Upload profile image (multipart)
+PUT {{baseUrl}}/api/auth/profile/image
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./avatar.jpg
+------Boundary--
+
+### Delete profile image
+DELETE {{baseUrl}}/api/auth/profile/image
+Authorization: Bearer {{token}}
+
+### Confirm email
+POST {{baseUrl}}/api/auth/confirm-email
+Content-Type: {{contentType}}
+
+{
+  "userId": "00000000-0000-0000-0000-000000000001",
+  "token": "CONFIRMATION_TOKEN_HERE"
+}
+
+### Forgot password
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: {{contentType}}
+
+{
+  "email": "owner@clinic.com"
+}
+
+### Reset password
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: {{contentType}}
+
+{
+  "email": "owner@clinic.com",
+  "token": "RESET_TOKEN_HERE",
+  "newPassword": "NewPassword123!"
+}
+
+### Change password (authenticated)
+POST {{baseUrl}}/api/auth/change-password
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "NewPassword123!"
+}
+
+### Resend email verification
+POST {{baseUrl}}/api/auth/resend-email-verification
+Content-Type: {{contentType}}
+
+{
+  "email": "owner@clinic.com"
+}
+
+### Refresh token (web — reads from cookie automatically)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+### Refresh token (mobile)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+X-Client-Type: mobile
+
+{
+  "refreshToken": "REFRESH_TOKEN_HERE"
+}
+
+### Check email availability
+GET {{baseUrl}}/api/auth/check-email?email=newuser@clinic.com
+
+### Check username availability
+GET {{baseUrl}}/api/auth/check-username?username=newuser
+
+### Logout (web)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+### Logout (mobile)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{mobileToken}}
+Content-Type: {{contentType}}
+X-Client-Type: mobile
+
+{
+  "refreshToken": "REFRESH_TOKEN_HERE"
+}

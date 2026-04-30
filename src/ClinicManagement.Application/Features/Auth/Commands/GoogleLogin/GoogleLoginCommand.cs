@@ -11,5 +11,6 @@ namespace ClinicManagement.Application.Features.Auth.Commands.GoogleLogin;
 public record GoogleLoginCommand(
     string Email,
     string FullName,
-    string? GoogleId
+    string? GoogleId,
+    string? PictureUrl = null
 ) : IRequest<Result<TokenResponseDto>>;

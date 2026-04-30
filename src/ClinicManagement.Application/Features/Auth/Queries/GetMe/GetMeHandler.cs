@@ -1,16 +1,18 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Queries;
 
-public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDto?>
+public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<GetMeDto>>
 {
-    public async Task<GetMeDto?> Handle(GetMeQuery request, CancellationToken cancellationToken)
+    public async Task<Result<GetMeDto>> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
         var profile = await uow.Users.GetProfileAsync(request.UserId, cancellationToken);
-        if (profile is null) return null;
+        if (profile is null)
+            return Result.Failure<GetMeDto>(ErrorCodes.NOT_FOUND, "User not found");
 
         var roles     = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
         var hasClinic = await uow.Users.HasClinicAsync(request.UserId, cancellationToken);
@@ -19,8 +21,10 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDt
         string? specializationNameEn = null;
         string? specializationNameAr = null;
         Guid? staffId = null;
+        Guid? memberId = null;
+        string? appointmentType = null;
         List<string> permissions = [];
-        
+
         var member = await uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
         if (member is not null)
         {
@@ -34,9 +38,19 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDt
             var spec = await uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
             specializationNameEn = spec?.NameEn;
             specializationNameAr = spec?.NameAr;
+
+            if (member is not null)
+            {
+                var memberWithDoctor = await uow.Members.GetByIdWithDoctorInfoAsync(member.Id, cancellationToken);
+                if (memberWithDoctor?.DoctorInfo is not null)
+                {
+                    memberId = memberWithDoctor.DoctorInfo.Id;
+                    appointmentType = memberWithDoctor.DoctorInfo.AppointmentType.ToString();
+                }
+            }
         }
 
-        return new GetMeDto(
+        return Result.Success(new GetMeDto(
             UserName:             profile.UserName,
             FullName:             profile.FullName,
             Email:                profile.Email,
@@ -50,7 +64,9 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, GetMeDt
             SpecializationNameEn: specializationNameEn,
             SpecializationNameAr: specializationNameAr,
             Gender:               profile.Gender,
-            StaffId:              staffId
-        );
+            StaffId:              staffId,
+            MemberId:             memberId,
+            AppointmentType:      appointmentType
+        ));
     }
 }

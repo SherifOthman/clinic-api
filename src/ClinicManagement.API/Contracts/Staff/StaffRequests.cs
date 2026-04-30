@@ -7,7 +7,7 @@ public record AcceptInvitationRequest(
     string PhoneNumber,
     string Gender);
 
-public record SetOwnerAsDoctorRequest(Guid SpecializationId);
+public record SetOwnerAsDoctorRequest(Guid? SpecializationId);
 
 public record SetStaffActiveStatusRequest(bool IsActive);
 

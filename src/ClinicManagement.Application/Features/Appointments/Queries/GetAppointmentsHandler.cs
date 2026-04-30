@@ -1,10 +1,11 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Appointments.Queries;
 
-public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List<AppointmentDto>>
+public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, Result<List<AppointmentDto>>>
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
@@ -15,7 +16,7 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List
         _currentUser = currentUser;
     }
 
-    public async Task<List<AppointmentDto>> Handle(GetAppointmentsQuery request, CancellationToken ct)
+    public async Task<Result<List<AppointmentDto>>> Handle(GetAppointmentsQuery request, CancellationToken ct)
     {
         List<Domain.Entities.Appointment> appointments;
 
@@ -26,7 +27,7 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List
         else
             appointments = [];
 
-        return appointments.Select(a => new AppointmentDto(
+        var list = appointments.Select(a => new AppointmentDto(
             a.Id,
             a.DoctorInfoId,
             a.Doctor?.ClinicMember?.Person?.FullName ?? "—",
@@ -41,7 +42,11 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, List
             a.Status.ToString(),
             a.VisitType?.Name ?? "—",
             a.FinalPrice,
-            a.CreatedAt
+            a.CreatedAt,
+            a.Patient?.Person?.Gender.ToString(),
+            a.Patient?.Person?.DateOfBirth
         )).ToList();
+
+        return Result.Success(list);
     }
 }

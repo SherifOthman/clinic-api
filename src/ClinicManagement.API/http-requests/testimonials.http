@@ -1,0 +1,64 @@
+@baseUrl = https://localhost:7001
+@testimonialId = 00000000-0000-0000-0000-000000000001
+
+### ── Authentication (cookie-based — run once) ────────────────────────────────
+
+# @name loginOwner
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
+}
+
+###
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "admin@system.com",
+  "password": "Password123!"
+}
+
+###
+
+### ── Public: Get approved testimonials (no auth required) ───────────────────
+
+GET {{baseUrl}}/api/testimonials
+
+###
+
+### ── ClinicOwner: Get my testimonial ─────────────────────────────────────────
+
+GET {{baseUrl}}/api/testimonials/mine
+
+###
+
+### ── ClinicOwner: Submit or update testimonial ──────────────────────────────
+
+POST {{baseUrl}}/api/testimonials
+Content-Type: application/json
+
+{
+  "content": "This clinic management system has transformed how we operate. Highly recommended!",
+  "ownerName": "Dr. Khalid Al-Mansouri",
+  "clinicName": "Al-Shifa Medical Center",
+  "rating": 5
+}
+
+###
+
+### ── SuperAdmin: Get all testimonials (with approval status) ─────────────────
+
+GET {{baseUrl}}/api/testimonials/all
+
+###
+
+### ── SuperAdmin: Toggle testimonial approval (publish/hide) ─────────────────
+
+PATCH {{baseUrl}}/api/testimonials/{{testimonialId}}/toggle
+
+###

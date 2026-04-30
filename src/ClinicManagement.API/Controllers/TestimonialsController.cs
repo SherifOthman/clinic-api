@@ -16,7 +16,10 @@ public class TestimonialsController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.AnonStatic)]
     [ProducesResponseType(typeof(List<TestimonialDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPublic(CancellationToken ct)
-        => Ok(await Sender.Send(new GetPublicTestimonialsQuery(), ct));
+    {
+        var result = await Sender.Send(new GetPublicTestimonialsQuery(), ct);
+        return HandleResult(result, "Failed to retrieve testimonials");
+    }
 
     /// <summary>SuperAdmin — all testimonials with approval status.</summary>
     [HttpGet("all")]
@@ -24,7 +27,10 @@ public class TestimonialsController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<AdminTestimonialDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
-        => Ok(await Sender.Send(new GetAllTestimonialsQuery(), ct));
+    {
+        var result = await Sender.Send(new GetAllTestimonialsQuery(), ct);
+        return HandleResult(result, "Failed to retrieve testimonials");
+    }
 
     /// <summary>SuperAdmin — toggle published/hidden for a testimonial.</summary>
     [HttpPatch("{id:guid}/toggle")]
@@ -47,7 +53,8 @@ public class TestimonialsController : BaseApiController
     public async Task<IActionResult> GetMine(CancellationToken ct)
     {
         var result = await Sender.Send(new GetMyTestimonialQuery(), ct);
-        return result is null ? NoContent() : Ok(result);
+        if (result.IsFailure) return HandleResult(result, "Failed to retrieve testimonial");
+        return result.Value is null ? NoContent() : Ok(result.Value);
     }
 
     /// <summary>ClinicOwner — submit or update their testimonial.</summary>

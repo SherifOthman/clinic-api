@@ -1,3 +1,4 @@
+using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Appointments.Queries;
@@ -7,7 +8,7 @@ public record GetAppointmentsQuery(
     DateOnly Date,
     Guid? BranchId = null,
     List<Guid>? DoctorInfoIds = null
-) : IRequest<List<AppointmentDto>>;
+) : IRequest<Result<List<AppointmentDto>>>;
 
 public record AppointmentDto(
     Guid Id,
@@ -24,5 +25,7 @@ public record AppointmentDto(
     string Status,
     string VisitTypeName,
     decimal FinalPrice,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    string? PatientGender = null,
+    DateOnly? PatientDateOfBirth = null
 );

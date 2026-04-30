@@ -19,7 +19,7 @@ public class DashboardController : BaseApiController
     public async Task<IActionResult> GetPublicStats(CancellationToken cancellationToken = default)
     {
         var result = await Sender.Send(new GetPublicStatsQuery(), cancellationToken);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve public stats");
     }
 
     /// <summary>Clinic staff dashboard stats — patients, staff, invitations, subscription.</summary>

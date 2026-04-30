@@ -1,5 +1,7 @@
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
+using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Features.Auth.Commands;
 using ClinicManagement.Application.Features.Onboarding.Commands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,15 +13,41 @@ namespace ClinicManagement.API.Controllers;
 [Route("api/onboarding")]
 public class OnboardingController : BaseApiController
 {
+    private readonly ICookieService _cookieService;
+
+    public OnboardingController(ICookieService cookieService)
+    {
+        _cookieService = cookieService;
+    }
+
     [HttpPost("complete")]
     [EnableRateLimiting(RateLimitPolicies.UserOnce)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> CompleteOnboarding(
         [FromBody] CompleteOnboarding request, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(request, cancellationToken);
-        return HandleResult(result, "Onboarding Failed");
+        if (!result.IsSuccess) return HandleResult(result, "Onboarding Failed");
+
+        // Re-issue tokens so the new JWT contains the ClinicId claim.
+        // Without this, RequireClinicOwner endpoints return 403 until the
+        // access token naturally expires and the refresh token issues a new one.
+        var refreshToken = _cookieService.GetRefreshTokenFromCookie();
+        if (!string.IsNullOrEmpty(refreshToken))
+        {
+            var refreshResult = await Sender.Send(
+                new RefreshTokenCommand(refreshToken, IsMobile: false),
+                cancellationToken);
+
+            if (refreshResult.IsSuccess && refreshResult.Value is not null)
+            {
+                _cookieService.SetAccessTokenCookie(refreshResult.Value.AccessToken!, 60);
+                _cookieService.SetRefreshTokenCookie(refreshResult.Value.RefreshToken!);
+            }
+        }
+
+        return NoContent();
     }
 }

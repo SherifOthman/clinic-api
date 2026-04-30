@@ -12,6 +12,8 @@ using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -112,6 +114,17 @@ public static class DependencyInjection
             options.Scope.Add("email");
             options.Scope.Add("profile");
             options.SaveTokens = false;
+            // Map the Google picture field — not included by default in GoogleOptions.
+            // ClaimActions runs before the ticket is serialised into the Cookie,
+            // so the claim survives the round-trip to /google/complete.
+            options.ClaimActions.Add(new JsonKeyClaimAction("urn:google:picture", "url", "picture"));
+
+            // Allow the correlation and state cookies to work over plain HTTP in development.
+            // Without this, the browser drops the Secure cookies on http://localhost and the
+            // OAuth callback fails with "correlation failed" → oauth_failed.
+            options.CorrelationCookie.SameSite    = SameSiteMode.Lax;
+            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.CorrelationCookie.HttpOnly     = true;
         });
     }
 

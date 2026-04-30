@@ -26,7 +26,8 @@ public class GetStaffDetailHandler : IRequestHandler<GetStaffDetailQuery, Result
                 member.DoctorProfile.Id,
                 member.DoctorProfile.SpecializationNameEn,
                 member.DoctorProfile.SpecializationNameAr,
-                member.DoctorProfile.CanSelfManageSchedule);
+                member.DoctorProfile.CanSelfManageSchedule,
+                member.DoctorProfile.AppointmentType.ToString());
 
         return Result.Success(new StaffDetailDto(
             member.Id, member.FullName, member.Gender, member.Email,

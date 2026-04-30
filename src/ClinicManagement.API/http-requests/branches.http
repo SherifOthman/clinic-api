@@ -1,0 +1,86 @@
+@baseUrl = https://localhost:7001
+@branchId = 00000000-0000-0000-0000-000000000001
+
+### ── Authentication (cookie-based — run once) ────────────────────────────────
+
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
+}
+
+###
+
+### ── Get all branches ────────────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/branches
+
+###
+
+### ── Create a branch ─────────────────────────────────────────────────────────
+
+POST {{baseUrl}}/api/branches
+Content-Type: application/json
+
+{
+  "name": "Main Branch",
+  "addressLine": "123 King Fahd Road, Riyadh",
+  "stateGeonameId": 101628,
+  "cityGeonameId": 108410,
+  "phoneNumbers": ["+966112345678"]
+}
+
+###
+
+### ── Create branch (minimal, no location) ───────────────────────────────────
+
+POST {{baseUrl}}/api/branches
+Content-Type: application/json
+
+{
+  "name": "Downtown Branch",
+  "addressLine": "456 Olaya Street",
+  "stateGeonameId": null,
+  "cityGeonameId": null,
+  "phoneNumbers": []
+}
+
+###
+
+### ── Update a branch ─────────────────────────────────────────────────────────
+
+PUT {{baseUrl}}/api/branches/{{branchId}}
+Content-Type: application/json
+
+{
+  "name": "Main Branch (Updated)",
+  "addressLine": "789 Prince Sultan Road",
+  "stateGeonameId": 101628,
+  "cityGeonameId": 108410,
+  "phoneNumbers": ["+966112345678", "+966119876543"]
+}
+
+###
+
+### ── Set branch active status ────────────────────────────────────────────────
+
+PATCH {{baseUrl}}/api/branches/{{branchId}}/active-status
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+###
+
+PATCH {{baseUrl}}/api/branches/{{branchId}}/active-status
+Content-Type: application/json
+
+{
+  "isActive": true
+}
+
+###

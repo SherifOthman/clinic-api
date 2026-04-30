@@ -1,8 +1,9 @@
+using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Reference.Queries;
 
-public record GetSpecializationsQuery : IRequest<IEnumerable<SpecializationDto>>;
+public record GetSpecializationsQuery : IRequest<Result<List<SpecializationDto>>>;
 
 public record SpecializationDto(
     Guid Id,

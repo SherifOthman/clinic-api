@@ -30,7 +30,9 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
     }
 
     public Task<List<DoctorForBranchRow>> GetDoctorsForBranchAsync(Guid branchId, CancellationToken ct = default)
-        => _db.Set<DoctorBranchSchedule>()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        return _db.Set<DoctorBranchSchedule>()
             .AsNoTracking()
             .Where(s => s.BranchId == branchId && s.IsActive)
             .Select(s => new DoctorForBranchRow(
@@ -39,8 +41,10 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
                 s.DoctorInfo.ClinicMember.Person.FullName,
                 s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
                 s.DoctorInfo.AppointmentType.ToString(),
-                s.DoctorInfo.DefaultVisitDurationMinutes))
+                s.DoctorInfo.DefaultVisitDurationMinutes,
+                _db.Set<DoctorSession>().Any(ds => ds.DoctorInfoId == s.DoctorInfoId && ds.BranchId == branchId && ds.Date == today)))
             .ToListAsync(ct);
+    }
 
     public async Task<List<WorkingDayRow>> GetWorkingDaysByDoctorInfoIdAsync(Guid doctorInfoId, CancellationToken ct = default)
         => await _db.Set<WorkingDay>()

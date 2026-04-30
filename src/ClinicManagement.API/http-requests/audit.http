@@ -1,0 +1,56 @@
+@baseUrl = https://localhost:7001
+
+### ── Authentication (SuperAdmin only) ───────────────────────────────────────
+
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "admin@system.com",
+  "password": "Password123!"
+}
+
+###
+
+### ── Get all audit logs (paginated) ─────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?pageNumber=1&pageSize=20
+
+###
+
+### ── Filter by entity type ───────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?entityType=Patient&pageNumber=1&pageSize=20
+
+###
+
+### ── Filter by action ────────────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?action=LoginSuccess&pageNumber=1&pageSize=20
+
+###
+
+### ── Filter by user search ───────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?userSearch=ahmed&pageNumber=1&pageSize=20
+
+###
+
+### ── Filter by clinic search ─────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?clinicSearch=Al-Shifa&pageNumber=1&pageSize=20
+
+###
+
+### ── Filter by date range ────────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&pageNumber=1&pageSize=20
+
+###
+
+### ── Combined filters ────────────────────────────────────────────────────────
+
+GET {{baseUrl}}/api/audit?entityType=Patient&action=Create&from=2026-01-01T00:00:00Z&userSearch=&clinicSearch=&pageNumber=1&pageSize=50
+
+###

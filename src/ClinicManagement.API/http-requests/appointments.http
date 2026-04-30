@@ -1,0 +1,168 @@
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# APPOINTMENTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Login
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
+}
+
+@token = {{login.response.body.$.accessToken}}
+@branchId = 00000000-0000-0000-0000-000000000001
+@doctorInfoId = 00000000-0000-0000-0000-000000000002
+@patientId = 00000000-0000-0000-0000-000000000003
+@visitTypeId = 00000000-0000-0000-0000-000000000004
+@appointmentId = 00000000-0000-0000-0000-000000000005
+@memberId = 00000000-0000-0000-0000-000000000006
+@sessionId = 00000000-0000-0000-0000-000000000007
+
+### Get appointments for a date (all doctors in branch)
+GET {{baseUrl}}/api/appointments?date=2026-05-01&branchId={{branchId}}
+Authorization: Bearer {{token}}
+
+### Get appointments for specific doctors
+GET {{baseUrl}}/api/appointments?date=2026-05-01&branchId={{branchId}}&doctorInfoIds={{doctorInfoId}}
+Authorization: Bearer {{token}}
+
+### Get all doctors available at a branch
+GET {{baseUrl}}/api/appointments/doctors?branchId={{branchId}}
+Authorization: Bearer {{token}}
+
+### Book a queue-based appointment
+POST {{baseUrl}}/api/appointments
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "branchId": "{{branchId}}",
+  "patientId": "{{patientId}}",
+  "doctorInfoId": "{{doctorInfoId}}",
+  "visitTypeId": "{{visitTypeId}}",
+  "date": "2026-05-01",
+  "type": "Queue"
+}
+
+### Book a time-based appointment
+POST {{baseUrl}}/api/appointments
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "branchId": "{{branchId}}",
+  "patientId": "{{patientId}}",
+  "doctorInfoId": "{{doctorInfoId}}",
+  "visitTypeId": "{{visitTypeId}}",
+  "date": "2026-05-01",
+  "type": "Time",
+  "scheduledTime": "10:00",
+  "discountPercent": 10,
+  "visitDurationMinutes": 30
+}
+
+### Update appointment status → Waiting (patient arrived)
+PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "Waiting"
+}
+
+### Update appointment status → InProgress
+PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "InProgress"
+}
+
+### Update appointment status → Completed
+PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "Completed"
+}
+
+### Update appointment status → Cancelled
+PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "Cancelled"
+}
+
+### Update appointment status → NoShow
+PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "NoShow"
+}
+
+### Set doctor appointment type → Queue
+PATCH {{baseUrl}}/api/appointments/doctors/{{memberId}}/appointment-type
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "appointmentType": "Queue"
+}
+
+### Set doctor appointment type → Time
+PATCH {{baseUrl}}/api/appointments/doctors/{{memberId}}/appointment-type
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "appointmentType": "Time"
+}
+
+### Doctor check-in for the day
+POST {{baseUrl}}/api/appointments/sessions/check-in
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "doctorInfoId": "{{doctorInfoId}}",
+  "branchId": "{{branchId}}"
+}
+
+### Handle delay — auto-shift all pending appointments
+POST {{baseUrl}}/api/appointments/sessions/{{sessionId}}/handle-delay
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "option": "AutoShift"
+}
+
+### Handle delay — mark past pending as NoShow
+POST {{baseUrl}}/api/appointments/sessions/{{sessionId}}/handle-delay
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "option": "MarkMissed"
+}
+
+### Handle delay — manual (receptionist decides per appointment)
+POST {{baseUrl}}/api/appointments/sessions/{{sessionId}}/handle-delay
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "option": "Manual"
+}

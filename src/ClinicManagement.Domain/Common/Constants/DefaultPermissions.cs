@@ -32,6 +32,7 @@ public static class DefaultPermissions
         Permission.ViewPatients,
         Permission.CreatePatient,
         Permission.EditPatient,
+        Permission.ViewBranches,       // needed to load branches in ScheduleTab
         Permission.ManageSchedule,
         Permission.ManageVisitTypes,
         Permission.ViewAppointments,

@@ -1,0 +1,26 @@
+### Login and set token variable
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "user@example.com",
+  "password": "string"
+}
+
+@token = {{login.response.body.$.token}}
+
+### Submit a contact form message
+POST {{baseUrl}}/api/contact
+Content-Type: application/json
+
+{
+  "name": "Your Name",
+  "email": "your@email.com",
+  "message": "Your message here."
+}
+
+### View all contact messages (SuperAdmin only)
+GET {{baseUrl}}/api/contact?page=1&pageSize=20
+Authorization: Bearer {{token}}
+

@@ -1,0 +1,8 @@
+### Get all countries
+GET {{baseUrl}}/api/locations/countries
+
+### Get all states in a country
+GET {{baseUrl}}/api/locations/countries/{{countryGeonameId}}/states
+
+### Get all cities in a state
+GET {{baseUrl}}/api/locations/states/{{stateGeonameId}}/cities

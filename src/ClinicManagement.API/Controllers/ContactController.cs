@@ -30,6 +30,6 @@ public class ContactController : BaseApiController
     public async Task<IActionResult> GetMessages([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var result = await Sender.Send(new GetContactMessagesQuery(page, pageSize), ct);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve contact messages");
     }
 }

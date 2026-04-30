@@ -2,6 +2,7 @@ using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Appointments.Commands;
@@ -25,6 +26,14 @@ public class SetDoctorAppointmentTypeHandler : IRequestHandler<SetDoctorAppointm
         var member = await _uow.Members.GetByIdWithDoctorInfoAsync(request.MemberId, ct);
         if (member is null || member.ClinicId != clinicId || member.DoctorInfo is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Doctor not found");
+
+        // Allow: clinic owner OR the doctor themselves (when canSelfManageSchedule is true)
+        var isOwner    = _currentUser.Roles.Contains(UserRoles.ClinicOwner);
+        var isSelf     = member.UserId.HasValue && member.UserId == _currentUser.UserId;
+        var canManage  = isOwner || (isSelf && member.DoctorInfo.CanSelfManageSchedule);
+
+        if (!canManage)
+            return Result.Failure(ErrorCodes.FORBIDDEN, "You are not allowed to change this doctor's appointment type.");
 
         member.DoctorInfo.AppointmentType = request.AppointmentType;
         await _uow.SaveChangesAsync(ct);

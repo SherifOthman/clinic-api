@@ -571,7 +571,7 @@ namespace ClinicManagement.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InvoiceItem", x => x.Id);
-                    table.CheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
+                    table.CheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
                     table.CheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
                     table.CheckConstraint("CK_InvoiceItem_SaleUnit", "[SaleUnit] IS NULL OR [SaleUnit] IN ('Box', 'Strip')");
                     table.CheckConstraint("CK_InvoiceItem_UnitPrice", "[UnitPrice] >= 0");
@@ -1461,6 +1461,13 @@ namespace ClinicManagement.Persistence.Migrations
                 name: "IX_ClinicMember_ClinicId_IsActive",
                 table: "ClinicMember",
                 columns: new[] { "ClinicId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicMember_ClinicId_Role",
+                table: "ClinicMember",
+                columns: new[] { "ClinicId", "Role" },
+                unique: true,
+                filter: "[Role] = 'Owner'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClinicMember_PersonId_ClinicId",

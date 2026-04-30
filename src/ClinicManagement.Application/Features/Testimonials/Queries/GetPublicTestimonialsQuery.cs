@@ -1,8 +1,9 @@
+using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Testimonials.Queries;
 
-public record GetPublicTestimonialsQuery : IRequest<List<TestimonialDto>>;
+public record GetPublicTestimonialsQuery : IRequest<Result<List<TestimonialDto>>>;
 
 public record TestimonialDto(
     string AuthorName,

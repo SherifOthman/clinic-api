@@ -231,8 +231,8 @@ public class StaffController : BaseApiController
     public async Task<IActionResult> GetPermissions(Guid id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetMemberPermissionsQuery(id), cancellationToken);
-        if (result is null) return NotFound();
-        return Ok(result.Select(p => p.ToString()).ToList());
+        if (result.IsFailure) return HandleResult(result, "Failed to retrieve permissions");
+        return Ok(result.Value!.Select(p => p.ToString()).ToList());
     }
     [Authorize(Policy = "RequireClinicOwner")]
     [HttpPut("{id:guid}/permissions")]

@@ -1,8 +1,9 @@
+using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.SubscriptionPlans.Queries;
 
-public record GetSubscriptionPlansQuery : IRequest<IEnumerable<SubscriptionPlanDto>>;
+public record GetSubscriptionPlansQuery : IRequest<Result<List<SubscriptionPlanDto>>>;
 
 public record SubscriptionPlanDto(
     Guid Id,

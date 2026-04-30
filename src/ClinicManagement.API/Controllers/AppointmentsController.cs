@@ -33,7 +33,7 @@ public class AppointmentsController : BaseApiController
             return BadRequest("Invalid date format. Use YYYY-MM-DD.");
 
         var result = await Sender.Send(new GetAppointmentsQuery(parsedDate, branchId, doctorInfoIds), ct);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve appointments");
     }
 
     /// <summary>Get all doctors available at a branch (for the doctor selector).</summary>
@@ -44,7 +44,7 @@ public class AppointmentsController : BaseApiController
     public async Task<IActionResult> GetDoctors([FromQuery] Guid branchId, CancellationToken ct)
     {
         var result = await Sender.Send(new GetDoctorsForBranchQuery(branchId), ct);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve doctors");
     }
 
     // ── Commands ──────────────────────────────────────────────────────────────
@@ -96,9 +96,9 @@ public class AppointmentsController : BaseApiController
         return HandleNoContent(result, "Failed to update status");
     }
 
-    /// <summary>Set whether a doctor uses Queue or Time appointments (owner only).</summary>
+    /// <summary>Set whether a doctor uses Queue or Time appointments (owner or the doctor themselves).</summary>
     [HttpPatch("doctors/{memberId:guid}/appointment-type")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ManageAppointments)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]

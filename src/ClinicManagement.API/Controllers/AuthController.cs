@@ -101,13 +101,8 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> GetMe(CancellationToken ct)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var query = new GetMeQuery(userId);
-        var result = await Sender.Send(query, ct);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        var result = await Sender.Send(new GetMeQuery(userId), ct);
+        return HandleResult(result, "Failed to retrieve user profile");
     }
 
     /// <summary>
@@ -225,9 +220,8 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(AvailabilityDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckEmailAvailability([FromQuery] string email, CancellationToken ct)
     {
-        var query = new CheckEmailAvailabilityQuery(email);
-        var result = await Sender.Send(query, ct);
-        return Ok(result);
+        var result = await Sender.Send(new CheckEmailAvailabilityQuery(email), ct);
+        return HandleResult(result, "Failed to check email availability");
     }
 
     /// <summary>
@@ -239,9 +233,8 @@ public class AuthController : BaseApiController
     [ProducesResponseType(typeof(AvailabilityDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckUsernameAvailability([FromQuery] string username, CancellationToken ct)
     {
-        var query = new CheckUsernameAvailabilityQuery(username);
-        var result = await Sender.Send(query, ct);
-        return Ok(result);
+        var result = await Sender.Send(new CheckUsernameAvailabilityQuery(username), ct);
+        return HandleResult(result, "Failed to check username availability");
     }
 
     /// <summary>

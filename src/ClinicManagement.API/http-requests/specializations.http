@@ -1,0 +1,7 @@
+@baseUrl = https://localhost:7001
+
+### ── Get all specializations (public, no auth required) ─────────────────────
+
+GET {{baseUrl}}/api/specializations
+
+###

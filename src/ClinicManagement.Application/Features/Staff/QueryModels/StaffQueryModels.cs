@@ -30,4 +30,4 @@ public record InvitationDetailRow(
 
 public record WorkingDayRow(int Day, string StartTime, string EndTime, bool IsAvailable, Guid BranchId);
 
-public record DoctorForBranchRow(Guid DoctorInfoId, Guid MemberId, string FullName, string? ProfileImageUrl, string AppointmentType, int DefaultVisitDurationMinutes);
+public record DoctorForBranchRow(Guid DoctorInfoId, Guid MemberId, string FullName, string? ProfileImageUrl, string AppointmentType, int DefaultVisitDurationMinutes, bool HasSessionToday = false);

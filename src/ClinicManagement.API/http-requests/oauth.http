@@ -1,0 +1,33 @@
+@baseUrl = https://localhost:7001
+
+### ── Google OAuth Flow ───────────────────────────────────────────────────────
+#
+# The OAuth flow is browser-based and cannot be fully tested via HTTP files.
+# Use a browser to initiate the flow:
+#
+#   Step 1: Open in browser → https://localhost:7001/api/auth/oauth/google
+#           This redirects to Google's consent screen.
+#
+#   Step 2: Google redirects back to:
+#           /api/auth/oauth/google/callback  (handled internally by ASP.NET)
+#
+#   Step 3: ASP.NET redirects to:
+#           /api/auth/oauth/google/complete  (issues JWT cookies, redirects to dashboard)
+#
+# After completing the flow, the access token and refresh token are set as
+# HttpOnly cookies. All subsequent API calls use these cookies automatically.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Step 1: Initiate Google OAuth (open in browser, not via HTTP client)
+# GET {{baseUrl}}/api/auth/oauth/google
+
+### Step 1 with custom return URL
+# GET {{baseUrl}}/api/auth/oauth/google?returnUrl=http://localhost:3000/dashboard
+
+### ── After OAuth: Verify the session is active ──────────────────────────────
+# Once cookies are set by the OAuth flow, call /me to confirm authentication.
+
+GET {{baseUrl}}/api/auth/me
+
+###

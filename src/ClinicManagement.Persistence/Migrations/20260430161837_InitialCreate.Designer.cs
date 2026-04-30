@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260429201600_InitialCreate")]
+    [Migration("20260430161837_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -412,6 +412,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.HasIndex("ClinicId", "IsActive");
+
+                    b.HasIndex("ClinicId", "Role")
+                        .IsUnique()
+                        .HasFilter("[Role] = 'Owner'");
 
                     b.HasIndex("PersonId", "ClinicId")
                         .IsUnique();
@@ -1023,7 +1027,7 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.ToTable("InvoiceItem", t =>
                         {
-                            t.HasCheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
+                            t.HasCheckConstraint("CK_InvoiceItem_ExactlyOneSource", "(CASE WHEN [MedicalServiceId]     IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineId]            IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicalSupplyId]       IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [MedicineDispensingId]  IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [LabTestOrderId]        IS NOT NULL THEN 1 ELSE 0 END +\r\n                   CASE WHEN [RadiologyOrderId]      IS NOT NULL THEN 1 ELSE 0 END) = 1");
 
                             t.HasCheckConstraint("CK_InvoiceItem_Quantity", "[Quantity] > 0");
 

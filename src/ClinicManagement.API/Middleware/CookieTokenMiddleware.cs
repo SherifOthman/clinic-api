@@ -23,6 +23,14 @@ public class CookieTokenMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Skip OAuth callback paths — the Google handler needs its own cookies untouched
+        var path = context.Request.Path.Value ?? "";
+        if (path.StartsWith("/api/auth/oauth", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         // Mobile clients send Authorization header themselves — leave untouched
         if (context.Request.Headers.ContainsKey("Authorization"))
         {

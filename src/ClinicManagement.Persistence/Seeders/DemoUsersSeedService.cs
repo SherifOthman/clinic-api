@@ -184,7 +184,12 @@ public class DemoUsersSeedService
         var alreadyMember = await _context.Set<ClinicMember>()
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .AnyAsync(m => m.UserId == doctor.Id && m.ClinicId == clinic.Id);
-        if (alreadyMember) return;
+        if (alreadyMember)
+        {
+            // Ensure existing doctor has all current default permissions (e.g. ViewBranches added later)
+            await EnsurePermissionsAsync(doctor.Id, clinic.Id, ClinicMemberRole.Doctor);
+            return;
+        }
 
         var cardiology = await _context.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
         var member = new ClinicMember
@@ -252,6 +257,31 @@ public class DemoUsersSeedService
 
     private void LogError(string role, IdentityResult result) =>
         _logger.LogError("Failed to create {Role}: {Errors}", role, string.Join(", ", result.Errors.Select(e => e.Description)));
+
+    /// <summary>
+    /// Adds any missing default permissions to an existing clinic member.
+    /// Called when the member already exists but the default permission set has grown.
+    /// </summary>
+    private async Task EnsurePermissionsAsync(Guid userId, Guid clinicId, ClinicMemberRole role)
+    {
+        var member = await _context.Set<ClinicMember>()
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .Include(m => m.Permissions)
+            .FirstOrDefaultAsync(m => m.UserId == userId && m.ClinicId == clinicId);
+
+        if (member is null) return;
+
+        var existing = member.Permissions.Select(p => p.Permission).ToHashSet();
+        var defaults = DefaultPermissions.ForRole(role);
+        var missing  = defaults.Where(p => !existing.Contains(p)).ToList();
+
+        if (missing.Count == 0) return;
+
+        var newPerms = missing.Select(p => new ClinicMemberPermission { ClinicMemberId = member.Id, Permission = p });
+        _context.Set<ClinicMemberPermission>().AddRange(newPerms);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Added {Count} missing permission(s) to {Role} (UserId: {UserId})", missing.Count, role, userId);
+    }
 
     // ── Appointment seed data ─────────────────────────────────────────────────
 

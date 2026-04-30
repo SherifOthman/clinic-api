@@ -15,10 +15,10 @@ public class SubscriptionPlansController : BaseApiController
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(IEnumerable<SubscriptionPlanDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
     {
-        var plans = await Sender.Send(new GetSubscriptionPlansQuery(), ct);
-        return Ok(plans);
+        var result = await Sender.Send(new GetSubscriptionPlansQuery(), ct);
+        return HandleResult(result, "Failed to retrieve subscription plans");
     }
 }

@@ -12,10 +12,10 @@ public class SpecializationsController : BaseApiController
 {
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(IEnumerable<SpecializationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<SpecializationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await Sender.Send(new GetSpecializationsQuery(), ct);
-        return Ok(result);
+        return HandleResult(result, "Failed to retrieve specializations");
     }
 }

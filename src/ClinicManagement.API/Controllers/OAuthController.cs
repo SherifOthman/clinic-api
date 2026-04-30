@@ -78,6 +78,8 @@ public class OAuthController : BaseApiController
         var email    = auth.Principal.FindFirstValue(ClaimTypes.Email);
         var fullName = auth.Principal.FindFirstValue(ClaimTypes.Name) ?? "Google User";
         var googleId = auth.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        // Google sends the profile picture as a custom claim
+        var pictureUrl = auth.Principal.FindFirstValue("urn:google:picture");
 
         if (string.IsNullOrEmpty(email))
         {
@@ -89,7 +91,7 @@ public class OAuthController : BaseApiController
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
         // Delegate all business logic to the handler
-        var result = await Sender.Send(new GoogleLoginCommand(email, fullName, googleId), ct);
+        var result = await Sender.Send(new GoogleLoginCommand(email, fullName, googleId, pictureUrl), ct);
 
         if (result.IsFailure)
         {
