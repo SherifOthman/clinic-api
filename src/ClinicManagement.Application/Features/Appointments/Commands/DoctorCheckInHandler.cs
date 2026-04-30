@@ -48,6 +48,10 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
         await _uow.DoctorSessions.AddAsync(session, ct);
         await _uow.SaveChangesAsync(ct);
 
+        // Store computed delay so HandleDelayHandler can use it reliably
+        session.StoredDelayMinutes = session.DelayMinutes;
+        await _uow.SaveChangesAsync(ct);
+
         return Result.Success(new DoctorCheckInResult(
             session.Id,
             session.IsLate,

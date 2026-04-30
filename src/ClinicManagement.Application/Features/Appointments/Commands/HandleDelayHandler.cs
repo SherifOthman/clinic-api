@@ -19,15 +19,14 @@ public class HandleDelayHandler : IRequestHandler<HandleDelayCommand, Result>
         if (session is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Session not found");
 
-        if (!session.IsLate)
-            return Result.Failure(ErrorCodes.OPERATION_NOT_ALLOWED, "Doctor is not late");
-
         if (session.DelayHandling.HasValue)
             return Result.Failure(ErrorCodes.ALREADY_EXISTS, "Delay already handled");
 
         session.DelayHandling = request.Option;
 
-        var delayMinutes = session.DelayMinutes ?? 0;
+        // Use stored delay minutes (set at check-in time) — more reliable than
+        // recomputing from timestamps after the fact due to timezone differences.
+        var delayMinutes = session.StoredDelayMinutes ?? session.DelayMinutes ?? 0;
         var appointments = await _uow.Appointments.GetByDoctorAndDateAsync(
             session.DoctorInfoId, session.Date, ct);
 

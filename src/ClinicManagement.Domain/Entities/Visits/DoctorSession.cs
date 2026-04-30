@@ -31,6 +31,12 @@ public class DoctorSession : AuditableTenantEntity
     /// </summary>
     public DelayHandlingOption? DelayHandling { get; set; }
 
+    /// <summary>
+    /// Delay in minutes stored at check-in time.
+    /// More reliable than recomputing from timestamps (avoids timezone issues).
+    /// </summary>
+    public int? StoredDelayMinutes { get; set; }
+
     // ── Computed ──────────────────────────────────────────────────────────────
 
     public bool IsActive => CheckedInAt.HasValue && !CheckedOutAt.HasValue;
