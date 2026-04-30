@@ -18,11 +18,11 @@ public class GetMeHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnNull_WhenUserDoesNotExist()
+    public async Task Handle_ShouldFail_WhenUserDoesNotExist()
     {
         var result = await _handler.Handle(new GetMeQuery(Guid.NewGuid()), default);
 
-        result.Should().BeNull();
+        result.IsFailure.Should().BeTrue();
     }
 
     [Fact]
@@ -37,10 +37,10 @@ public class GetMeHandlerTests
 
         var result = await _handler.Handle(new GetMeQuery(user.Id), default);
 
-        result.Should().NotBeNull();
-        result!.FullName.Should().Be("Ahmed Ali");
-        result.Gender.Should().Be("Male");
-        result.OnboardingCompleted.Should().BeFalse();
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.FullName.Should().Be("Ahmed Ali");
+        result.Value.Gender.Should().Be("Male");
+        result.Value.OnboardingCompleted.Should().BeFalse();
     }
 
     [Fact]
@@ -58,6 +58,7 @@ public class GetMeHandlerTests
 
         var result = await _handler.Handle(new GetMeQuery(user.Id), default);
 
-        result!.OnboardingCompleted.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.OnboardingCompleted.Should().BeTrue();
     }
 }

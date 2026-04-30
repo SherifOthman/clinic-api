@@ -23,15 +23,15 @@ public class GetMemberPermissionsHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnNull_WhenMemberNotFound()
+    public async Task Handle_ShouldFail_WhenMemberNotFound()
     {
         var result = await _handler.Handle(new GetMemberPermissionsQuery(Guid.NewGuid()), default);
 
-        result.Should().BeNull();
+        result.IsFailure.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnNull_WhenMemberBelongsToDifferentClinic()
+    public async Task Handle_ShouldFail_WhenMemberBelongsToDifferentClinic()
     {
         var (_, member) = TestHandlerHelpers.CreateTestMember(clinicId: Guid.NewGuid()); // different clinic
         await _uow.Members.AddAsync(member);
@@ -39,7 +39,7 @@ public class GetMemberPermissionsHandlerTests
 
         var result = await _handler.Handle(new GetMemberPermissionsQuery(member.Id), default);
 
-        result.Should().BeNull();
+        result.IsFailure.Should().BeTrue();
     }
 
     [Fact]
@@ -55,10 +55,10 @@ public class GetMemberPermissionsHandlerTests
 
         var result = await _handler.Handle(new GetMemberPermissionsQuery(member.Id), default);
 
-        result.Should().NotBeNull();
-        result!.Should().HaveCount(2);
-        result.Should().Contain(Permission.ViewPatients);
-        result.Should().Contain(Permission.CreatePatient);
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Should().HaveCount(2);
+        result.Value.Should().Contain(Permission.ViewPatients);
+        result.Value.Should().Contain(Permission.CreatePatient);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class GetMemberPermissionsHandlerTests
 
         var result = await _handler.Handle(new GetMemberPermissionsQuery(member.Id), default);
 
-        result.Should().NotBeNull();
-        result!.Should().BeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Should().BeEmpty();
     }
 }
