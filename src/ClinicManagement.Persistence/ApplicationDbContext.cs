@@ -15,11 +15,6 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 {
     private readonly ICurrentUserService? _currentUserService;
 
-    // ── Location reference tables (GeoNames seed) ─────────────────────────────
-    public DbSet<GeoCountry> GeoCountries => Set<GeoCountry>();
-    public DbSet<GeoState>   GeoStates    => Set<GeoState>();
-    public DbSet<GeoCity>    GeoCities    => Set<GeoCity>();
-
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         ICurrentUserService? currentUserService = null,
@@ -103,26 +98,30 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         }
     }
 
-    private void ApplyTenantFilter(ModelBuilder modelBuilder, Type clrType)
+    // EF Core's HasQueryFilter requires a generic type parameter at compile time.
+    // These two methods are the bridge: the first dispatches via reflection using
+    // the runtime Type, the second does the actual work with the compile-time T.
+
+    private void ApplyTenantFilter(ModelBuilder modelBuilder, Type entityType)
         => typeof(ApplicationDbContext)
-            .GetMethod(nameof(ApplyTenantFilterGeneric), BindingFlags.NonPublic | BindingFlags.Instance)!
-            .MakeGenericMethod(clrType)
+            .GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance, [typeof(ModelBuilder)])!
+            .MakeGenericMethod(entityType)
             .Invoke(this, [modelBuilder]);
 
-    private void ApplyTenantFilterGeneric<TEntity>(ModelBuilder modelBuilder)
+    private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ITenantEntity
         => modelBuilder.Entity<TEntity>()
             .HasQueryFilter(
                 QueryFilterNames.Tenant,
                 e => _currentUserService == null || e.ClinicId == (_currentUserService.ClinicId ?? Guid.Empty));
 
-    private static void ApplySoftDeleteFilter(ModelBuilder modelBuilder, Type clrType)
+    private static void ApplySoftDeleteFilter(ModelBuilder modelBuilder, Type entityType)
         => typeof(ApplicationDbContext)
-            .GetMethod(nameof(ApplySoftDeleteFilterGeneric), BindingFlags.NonPublic | BindingFlags.Static)!
-            .MakeGenericMethod(clrType)
+            .GetMethod(nameof(ApplySoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Static, [typeof(ModelBuilder)])!
+            .MakeGenericMethod(entityType)
             .Invoke(null, [modelBuilder]);
 
-    private static void ApplySoftDeleteFilterGeneric<TEntity>(ModelBuilder modelBuilder)
+    private static void ApplySoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ISoftDeletable
         => modelBuilder.Entity<TEntity>()
             .HasQueryFilter(QueryFilterNames.SoftDelete, e => !e.IsDeleted);

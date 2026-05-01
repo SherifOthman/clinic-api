@@ -1,23 +1,31 @@
 using ClinicManagement.Application.Abstractions.Repositories;
+using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
 public class GeoLocationRepository : IGeoLocationRepository
 {
-    private readonly ApplicationDbContext _db;
+    private readonly DbSet<GeoCountry> _countries;
+    private readonly DbSet<GeoState>   _states;
+    private readonly DbSet<GeoCity>    _cities;
 
-    public GeoLocationRepository(ApplicationDbContext db) => _db = db;
+    public GeoLocationRepository(ApplicationDbContext db)
+    {
+        _countries = db.Set<GeoCountry>();
+        _states    = db.Set<GeoState>();
+        _cities    = db.Set<GeoCity>();
+    }
 
     public async Task<List<CountryItem>> GetCountriesAsync(CancellationToken ct = default)
-        => await _db.GeoCountries
+        => await _countries
             .AsNoTracking()
             .OrderBy(c => c.NameEn)
             .Select(c => new CountryItem(c.GeonameId, c.NameEn, c.NameAr, c.CountryCode))
             .ToListAsync(ct);
 
     public async Task<List<StateItem>> GetStatesAsync(int countryGeonameId, CancellationToken ct = default)
-        => await _db.GeoStates
+        => await _states
             .AsNoTracking()
             .Where(s => s.CountryGeonameId == countryGeonameId)
             .OrderBy(s => s.NameEn)
@@ -25,7 +33,7 @@ public class GeoLocationRepository : IGeoLocationRepository
             .ToListAsync(ct);
 
     public async Task<List<CityItem>> GetCitiesAsync(int stateGeonameId, CancellationToken ct = default)
-        => await _db.GeoCities
+        => await _cities
             .AsNoTracking()
             .Where(c => c.StateGeonameId == stateGeonameId)
             .OrderBy(c => c.NameEn)
