@@ -9,7 +9,7 @@
 ### Login
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}
+Content-Type: {{contentType}}`nX-Client-Type: mobile
 
 {
   "emailOrUsername": "owner@clinic.com",

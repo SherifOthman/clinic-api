@@ -11,7 +11,7 @@
 ### Login as SuperAdmin
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}
+Content-Type: {{contentType}}`nX-Client-Type: mobile
 
 {
   "emailOrUsername": "admin@system.com",

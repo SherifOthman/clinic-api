@@ -8,7 +8,7 @@
 ### Login as SuperAdmin (to view messages)
 # @name loginAdmin
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}
+Content-Type: {{contentType}}`nX-Client-Type: mobile
 
 {
   "emailOrUsername": "admin@system.com",

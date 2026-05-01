@@ -1,11 +1,9 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# AUTH - Full flow:
-# 1. Register -> 2. Confirm email -> 3. Login -> 4. Use app
-# Password reset: forgot-password -> reset-password
-# Tokens (web): HttpOnly cookies, sent automatically
-# Tokens (mobile): returned in body, send X-Client-Type: mobile
+# NOTE: All requests use X-Client-Type: mobile so tokens are returned in the
+# response body and can be captured as variables. Web mode uses HttpOnly cookies
+# which the REST client cannot read.
 
 ### Register a new clinic owner
 POST {{baseUrl}}/api/auth/register
@@ -39,10 +37,11 @@ Content-Type: {{contentType}}
   "email": "elemlak202099@gmail.com"
 }
 
-### Login - web (tokens in HttpOnly cookies)
+### Login (mobile mode — tokens returned in body so @token can be captured)
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "elemlak202099@gmail.com",
@@ -50,50 +49,29 @@ Content-Type: {{contentType}}
 }
 
 @token = {{login.response.body.$.accessToken}}
-
-### Login - mobile (tokens in body)
-# @name loginMobile
-POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}
-X-Client-Type: mobile
-
-{
-  "emailOrUsername": "elemlak202099@gmail.com",
-  "password": "Password123!"
-}
-
-@mobileToken = {{loginMobile.response.body.$.accessToken}}
+@refreshToken = {{login.response.body.$.refreshToken}}
 
 ### Get current user
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
 
-### Refresh token - web (no body, reads cookie)
-POST {{baseUrl}}/api/auth/refresh
-Content-Type: {{contentType}}
-
-### Refresh token - mobile
+### Refresh token (mobile)
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 X-Client-Type: mobile
 
 {
-  "refreshToken": "REFRESH_TOKEN_HERE"
+  "refreshToken": "{{refreshToken}}"
 }
 
-### Logout - web
+### Logout (mobile)
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
-
-### Logout - mobile
-POST {{baseUrl}}/api/auth/logout
-Authorization: Bearer {{mobileToken}}
-Content-Type: {{contentType}}
 X-Client-Type: mobile
 
 {
-  "refreshToken": "REFRESH_TOKEN_HERE"
+  "refreshToken": "{{refreshToken}}"
 }
 
 ### Update profile
@@ -130,13 +108,13 @@ Content-Type: {{contentType}}
   "email": "elemlak202099@gmail.com"
 }
 
-### Reset password (token from email link ?email=...&token=...)
+### Reset password (token from email link ?email=...&token=... — decode first)
 POST {{baseUrl}}/api/auth/reset-password
 Content-Type: {{contentType}}
 
 {
   "email": "elemlak202099@gmail.com",
-  "token": "TOKEN_FROM_EMAIL_LINK",
+  "token": "TOKEN_FROM_EMAIL_LINK_DECODED",
   "newPassword": "NewPassword123!"
 }
 
