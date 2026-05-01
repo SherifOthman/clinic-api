@@ -37,8 +37,9 @@ public static class RateLimitPolicies
     public const string UserLogout  = "user-logout";  // logout — very generous
 
     // Public / anonymous
-    public const string AnonStatic  = "anon-static";  // reference data, pricing, stats
-    public const string AnonContact = "anon-contact"; // contact form — per-IP, hourly cap
+    public const string AnonStatic   = "anon-static";   // reference data, pricing, stats
+    public const string AnonLocation = "anon-location"; // location cascades (country→state→city)
+    public const string AnonContact  = "anon-contact";  // contact form — per-IP, hourly cap
 }
 
 public static class RateLimitingExtensions
@@ -270,6 +271,21 @@ public static class RateLimitingExtensions
                         ReplenishmentPeriod = TimeSpan.FromSeconds(15),
                         QueueLimit          = 0,
                         AutoReplenishment   = true,
+                    }));
+
+            // Location cascades: country → state → city fire in sequence on every form load.
+            // 120 per minute per IP — generous because it's pure read-only reference data
+            // that never changes and is already cached at the handler level.
+            options.AddPolicy(RateLimitPolicies.AnonLocation, ctx =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window            = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 4,
+                        PermitLimit       = 120,
+                        QueueLimit        = 0,
+                        AutoReplenishment = true,
                     }));
 
             // Contact form: 5 per hour per IP — prevents spam, allows genuine retries
