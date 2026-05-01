@@ -9,12 +9,11 @@ namespace ClinicManagement.Persistence.Repositories;
 
 public class AuditLogRepository : Repository<AuditLog>, IAuditLogRepository
 {
+    // Inline DbSet — same pattern as every other repository in this project
     private readonly DbSet<Clinic> _clinics;
 
     public AuditLogRepository(ApplicationDbContext context) : base(context)
-    {
-        _clinics = context.Set<Clinic>();
-    }
+        => _clinics = context.Set<Clinic>();
 
     public async Task<PaginatedResult<AuditLog>> GetProjectedPageAsync(
         string? entityType,
