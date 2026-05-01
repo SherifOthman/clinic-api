@@ -16,10 +16,6 @@ public class Person : BaseEntity
     public DateOnly? DateOfBirth { get; set; }
     public string? ProfileImageUrl { get; set; }
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    public bool HasProfileImage => !string.IsNullOrWhiteSpace(ProfileImageUrl);
-
     // Navigation
     public User? User { get; set; }
     public ICollection<ClinicMember> ClinicMemberships { get; set; } = new List<ClinicMember>();

@@ -31,13 +31,6 @@ public class DoctorInfo : BaseEntity, ISoftDeletable, IAuditableEntity
     /// </summary>
     public int DefaultVisitDurationMinutes { get; set; } = 30;
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    public bool HasSpecialization => SpecializationId.HasValue;
-    public bool HasLicense        => !string.IsNullOrWhiteSpace(LicenseNumber);
-    public bool IsAvailableAtBranch(Guid branchId) =>
-        BranchSchedules.Any(s => s.BranchId == branchId && s.IsActive);
-
     // Navigation
     public ClinicMember ClinicMember { get; set; } = null!;
     public Specialization? Specialization { get; set; }

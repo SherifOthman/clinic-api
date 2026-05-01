@@ -21,12 +21,6 @@ public class Patient : AuditableTenantEntity, ISoftDeletable, IAuditableEntity
     public int? StateGeonameId { get; set; }
     public int? CityGeonameId { get; set; }
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    public bool HasChronicDiseases => ChronicDiseases.Count > 0;
-    public bool HasPhones => Phones.Count > 0;
-    public bool HasLocation => CountryGeonameId.HasValue;
-
     // Navigation
     public Person Person { get; set; } = null!;
     public GeoCountry? Country { get; set; }

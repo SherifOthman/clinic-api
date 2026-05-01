@@ -37,30 +37,11 @@ public class Appointment : AuditableTenantEntity, IAuditableEntity
 
     public Guid? InvoiceId { get; set; }
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    public bool IsPending    => Status == AppointmentStatus.Pending;
-    public bool IsWaiting    => Status == AppointmentStatus.Waiting;
-    public bool IsInProgress => Status == AppointmentStatus.InProgress;
-    public bool IsCompleted  => Status == AppointmentStatus.Completed;
-    public bool IsCancelled  => Status == AppointmentStatus.Cancelled;
-    public bool IsNoShow     => Status == AppointmentStatus.NoShow;
-
-    public bool IsQueued    => Type == AppointmentType.Queue;
-    public bool IsScheduled => Type == AppointmentType.Time;
-
-    public bool CanBeCancelled => Status is AppointmentStatus.Pending or AppointmentStatus.Waiting or AppointmentStatus.InProgress;
-    public bool IsInvoiced     => InvoiceId.HasValue;
-
-    /// <summary>
-    /// Sets Price and DiscountPercent and immediately recalculates FinalPrice.
-    /// This is the only way to update pricing — keeps FinalPrice always in sync.
-    /// </summary>
     public void ApplyPrice(decimal price, decimal? discountPercent = null)
     {
-        Price          = price;
+        Price           = price;
         DiscountPercent = discountPercent;
-        FinalPrice     = discountPercent.HasValue
+        FinalPrice      = discountPercent.HasValue
             ? Math.Round(price * (1 - discountPercent.Value / 100m), 2)
             : price;
     }

@@ -16,12 +16,6 @@ public class ClinicBranch : AuditableTenantEntity, IAuditableEntity
     public bool IsMainBranch { get; set; }
     public bool IsActive { get; set; } = true;
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    public bool HasAddress       => !string.IsNullOrWhiteSpace(AddressLine);
-    public bool HasPhoneNumbers  => PhoneNumbers.Count > 0;
-    public bool HasLocation      => StateGeonameId.HasValue && CityGeonameId.HasValue;
-
     // Navigation properties
     public Clinic Clinic { get; set; } = null!;
     public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();

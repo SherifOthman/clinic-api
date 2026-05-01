@@ -1,6 +1,5 @@
-using ClinicManagement.Application.Features.Auth.QueryModels;
 using ClinicManagement.Application.Abstractions.Repositories;
-using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Application.Features.Auth.QueryModels;
 using ClinicManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +16,11 @@ public class UserRepository : IUserRepository
 
     public UserRepository(ApplicationDbContext context)
     {
-        _users = context.Set<User>();
+        _users     = context.Set<User>();
         _userRoles = context.Set<IdentityUserRole<Guid>>();
-        _roles = context.Set<Role>();
-        _members = context.Set<ClinicMember>();
-        _clinics = context.Set<Clinic>();
+        _roles     = context.Set<Role>();
+        _members   = context.Set<ClinicMember>();
+        _clinics   = context.Set<Clinic>();
     }
 
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -33,8 +32,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername, CancellationToken ct = default)
         => await _users
             .Include(u => u.Person)
-            .FirstOrDefaultAsync(
-                u => u.Email == emailOrUsername || u.UserName == emailOrUsername, ct);
+            .FirstOrDefaultAsync(u => u.Email == emailOrUsername || u.UserName == emailOrUsername, ct);
 
     public async Task<bool> AnyByEmailAsync(string email, CancellationToken ct = default)
         => await _users.AnyAsync(u => u.Email == email, ct);
@@ -59,42 +57,6 @@ public class UserRepository : IUserRepository
 
         return roles.Select(r => new UserRoleRow(r)).ToList();
     }
-
-    public async Task<UserSpecializationRow?> GetDoctorSpecializationAsync(Guid userId, CancellationToken ct = default)
-    {
-        var spec = await _members
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .AsNoTracking()
-            .Where(m => m.UserId == userId && m.DoctorInfo != null && m.DoctorInfo.Specialization != null)
-            .Select(m => new
-            {
-                m.DoctorInfo!.Specialization!.NameEn,
-                m.DoctorInfo!.Specialization!.NameAr,
-            })
-            .FirstOrDefaultAsync(ct);
-
-        return spec is null ? null : new UserSpecializationRow(spec.NameEn, spec.NameAr);
-    }
-
-    public async Task<bool> HasClinicAsync(Guid userId, CancellationToken ct = default)
-        => await _clinics
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .AnyAsync(c => c.OwnerUserId == userId, ct);
-
-    public async Task<UserProfileRow?> GetProfileAsync(Guid userId, CancellationToken ct = default)
-        => await _users
-            .AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => new UserProfileRow(
-                u.UserName!,
-                u.Person.FullName,
-                u.Email!,
-                u.PhoneNumber,
-                u.Person.ProfileImageUrl,
-                u.EmailConfirmed,
-                u.Person.Gender.ToString(),
-                u.PasswordHash != null))
-            .FirstOrDefaultAsync(ct);
 
     public async Task<GetMeProjection?> GetMeProjectionAsync(Guid userId, CancellationToken ct = default)
         => await _users

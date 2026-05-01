@@ -13,9 +13,6 @@ public interface IUserRepository
     Task<bool> AnyByNormalizedEmailAsync(string normalizedEmail, CancellationToken ct = default);
     Task<bool> AnyByNormalizedUsernameAsync(string normalizedUsername, CancellationToken ct = default);
     Task<List<UserRoleRow>> GetRolesByUserIdAsync(Guid userId, CancellationToken ct = default);
-    Task<UserSpecializationRow?> GetDoctorSpecializationAsync(Guid userId, CancellationToken ct = default);
-    Task<bool> HasClinicAsync(Guid userId, CancellationToken ct = default);
-    Task<UserProfileRow?> GetProfileAsync(Guid userId, CancellationToken ct = default);
 
     /// <summary>
     /// Single-query projection for GET /auth/me.

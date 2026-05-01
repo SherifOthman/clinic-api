@@ -30,11 +30,6 @@ public class ClinicMember : AuditableTenantEntity, IAuditableEntity
     public bool IsReceptionist => Role == ClinicMemberRole.Receptionist;
     public bool IsNurse        => Role == ClinicMemberRole.Nurse;
 
-    /// <summary>True once the person has registered an account and linked it to this membership.</summary>
-    public bool HasAccount => UserId.HasValue;
-
-    public int DaysActive => (int)(DateTimeOffset.UtcNow - JoinedAt).TotalDays;
-
     // Navigation
     public Person Person { get; set; } = null!;
     public User? User { get; set; }
