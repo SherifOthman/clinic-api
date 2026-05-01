@@ -1,12 +1,40 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# ─────────────────────────────────────────────────────────────────────────────
-# AUTH
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
+# AUTH — Full flow in order
+#
+# REGISTRATION FLOW:
+#   1. POST /register          → creates account, sends confirmation email
+#   2. (user clicks email link) → frontend reads ?email=...&token=... from URL
+#   3. POST /confirm-email     → activates account (email + token from link)
+#   4. POST /login             → get tokens
+#   5. POST /onboarding/complete → (ClinicOwner only, first login)
+#
+# PASSWORD RESET FLOW:
+#   1. POST /forgot-password   → sends reset email (always 204, no enumeration)
+#   2. (user clicks email link) → frontend reads ?email=...&token=... from URL
+#   3. POST /reset-password    → sets new password (email + token from link)
+#
+# TOKEN REFRESH FLOW (web):
+#   - Tokens live in HttpOnly cookies — browser sends them automatically
+#   - POST /refresh with no body — reads cookie automatically
+#
+# TOKEN REFRESH FLOW (mobile):
+#   - Tokens returned in response body
+#   - POST /refresh with { "refreshToken": "..." } + X-Client-Type: mobile
+#
+# NOTE on tokens in confirm-email and reset-password:
+#   The token in the email link is URL-encoded. The frontend must decode it
+#   (decodeURIComponent) before sending it in the JSON body.
+# =============================================================================
+
+# ── Step 1: Register ──────────────────────────────────────────────────────────
 
 ### Register a new clinic owner
 # RegisterCommand: FullName, UserName, Email, Password, Gender, PhoneNumber
+# → 201 Created + sends confirmation email
+# → 400 if email/username taken or password too weak
 POST {{baseUrl}}/api/auth/register
 Content-Type: {{contentType}}
 
@@ -19,34 +47,99 @@ Content-Type: {{contentType}}
   "phoneNumber": "+966501234567"
 }
 
-### Login (web — tokens set as HttpOnly cookies)
+# ── Step 2: Confirm email ─────────────────────────────────────────────────────
+
+### Confirm email address
+# ConfirmEmailCommand: Email, Token
+# Token comes from the email link: /confirm-email?email=...&token=...
+# Frontend decodes the URL params and POSTs them here.
+# → 204 NoContent on success
+# → 400 if token invalid/expired or email already confirmed
+POST {{baseUrl}}/api/auth/confirm-email
+Content-Type: {{contentType}}
+
+{
+  "email": "ahmed@clinic.com",
+  "token": "TOKEN_FROM_EMAIL_LINK"
+}
+
+### Resend confirmation email (if token expired or email not received)
+# ResendEmailVerificationCommand: Email
+# → 204 NoContent (always, even if email not found — prevents enumeration)
+POST {{baseUrl}}/api/auth/resend-email-verification
+Content-Type: {{contentType}}
+
+{
+  "email": "ahmed@clinic.com"
+}
+
+# ── Step 3: Login ─────────────────────────────────────────────────────────────
+
+### Login — web client (tokens set as HttpOnly cookies, body returns nulls)
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "emailOrUsername": "owner@clinic.com",
+  "emailOrUsername": "ahmed@clinic.com",
   "password": "Password123!"
 }
 
 @token = {{login.response.body.$.accessToken}}
 
-### Login (mobile — tokens returned in body)
+### Login — mobile client (tokens returned in body)
 # @name loginMobile
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 X-Client-Type: mobile
 
 {
-  "emailOrUsername": "owner@clinic.com",
+  "emailOrUsername": "ahmed@clinic.com",
   "password": "Password123!"
 }
 
 @mobileToken = {{loginMobile.response.body.$.accessToken}}
 
-### Get current user (me)
+# ── Step 4: Get current user ──────────────────────────────────────────────────
+
+### Get current user profile
+# Returns: userName, fullName, email, roles, permissions, emailConfirmed,
+#          onboardingCompleted, hasPassword, gender, staffId, weekStartDay, etc.
+# hasPassword=false means user registered via Google OAuth — no change-password
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
+
+# ── Token management ──────────────────────────────────────────────────────────
+
+### Refresh token — web (reads HttpOnly cookie automatically, no body needed)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+### Refresh token — mobile (token in body)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+X-Client-Type: mobile
+
+{
+  "refreshToken": "REFRESH_TOKEN_HERE"
+}
+
+### Logout — web (clears HttpOnly cookies)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+### Logout — mobile (revokes refresh token)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{mobileToken}}
+Content-Type: {{contentType}}
+X-Client-Type: mobile
+
+{
+  "refreshToken": "REFRESH_TOKEN_HERE"
+}
+
+# ── Profile management ────────────────────────────────────────────────────────
 
 ### Update profile
 # UpdateProfileRequest: FullName, UserName, PhoneNumber, Gender
@@ -61,7 +154,7 @@ Content-Type: {{contentType}}
   "gender": "Male"
 }
 
-### Upload profile image (multipart)
+### Upload profile image (multipart/form-data)
 PUT {{baseUrl}}/api/auth/profile/image
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----Boundary
@@ -77,38 +170,11 @@ Content-Type: image/jpeg
 DELETE {{baseUrl}}/api/auth/profile/image
 Authorization: Bearer {{token}}
 
-### Confirm email
-# ConfirmEmailCommand: Email, Token
-POST {{baseUrl}}/api/auth/confirm-email
-Content-Type: {{contentType}}
+# ── Password management ───────────────────────────────────────────────────────
 
-{
-  "email": "ahmed@clinic.com",
-  "token": "CONFIRMATION_TOKEN_HERE"
-}
-
-### Forgot password
-# ForgotPasswordCommand: Email
-POST {{baseUrl}}/api/auth/forgot-password
-Content-Type: {{contentType}}
-
-{
-  "email": "owner@clinic.com"
-}
-
-### Reset password
-# ResetPasswordCommand: Email, Token, NewPassword
-POST {{baseUrl}}/api/auth/reset-password
-Content-Type: {{contentType}}
-
-{
-  "email": "owner@clinic.com",
-  "token": "RESET_TOKEN_HERE",
-  "newPassword": "NewPassword123!"
-}
-
-### Change password (authenticated)
+### Change password (authenticated — only if hasPassword=true from /me)
 # ChangePasswordCommand: CurrentPassword, NewPassword
+# → 400 if currentPassword is wrong
 POST {{baseUrl}}/api/auth/change-password
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -118,47 +184,35 @@ Content-Type: {{contentType}}
   "newPassword": "NewPassword123!"
 }
 
-### Resend email verification
-# ResendEmailVerificationCommand: Email
-POST {{baseUrl}}/api/auth/resend-email-verification
+### Forgot password (unauthenticated)
+# ForgotPasswordCommand: Email
+# → always 204 NoContent regardless of whether email exists (prevents enumeration)
+# → sends reset link to email: /reset-password?email=...&token=...
+POST {{baseUrl}}/api/auth/forgot-password
 Content-Type: {{contentType}}
 
 {
   "email": "ahmed@clinic.com"
 }
 
-### Refresh token (web — reads from cookie automatically)
-POST {{baseUrl}}/api/auth/refresh
+### Reset password (unauthenticated)
+# ResetPasswordCommand: Email, Token, NewPassword
+# Token comes from the email link: /reset-password?email=...&token=...
+# Frontend decodes the URL params and POSTs them here.
+# → 400 if token invalid/expired
+POST {{baseUrl}}/api/auth/reset-password
 Content-Type: {{contentType}}
-
-### Refresh token (mobile)
-# RefreshTokenRequest: RefreshToken
-POST {{baseUrl}}/api/auth/refresh
-Content-Type: {{contentType}}
-X-Client-Type: mobile
 
 {
-  "refreshToken": "REFRESH_TOKEN_HERE"
+  "email": "ahmed@clinic.com",
+  "token": "TOKEN_FROM_EMAIL_LINK",
+  "newPassword": "NewPassword123!"
 }
 
-### Check email availability
+# ── Availability checks (for registration form) ───────────────────────────────
+
+### Check if email is available
 GET {{baseUrl}}/api/auth/check-email?email=newuser@clinic.com
 
-### Check username availability
+### Check if username is available
 GET {{baseUrl}}/api/auth/check-username?username=newuser
-
-### Logout (web)
-POST {{baseUrl}}/api/auth/logout
-Authorization: Bearer {{token}}
-Content-Type: {{contentType}}
-
-### Logout (mobile)
-# LogoutRequest: RefreshToken
-POST {{baseUrl}}/api/auth/logout
-Authorization: Bearer {{mobileToken}}
-Content-Type: {{contentType}}
-X-Client-Type: mobile
-
-{
-  "refreshToken": "REFRESH_TOKEN_HERE"
-}
