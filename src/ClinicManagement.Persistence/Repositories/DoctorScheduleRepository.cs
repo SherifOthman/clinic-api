@@ -36,21 +36,47 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
         return schedule;
     }
 
-    public Task<List<DoctorForBranchRow>> GetDoctorsForBranchAsync(Guid branchId, CancellationToken ct = default)
+    public async Task<List<DoctorForBranchRow>> GetDoctorsForBranchAsync(Guid branchId, CancellationToken ct = default)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        return _db.Set<DoctorBranchSchedule>()
+
+        // Load schedules and sessions in two flat queries — avoids a correlated
+        // subquery per doctor that EF generates when .Any() is inside .Select()
+        var schedules = await _db.Set<DoctorBranchSchedule>()
             .AsNoTracking()
             .Where(s => s.BranchId == branchId && s.IsActive)
+            .Select(s => new
+            {
+                s.DoctorInfoId,
+                MemberId        = s.DoctorInfo.ClinicMemberId,
+                FullName        = s.DoctorInfo.ClinicMember.Person.FullName,
+                ProfileImageUrl = s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
+                AppointmentType = s.AppointmentType.ToString(),
+                s.DoctorInfo.DefaultVisitDurationMinutes,
+            })
+            .ToListAsync(ct);
+
+        if (schedules.Count == 0)
+            return [];
+
+        // Single query for all sessions today — no per-doctor subquery
+        var doctorInfoIds = schedules.Select(s => s.DoctorInfoId).ToList();
+        var checkedInToday = await _db.Set<DoctorSession>()
+            .AsNoTracking()
+            .Where(ds => doctorInfoIds.Contains(ds.DoctorInfoId) && ds.BranchId == branchId && ds.Date == today)
+            .Select(ds => ds.DoctorInfoId)
+            .ToHashSetAsync(ct);
+
+        return schedules
             .Select(s => new DoctorForBranchRow(
                 s.DoctorInfoId,
-                s.DoctorInfo.ClinicMemberId,
-                s.DoctorInfo.ClinicMember.Person.FullName,
-                s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
-                s.AppointmentType.ToString(),                          // ← per-branch now
-                s.DoctorInfo.DefaultVisitDurationMinutes,
-                _db.Set<DoctorSession>().Any(ds => ds.DoctorInfoId == s.DoctorInfoId && ds.BranchId == branchId && ds.Date == today)))
-            .ToListAsync(ct);
+                s.MemberId,
+                s.FullName,
+                s.ProfileImageUrl,
+                s.AppointmentType,
+                s.DefaultVisitDurationMinutes,
+                checkedInToday.Contains(s.DoctorInfoId)))
+            .ToList();
     }
 
     public async Task<List<WorkingDayRow>> GetWorkingDaysByDoctorInfoIdAsync(Guid doctorInfoId, CancellationToken ct = default)

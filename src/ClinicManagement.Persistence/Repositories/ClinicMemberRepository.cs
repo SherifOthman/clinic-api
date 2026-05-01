@@ -28,7 +28,7 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             .FirstOrDefaultAsync(m => m.UserId == userId, ct);
 
     public async Task<ClinicMember?> GetByIdWithDoctorInfoAsync(Guid id, CancellationToken ct = default)
-        => await DbSet.Include(m => m.DoctorInfo).FirstOrDefaultAsync(m => m.Id == id, ct);
+        => await DbSet.AsNoTracking().Include(m => m.DoctorInfo).FirstOrDefaultAsync(m => m.Id == id, ct);
 
     public async Task<int> CountActiveAsync(CancellationToken ct = default)
         => await DbSet.CountAsync(m => m.IsActive, ct);

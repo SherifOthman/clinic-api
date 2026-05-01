@@ -95,4 +95,35 @@ public class UserRepository : IUserRepository
                 u.Person.Gender.ToString(),
                 u.PasswordHash != null))
             .FirstOrDefaultAsync(ct);
+
+    public async Task<GetMeProjection?> GetMeProjectionAsync(Guid userId, CancellationToken ct = default)
+        => await _users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new GetMeProjection(
+                u.UserName!,
+                u.Person.FullName,
+                u.Email!,
+                u.PhoneNumber,
+                u.Person.ProfileImageUrl,
+                u.EmailConfirmed,
+                u.Person.Gender.ToString(),
+                u.PasswordHash != null,
+                // OnboardingCompleted = has an owned clinic
+                _clinics.Any(c => c.OwnerUserId == userId),
+                // Member fields — null when user has no clinic membership (e.g. super admin)
+                _members.Where(m => m.UserId == userId).Select(m => (Guid?)m.Id).FirstOrDefault(),
+                _members.Where(m => m.UserId == userId && m.DoctorInfo != null)
+                        .Select(m => (Guid?)m.DoctorInfo!.Id).FirstOrDefault(),
+                _members.Where(m => m.UserId == userId && m.DoctorInfo != null && m.DoctorInfo.Specialization != null)
+                        .Select(m => m.DoctorInfo!.Specialization!.NameEn).FirstOrDefault(),
+                _members.Where(m => m.UserId == userId && m.DoctorInfo != null && m.DoctorInfo.Specialization != null)
+                        .Select(m => m.DoctorInfo!.Specialization!.NameAr).FirstOrDefault(),
+                // WeekStartDay — from owned clinic or from member's clinic
+                _clinics.Where(c => c.OwnerUserId == userId).Select(c => (int?)c.WeekStartDay).FirstOrDefault()
+                ?? _members.Where(m => m.UserId == userId)
+                           .Join(_clinics, m => m.ClinicId, c => c.Id, (m, c) => (int?)c.WeekStartDay)
+                           .FirstOrDefault()
+                ?? 6))
+            .FirstOrDefaultAsync(ct);
 }

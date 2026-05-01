@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Repositories;
+using ClinicManagement.Application.Features.Appointments.Queries;
 using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,63 @@ public class AppointmentRepository : IAppointmentRepository
 
     public AppointmentRepository(ApplicationDbContext ctx) => _set = ctx.Set<Appointment>();
 
-    // ── Reads — AsNoTracking for performance ──────────────────────────────────
+    // ── Projected reads — push mapping to SQL, avoid entity materialisation ──
+
+    public Task<List<AppointmentDto>> GetProjectedByDoctorsAndDateAsync(
+        List<Guid> doctorInfoIds, DateOnly date, CancellationToken ct = default)
+        => _set.AsNoTracking()
+               .Where(a => doctorInfoIds.Contains(a.DoctorInfoId) && a.Date == date)
+               .OrderBy(a => a.DoctorInfoId)
+               .ThenBy(a => a.QueueNumber ?? 0)
+               .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
+               .Select(a => new AppointmentDto(
+                   a.Id,
+                   a.DoctorInfoId,
+                   a.Doctor != null ? a.Doctor.ClinicMember.Person.FullName : "—",
+                   a.PatientId,
+                   a.Patient != null ? a.Patient.Person.FullName : "—",
+                   a.Patient != null ? a.Patient.PatientCode : null,
+                   a.QueueNumber,
+                   a.ScheduledTime != null ? a.ScheduledTime.Value.ToString("HH:mm") : null,
+                   a.EndTime != null ? a.EndTime.Value.ToString("HH:mm") : null,
+                   a.VisitDurationMinutes,
+                   a.Type.ToString(),
+                   a.Status.ToString(),
+                   a.VisitType != null ? a.VisitType.Name : "—",
+                   a.FinalPrice,
+                   a.CreatedAt,
+                   a.Patient != null ? a.Patient.Person.Gender.ToString() : null,
+                   a.Patient != null ? a.Patient.Person.DateOfBirth : null))
+               .ToListAsync(ct);
+
+    public Task<List<AppointmentDto>> GetProjectedByBranchAndDateAsync(
+        Guid branchId, DateOnly date, CancellationToken ct = default)
+        => _set.AsNoTracking()
+               .Where(a => a.BranchId == branchId && a.Date == date)
+               .OrderBy(a => a.DoctorInfoId)
+               .ThenBy(a => a.QueueNumber ?? 0)
+               .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
+               .Select(a => new AppointmentDto(
+                   a.Id,
+                   a.DoctorInfoId,
+                   a.Doctor != null ? a.Doctor.ClinicMember.Person.FullName : "—",
+                   a.PatientId,
+                   a.Patient != null ? a.Patient.Person.FullName : "—",
+                   a.Patient != null ? a.Patient.PatientCode : null,
+                   a.QueueNumber,
+                   a.ScheduledTime != null ? a.ScheduledTime.Value.ToString("HH:mm") : null,
+                   a.EndTime != null ? a.EndTime.Value.ToString("HH:mm") : null,
+                   a.VisitDurationMinutes,
+                   a.Type.ToString(),
+                   a.Status.ToString(),
+                   a.VisitType != null ? a.VisitType.Name : "—",
+                   a.FinalPrice,
+                   a.CreatedAt,
+                   a.Patient != null ? a.Patient.Person.Gender.ToString() : null,
+                   a.Patient != null ? a.Patient.Person.DateOfBirth : null))
+               .ToListAsync(ct);
+
+    // ── Entity reads — AsNoTracking for performance ───────────────────────────
 
     public Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => _set.AsNoTracking()
@@ -31,6 +88,7 @@ public class AppointmentRepository : IAppointmentRepository
         => _set.AsNoTracking()
                .Include(a => a.Patient).ThenInclude(p => p.Person)
                .Include(a => a.VisitType)
+               .Include(a => a.Doctor).ThenInclude(d => d.ClinicMember).ThenInclude(m => m.Person)
                .Where(a => doctorInfoIds.Contains(a.DoctorInfoId) && a.Date == date)
                .OrderBy(a => a.DoctorInfoId)
                .ThenBy(a => a.QueueNumber ?? 0)

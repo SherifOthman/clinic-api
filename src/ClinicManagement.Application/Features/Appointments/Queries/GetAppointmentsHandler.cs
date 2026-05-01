@@ -18,34 +18,15 @@ public class GetAppointmentsHandler : IRequestHandler<GetAppointmentsQuery, Resu
 
     public async Task<Result<List<AppointmentDto>>> Handle(GetAppointmentsQuery request, CancellationToken ct)
     {
-        List<Domain.Entities.Appointment> appointments;
+        // Use projected queries — mapping happens in SQL, no entity materialisation needed
+        List<AppointmentDto> list;
 
         if (request.DoctorInfoIds is { Count: > 0 })
-            appointments = await _uow.Appointments.GetByDoctorsAndDateAsync(request.DoctorInfoIds, request.Date, ct);
+            list = await _uow.Appointments.GetProjectedByDoctorsAndDateAsync(request.DoctorInfoIds, request.Date, ct);
         else if (request.BranchId.HasValue)
-            appointments = await _uow.Appointments.GetByBranchAndDateAsync(request.BranchId.Value, request.Date, ct);
+            list = await _uow.Appointments.GetProjectedByBranchAndDateAsync(request.BranchId.Value, request.Date, ct);
         else
-            appointments = [];
-
-        var list = appointments.Select(a => new AppointmentDto(
-            a.Id,
-            a.DoctorInfoId,
-            a.Doctor?.ClinicMember?.Person?.FullName ?? "—",
-            a.PatientId,
-            a.Patient?.Person?.FullName ?? "—",
-            a.Patient?.PatientCode,
-            a.QueueNumber,
-            a.ScheduledTime?.ToString("HH:mm"),
-            a.EndTime?.ToString("HH:mm"),
-            a.VisitDurationMinutes,
-            a.Type.ToString(),
-            a.Status.ToString(),
-            a.VisitType?.Name ?? "—",
-            a.FinalPrice,
-            a.CreatedAt,
-            a.Patient?.Person?.Gender.ToString(),
-            a.Patient?.Person?.DateOfBirth
-        )).ToList();
+            list = [];
 
         return Result.Success(list);
     }

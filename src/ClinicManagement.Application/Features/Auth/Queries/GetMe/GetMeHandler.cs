@@ -10,72 +10,39 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
 {
     public async Task<Result<GetMeDto>> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
-        var profile = await uow.Users.GetProfileAsync(request.UserId, cancellationToken);
-        if (profile is null)
+        // Single query: profile + member + clinic week start day + doctor info
+        var projection = await uow.Users.GetMeProjectionAsync(request.UserId, cancellationToken);
+        if (projection is null)
             return Result.Failure<GetMeDto>(ErrorCodes.NOT_FOUND, "User not found");
 
-        var roles       = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
-        var hasClinic   = await uow.Users.HasClinicAsync(request.UserId, cancellationToken);
-        var hasPassword = profile.HasPassword;
+        // Roles and permissions are in separate tables — run in parallel
+        var rolesTask = uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
+        var permissionsTask = projection.MemberId.HasValue
+            ? uow.Permissions.GetByMemberIdAsync(projection.MemberId.Value, cancellationToken)
+            : Task.FromResult(new List<Domain.Enums.Permission>());
 
-        string? specializationNameEn = null;
-        string? specializationNameAr = null;
-        Guid? staffId  = null;
-        Guid? memberId = null;
-        int weekStartDay = 6; // default Saturday
-        List<string> permissions = [];
+        await Task.WhenAll(rolesTask, permissionsTask);
 
-        var member = await uow.Members.GetByUserIdAsync(request.UserId, cancellationToken);
-        if (member is not null)
-        {
-            staffId = member.Id;
-            var memberPermissions = await uow.Permissions.GetByMemberIdAsync(member.Id, cancellationToken);
-            permissions = memberPermissions.Select(p => p.ToString()).ToList();
-        }
-
-        // Load clinic WeekStartDay (works for both owner and staff)
-        var clinic = await uow.Clinics.GetByOwnerIdAsync(request.UserId, cancellationToken);
-        if (clinic is null && member is not null)
-        {
-            var memberClinic = await uow.Clinics.GetByIdAsync(member.ClinicId, cancellationToken);
-            weekStartDay = memberClinic?.WeekStartDay ?? 6;
-        }
-        else if (clinic is not null)
-        {
-            weekStartDay = clinic.WeekStartDay;
-        }
-
-        if (roles.Any(r => r.RoleName == UserRoles.Doctor))
-        {
-            var spec = await uow.Users.GetDoctorSpecializationAsync(request.UserId, cancellationToken);
-            specializationNameEn = spec?.NameEn;
-            specializationNameAr = spec?.NameAr;
-
-            if (member is not null)
-            {
-                var memberWithDoctor = await uow.Members.GetByIdWithDoctorInfoAsync(member.Id, cancellationToken);
-                if (memberWithDoctor?.DoctorInfo is not null)
-                    memberId = memberWithDoctor.DoctorInfo.Id;
-            }
-        }
+        var roles       = rolesTask.Result;
+        var permissions = permissionsTask.Result;
 
         return Result.Success(new GetMeDto(
-            UserName:             profile.UserName,
-            FullName:             profile.FullName,
-            Email:                profile.Email,
-            PhoneNumber:          profile.PhoneNumber ?? string.Empty,
-            ProfileImageUrl:      profile.ProfileImageUrl,
+            UserName:             projection.UserName,
+            FullName:             projection.FullName,
+            Email:                projection.Email,
+            PhoneNumber:          projection.PhoneNumber ?? string.Empty,
+            ProfileImageUrl:      projection.ProfileImageUrl,
             Roles:                roles.Select(r => r.RoleName).ToList(),
-            Permissions:          permissions,
-            EmailConfirmed:       profile.EmailConfirmed,
-            OnboardingCompleted:  hasClinic,
-            HasPassword:          hasPassword,
-            SpecializationNameEn: specializationNameEn,
-            SpecializationNameAr: specializationNameAr,
-            Gender:               profile.Gender,
-            StaffId:              staffId,
-            MemberId:             memberId,
-            WeekStartDay:         weekStartDay
+            Permissions:          permissions.Select(p => p.ToString()).ToList(),
+            EmailConfirmed:       projection.EmailConfirmed,
+            OnboardingCompleted:  projection.OnboardingCompleted,
+            HasPassword:          projection.HasPassword,
+            SpecializationNameEn: projection.SpecializationNameEn,
+            SpecializationNameAr: projection.SpecializationNameAr,
+            Gender:               projection.Gender,
+            StaffId:              projection.MemberId,
+            MemberId:             projection.DoctorInfoId,
+            WeekStartDay:         projection.WeekStartDay
         ));
     }
 }

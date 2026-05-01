@@ -16,4 +16,11 @@ public interface IUserRepository
     Task<UserSpecializationRow?> GetDoctorSpecializationAsync(Guid userId, CancellationToken ct = default);
     Task<bool> HasClinicAsync(Guid userId, CancellationToken ct = default);
     Task<UserProfileRow?> GetProfileAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Single-query projection for GET /auth/me.
+    /// Returns profile + member + clinic week start day in one round-trip.
+    /// Roles and permissions are fetched separately (different tables, parallel-friendly).
+    /// </summary>
+    Task<GetMeProjection?> GetMeProjectionAsync(Guid userId, CancellationToken ct = default);
 }

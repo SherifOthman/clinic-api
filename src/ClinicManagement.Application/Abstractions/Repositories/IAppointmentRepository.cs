@@ -1,10 +1,15 @@
+using ClinicManagement.Application.Features.Appointments.Queries;
 using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
 public interface IAppointmentRepository
 {
-    // ── Reads (AsNoTracking) ──────────────────────────────────────────────────
+    // ── Projected reads (preferred — no entity materialisation) ──────────────
+    Task<List<AppointmentDto>> GetProjectedByDoctorsAndDateAsync(List<Guid> doctorInfoIds, DateOnly date, CancellationToken ct = default);
+    Task<List<AppointmentDto>> GetProjectedByBranchAndDateAsync(Guid branchId, DateOnly date, CancellationToken ct = default);
+
+    // ── Entity reads (AsNoTracking) — kept for detail/update scenarios ────────
     Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<List<Appointment>> GetByDoctorAndDateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default);
     Task<List<Appointment>> GetByDoctorsAndDateAsync(List<Guid> doctorInfoIds, DateOnly date, CancellationToken ct = default);

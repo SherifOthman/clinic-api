@@ -33,8 +33,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 
         var elapsedMilliseconds = _timer.ElapsedMilliseconds;
 
-        // Log warning if request takes longer than 500ms
-        if (elapsedMilliseconds > 500)
+        // Log warning if request takes longer than 200ms
+        if (elapsedMilliseconds > 200)
         {
             var requestName = typeof(TRequest).Name;
 
