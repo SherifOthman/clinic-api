@@ -4,7 +4,6 @@ using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence.Jobs;
 using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
-using ClinicManagement.Persistence.Seeders.Demo;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -56,8 +55,6 @@ public static class DependencyInjection
         services.AddScoped<SpecializationSeedService>();
         services.AddScoped<ChronicDiseaseSeedService>();
         services.AddScoped<SubscriptionPlanSeedService>();
-        services.AddScoped<DemoUsersSeedService>();
-        services.AddScoped<DemoDataOrchestrator>();
         services.AddScoped<GeoLocationSeedService>();
 
         // Hangfire jobs — data-access-heavy jobs belong in Persistence
