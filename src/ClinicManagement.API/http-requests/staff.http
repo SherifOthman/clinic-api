@@ -1,5 +1,10 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
+@staffId = 00000000-0000-0000-0000-000000000001
+@invitationId = 00000000-0000-0000-0000-000000000002
+@branchId = 00000000-0000-0000-0000-000000000003
+@visitTypeId = 00000000-0000-0000-0000-000000000004
+@specializationId = 00000000-0000-0000-0000-000000000005
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STAFF
@@ -16,11 +21,6 @@ Content-Type: {{contentType}}
 }
 
 @token = {{login.response.body.$.accessToken}}
-@staffId = 00000000-0000-0000-0000-000000000001
-@invitationId = 00000000-0000-0000-0000-000000000002
-@branchId = 00000000-0000-0000-0000-000000000003
-@visitTypeId = 00000000-0000-0000-0000-000000000004
-@specializationId = 00000000-0000-0000-0000-000000000005
 
 # ── Staff list & detail ───────────────────────────────────────────────────────
 
@@ -28,15 +28,15 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/api/staff?pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
-### Get staff filtered by role
+### Filter by role
 GET {{baseUrl}}/api/staff?role=Doctor&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
-### Get staff filtered by active status
+### Filter by active status
 GET {{baseUrl}}/api/staff?isActive=true&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
-### Get staff sorted by name
+### Sort by name
 GET {{baseUrl}}/api/staff?sortBy=fullName&sortDirection=asc&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
@@ -45,6 +45,7 @@ GET {{baseUrl}}/api/staff/{{staffId}}
 Authorization: Bearer {{token}}
 
 ### Activate staff member
+# SetStaffActiveStatusRequest: IsActive
 PATCH {{baseUrl}}/api/staff/{{staffId}}/active-status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -65,6 +66,7 @@ Content-Type: {{contentType}}
 # ── Invitations ───────────────────────────────────────────────────────────────
 
 ### Invite a doctor
+# InviteStaffCommand: Role, Email, SpecializationId?
 POST {{baseUrl}}/api/staff/invite
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -75,7 +77,7 @@ Content-Type: {{contentType}}
   "specializationId": "{{specializationId}}"
 }
 
-### Invite a receptionist
+### Invite a receptionist (no specializationId needed)
 POST {{baseUrl}}/api/staff/invite
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -89,7 +91,8 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/api/staff/invitations?pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
-### Get pending invitations only
+### Get pending invitations only (status=0)
+# InvitationStatus: Pending=0, Accepted=1, Canceled=2, Expired=3
 GET {{baseUrl}}/api/staff/invitations?status=0&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
@@ -97,7 +100,7 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/staff/invitations/{{invitationId}}
 Authorization: Bearer {{token}}
 
-### Resend invitation
+### Resend invitation (extends expiry by 7 days)
 PATCH {{baseUrl}}/api/staff/invitations/{{invitationId}}/resend
 Authorization: Bearer {{token}}
 
@@ -106,6 +109,7 @@ DELETE {{baseUrl}}/api/staff/invitations/{{invitationId}}
 Authorization: Bearer {{token}}
 
 ### Accept invitation with registration (public — no auth)
+# AcceptInvitationRequest: FullName, UserName, Password, PhoneNumber, Gender
 POST {{baseUrl}}/api/staff/invitations/INVITATION_TOKEN_HERE/accept-with-registration
 Content-Type: {{contentType}}
 
@@ -120,6 +124,7 @@ Content-Type: {{contentType}}
 # ── Owner registers as doctor ─────────────────────────────────────────────────
 
 ### Set clinic owner as doctor
+# SetOwnerAsDoctorRequest: SpecializationId?
 PATCH {{baseUrl}}/api/staff/me/doctor-profile
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -139,13 +144,14 @@ GET {{baseUrl}}/api/staff/{{staffId}}/working-days?branchId={{branchId}}
 Authorization: Bearer {{token}}
 
 ### Save working days
+# SaveWorkingDaysRequest: BranchId, Days[]
+# WorkingDayRequest: Day (0=Sun…6=Sat), StartTime, EndTime, IsAvailable
 PUT {{baseUrl}}/api/staff/{{staffId}}/working-days
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
   "branchId": "{{branchId}}",
-  "staffId": "{{staffId}}",
   "days": [
     { "day": 0, "startTime": "09:00", "endTime": "17:00", "isAvailable": false },
     { "day": 1, "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
@@ -153,7 +159,7 @@ Content-Type: {{contentType}}
     { "day": 3, "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
     { "day": 4, "startTime": "09:00", "endTime": "17:00", "isAvailable": true },
     { "day": 5, "startTime": "09:00", "endTime": "14:00", "isAvailable": true },
-    { "day": 6, "startTime": "09:00", "endTime": "14:00", "isAvailable": true }
+    { "day": 6, "startTime": "09:00", "endTime": "14:00", "isAvailable": false }
   ]
 }
 
@@ -163,7 +169,8 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/api/staff/{{staffId}}/visit-types?branchId={{branchId}}
 Authorization: Bearer {{token}}
 
-### Add a new visit type
+### Add a new visit type (visitTypeId = null → create)
+# UpsertDoctorVisitTypeRequest: BranchId, VisitTypeId?, Name, Price, IsActive
 PUT {{baseUrl}}/api/staff/{{staffId}}/visit-types
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -176,7 +183,7 @@ Content-Type: {{contentType}}
   "isActive": true
 }
 
-### Update an existing visit type
+### Update an existing visit type (visitTypeId set → update)
 PUT {{baseUrl}}/api/staff/{{staffId}}/visit-types
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -202,13 +209,14 @@ Content-Type: {{contentType}}
   "isActive": false
 }
 
-### Remove a visit type
+### Remove a visit type permanently
 DELETE {{baseUrl}}/api/staff/{{staffId}}/visit-types/{{visitTypeId}}
 Authorization: Bearer {{token}}
 
 # ── Schedule lock ─────────────────────────────────────────────────────────────
 
-### Allow doctor to self-manage schedule
+### Allow doctor to self-manage their schedule
+# SetDoctorScheduleLockRequest: CanSelfManage
 PATCH {{baseUrl}}/api/staff/{{staffId}}/schedule-lock
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -217,7 +225,7 @@ Content-Type: {{contentType}}
   "canSelfManage": true
 }
 
-### Lock doctor schedule (owner-only)
+### Lock doctor schedule (owner manages it)
 PATCH {{baseUrl}}/api/staff/{{staffId}}/schedule-lock
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -232,7 +240,14 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/api/staff/{{staffId}}/permissions
 Authorization: Bearer {{token}}
 
-### Set staff member permissions
+### Set staff member permissions (replaces all existing)
+# Body: array of permission strings
+# Valid values: ViewPatients, CreatePatient, EditPatient, DeletePatient,
+#               ViewStaff, InviteStaff, ManageStaffStatus,
+#               ViewBranches, ManageBranches,
+#               ManageSchedule, ManageVisitTypes,
+#               ViewAppointments, ManageAppointments,
+#               ViewInvoices, ManageInvoices
 PUT {{baseUrl}}/api/staff/{{staffId}}/permissions
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}

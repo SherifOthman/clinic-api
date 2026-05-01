@@ -1,27 +1,45 @@
-### Login and set token variable
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DASHBOARD
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Login
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
-  "emailOrUsername": "user@example.com",
-  "password": "string"
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
 }
 
-@token = {{login.response.body.$.token}}
+@token = {{login.response.body.$.accessToken}}
 
-### Get public stats
+### Login as SuperAdmin
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "emailOrUsername": "admin@system.com",
+  "password": "Password123!"
+}
+
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
+
+### Get public stats (anonymous — for marketing website)
 GET {{baseUrl}}/api/dashboard/stats/public
 
-### Get clinic staff dashboard stats
+### Get clinic staff dashboard stats (authenticated)
 GET {{baseUrl}}/api/dashboard/stats
 Authorization: Bearer {{token}}
 
-### Get superadmin dashboard stats
+### Get SuperAdmin dashboard stats (cross-clinic totals)
 GET {{baseUrl}}/api/dashboard/stats/superadmin
-Authorization: Bearer {{token}}
+Authorization: Bearer {{adminToken}}
 
-### Get recent patients (ClinicOwner only)
+### Get recent patients (ClinicOwner only — last 5)
 GET {{baseUrl}}/api/dashboard/recent-patients
 Authorization: Bearer {{token}}
-

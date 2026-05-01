@@ -1,10 +1,16 @@
 @baseUrl = http://localhost:5000
+@contentType = application/json
 
-### ── Login as new owner (not yet onboarded) ─────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# ONBOARDING
+# Requires: authenticated ClinicOwner who has NOT yet completed onboarding.
+# Get a valid subscriptionPlanId from GET /api/subscription-plans first.
+# ─────────────────────────────────────────────────────────────────────────────
 
+### Login as new owner (not yet onboarded)
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "emailOrUsername": "newowner@clinic.com",
@@ -13,13 +19,12 @@ Content-Type: application/json
 
 @token = {{login.response.body.$.accessToken}}
 
-### ── Complete onboarding ─────────────────────────────────────────────────────
-# Requires: authenticated ClinicOwner who has NOT yet completed onboarding.
-# SubscriptionPlanId must be a valid plan from GET /api/subscription-plans.
-
+### Complete onboarding
+# CompleteOnboarding: ClinicName, SubscriptionPlanId, BranchName, AddressLine,
+#                     StateGeonameId?, CityGeonameId?, CountryCode?
 POST {{baseUrl}}/api/onboarding/complete
 Authorization: Bearer {{token}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "clinicName": "Al-Shifa Medical Center",
@@ -31,11 +36,10 @@ Content-Type: application/json
   "countryCode": "SA"
 }
 
-### ── Minimal onboarding (no location) ───────────────────────────────────────
-
+### Complete onboarding (minimal — no location)
 POST {{baseUrl}}/api/onboarding/complete
 Authorization: Bearer {{token}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "clinicName": "City Clinic",
@@ -44,6 +48,5 @@ Content-Type: application/json
   "addressLine": "456 Main Street",
   "stateGeonameId": null,
   "cityGeonameId": null,
-  "countryCode": "SA"
+  "countryCode": null
 }
-

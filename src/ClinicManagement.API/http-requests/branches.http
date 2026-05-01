@@ -1,29 +1,32 @@
-@baseUrl = https://localhost:7001
+@baseUrl = http://localhost:5000
+@contentType = application/json
 @branchId = 00000000-0000-0000-0000-000000000001
 
-### ── Authentication (cookie-based — run once) ────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# BRANCHES
+# ─────────────────────────────────────────────────────────────────────────────
 
+### Login
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "emailOrUsername": "owner@clinic.com",
   "password": "Password123!"
 }
 
-###
+@token = {{login.response.body.$.accessToken}}
 
-### ── Get all branches ────────────────────────────────────────────────────────
-
+### Get all branches
 GET {{baseUrl}}/api/branches
+Authorization: Bearer {{token}}
 
-###
-
-### ── Create a branch ─────────────────────────────────────────────────────────
-
+### Create a branch
+# CreateBranchCommand: Name, AddressLine, StateGeonameId?, CityGeonameId?, PhoneNumbers
 POST {{baseUrl}}/api/branches
-Content-Type: application/json
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
 {
   "name": "Main Branch",
@@ -33,12 +36,10 @@ Content-Type: application/json
   "phoneNumbers": ["+966112345678"]
 }
 
-###
-
-### ── Create branch (minimal, no location) ───────────────────────────────────
-
+### Create branch (minimal — no location)
 POST {{baseUrl}}/api/branches
-Content-Type: application/json
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
 {
   "name": "Downtown Branch",
@@ -48,12 +49,11 @@ Content-Type: application/json
   "phoneNumbers": []
 }
 
-###
-
-### ── Update a branch ─────────────────────────────────────────────────────────
-
+### Update a branch
+# UpdateBranchCommand: Name, AddressLine, StateGeonameId?, CityGeonameId?, PhoneNumbers
 PUT {{baseUrl}}/api/branches/{{branchId}}
-Content-Type: application/json
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
 {
   "name": "Main Branch (Updated)",
@@ -63,24 +63,21 @@ Content-Type: application/json
   "phoneNumbers": ["+966112345678", "+966119876543"]
 }
 
-###
-
-### ── Set branch active status ────────────────────────────────────────────────
-
+### Deactivate a branch
+# SetBranchActiveStatusCommand: IsActive
 PATCH {{baseUrl}}/api/branches/{{branchId}}/active-status
-Content-Type: application/json
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
 {
   "isActive": false
 }
 
-###
-
+### Activate a branch
 PATCH {{baseUrl}}/api/branches/{{branchId}}/active-status
-Content-Type: application/json
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
 {
   "isActive": true
 }
-
-###

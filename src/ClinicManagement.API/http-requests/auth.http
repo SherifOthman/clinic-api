@@ -6,14 +6,17 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 ### Register a new clinic owner
+# RegisterCommand: FullName, UserName, Email, Password, Gender, PhoneNumber
 POST {{baseUrl}}/api/auth/register
 Content-Type: {{contentType}}
 
 {
-  "email": "owner@clinic.com",
-  "password": "Password123!",
   "fullName": "Ahmed Al-Rashid",
-  "gender": "Male"
+  "userName": "ahmed.rashid",
+  "email": "ahmed@clinic.com",
+  "password": "Password123!",
+  "gender": "Male",
+  "phoneNumber": "+966501234567"
 }
 
 ### Login (web — tokens set as HttpOnly cookies)
@@ -46,6 +49,7 @@ GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### Update profile
+# UpdateProfileRequest: FullName, UserName, PhoneNumber, Gender
 PUT {{baseUrl}}/api/auth/profile
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -74,15 +78,17 @@ DELETE {{baseUrl}}/api/auth/profile/image
 Authorization: Bearer {{token}}
 
 ### Confirm email
+# ConfirmEmailCommand: Email, Token
 POST {{baseUrl}}/api/auth/confirm-email
 Content-Type: {{contentType}}
 
 {
-  "userId": "00000000-0000-0000-0000-000000000001",
+  "email": "ahmed@clinic.com",
   "token": "CONFIRMATION_TOKEN_HERE"
 }
 
 ### Forgot password
+# ForgotPasswordCommand: Email
 POST {{baseUrl}}/api/auth/forgot-password
 Content-Type: {{contentType}}
 
@@ -91,6 +97,7 @@ Content-Type: {{contentType}}
 }
 
 ### Reset password
+# ResetPasswordCommand: Email, Token, NewPassword
 POST {{baseUrl}}/api/auth/reset-password
 Content-Type: {{contentType}}
 
@@ -101,6 +108,7 @@ Content-Type: {{contentType}}
 }
 
 ### Change password (authenticated)
+# ChangePasswordCommand: CurrentPassword, NewPassword
 POST {{baseUrl}}/api/auth/change-password
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -111,11 +119,12 @@ Content-Type: {{contentType}}
 }
 
 ### Resend email verification
+# ResendEmailVerificationCommand: Email
 POST {{baseUrl}}/api/auth/resend-email-verification
 Content-Type: {{contentType}}
 
 {
-  "email": "owner@clinic.com"
+  "email": "ahmed@clinic.com"
 }
 
 ### Refresh token (web — reads from cookie automatically)
@@ -123,6 +132,7 @@ POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 
 ### Refresh token (mobile)
+# RefreshTokenRequest: RefreshToken
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 X-Client-Type: mobile
@@ -143,6 +153,7 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 ### Logout (mobile)
+# LogoutRequest: RefreshToken
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{mobileToken}}
 Content-Type: {{contentType}}

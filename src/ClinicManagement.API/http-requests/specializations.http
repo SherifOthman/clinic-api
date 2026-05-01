@@ -1,7 +1,9 @@
-@baseUrl = https://localhost:7001
+@baseUrl = http://localhost:5000
 
-### ── Get all specializations (public, no auth required) ─────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# SPECIALIZATIONS  (public — no auth required)
+# Used during onboarding and staff invitation to pick a doctor's specialization.
+# ─────────────────────────────────────────────────────────────────────────────
 
+### Get all specializations
 GET {{baseUrl}}/api/specializations
-
-###

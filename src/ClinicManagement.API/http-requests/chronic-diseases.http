@@ -1,16 +1,26 @@
-### Login and set token variable
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHRONIC DISEASES  (requires authentication)
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Login
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
-  "emailOrUsername": "user@example.com",
-  "password": "string"
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
 }
 
-@token = {{login.response.body.$.token}}
+@token = {{login.response.body.$.accessToken}}
 
 ### Get all chronic diseases
 GET {{baseUrl}}/api/chronic-diseases
 Authorization: Bearer {{token}}
 
+### Get chronic diseases in Arabic
+GET {{baseUrl}}/api/chronic-diseases?language=ar
+Authorization: Bearer {{token}}

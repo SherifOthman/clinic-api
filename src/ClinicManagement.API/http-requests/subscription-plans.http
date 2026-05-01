@@ -1,6 +1,10 @@
 @baseUrl = http://localhost:5000
 
-### ── Get all subscription plans (public, no auth required) ──────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# SUBSCRIPTION PLANS  (public — no auth required)
+# Used during onboarding to pick a plan. Returns name, pricing, limits, and
+# feature flags for each available plan.
+# ─────────────────────────────────────────────────────────────────────────────
 
+### Get all active subscription plans
 GET {{baseUrl}}/api/subscription-plans
-
