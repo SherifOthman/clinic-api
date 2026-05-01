@@ -6,8 +6,8 @@
 #
 # REGISTRATION FLOW:
 #   1. POST /register          → creates account, sends confirmation email
-#   2. (user clicks email link) → frontend reads ?email=...&token=... from URL
-#   3. POST /confirm-email     → activates account (email + token from link)
+#   2. (user clicks email link) → frontend reads ?userId=...&token=... from URL
+#   3. POST /confirm-email     → activates account (userId + token from link)
 #   4. POST /login             → get tokens
 #   5. POST /onboarding/complete → (ClinicOwner only, first login)
 #
@@ -31,7 +31,7 @@
 
 # ── Step 1: Register ──────────────────────────────────────────────────────────
 
-### Register a new clinic owner
+## Register a new clinic owner
 # RegisterCommand: FullName, UserName, Email, Password, Gender, PhoneNumber
 # → 201 Created + sends confirmation email
 # → 400 if email/username taken or password too weak
@@ -50,16 +50,16 @@ Content-Type: {{contentType}}
 # ── Step 2: Confirm email ─────────────────────────────────────────────────────
 
 ### Confirm email address
-# ConfirmEmailCommand: Email, Token
-# Token comes from the email link: /confirm-email?email=...&token=...
-# Frontend decodes the URL params and POSTs them here.
+# ConfirmEmailCommand: UserId, Token
+# Token comes from the email link: /confirm-email?userId=...&token=...
+# Frontend reads the query params and POSTs them here.
 # → 204 NoContent on success
 # → 400 if token invalid/expired or email already confirmed
 POST {{baseUrl}}/api/auth/confirm-email
 Content-Type: {{contentType}}
 
 {
-  "email": "ahmed@clinic.com",
+  "userId": "00000000-0000-0000-0000-000000000001",
   "token": "TOKEN_FROM_EMAIL_LINK"
 }
 
@@ -175,7 +175,7 @@ Authorization: Bearer {{token}}
 ### Change password (authenticated — only if hasPassword=true from /me)
 # ChangePasswordCommand: CurrentPassword, NewPassword
 # → 400 if currentPassword is wrong
-POST {{baseUrl}}/api/auth/change-password
+PATCH {{baseUrl}}/api/auth/password
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 

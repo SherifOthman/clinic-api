@@ -198,9 +198,9 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
-    /// Change current user password
+    /// Change current user password (only available when hasPassword=true)
     /// </summary>
-    [HttpPost("change-password")]
+    [HttpPatch("password")]
     [Authorize]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -238,10 +238,12 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
-    /// Logout current user
+    /// Logout current user — clears cookies (web) or revokes refresh token (mobile).
+    /// AllowAnonymous so an expired access token can still trigger a logout and
+    /// clear the HttpOnly cookies. The refresh token is revoked server-side.
     /// </summary>
     [HttpPost("logout")]
-    [Authorize]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.UserLogout)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request, CancellationToken ct)

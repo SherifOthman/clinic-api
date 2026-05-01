@@ -22,11 +22,14 @@ public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
 
     public async Task<Result> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
     {
-        var user = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
+        // Look up by ID — the token is cryptographically bound to this user ID.
+        // Using email would require an extra lookup and would break if the user
+        // changed their email between registration and clicking the link.
+        var user = await _uow.Users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {
-            _logger.LogWarning("Email confirmation attempted for non-existent user: {Email}", request.Email);
+            _logger.LogWarning("Email confirmation attempted for non-existent user: {UserId}", request.UserId);
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 

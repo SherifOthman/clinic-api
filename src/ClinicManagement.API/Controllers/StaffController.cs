@@ -85,8 +85,8 @@ public class StaffController : BaseApiController
     }
 
     [RequirePermission(Permission.InviteStaff)]
-    [HttpDelete("invitations/{id}")]
-    [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
+    [HttpPatch("invitations/{id:guid}/cancel")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CancelInvitation(Guid id, CancellationToken cancellationToken)
@@ -184,16 +184,31 @@ public class StaffController : BaseApiController
     }
 
     [Authorize]
-    [HttpPut("{id:guid}/visit-types")]
+    [HttpPost("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpsertVisitType(
+    public async Task<IActionResult> CreateVisitType(
         Guid id, [FromBody] UpsertDoctorVisitTypeRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpsertDoctorVisitTypeCommand(id, request.BranchId, request.VisitTypeId, request.Name, request.Price, request.IsActive);
+        var command = new UpsertDoctorVisitTypeCommand(id, request.BranchId, null, request.Name, request.Price, request.IsActive);
         var result = await Sender.Send(command, cancellationToken);
-        return !result.IsSuccess ? HandleResult(result, "Failed to save visit type") : Ok(result.Value);
+        return !result.IsSuccess
+            ? HandleResult(result, "Failed to create visit type")
+            : StatusCode(StatusCodes.Status201Created, result.Value);
+    }
+
+    [Authorize]
+    [HttpPut("{id:guid}/visit-types/{visitTypeId:guid}")]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateVisitType(
+        Guid id, Guid visitTypeId, [FromBody] UpsertDoctorVisitTypeRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpsertDoctorVisitTypeCommand(id, request.BranchId, visitTypeId, request.Name, request.Price, request.IsActive);
+        var result = await Sender.Send(command, cancellationToken);
+        return HandleNoContent(result, "Failed to update visit type");
     }
 
     [Authorize]

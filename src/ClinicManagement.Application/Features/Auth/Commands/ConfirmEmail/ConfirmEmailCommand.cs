@@ -4,6 +4,6 @@ using MediatR;
 namespace ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 
 public record ConfirmEmailCommand(
-    string Email,
+    Guid UserId,
     string Token
 ) : IRequest<Result>;
