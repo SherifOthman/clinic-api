@@ -42,7 +42,7 @@ A full appointment management system supporting two modes per doctor:
 
 **Time-based**: Appointments have a specific scheduled time and duration. The system tracks doctor sessions with check-in, delay detection, and delay resolution (auto-shift remaining appointments, mark as missed, or manual handling).
 
-The appointment status workflow is: `Pending → Waiting → InProgress → Completed / Cancelled / NoShow`. Each appointment stores a `FinalPrice` calculated from the visit type base price and an optional discount percent. Visit types are configured per doctor per branch with custom names and pricing.
+The appointment status workflow is: `Pending → Waiting → InProgress → Completed / Cancelled / NoShow`. Each appointment stores a `FinalPrice` calculated from the visit type base price and an optional discount percent.
 
 ### Location Data
 
@@ -58,7 +58,11 @@ Clinic owners invite staff by email with a role (Doctor or Receptionist). The in
 
 ### Audit Trail
 
-Security events (login, logout, failed attempts, account lockouts) and business events (password changes, staff invitations, permission changes, clinic onboarding) are logged via a MediatR `AuditBehavior` pipeline — any command implementing `IAuditableCommand` is automatically audited on success. Login/logout events are logged manually since they audit failures too. The SuperAdmin can query the full audit trail across all clinics filtered by entity type, action, user, clinic, or date range. Standard logs are purged after 1 month, security events after 3 months, via a batched Hangfire job.
+All data changes are captured automatically via an EF Core `SaveChanges` interceptor. Any entity implementing `IAuditableEntity` (`Patient`, `Appointment`, `ClinicMember`, `DoctorInfo`, `ClinicBranch`, `Clinic`) gets a full field-level diff written to `AuditLogs` on every Create, Update, or Delete — no handler code required. Sensitive fields (`PasswordHash`, `SecurityStamp`, tokens) are excluded from diffs.
+
+Business events that have no entity diff (login, logout, failed login, account lockout, password change, staff invitation, permission changes) are written manually via `IAuditWriter`, which reads the current user context automatically.
+
+The SuperAdmin can query the full audit trail across all clinics filtered by entity type, action, user, clinic, or date range. Standard logs are purged after 12 months, security events after 24 months, via a batched Hangfire job.
 
 ### Contact & Testimonials
 
@@ -87,7 +91,7 @@ Domain         → Entities, enums, value objects, Result<T>, domain logic
 Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jobs
 ```
 
-**CQRS with MediatR** — every operation is either a Command (write) or a Query (read). Four pipeline behaviors run on every request: `LoggingBehavior`, `ValidationBehavior` (FluentValidation, returns structured errors before the handler executes), `PerformanceBehavior` (warns on slow handlers), and `AuditBehavior` (writes an `AuditLog` entry after any command implementing `IAuditableCommand` succeeds).
+**CQRS with MediatR** — every operation is either a Command (write) or a Query (read). Three pipeline behaviors run on every request: `LoggingBehavior`, `ValidationBehavior` (FluentValidation, returns structured errors before the handler executes), and `PerformanceBehavior` (warns on requests exceeding 200ms).
 
 **Result pattern** — handlers return `Result<T>` instead of throwing exceptions for expected failures. `GlobalExceptionMiddleware` catches anything unexpected and returns RFC 7807 Problem Details with a trace ID. Error codes are string constants that map directly to frontend i18n keys.
 
@@ -201,7 +205,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Status flow (Pending → InProgress → Completed/Cancelled) | ✅  |                                        |
 | Doctor check-in with delay detection                     | ✅  |                                        |
 | Delay handling (auto-shift / mark missed / manual)       | ✅  |                                        |
-| Set appointment type per doctor (Queue vs Time)          | ✅  |                                        |
+| Set appointment type per doctor per branch (Queue vs Time) | ✅  |                                        |
 | Queue number assignment (atomic, no race conditions)     | ✅  |                                        |
 | Discount support on appointments                         | ✅  |                                        |
 | Auto-create invoice on payment                           | 🗂️  | Flow designed, not implemented         |
@@ -265,10 +269,11 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 | Feature                                                         | API | Notes                                                    |
 | --------------------------------------------------------------- | --- | -------------------------------------------------------- |
-| Security & business event logging (MediatR AuditBehavior)       | ✅  | Login, password, staff, permissions, onboarding          |
+| Automatic entity change capture (SaveChanges interceptor)       | ✅  | Patient, Appointment, ClinicMember, DoctorInfo, Branch   |
+| Business event logging (IAuditWriter — manual calls)            | ✅  | Login, password, staff, permissions, onboarding          |
 | Permission change logging                                       | ✅  | Granted/revoked diff per change                          |
 | Audit log query (filter by entity, action, user, clinic, date)  | ✅  | SuperAdmin only                                          |
-| Batched retention cleanup (1 month standard, 3 months security) | ✅  | Hangfire job, 5,000 rows/batch                           |
+| Batched retention cleanup (12 months standard, 24 months security) | ✅  | Hangfire job, 5,000 rows/batch                        |
 
 ### Reference Data
 

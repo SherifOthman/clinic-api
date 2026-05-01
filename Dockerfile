@@ -8,13 +8,14 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy solution and all .csproj files first.
-# Docker caches each layer - if these files don't change,
+# Docker caches each layer — if these files don't change,
 # the 'dotnet restore' layer is reused (faster rebuilds).
-COPY ClinicManagement.sln .
+COPY ClinicManagement.slnx .
 COPY src/ClinicManagement.API/ClinicManagement.API.csproj                         src/ClinicManagement.API/
 COPY src/ClinicManagement.Application/ClinicManagement.Application.csproj         src/ClinicManagement.Application/
 COPY src/ClinicManagement.Domain/ClinicManagement.Domain.csproj                   src/ClinicManagement.Domain/
 COPY src/ClinicManagement.Infrastructure/ClinicManagement.Infrastructure.csproj   src/ClinicManagement.Infrastructure/
+COPY src/ClinicManagement.Persistence/ClinicManagement.Persistence.csproj         src/ClinicManagement.Persistence/
 
 # Restore NuGet packages (cached unless .csproj files change)
 RUN dotnet restore

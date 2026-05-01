@@ -53,6 +53,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             var remainingMinutes = lockoutEnd.HasValue ? (int)(lockoutEnd.Value - DateTimeOffset.UtcNow).TotalMinutes + 1 : 30;
 
             _logger.LogWarning("Login attempt for locked account {UserId}", user.Id);
+           
             await _audit.WriteEventAsync("LoginBlocked", $"Account locked, {remainingMinutes} min remaining",
                 overrideUserId: user.Id, overrideFullName: user.Person.FullName,
                 overrideEmail: user.Email, ct: cancellationToken);
@@ -69,6 +70,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             if (await _userManager.IsLockedOutAsync(user))
             {
                 _logger.LogWarning("Account {UserId} locked after multiple failed login attempts", user.Id);
+              
                 await _audit.WriteEventAsync("AccountLocked", "Locked after too many failed attempts",
                     overrideUserId: user.Id, overrideFullName: user.Person.FullName,
                     overrideEmail: user.Email, ct: cancellationToken);
