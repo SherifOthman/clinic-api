@@ -33,6 +33,7 @@ public class ClinicMember : AuditableTenantEntity, IAuditableEntity
     // Navigation
     public Person Person { get; set; } = null!;
     public User? User { get; set; }
+    public Clinic Clinic { get; set; } = null!;
     public DoctorInfo? DoctorInfo { get; set; }
     public ICollection<ClinicMemberPermission> Permissions { get; set; } = new List<ClinicMemberPermission>();
 }

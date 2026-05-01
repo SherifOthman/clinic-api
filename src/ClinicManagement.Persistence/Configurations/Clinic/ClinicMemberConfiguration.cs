@@ -33,7 +33,7 @@ public class ClinicMemberConfiguration : IEntityTypeConfiguration<ClinicMember>
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Clinic>()
+        builder.HasOne(m => m.Clinic)
             .WithMany(c => c.Members)
             .HasForeignKey(m => m.ClinicId)
             .OnDelete(DeleteBehavior.Cascade);

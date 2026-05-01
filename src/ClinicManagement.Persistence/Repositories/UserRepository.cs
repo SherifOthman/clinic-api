@@ -59,35 +59,81 @@ public class UserRepository : IUserRepository
     }
 
     public async Task<GetMeProjection?> GetMeProjectionAsync(Guid userId, CancellationToken ct = default)
-        => await _users
+    {
+        // Query 1: user profile — always a single row, no joins needed
+        var profile = await _users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .Select(u => new GetMeProjection(
-                u.UserName!,
-                u.Person.FullName,
-                u.Email!,
+            .Select(u => new
+            {
+                u.UserName,
+                u.Email,
                 u.PhoneNumber,
+                u.Person.FullName,
                 u.Person.ProfileImageUrl,
+                Gender         = u.Person.Gender.ToString(),
                 u.EmailConfirmed,
-                u.Person.Gender.ToString(),
-                u.PasswordHash != null,
-                // OnboardingCompleted = has an owned clinic
-                _clinics.Any(c => c.OwnerUserId == userId),
-                // Member fields — null when user has no clinic membership (e.g. super admin)
-                _members.Where(m => m.UserId == userId).Select(m => (Guid?)m.Id).FirstOrDefault(),
-                _members.Where(m => m.UserId == userId && m.DoctorInfo != null)
-                        .Select(m => (Guid?)m.DoctorInfo!.Id).FirstOrDefault(),
-                _members.Where(m => m.UserId == userId && m.DoctorInfo != null && m.DoctorInfo.Specialization != null)
-                        .Select(m => m.DoctorInfo!.Specialization!.NameEn).FirstOrDefault(),
-                _members.Where(m => m.UserId == userId && m.DoctorInfo != null && m.DoctorInfo.Specialization != null)
-                        .Select(m => m.DoctorInfo!.Specialization!.NameAr).FirstOrDefault(),
-                // WeekStartDay — from owned clinic or from member's clinic
-                _clinics.Where(c => c.OwnerUserId == userId).Select(c => (int?)c.WeekStartDay).FirstOrDefault()
-                ?? _members.Where(m => m.UserId == userId)
-                           .Join(_clinics, m => m.ClinicId, c => c.Id, (m, c) => (int?)c.WeekStartDay)
-                           .FirstOrDefault()
-                ?? 6,
+                HasPassword    = u.PasswordHash != null,
                 u.LastLoginAt,
-                u.LastPasswordChangeAt))
+                u.LastPasswordChangeAt,
+            })
             .FirstOrDefaultAsync(ct);
+
+        if (profile is null) return null;
+
+        // Query 2: member + clinic context — one join covers all roles.
+        // SuperAdmin has no member record → returns null → all context fields stay null.
+        var context = await _members
+            .AsNoTracking()
+            .Where(m => m.UserId == userId)
+            .Select(m => new
+            {
+                MemberId         = m.Id,
+                DoctorInfoId     = m.DoctorInfo != null ? (Guid?)m.DoctorInfo.Id : null,
+                SpecNameEn       = m.DoctorInfo != null && m.DoctorInfo.Specialization != null
+                                     ? m.DoctorInfo.Specialization.NameEn : null,
+                SpecNameAr       = m.DoctorInfo != null && m.DoctorInfo.Specialization != null
+                                     ? m.DoctorInfo.Specialization.NameAr : null,
+                m.Clinic.WeekStartDay,
+                // OnboardingCompleted: true when the clinic owner has finished setup
+                OnboardingCompleted = m.Clinic.OnboardingCompleted,
+            })
+            .FirstOrDefaultAsync(ct);
+
+        // For clinic owners who haven't joined as a member yet (edge case during onboarding),
+        // fall back to the owned clinic for WeekStartDay and OnboardingCompleted.
+        int weekStartDay        = context?.WeekStartDay ?? 6;
+        bool onboardingCompleted = context?.OnboardingCompleted ?? false;
+
+        if (context is null)
+        {
+            var ownedClinic = await _clinics
+                .AsNoTracking()
+                .Where(c => c.OwnerUserId == userId)
+                .Select(c => new { c.WeekStartDay, c.OnboardingCompleted })
+                .FirstOrDefaultAsync(ct);
+
+            weekStartDay         = ownedClinic?.WeekStartDay ?? 6;
+            onboardingCompleted  = ownedClinic?.OnboardingCompleted ?? false;
+        }
+
+        return new GetMeProjection(
+            UserName:             profile.UserName!,
+            FullName:             profile.FullName,
+            Email:                profile.Email!,
+            PhoneNumber:          profile.PhoneNumber,
+            ProfileImageUrl:      profile.ProfileImageUrl,
+            EmailConfirmed:       profile.EmailConfirmed,
+            Gender:               profile.Gender,
+            HasPassword:          profile.HasPassword,
+            OnboardingCompleted:  onboardingCompleted,
+            MemberId:             context?.MemberId,
+            DoctorInfoId:         context?.DoctorInfoId,
+            SpecializationNameEn: context?.SpecNameEn,
+            SpecializationNameAr: context?.SpecNameAr,
+            WeekStartDay:         weekStartDay,
+            LastLoginAt:          profile.LastLoginAt,
+            LastPasswordChangeAt: profile.LastPasswordChangeAt
+        );
+    }
 }
