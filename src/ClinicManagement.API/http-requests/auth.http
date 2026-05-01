@@ -31,7 +31,7 @@
 
 # ── Step 1: Register ──────────────────────────────────────────────────────────
 
-## Register a new clinic owner
+### Register a new clinic owner
 # RegisterCommand: FullName, UserName, Email, Password, Gender, PhoneNumber
 # → 201 Created + sends confirmation email
 # → 400 if email/username taken or password too weak
@@ -41,7 +41,7 @@ Content-Type: {{contentType}}
 {
   "fullName": "Ahmed Al-Rashid",
   "userName": "ahmed.rashid",
-  "email": "ahmed@clinic.com",
+  "email": "elemlak202099@gmail.com",
   "password": "Password123!",
   "gender": "Male",
   "phoneNumber": "+966501234567"
