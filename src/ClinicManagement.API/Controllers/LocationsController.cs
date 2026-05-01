@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/locations")]
-[EnableRateLimiting(RateLimitPolicies.AnonLocation)]
+[EnableRateLimiting(RateLimitPolicies.AnonStatic)]
 public class LocationsController : BaseApiController
 {
     [HttpGet("countries")]

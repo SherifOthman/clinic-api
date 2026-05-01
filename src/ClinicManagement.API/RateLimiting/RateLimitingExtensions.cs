@@ -37,9 +37,8 @@ public static class RateLimitPolicies
     public const string UserLogout  = "user-logout";  // logout — very generous
 
     // Public / anonymous
-    public const string AnonStatic   = "anon-static";   // reference data, pricing, stats
-    public const string AnonLocation = "anon-location"; // location cascades (country→state→city)
-    public const string AnonContact  = "anon-contact";  // contact form — per-IP, hourly cap
+    public const string AnonStatic  = "anon-static";  // reference data, pricing, stats
+    public const string AnonContact = "anon-contact"; // contact form — per-IP, hourly cap
 }
 
 public static class RateLimitingExtensions
@@ -53,13 +52,28 @@ public static class RateLimitingExtensions
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 
-                // TryGetMetadata only works reliably for FixedWindowLimiter.
-                // SlidingWindow and TokenBucket don't populate RetryAfter metadata,
-                // so we fall back to a sensible default based on the policy type.
-                var retryAfterSeconds = 60; // safe default
+                // Calculate actual retry-after based on the limiter type:
+                // - FixedWindow/SlidingWindow: TryGetMetadata gives the real window remaining
+                // - TokenBucket: refills continuously (pro-rata), so retry-after is the time
+                //   to replenish 1 token = ReplenishmentPeriod / TokensPerPeriod
+                //   We can't read those values here, so we use the metadata if available,
+                //   otherwise fall back to a short default (2s) since token buckets refill fast.
+                int retryAfterSeconds;
 
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    // FixedWindowLimiter populates this correctly
                     retryAfterSeconds = (int)Math.Ceiling(retryAfter.TotalSeconds);
+                }
+                else
+                {
+                    // SlidingWindow and TokenBucket don't populate RetryAfter.
+                    // Token buckets refill continuously — 1 token returns in
+                    // ReplenishmentPeriod / TokensPerPeriod seconds.
+                    // We tag the policy name on the partition key to distinguish them,
+                    // but the simplest correct answer is: try again in 1–2 seconds.
+                    retryAfterSeconds = 2;
+                }
 
                 context.HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString();
 
@@ -271,21 +285,6 @@ public static class RateLimitingExtensions
                         ReplenishmentPeriod = TimeSpan.FromSeconds(15),
                         QueueLimit          = 0,
                         AutoReplenishment   = true,
-                    }));
-
-            // Location cascades: country → state → city fire in sequence on every form load.
-            // 120 per minute per IP — generous because it's pure read-only reference data
-            // that never changes and is already cached at the handler level.
-            options.AddPolicy(RateLimitPolicies.AnonLocation, ctx =>
-                RateLimitPartition.GetSlidingWindowLimiter(
-                    ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                    _ => new SlidingWindowRateLimiterOptions
-                    {
-                        Window            = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 4,
-                        PermitLimit       = 120,
-                        QueueLimit        = 0,
-                        AutoReplenishment = true,
                     }));
 
             // Contact form: 5 per hour per IP — prevents spam, allows genuine retries
