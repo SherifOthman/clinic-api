@@ -37,9 +37,10 @@ public class DemoScheduleSeed
         // ── Doctor 1: Queue, Sun–Thu ──────────────────────────────────────────
         var ownerSchedule = new DoctorBranchSchedule
         {
-            DoctorInfoId = ownerDoctor.Id,
-            BranchId     = branch.Id,
-            IsActive     = true,
+            DoctorInfoId    = ownerDoctor.Id,
+            BranchId        = branch.Id,
+            IsActive        = true,
+            AppointmentType = Domain.Enums.AppointmentType.Queue,
         };
         _db.Set<DoctorBranchSchedule>().Add(ownerSchedule);
         foreach (var day in new[] { 0, 1, 2, 3, 4 }) // Sun–Thu
@@ -55,9 +56,10 @@ public class DemoScheduleSeed
         // ── Doctor 2: Time, Mon–Fri ───────────────────────────────────────────
         var staffSchedule = new DoctorBranchSchedule
         {
-            DoctorInfoId = staffDoctor.Id,
-            BranchId     = branch.Id,
-            IsActive     = true,
+            DoctorInfoId    = staffDoctor.Id,
+            BranchId        = branch.Id,
+            IsActive        = true,
+            AppointmentType = Domain.Enums.AppointmentType.Time,
         };
         _db.Set<DoctorBranchSchedule>().Add(staffSchedule);
         foreach (var day in new[] { 1, 2, 3, 4, 5 }) // Mon–Fri
@@ -73,9 +75,10 @@ public class DemoScheduleSeed
         // ── Doctor 3: Queue, Sun–Thu ──────────────────────────────────────────
         var doctor3Schedule = new DoctorBranchSchedule
         {
-            DoctorInfoId = doctor3.Id,
-            BranchId     = branch.Id,
-            IsActive     = true,
+            DoctorInfoId    = doctor3.Id,
+            BranchId        = branch.Id,
+            IsActive        = true,
+            AppointmentType = Domain.Enums.AppointmentType.Queue,
         };
         _db.Set<DoctorBranchSchedule>().Add(doctor3Schedule);
         foreach (var day in new[] { 0, 1, 2, 3, 4 }) // Sun–Thu
@@ -91,9 +94,10 @@ public class DemoScheduleSeed
         // ── Doctor 4: Time, Tue–Sat ───────────────────────────────────────────
         var doctor4Schedule = new DoctorBranchSchedule
         {
-            DoctorInfoId = doctor4.Id,
-            BranchId     = branch.Id,
-            IsActive     = true,
+            DoctorInfoId    = doctor4.Id,
+            BranchId        = branch.Id,
+            IsActive        = true,
+            AppointmentType = Domain.Enums.AppointmentType.Time,
         };
         _db.Set<DoctorBranchSchedule>().Add(doctor4Schedule);
         foreach (var day in new[] { 2, 3, 4, 5, 6 }) // Tue–Sat

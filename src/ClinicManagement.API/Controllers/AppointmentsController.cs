@@ -96,7 +96,7 @@ public class AppointmentsController : BaseApiController
         return HandleNoContent(result, "Failed to update status");
     }
 
-    /// <summary>Set whether a doctor uses Queue or Time appointments (owner or the doctor themselves).</summary>
+    /// <summary>Set whether a doctor uses Queue or Time appointments at a specific branch (owner or the doctor themselves).</summary>
     [HttpPatch("doctors/{memberId:guid}/appointment-type")]
     [RequirePermission(Permission.ManageAppointments)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
@@ -107,7 +107,7 @@ public class AppointmentsController : BaseApiController
         if (!Enum.TryParse<AppointmentType>(request.AppointmentType, out var apptType))
             return BadRequest("Invalid appointment type. Use 'Queue' or 'Time'.");
 
-        var result = await Sender.Send(new SetDoctorAppointmentTypeCommand(memberId, apptType), ct);
+        var result = await Sender.Send(new SetDoctorAppointmentTypeCommand(memberId, request.BranchId, apptType), ct);
         return HandleNoContent(result, "Failed to set appointment type");
     }
 

@@ -14,8 +14,8 @@ public class SetDoctorAppointmentTypeHandler : IRequestHandler<SetDoctorAppointm
 
     public SetDoctorAppointmentTypeHandler(IUnitOfWork uow, ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _uow          = uow;
+        _currentUser  = currentUser;
     }
 
     public async Task<Result> Handle(SetDoctorAppointmentTypeCommand request, CancellationToken ct)
@@ -27,15 +27,24 @@ public class SetDoctorAppointmentTypeHandler : IRequestHandler<SetDoctorAppointm
         if (member is null || member.ClinicId != clinicId || member.DoctorInfo is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Doctor not found");
 
-        // Allow: clinic owner OR the doctor themselves (when canSelfManageSchedule is true)
-        var isOwner    = _currentUser.Roles.Contains(UserRoles.ClinicOwner);
-        var isSelf     = member.UserId.HasValue && member.UserId == _currentUser.UserId;
-        var canManage  = isOwner || (isSelf && member.DoctorInfo.CanSelfManageSchedule);
+        // Allow: clinic owner OR the doctor themselves (when CanSelfManageSchedule is true)
+        var isOwner   = _currentUser.Roles.Contains(UserRoles.ClinicOwner);
+        var isSelf    = member.UserId.HasValue && member.UserId == _currentUser.UserId;
+        var canManage = isOwner || (isSelf && member.DoctorInfo.CanSelfManageSchedule);
 
         if (!canManage)
-            return Result.Failure(ErrorCodes.FORBIDDEN, "You are not allowed to change this doctor's appointment type.");
+            return Result.Failure(ErrorCodes.FORBIDDEN,
+                "You are not allowed to change this doctor's appointment type.");
 
-        member.DoctorInfo.AppointmentType = request.AppointmentType;
+        // Load the branch schedule — must exist and be active
+        var schedule = await _uow.DoctorSchedules.GetScheduleAsync(
+            member.DoctorInfo.Id, request.BranchId, ct);
+
+        if (schedule is null || !schedule.IsActive)
+            return Result.Failure(ErrorCodes.NOT_FOUND,
+                "Doctor has no active schedule at this branch.");
+
+        schedule.AppointmentType = request.AppointmentType;
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }

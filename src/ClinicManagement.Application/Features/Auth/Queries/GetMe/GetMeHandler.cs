@@ -14,15 +14,14 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
         if (profile is null)
             return Result.Failure<GetMeDto>(ErrorCodes.NOT_FOUND, "User not found");
 
-        var roles     = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
-        var hasClinic = await uow.Users.HasClinicAsync(request.UserId, cancellationToken);
+        var roles       = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
+        var hasClinic   = await uow.Users.HasClinicAsync(request.UserId, cancellationToken);
         var hasPassword = profile.HasPassword;
 
         string? specializationNameEn = null;
         string? specializationNameAr = null;
-        Guid? staffId = null;
+        Guid? staffId  = null;
         Guid? memberId = null;
-        string? appointmentType = null;
         int weekStartDay = 6; // default Saturday
         List<string> permissions = [];
 
@@ -56,10 +55,7 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
             {
                 var memberWithDoctor = await uow.Members.GetByIdWithDoctorInfoAsync(member.Id, cancellationToken);
                 if (memberWithDoctor?.DoctorInfo is not null)
-                {
                     memberId = memberWithDoctor.DoctorInfo.Id;
-                    appointmentType = memberWithDoctor.DoctorInfo.AppointmentType.ToString();
-                }
             }
         }
 
@@ -79,7 +75,6 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
             Gender:               profile.Gender,
             StaffId:              staffId,
             MemberId:             memberId,
-            AppointmentType:      appointmentType,
             WeekStartDay:         weekStartDay
         ));
     }

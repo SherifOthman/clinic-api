@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Common;
+using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Domain.Entities;
 
@@ -13,6 +14,14 @@ public class DoctorBranchSchedule : BaseEntity, ISoftDeletable
     public Guid BranchId { get; init; }
     public bool IsDeleted { get; set; } = false;
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// How this doctor handles appointments at this specific branch.
+    /// Queue = patients arrive and get a queue number (no fixed time).
+    /// Time  = patients book a specific date + time slot.
+    /// Defaults to the doctor's clinic-wide default when the schedule is first created.
+    /// </summary>
+    public AppointmentType AppointmentType { get; set; } = AppointmentType.Queue;
 
     // ── Computed ──────────────────────────────────────────────────────────────
 

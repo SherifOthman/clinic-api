@@ -13,6 +13,6 @@ public record CreateAppointmentRequest(
 );
 
 public record UpdateStatusRequest(string Status);
-public record SetAppointmentTypeRequest(string AppointmentType);
+public record SetAppointmentTypeRequest(string AppointmentType, Guid BranchId);
 public record CheckInRequest(Guid DoctorInfoId, Guid BranchId);
 public record HandleDelayRequest(string Option); // "AutoShift" | "MarkMissed" | "Manual"

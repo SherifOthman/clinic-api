@@ -24,7 +24,14 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
         var existing = await GetScheduleAsync(doctorInfoId, branchId, ct);
         if (existing is not null) return existing;
 
-        var schedule = new DoctorBranchSchedule { DoctorInfoId = doctorInfoId, BranchId = branchId };
+        // Seed the appointment type from the doctor's clinic-wide default
+        var doctorInfo = await _db.Set<DoctorInfo>().FindAsync([doctorInfoId], ct);
+        var schedule = new DoctorBranchSchedule
+        {
+            DoctorInfoId    = doctorInfoId,
+            BranchId        = branchId,
+            AppointmentType = doctorInfo?.AppointmentType ?? Domain.Enums.AppointmentType.Queue,
+        };
         _db.Set<DoctorBranchSchedule>().Add(schedule);
         return schedule;
     }
@@ -40,7 +47,7 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
                 s.DoctorInfo.ClinicMemberId,
                 s.DoctorInfo.ClinicMember.Person.FullName,
                 s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
-                s.DoctorInfo.AppointmentType.ToString(),
+                s.AppointmentType.ToString(),                          // ← per-branch now
                 s.DoctorInfo.DefaultVisitDurationMinutes,
                 _db.Set<DoctorSession>().Any(ds => ds.DoctorInfoId == s.DoctorInfoId && ds.BranchId == branchId && ds.Date == today)))
             .ToListAsync(ct);
