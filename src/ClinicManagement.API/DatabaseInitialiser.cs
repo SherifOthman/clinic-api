@@ -37,6 +37,7 @@ public static class DatabaseInitialiser
             await services.GetRequiredService<SpecializationSeedService>().SeedSpecializationsAsync();
             await services.GetRequiredService<ChronicDiseaseSeedService>().SeedChronicDiseasesAsync();
             await services.GetRequiredService<SubscriptionPlanSeedService>().SeedSubscriptionPlansAsync();
+            await services.GetRequiredService<SystemUserSeedService>().SeedAsync();
 
             Log.Information("Core database seeding completed — API is ready");
         }

@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<SpecializationSeedService>();
         services.AddScoped<ChronicDiseaseSeedService>();
         services.AddScoped<SubscriptionPlanSeedService>();
+        services.AddScoped<SystemUserSeedService>();
         services.AddScoped<GeoLocationSeedService>();
 
         // Hangfire jobs — data-access-heavy jobs belong in Persistence
