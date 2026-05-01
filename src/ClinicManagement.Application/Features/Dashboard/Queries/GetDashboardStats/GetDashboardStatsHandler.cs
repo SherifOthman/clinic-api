@@ -34,19 +34,16 @@ public class GetDashboardStatsHandler : IRequestHandler<GetDashboardStatsQuery, 
         var thisMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var lastMonth = thisMonth.AddMonths(-1);
 
-        // Run all COUNT queries in parallel — they are independent
-        var totalPatientsTask      = _uow.Patients.CountAsync(cancellationToken);
-        var patientsThisMonthTask  = _uow.Patients.CountCreatedFromAsync(thisMonth, cancellationToken);
-        var patientsLastMonthTask  = _uow.Patients.CountCreatedBetweenAsync(lastMonth, thisMonth, cancellationToken);
-        var activeStaffTask        = _uow.Members.CountActiveAsync(cancellationToken);
-        var pendingInvitationsTask = _uow.Invitations.CountPendingAsync(cancellationToken);
-        var subTask                = _uow.ClinicSubscriptions.GetLatestAsync(cancellationToken);
+        // Run sequentially — DbContext is not thread-safe; parallel queries on the same
+        // instance cause "A second operation was started" errors. The cache above means
+        // this code path runs at most once every 5 minutes per clinic anyway.
+        var totalPatients      = await _uow.Patients.CountAsync(cancellationToken);
+        var patientsThisMonth  = await _uow.Patients.CountCreatedFromAsync(thisMonth, cancellationToken);
+        var patientsLastMonth  = await _uow.Patients.CountCreatedBetweenAsync(lastMonth, thisMonth, cancellationToken);
+        var activeStaff        = await _uow.Members.CountActiveAsync(cancellationToken);
+        var pendingInvitations = await _uow.Invitations.CountPendingAsync(cancellationToken);
+        var sub                = await _uow.ClinicSubscriptions.GetLatestAsync(cancellationToken);
 
-        await Task.WhenAll(
-            totalPatientsTask, patientsThisMonthTask, patientsLastMonthTask,
-            activeStaffTask, pendingInvitationsTask, subTask);
-
-        var sub = subTask.Result;
         SubscriptionInfoDto? subscription = null;
         if (sub is not null)
         {
@@ -64,11 +61,11 @@ public class GetDashboardStatsHandler : IRequestHandler<GetDashboardStatsQuery, 
         }
 
         var result = new DashboardStatsDto(
-            TotalPatients:      totalPatientsTask.Result,
-            PatientsThisMonth:  patientsThisMonthTask.Result,
-            PatientsLastMonth:  patientsLastMonthTask.Result,
-            ActiveStaff:        activeStaffTask.Result,
-            PendingInvitations: pendingInvitationsTask.Result,
+            TotalPatients:      totalPatients,
+            PatientsThisMonth:  patientsThisMonth,
+            PatientsLastMonth:  patientsLastMonth,
+            ActiveStaff:        activeStaff,
+            PendingInvitations: pendingInvitations,
             Subscription:       subscription);
 
         // Cache for 5 minutes — stats don't need to be real-time

@@ -15,16 +15,12 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
         if (projection is null)
             return Result.Failure<GetMeDto>(ErrorCodes.NOT_FOUND, "User not found");
 
-        // Roles and permissions are in separate tables — run in parallel
-        var rolesTask = uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
-        var permissionsTask = projection.MemberId.HasValue
-            ? uow.Permissions.GetByMemberIdAsync(projection.MemberId.Value, cancellationToken)
-            : Task.FromResult(new List<Domain.Enums.Permission>());
-
-        await Task.WhenAll(rolesTask, permissionsTask);
-
-        var roles       = rolesTask.Result;
-        var permissions = permissionsTask.Result;
+        // Roles and permissions are in separate tables — run sequentially
+        // (DbContext is not thread-safe; Task.WhenAll on the same instance causes concurrency errors)
+        var roles       = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
+        var permissions = projection.MemberId.HasValue
+            ? await uow.Permissions.GetByMemberIdAsync(projection.MemberId.Value, cancellationToken)
+            : new List<Domain.Enums.Permission>();
 
         return Result.Success(new GetMeDto(
             UserName:                projection.UserName,
