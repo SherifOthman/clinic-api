@@ -13,20 +13,26 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<InviteStaffResponseDto>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly ICurrentUserService _currentUser;
     private readonly IEmailService _emailService;
+    private readonly ISecurityAuditWriter _auditWriter;
 
-    public InviteStaffHandler(IUnitOfWork uow, ICurrentUserService currentUserService, IEmailService emailService)
+    public InviteStaffHandler(
+        IUnitOfWork uow,
+        ICurrentUserService currentUser,
+        IEmailService emailService,
+        ISecurityAuditWriter auditWriter)
     {
-        _uow                = uow;
-        _currentUserService = currentUserService;
-        _emailService       = emailService;
+        _uow         = uow;
+        _currentUser = currentUser;
+        _emailService = emailService;
+        _auditWriter = auditWriter;
     }
 
     public async Task<Result<InviteStaffResponseDto>> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
     {
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var clinicId      = _currentUserService.GetRequiredClinicId();
+        var currentUserId = _currentUser.GetRequiredUserId();
+        var clinicId      = _currentUser.GetRequiredClinicId();
 
         var role = request.Role switch
         {
@@ -51,7 +57,13 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Audit handled by AuditBehavior
+        // Manual audit — SaveChanges captures the Invitation row creation, but the
+        // business context ("who was invited as what role") is more useful here.
+        await _auditWriter.WriteAsync(
+            _currentUser.UserId, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
+            _currentUser.Roles.FirstOrDefault(), clinicId,
+            "StaffInvited", $"Invited {request.Email} as {request.Role}", cancellationToken);
+
         return Result.Success(new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt));
     }
 }

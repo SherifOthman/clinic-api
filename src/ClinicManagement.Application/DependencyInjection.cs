@@ -1,9 +1,7 @@
 using ClinicManagement.Application.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
-
-namespace ClinicManagement.Application;
+using System.Reflection;namespace ClinicManagement.Application;
 
 public static class DependencyInjection
 {
@@ -15,7 +13,6 @@ public static class DependencyInjection
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
-            cfg.AddOpenBehavior(typeof(AuditBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());

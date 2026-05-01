@@ -8,7 +8,7 @@ namespace ClinicManagement.Domain.Entities;
 /// Previously used AuditableEntity (no ClinicId), which meant tenant isolation
 /// depended entirely on BranchId — a single-hop FK, not a direct filter.
 /// </summary>
-public class Appointment : AuditableTenantEntity
+public class Appointment : AuditableTenantEntity, IAuditableEntity
 {
     public Guid BranchId { get; set; }
     public Guid PatientId { get; set; }

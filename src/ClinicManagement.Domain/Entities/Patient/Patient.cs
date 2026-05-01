@@ -7,7 +7,7 @@ namespace ClinicManagement.Domain.Entities;
 /// A person's medical record at a specific clinic.
 /// All personal data (name, gender, DOB) lives on Person.
 /// </summary>
-public class Patient : AuditableTenantEntity, ISoftDeletable
+public class Patient : AuditableTenantEntity, ISoftDeletable, IAuditableEntity
 {
     public string PatientCode { get; set; } = null!;
 

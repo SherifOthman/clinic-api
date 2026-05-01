@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
@@ -12,8 +11,4 @@ public record CompleteOnboarding(
     int? StateGeonameId,
     int? CityGeonameId,
     string? CountryCode
-) : IRequest<Result>, IAuditableCommand
-{
-    public string AuditEvent   => "ClinicOnboarded";
-    public string? AuditDetail => $"Clinic: {ClinicName}";
-}
+) : IRequest<Result>;

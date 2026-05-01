@@ -33,7 +33,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         var userId = _currentUserService?.UserId;
         var now    = DateTimeOffset.UtcNow;
 
-        // Stamp audit fields only — AuditLog writes are handled by AuditBehavior
+        // Stamp CreatedAt/UpdatedAt/CreatedBy/UpdatedBy on all auditable entities
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)

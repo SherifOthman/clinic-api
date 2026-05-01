@@ -55,7 +55,12 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         user.LastPasswordChangeAt = DateTimeOffset.UtcNow;
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Success audit handled by AuditBehavior
+        // Manual audit — UserManager handles the password hash; no entity diff is captured by SaveChanges
+        await _auditWriter.WriteAsync(
+            user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
+            _currentUser.Roles.FirstOrDefault(), null,
+            "PasswordChanged", null, cancellationToken);
+
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);
         return Result.Success();
     }

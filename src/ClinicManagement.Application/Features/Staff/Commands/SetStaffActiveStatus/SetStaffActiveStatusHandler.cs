@@ -19,7 +19,7 @@ public class SetStaffActiveStatusHandler : IRequestHandler<SetStaffActiveStatusC
         member.IsActive = request.IsActive;
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Audit handled by AuditBehavior
+        // Audit captured automatically by SaveChanges interceptor (IsActive field diff)
         return Result.Success();
     }
 }

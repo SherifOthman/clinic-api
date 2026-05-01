@@ -60,7 +60,7 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
         await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Audit handled by AuditBehavior
+        // Audit captured automatically by SaveChanges interceptor (Clinic + Branch creation)
         return Result.Success();
     }
 
