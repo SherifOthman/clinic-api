@@ -21,12 +21,14 @@ Content-Type: {{contentType}}
 }
 
 ### Confirm email (userId + token from email link ?userId=...&token=...)
+# IMPORTANT: token in the email link is URL-encoded. Decode it first:
+# %2B -> +   %2F -> /   %3D -> =
 POST {{baseUrl}}/api/auth/confirm-email
 Content-Type: {{contentType}}
 
 {
-  "userId": "f825c1d3-d04e-4422-8273-68a85a3609cf"
-  "token": "CfDJ8Og4D7gQ37NJuvEHvPXJp2sovoXBMexiqpIo1jW6HtwgBM%2BS6YNVuzYAHPa%2BRR4vKuLFxxfRa%2FkxyK8j8tdtBU6cpzPGll0f1f5U50sBA%2FhOBMTtS0QzNA2M64QdtwsiYoOz3bjnsR2Nc42B1CIy2JAwPX01KBR7s6188xtA%2BBy%2B5%2BUpHfmJUuc4uQ9oPzvsLKdET%2F4IKeDFw2WHdqiWHaxGgm8ORjg5rClVRqNkI67t0eAavI219RmY3sbrLnLC3Q%3D%3D"
+  "userId": "da5f6735-ad21-46a7-a261-899d6f921b23",
+  "token": "CfDJ8Og4D7gQ37NJuvEHvPXJp2v5cG+gCzkxDWV07J5eue+rgBp/9AFHaarWPlnq0rZ2fPwLNHm6p3n8fiv+NH044hBEryfPUdtfhNPNrrer+dy71T9sVR2gZu1lRf6Z5lKycC6mh5CGNQWevS/uFZXfyXIecvJJmM6CYcvSwiqA1SRSNSPCc+CHRLF08Wy1uXlU8RF10/ZJp4Rkzw+GlJGHnX5GnPTXHzvMt/61Kob2gzu6X9lU6ZheabduEjRm3xOKYA=="
 }
 
 ### Resend confirmation email

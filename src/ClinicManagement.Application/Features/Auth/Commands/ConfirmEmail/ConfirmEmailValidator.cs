@@ -6,9 +6,9 @@ public class ConfirmEmailValidator : AbstractValidator<ConfirmEmailCommand>
 {
     public ConfirmEmailValidator()
     {
-        RuleFor(x => x.Token)
-            .NotEmpty()
-            .EmailAddress();
+        RuleFor(x => x.UserId)
+            .NotEmpty();
+    
 
         RuleFor(x => x.Token)
             .NotEmpty();
