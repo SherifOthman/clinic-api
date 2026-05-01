@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# =============================================================================
+###
 # AUTH — Full flow in order
 #
 # REGISTRATION FLOW:
@@ -23,11 +23,6 @@
 # TOKEN REFRESH FLOW (mobile):
 #   - Tokens returned in response body
 #   - POST /refresh with { "refreshToken": "..." } + X-Client-Type: mobile
-#
-# NOTE on tokens in confirm-email and reset-password:
-#   The token in the email link is URL-encoded. The frontend must decode it
-#   (decodeURIComponent) before sending it in the JSON body.
-# =============================================================================
 
 # ── Step 1: Register ──────────────────────────────────────────────────────────
 
@@ -52,9 +47,8 @@ Content-Type: {{contentType}}
 ### Confirm email address
 # ConfirmEmailCommand: UserId, Token
 # Token comes from the email link: /confirm-email?userId=...&token=...
-# Frontend reads the query params and POSTs them here.
 # → 204 NoContent on success
-# → 400 if token invalid/expired or email already confirmed
+# → 409 if already confirmed, 401 if token invalid/expired
 POST {{baseUrl}}/api/auth/confirm-email
 Content-Type: {{contentType}}
 
@@ -63,9 +57,9 @@ Content-Type: {{contentType}}
   "token": "TOKEN_FROM_EMAIL_LINK"
 }
 
-### Resend confirmation email (if token expired or email not received)
+### Resend confirmation email
 # ResendEmailVerificationCommand: Email
-# → 204 NoContent (always, even if email not found — prevents enumeration)
+# → 204 NoContent always (prevents enumeration)
 POST {{baseUrl}}/api/auth/resend-email-verification
 Content-Type: {{contentType}}
 
@@ -75,13 +69,13 @@ Content-Type: {{contentType}}
 
 # ── Step 3: Login ─────────────────────────────────────────────────────────────
 
-### Login — web client (tokens set as HttpOnly cookies, body returns nulls)
+### Login — web client (tokens set as HttpOnly cookies)
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "emailOrUsername": "ahmed@clinic.com",
+  "emailOrUsername": "elemlak202099@gmail.com",
   "password": "Password123!"
 }
 
@@ -94,7 +88,7 @@ Content-Type: {{contentType}}
 X-Client-Type: mobile
 
 {
-  "emailOrUsername": "ahmed@clinic.com",
+  "emailOrUsername": "elemlak202099@gmail.com",
   "password": "Password123!"
 }
 
@@ -103,19 +97,17 @@ X-Client-Type: mobile
 # ── Step 4: Get current user ──────────────────────────────────────────────────
 
 ### Get current user profile
-# Returns: userName, fullName, email, roles, permissions, emailConfirmed,
-#          onboardingCompleted, hasPassword, gender, staffId, weekStartDay, etc.
-# hasPassword=false means user registered via Google OAuth — no change-password
+# hasPassword=false means Google OAuth user — change-password not available
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
 
 # ── Token management ──────────────────────────────────────────────────────────
 
-### Refresh token — web (reads HttpOnly cookie automatically, no body needed)
+### Refresh token — web (reads HttpOnly cookie, no body needed)
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 
-### Refresh token — mobile (token in body)
+### Refresh token — mobile
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 X-Client-Type: mobile
@@ -154,27 +146,14 @@ Content-Type: {{contentType}}
   "gender": "Male"
 }
 
-### Upload profile image (multipart/form-data)
-PUT {{baseUrl}}/api/auth/profile/image
-Authorization: Bearer {{token}}
-Content-Type: multipart/form-data; boundary=----Boundary
-
-------Boundary
-Content-Disposition: form-data; name="file"; filename="avatar.jpg"
-Content-Type: image/jpeg
-
-< ./avatar.jpg
-------Boundary--
-
 ### Delete profile image
 DELETE {{baseUrl}}/api/auth/profile/image
 Authorization: Bearer {{token}}
 
 # ── Password management ───────────────────────────────────────────────────────
 
-### Change password (authenticated — only if hasPassword=true from /me)
+### Change password (only if hasPassword=true from /me)
 # ChangePasswordCommand: CurrentPassword, NewPassword
-# → 400 if currentPassword is wrong
 PATCH {{baseUrl}}/api/auth/password
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -184,35 +163,31 @@ Content-Type: {{contentType}}
   "newPassword": "NewPassword123!"
 }
 
-### Forgot password (unauthenticated)
-# ForgotPasswordCommand: Email
-# → always 204 NoContent regardless of whether email exists (prevents enumeration)
-# → sends reset link to email: /reset-password?email=...&token=...
+### Forgot password
+# → always 204 regardless of whether email exists (prevents enumeration)
 POST {{baseUrl}}/api/auth/forgot-password
 Content-Type: {{contentType}}
 
 {
-  "email": "ahmed@clinic.com"
+  "email": "elemlak202099@gmail.com"
 }
 
-### Reset password (unauthenticated)
+### Reset password
 # ResetPasswordCommand: Email, Token, NewPassword
 # Token comes from the email link: /reset-password?email=...&token=...
-# Frontend decodes the URL params and POSTs them here.
-# → 400 if token invalid/expired
 POST {{baseUrl}}/api/auth/reset-password
 Content-Type: {{contentType}}
 
 {
-  "email": "ahmed@clinic.com",
+  "email": "elemlak202099@gmail.com",
   "token": "TOKEN_FROM_EMAIL_LINK",
   "newPassword": "NewPassword123!"
 }
 
-# ── Availability checks (for registration form) ───────────────────────────────
+# ── Availability checks ───────────────────────────────────────────────────────
 
-### Check if email is available
+### Check email availability
 GET {{baseUrl}}/api/auth/check-email?email=newuser@clinic.com
 
-### Check if username is available
+### Check username availability
 GET {{baseUrl}}/api/auth/check-username?username=newuser
