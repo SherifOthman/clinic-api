@@ -27,22 +27,24 @@ public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<
         var permissions = permissionsTask.Result;
 
         return Result.Success(new GetMeDto(
-            UserName:             projection.UserName,
-            FullName:             projection.FullName,
-            Email:                projection.Email,
-            PhoneNumber:          projection.PhoneNumber ?? string.Empty,
-            ProfileImageUrl:      projection.ProfileImageUrl,
-            Roles:                roles.Select(r => r.RoleName).ToList(),
-            Permissions:          permissions.Select(p => p.ToString()).ToList(),
-            EmailConfirmed:       projection.EmailConfirmed,
-            OnboardingCompleted:  projection.OnboardingCompleted,
-            HasPassword:          projection.HasPassword,
-            SpecializationNameEn: projection.SpecializationNameEn,
-            SpecializationNameAr: projection.SpecializationNameAr,
-            Gender:               projection.Gender,
-            StaffId:              projection.MemberId,
-            MemberId:             projection.DoctorInfoId,
-            WeekStartDay:         projection.WeekStartDay
+            UserName:                projection.UserName,
+            FullName:                projection.FullName,
+            Email:                   projection.Email,
+            PhoneNumber:             projection.PhoneNumber ?? string.Empty,
+            ProfileImageUrl:         projection.ProfileImageUrl,
+            Roles:                   roles.Select(r => r.RoleName).ToList(),
+            Permissions:             permissions.Select(p => p.ToString()).ToList(),
+            EmailConfirmed:          projection.EmailConfirmed,
+            OnboardingCompleted:     projection.OnboardingCompleted,
+            HasPassword:             projection.HasPassword,
+            SpecializationNameEn:    projection.SpecializationNameEn,
+            SpecializationNameAr:    projection.SpecializationNameAr,
+            Gender:                  projection.Gender,
+            StaffId:                 projection.MemberId,
+            MemberId:                projection.DoctorInfoId,
+            WeekStartDay:            projection.WeekStartDay,
+            LastLoginAt:             projection.LastLoginAt,
+            LastPasswordChangeAt:    projection.LastPasswordChangeAt
         ));
     }
 }

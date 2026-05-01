@@ -86,6 +86,8 @@ public class UserRepository : IUserRepository
                 ?? _members.Where(m => m.UserId == userId)
                            .Join(_clinics, m => m.ClinicId, c => c.Id, (m, c) => (int?)c.WeekStartDay)
                            .FirstOrDefault()
-                ?? 6))
+                ?? 6,
+                u.LastLoginAt,
+                u.LastPasswordChangeAt))
             .FirstOrDefaultAsync(ct);
 }

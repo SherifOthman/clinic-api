@@ -21,5 +21,7 @@ public record GetMeProjection(
     Guid? DoctorInfoId,
     string? SpecializationNameEn,
     string? SpecializationNameAr,
-    int WeekStartDay
+    int WeekStartDay,
+    DateTimeOffset? LastLoginAt,
+    DateTimeOffset? LastPasswordChangeAt
 );

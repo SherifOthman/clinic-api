@@ -21,5 +21,7 @@ public record GetMeDto(
     string Gender,
     Guid? StaffId,
     Guid? MemberId,
-    int WeekStartDay
+    int WeekStartDay,
+    DateTimeOffset? LastLoginAt,
+    DateTimeOffset? LastPasswordChangeAt
 );
