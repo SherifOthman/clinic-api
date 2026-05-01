@@ -25,8 +25,8 @@ POST {{baseUrl}}/api/auth/confirm-email
 Content-Type: {{contentType}}
 
 {
-  "userId": "00000000-0000-0000-0000-000000000001",
-  "token": "TOKEN_FROM_EMAIL_LINK"
+  "userId": "f825c1d3-d04e-4422-8273-68a85a3609cf"
+  "token": "CfDJ8Og4D7gQ37NJuvEHvPXJp2sovoXBMexiqpIo1jW6HtwgBM%2BS6YNVuzYAHPa%2BRR4vKuLFxxfRa%2FkxyK8j8tdtBU6cpzPGll0f1f5U50sBA%2FhOBMTtS0QzNA2M64QdtwsiYoOz3bjnsR2Nc42B1CIy2JAwPX01KBR7s6188xtA%2BBy%2B5%2BUpHfmJUuc4uQ9oPzvsLKdET%2F4IKeDFw2WHdqiWHaxGgm8ORjg5rClVRqNkI67t0eAavI219RmY3sbrLnLC3Q%3D%3D"
 }
 
 ### Resend confirmation email

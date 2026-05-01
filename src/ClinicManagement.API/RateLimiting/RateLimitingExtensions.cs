@@ -51,11 +51,19 @@ public static class RateLimitingExtensions
             options.OnRejected = async (context, ct) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+                // TryGetMetadata only works reliably for FixedWindowLimiter.
+                // SlidingWindow and TokenBucket don't populate RetryAfter metadata,
+                // so we fall back to a sensible default based on the policy type.
+                var retryAfterSeconds = 60; // safe default
+
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                    context.HttpContext.Response.Headers.RetryAfter =
-                        retryAfter.TotalSeconds.ToString("0");
+                    retryAfterSeconds = (int)Math.Ceiling(retryAfter.TotalSeconds);
+
+                context.HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString();
+
                 await context.HttpContext.Response.WriteAsJsonAsync(
-                    new { error = "Too many requests. Please slow down.", retryAfter = retryAfter.TotalSeconds },
+                    new { error = "Too many requests. Please slow down.", retryAfter = retryAfterSeconds },
                     ct);
             };
 
