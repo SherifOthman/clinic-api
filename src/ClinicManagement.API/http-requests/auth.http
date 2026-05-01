@@ -2,34 +2,32 @@
 @contentType = application/json
 
 ###
-# AUTH — Full flow in order
+# AUTH - Full flow in order
 #
 # REGISTRATION FLOW:
-#   1. POST /register          → creates account, sends confirmation email
-#   2. (user clicks email link) → frontend reads ?userId=...&token=... from URL
-#   3. POST /confirm-email     → activates account (userId + token from link)
-#   4. POST /login             → get tokens
-#   5. POST /onboarding/complete → (ClinicOwner only, first login)
+#   1. POST /register          -> creates account, sends confirmation email
+#   2. (user clicks email link) -> frontend reads ?userId=...&token=... from URL
+#   3. POST /confirm-email     -> activates account (userId + token from link)
+#   4. POST /login             -> get tokens
+#   5. POST /onboarding/complete -> (ClinicOwner only, first login)
 #
 # PASSWORD RESET FLOW:
-#   1. POST /forgot-password   → sends reset email (always 204, no enumeration)
-#   2. (user clicks email link) → frontend reads ?email=...&token=... from URL
-#   3. POST /reset-password    → sets new password (email + token from link)
+#   1. POST /forgot-password   -> sends reset email (always 204, no enumeration)
+#   2. (user clicks email link) -> frontend reads ?email=...&token=... from URL
+#   3. POST /reset-password    -> sets new password (email + token from link)
 #
 # TOKEN REFRESH FLOW (web):
-#   - Tokens live in HttpOnly cookies — browser sends them automatically
-#   - POST /refresh with no body — reads cookie automatically
+#   - Tokens live in HttpOnly cookies, browser sends them automatically
+#   - POST /refresh with no body
 #
 # TOKEN REFRESH FLOW (mobile):
 #   - Tokens returned in response body
 #   - POST /refresh with { "refreshToken": "..." } + X-Client-Type: mobile
 
-# ── Step 1: Register ──────────────────────────────────────────────────────────
-
 ### Register a new clinic owner
 # RegisterCommand: FullName, UserName, Email, Password, Gender, PhoneNumber
-# → 201 Created + sends confirmation email
-# → 400 if email/username taken or password too weak
+# -> 201 Created + sends confirmation email
+# -> 400 if email/username taken or password too weak
 POST {{baseUrl}}/api/auth/register
 Content-Type: {{contentType}}
 
@@ -42,13 +40,11 @@ Content-Type: {{contentType}}
   "phoneNumber": "+966501234567"
 }
 
-# ── Step 2: Confirm email ─────────────────────────────────────────────────────
-
 ### Confirm email address
 # ConfirmEmailCommand: UserId, Token
 # Token comes from the email link: /confirm-email?userId=...&token=...
-# → 204 NoContent on success
-# → 409 if already confirmed, 401 if token invalid/expired
+# -> 204 NoContent on success
+# -> 409 if already confirmed, 401 if token invalid/expired
 POST {{baseUrl}}/api/auth/confirm-email
 Content-Type: {{contentType}}
 
@@ -59,17 +55,15 @@ Content-Type: {{contentType}}
 
 ### Resend confirmation email
 # ResendEmailVerificationCommand: Email
-# → 204 NoContent always (prevents enumeration)
+# -> 204 NoContent always (prevents enumeration)
 POST {{baseUrl}}/api/auth/resend-email-verification
 Content-Type: {{contentType}}
 
 {
-  "email": "ahmed@clinic.com"
+  "email": "elemlak202099@gmail.com"
 }
 
-# ── Step 3: Login ─────────────────────────────────────────────────────────────
-
-### Login — web client (tokens set as HttpOnly cookies)
+### Login - web client (tokens set as HttpOnly cookies)
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
@@ -81,7 +75,7 @@ Content-Type: {{contentType}}
 
 @token = {{login.response.body.$.accessToken}}
 
-### Login — mobile client (tokens returned in body)
+### Login - mobile client (tokens returned in body)
 # @name loginMobile
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
@@ -94,20 +88,16 @@ X-Client-Type: mobile
 
 @mobileToken = {{loginMobile.response.body.$.accessToken}}
 
-# ── Step 4: Get current user ──────────────────────────────────────────────────
-
 ### Get current user profile
-# hasPassword=false means Google OAuth user — change-password not available
+# hasPassword=false means Google OAuth user - change-password not available
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
 
-# ── Token management ──────────────────────────────────────────────────────────
-
-### Refresh token — web (reads HttpOnly cookie, no body needed)
+### Refresh token - web (reads HttpOnly cookie, no body needed)
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 
-### Refresh token — mobile
+### Refresh token - mobile
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 X-Client-Type: mobile
@@ -116,12 +106,12 @@ X-Client-Type: mobile
   "refreshToken": "REFRESH_TOKEN_HERE"
 }
 
-### Logout — web (clears HttpOnly cookies)
+### Logout - web (clears HttpOnly cookies)
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
-### Logout — mobile (revokes refresh token)
+### Logout - mobile (revokes refresh token)
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{mobileToken}}
 Content-Type: {{contentType}}
@@ -130,8 +120,6 @@ X-Client-Type: mobile
 {
   "refreshToken": "REFRESH_TOKEN_HERE"
 }
-
-# ── Profile management ────────────────────────────────────────────────────────
 
 ### Update profile
 # UpdateProfileRequest: FullName, UserName, PhoneNumber, Gender
@@ -150,8 +138,6 @@ Content-Type: {{contentType}}
 DELETE {{baseUrl}}/api/auth/profile/image
 Authorization: Bearer {{token}}
 
-# ── Password management ───────────────────────────────────────────────────────
-
 ### Change password (only if hasPassword=true from /me)
 # ChangePasswordCommand: CurrentPassword, NewPassword
 PATCH {{baseUrl}}/api/auth/password
@@ -164,7 +150,7 @@ Content-Type: {{contentType}}
 }
 
 ### Forgot password
-# → always 204 regardless of whether email exists (prevents enumeration)
+# -> always 204 regardless of whether email exists (prevents enumeration)
 POST {{baseUrl}}/api/auth/forgot-password
 Content-Type: {{contentType}}
 
@@ -183,8 +169,6 @@ Content-Type: {{contentType}}
   "token": "TOKEN_FROM_EMAIL_LINK",
   "newPassword": "NewPassword123!"
 }
-
-# ── Availability checks ───────────────────────────────────────────────────────
 
 ### Check email availability
 GET {{baseUrl}}/api/auth/check-email?email=newuser@clinic.com
