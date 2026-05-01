@@ -1,24 +1,21 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CONTACT
-# ─────────────────────────────────────────────────────────────────────────────
+# Run "Login as SuperAdmin" first — @adminToken is populated from the response
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
 
-### Login as SuperAdmin (to view messages)
+### Login as SuperAdmin — run this first
 # @name loginAdmin
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "admin@system.com",
   "password": "Password123!"
 }
 
-@adminToken = {{loginAdmin.response.body.$.accessToken}}
-
 ### Submit a contact form message (public — no auth required)
-# SendContactMessageCommand: FirstName, LastName, Email, Phone?, Company?, Subject, Message
 POST {{baseUrl}}/api/contact
 Content-Type: {{contentType}}
 

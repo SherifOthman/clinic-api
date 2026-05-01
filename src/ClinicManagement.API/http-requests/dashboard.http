@@ -1,45 +1,43 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DASHBOARD
-# ─────────────────────────────────────────────────────────────────────────────
+# Run "Login" first — @token is populated from the response
+@token = {{login.response.body.$.accessToken}}
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
 
-### Login
+### Login — run this first
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "owner@clinic.com",
   "password": "Password123!"
 }
 
-@token = {{login.response.body.$.accessToken}}
-
 ### Login as SuperAdmin
 # @name loginAdmin
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "admin@system.com",
   "password": "Password123!"
 }
 
-@adminToken = {{loginAdmin.response.body.$.accessToken}}
-
-### Get public stats (anonymous — for marketing website)
+### Get public stats (anonymous)
 GET {{baseUrl}}/api/dashboard/stats/public
 
-### Get clinic staff dashboard stats (authenticated)
+### Get clinic staff dashboard stats
 GET {{baseUrl}}/api/dashboard/stats
 Authorization: Bearer {{token}}
 
-### Get SuperAdmin dashboard stats (cross-clinic totals)
+### Get SuperAdmin dashboard stats
 GET {{baseUrl}}/api/dashboard/stats/superadmin
 Authorization: Bearer {{adminToken}}
 
-### Get recent patients (ClinicOwner only — last 5)
+### Get recent patients (ClinicOwner only)
 GET {{baseUrl}}/api/dashboard/recent-patients
 Authorization: Bearer {{token}}

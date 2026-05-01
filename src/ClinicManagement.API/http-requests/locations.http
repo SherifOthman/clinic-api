@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:5000
 @countryGeonameId = 682730
-@stateGeonameId = 101628
+@stateGeonameId = 101627
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOCATIONS  (all endpoints are anonymous)

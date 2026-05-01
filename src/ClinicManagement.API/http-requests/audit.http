@@ -1,24 +1,21 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# ─────────────────────────────────────────────────────────────────────────────
-# AUDIT  (SuperAdmin only)
+# Run "Login" first — @token is populated from the response
 # Valid action values: Create | Update | Delete | Security | Restore
-# Valid entityType values: Patient | Staff | StaffInvitation | DoctorProfile |
-#                          Clinic | ClinicBranch | Auth
-# ─────────────────────────────────────────────────────────────────────────────
+# Valid entityType values: Patient | Staff | StaffInvitation | DoctorProfile | Clinic | ClinicBranch | Auth
+@token = {{login.response.body.$.accessToken}}
 
-### Login as SuperAdmin
+### Login as SuperAdmin — run this first
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "admin@system.com",
   "password": "Password123!"
 }
-
-@token = {{login.response.body.$.accessToken}}
 
 ### Get all audit logs (paginated)
 GET {{baseUrl}}/api/audit?pageNumber=1&pageSize=20
@@ -32,7 +29,7 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/audit?action=Create&pageNumber=1&pageSize=20
 Authorization: Bearer {{token}}
 
-### Filter security events (login, lockout, permission changes)
+### Filter security events
 GET {{baseUrl}}/api/audit?action=Security&pageNumber=1&pageSize=20
 Authorization: Bearer {{token}}
 

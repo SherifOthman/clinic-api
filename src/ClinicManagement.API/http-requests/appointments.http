@@ -1,20 +1,7 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# ─────────────────────────────────────────────────────────────────────────────
-# APPOINTMENTS
-# ─────────────────────────────────────────────────────────────────────────────
-
-### Login
-# @name login
-POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
-
-{
-  "emailOrUsername": "owner@clinic.com",
-  "password": "Password123!"
-}
-
+# Run "Login" first — @token is populated from the response
 @token = {{login.response.body.$.accessToken}}
 @branchId = 00000000-0000-0000-0000-000000000001
 @doctorInfoId = 00000000-0000-0000-0000-000000000002
@@ -23,6 +10,17 @@ Content-Type: {{contentType}}`nX-Client-Type: mobile
 @appointmentId = 00000000-0000-0000-0000-000000000005
 @memberId = 00000000-0000-0000-0000-000000000006
 @sessionId = 00000000-0000-0000-0000-000000000007
+
+### Login — run this first
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+X-Client-Type: mobile
+
+{
+  "emailOrUsername": "owner@clinic.com",
+  "password": "Password123!"
+}
 
 ### Get appointments for a date (all doctors in branch)
 GET {{baseUrl}}/api/appointments?date=2026-05-01&branchId={{branchId}}
@@ -67,7 +65,7 @@ Content-Type: {{contentType}}
   "visitDurationMinutes": 30
 }
 
-### Update appointment status → Waiting (patient arrived)
+### Update appointment status - Waiting
 PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -76,7 +74,7 @@ Content-Type: {{contentType}}
   "status": "Waiting"
 }
 
-### Update appointment status → InProgress
+### Update appointment status - InProgress
 PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -85,7 +83,7 @@ Content-Type: {{contentType}}
   "status": "InProgress"
 }
 
-### Update appointment status → Completed
+### Update appointment status - Completed
 PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -94,7 +92,7 @@ Content-Type: {{contentType}}
   "status": "Completed"
 }
 
-### Update appointment status → Cancelled
+### Update appointment status - Cancelled
 PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -103,7 +101,7 @@ Content-Type: {{contentType}}
   "status": "Cancelled"
 }
 
-### Update appointment status → NoShow
+### Update appointment status - NoShow
 PATCH {{baseUrl}}/api/appointments/{{appointmentId}}/status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -112,7 +110,7 @@ Content-Type: {{contentType}}
   "status": "NoShow"
 }
 
-### Set doctor appointment type → Queue
+### Set doctor appointment type - Queue
 PATCH {{baseUrl}}/api/appointments/doctors/{{memberId}}/appointment-type
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -121,7 +119,7 @@ Content-Type: {{contentType}}
   "appointmentType": "Queue"
 }
 
-### Set doctor appointment type → Time
+### Set doctor appointment type - Time
 PATCH {{baseUrl}}/api/appointments/doctors/{{memberId}}/appointment-type
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -140,7 +138,7 @@ Content-Type: {{contentType}}
   "branchId": "{{branchId}}"
 }
 
-### Handle delay — auto-shift all pending appointments
+### Handle delay - auto-shift all pending appointments
 POST {{baseUrl}}/api/appointments/sessions/{{sessionId}}/handle-delay
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -149,7 +147,7 @@ Content-Type: {{contentType}}
   "option": "AutoShift"
 }
 
-### Handle delay — mark past pending as NoShow
+### Handle delay - mark past pending as NoShow
 POST {{baseUrl}}/api/appointments/sessions/{{sessionId}}/handle-delay
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -158,7 +156,7 @@ Content-Type: {{contentType}}
   "option": "MarkMissed"
 }
 
-### Handle delay — manual (receptionist decides per appointment)
+### Handle delay - manual
 POST {{baseUrl}}/api/appointments/sessions/{{sessionId}}/handle-delay
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}

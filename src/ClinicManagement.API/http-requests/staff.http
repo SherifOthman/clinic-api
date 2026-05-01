@@ -6,23 +6,19 @@
 @visitTypeId = 00000000-0000-0000-0000-000000000004
 @specializationId = 00000000-0000-0000-0000-000000000005
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STAFF
-# ─────────────────────────────────────────────────────────────────────────────
+# Run "Login" first — @token is populated from the response
+@token = {{login.response.body.$.accessToken}}
 
-### Login
+### Login — run this first
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "owner@clinic.com",
   "password": "Password123!"
 }
-
-@token = {{login.response.body.$.accessToken}}
-
-# ── Staff list & detail ───────────────────────────────────────────────────────
 
 ### Get all staff (paginated)
 GET {{baseUrl}}/api/staff?pageNumber=1&pageSize=10
@@ -45,7 +41,6 @@ GET {{baseUrl}}/api/staff/{{staffId}}
 Authorization: Bearer {{token}}
 
 ### Activate staff member
-# SetStaffActiveStatusRequest: IsActive
 PATCH {{baseUrl}}/api/staff/{{staffId}}/active-status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -63,10 +58,7 @@ Content-Type: {{contentType}}
   "isActive": false
 }
 
-# ── Invitations ───────────────────────────────────────────────────────────────
-
 ### Invite a doctor
-# InviteStaffCommand: Role, Email, SpecializationId?
 POST {{baseUrl}}/api/staff/invite
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -77,7 +69,7 @@ Content-Type: {{contentType}}
   "specializationId": "{{specializationId}}"
 }
 
-### Invite a receptionist (no specializationId needed)
+### Invite a receptionist
 POST {{baseUrl}}/api/staff/invite
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -92,7 +84,6 @@ GET {{baseUrl}}/api/staff/invitations?pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
 ### Get pending invitations only (status=0)
-# InvitationStatus: Pending=0, Accepted=1, Canceled=2, Expired=3
 GET {{baseUrl}}/api/staff/invitations?status=0&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
@@ -100,16 +91,15 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/staff/invitations/{{invitationId}}
 Authorization: Bearer {{token}}
 
-### Resend invitation (extends expiry by 7 days)
+### Resend invitation
 PATCH {{baseUrl}}/api/staff/invitations/{{invitationId}}/resend
 Authorization: Bearer {{token}}
 
-### Cancel invitation (state change — not a delete, record is kept)
+### Cancel invitation
 PATCH {{baseUrl}}/api/staff/invitations/{{invitationId}}/cancel
 Authorization: Bearer {{token}}
 
-### Accept invitation with registration (public — no auth)
-# AcceptInvitationRequest: FullName, UserName, Password, PhoneNumber, Gender
+### Accept invitation with registration (public - no auth)
 POST {{baseUrl}}/api/staff/invitations/INVITATION_TOKEN_HERE/accept-with-registration
 Content-Type: {{contentType}}
 
@@ -121,10 +111,7 @@ Content-Type: {{contentType}}
   "gender": "Female"
 }
 
-# ── Owner registers as doctor ─────────────────────────────────────────────────
-
 ### Set clinic owner as doctor
-# SetOwnerAsDoctorRequest: SpecializationId?
 PATCH {{baseUrl}}/api/staff/me/doctor-profile
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -133,9 +120,7 @@ Content-Type: {{contentType}}
   "specializationId": "{{specializationId}}"
 }
 
-# ── Working days ──────────────────────────────────────────────────────────────
-
-### Get working days for a staff member (all branches)
+### Get working days (all branches)
 GET {{baseUrl}}/api/staff/{{staffId}}/working-days
 Authorization: Bearer {{token}}
 
@@ -144,8 +129,6 @@ GET {{baseUrl}}/api/staff/{{staffId}}/working-days?branchId={{branchId}}
 Authorization: Bearer {{token}}
 
 ### Save working days
-# SaveWorkingDaysRequest: BranchId, Days[]
-# WorkingDayRequest: Day (0=Sun…6=Sat), StartTime, EndTime, IsAvailable
 PUT {{baseUrl}}/api/staff/{{staffId}}/working-days
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -163,14 +146,11 @@ Content-Type: {{contentType}}
   ]
 }
 
-# ── Visit types ───────────────────────────────────────────────────────────────
-
 ### Get visit types for a doctor at a branch
 GET {{baseUrl}}/api/staff/{{staffId}}/visit-types?branchId={{branchId}}
 Authorization: Bearer {{token}}
 
 ### Add a new visit type
-# POST to create — no visitTypeId in body, it's a new resource
 POST {{baseUrl}}/api/staff/{{staffId}}/visit-types
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -183,7 +163,6 @@ Content-Type: {{contentType}}
 }
 
 ### Update an existing visit type
-# PUT /{visitTypeId} to update — visitTypeId in URL
 PUT {{baseUrl}}/api/staff/{{staffId}}/visit-types/{{visitTypeId}}
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -195,26 +174,11 @@ Content-Type: {{contentType}}
   "isActive": true
 }
 
-### Deactivate a visit type
-PUT {{baseUrl}}/api/staff/{{staffId}}/visit-types/{{visitTypeId}}
-Authorization: Bearer {{token}}
-Content-Type: {{contentType}}
-
-{
-  "branchId": "{{branchId}}",
-  "name": "Emergency",
-  "price": 250,
-  "isActive": false
-}
-
-### Remove a visit type permanently
+### Remove a visit type
 DELETE {{baseUrl}}/api/staff/{{staffId}}/visit-types/{{visitTypeId}}
 Authorization: Bearer {{token}}
 
-# ── Schedule lock ─────────────────────────────────────────────────────────────
-
-### Allow doctor to self-manage their schedule
-# SetDoctorScheduleLockRequest: CanSelfManage
+### Allow doctor to self-manage schedule
 PATCH {{baseUrl}}/api/staff/{{staffId}}/schedule-lock
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -223,7 +187,7 @@ Content-Type: {{contentType}}
   "canSelfManage": true
 }
 
-### Lock doctor schedule (owner manages it)
+### Lock doctor schedule
 PATCH {{baseUrl}}/api/staff/{{staffId}}/schedule-lock
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -232,20 +196,11 @@ Content-Type: {{contentType}}
   "canSelfManage": false
 }
 
-# ── Permissions ───────────────────────────────────────────────────────────────
-
 ### Get staff member permissions
 GET {{baseUrl}}/api/staff/{{staffId}}/permissions
 Authorization: Bearer {{token}}
 
-### Set staff member permissions (replaces all existing)
-# Body: array of permission strings
-# Valid values: ViewPatients, CreatePatient, EditPatient, DeletePatient,
-#               ViewStaff, InviteStaff, ManageStaffStatus,
-#               ViewBranches, ManageBranches,
-#               ManageSchedule, ManageVisitTypes,
-#               ViewAppointments, ManageAppointments,
-#               ViewInvoices, ManageInvoices
+### Set staff member permissions
 PUT {{baseUrl}}/api/staff/{{staffId}}/permissions
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}

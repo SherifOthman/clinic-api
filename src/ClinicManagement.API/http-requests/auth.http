@@ -1,9 +1,16 @@
 @baseUrl = http://localhost:5000
 @contentType = application/json
 
-# NOTE: All requests use X-Client-Type: mobile so tokens are returned in the
-# response body and can be captured as variables. Web mode uses HttpOnly cookies
-# which the REST client cannot read.
+# HOW TO USE:
+# 1. Run the "Login" request below first
+# 2. @token and @refreshToken are populated from the response automatically
+# 3. All other requests use {{token}} — they will work after step 1
+#
+# All logins use X-Client-Type: mobile so tokens come back in the body.
+# Web mode puts tokens in HttpOnly cookies which the REST client cannot read.
+
+@token = {{login.response.body.$.accessToken}}
+@refreshToken = {{login.response.body.$.refreshToken}}
 
 ### Register a new clinic owner
 POST {{baseUrl}}/api/auth/register
@@ -37,7 +44,7 @@ Content-Type: {{contentType}}
   "email": "elemlak202099@gmail.com"
 }
 
-### Login (mobile mode — tokens returned in body so @token can be captured)
+### Login — run this first to populate @token and @refreshToken
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
@@ -48,14 +55,11 @@ X-Client-Type: mobile
   "password": "Password123!"
 }
 
-@token = {{login.response.body.$.accessToken}}
-@refreshToken = {{login.response.body.$.refreshToken}}
-
 ### Get current user
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
 
-### Refresh token (mobile)
+### Refresh token
 POST {{baseUrl}}/api/auth/refresh
 Content-Type: {{contentType}}
 X-Client-Type: mobile
@@ -64,7 +68,7 @@ X-Client-Type: mobile
   "refreshToken": "{{refreshToken}}"
 }
 
-### Logout (mobile)
+### Logout
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -108,7 +112,7 @@ Content-Type: {{contentType}}
   "email": "elemlak202099@gmail.com"
 }
 
-### Reset password (token from email link ?email=...&token=... — decode first)
+### Reset password (token from email link — decode %2B->+ %2F->/ %3D->= first)
 POST {{baseUrl}}/api/auth/reset-password
 Content-Type: {{contentType}}
 

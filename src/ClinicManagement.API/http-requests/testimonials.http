@@ -2,35 +2,33 @@
 @contentType = application/json
 @testimonialId = 00000000-0000-0000-0000-000000000001
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TESTIMONIALS
-# ─────────────────────────────────────────────────────────────────────────────
+# Run the login requests first — tokens are populated from the responses
+@ownerToken = {{loginOwner.response.body.$.accessToken}}
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
 
-### Login as ClinicOwner
+### Login as ClinicOwner — run this first
 # @name loginOwner
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "owner@clinic.com",
   "password": "Password123!"
 }
 
-@ownerToken = {{loginOwner.response.body.$.accessToken}}
-
 ### Login as SuperAdmin
 # @name loginAdmin
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "admin@system.com",
   "password": "Password123!"
 }
 
-@adminToken = {{loginAdmin.response.body.$.accessToken}}
-
-### Get approved testimonials (public — no auth required)
+### Get approved testimonials (public - no auth required)
 GET {{baseUrl}}/api/testimonials
 
 ### Get my testimonial (ClinicOwner only)
@@ -38,7 +36,6 @@ GET {{baseUrl}}/api/testimonials/mine
 Authorization: Bearer {{ownerToken}}
 
 ### Submit or update testimonial (ClinicOwner only)
-# SubmitTestimonialCommand: AuthorName, Position, Text, Rating, AvatarUrl?
 POST {{baseUrl}}/api/testimonials
 Authorization: Bearer {{ownerToken}}
 Content-Type: {{contentType}}
@@ -55,6 +52,6 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/api/testimonials/all
 Authorization: Bearer {{adminToken}}
 
-### Toggle testimonial approval — publish or hide (SuperAdmin only)
+### Toggle testimonial approval (SuperAdmin only)
 PATCH {{baseUrl}}/api/testimonials/{{testimonialId}}/toggle
 Authorization: Bearer {{adminToken}}

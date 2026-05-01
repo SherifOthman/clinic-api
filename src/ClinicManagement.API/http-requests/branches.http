@@ -2,28 +2,25 @@
 @contentType = application/json
 @branchId = 00000000-0000-0000-0000-000000000001
 
-# ─────────────────────────────────────────────────────────────────────────────
-# BRANCHES
-# ─────────────────────────────────────────────────────────────────────────────
+# Run "Login" first — @token is populated from the response
+@token = {{login.response.body.$.accessToken}}
 
-### Login
+### Login — run this first
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: {{contentType}}`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "owner@clinic.com",
   "password": "Password123!"
 }
 
-@token = {{login.response.body.$.accessToken}}
-
 ### Get all branches
 GET {{baseUrl}}/api/branches
 Authorization: Bearer {{token}}
 
 ### Create a branch
-# CreateBranchCommand: Name, AddressLine, StateGeonameId?, CityGeonameId?, PhoneNumbers
 POST {{baseUrl}}/api/branches
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -36,7 +33,7 @@ Content-Type: {{contentType}}
   "phoneNumbers": ["+966112345678"]
 }
 
-### Create branch (minimal — no location)
+### Create branch (minimal - no location)
 POST {{baseUrl}}/api/branches
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -50,7 +47,6 @@ Content-Type: {{contentType}}
 }
 
 ### Update a branch
-# UpdateBranchCommand: Name, AddressLine, StateGeonameId?, CityGeonameId?, PhoneNumbers
 PUT {{baseUrl}}/api/branches/{{branchId}}
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
@@ -64,7 +60,6 @@ Content-Type: {{contentType}}
 }
 
 ### Deactivate a branch
-# SetBranchActiveStatusCommand: IsActive
 PATCH {{baseUrl}}/api/branches/{{branchId}}/active-status
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}

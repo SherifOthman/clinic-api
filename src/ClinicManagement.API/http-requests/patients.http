@@ -1,64 +1,69 @@
 @baseUrl = http://localhost:5000
+@contentType = application/json
 @patientId = 00000000-0000-0000-0000-000000000001
 
-### ── Login ───────────────────────────────────────────────────────────────────
+# Run "Login" first — @token is populated from the response
+@token = {{login.response.body.$.accessToken}}
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
 
+### Login — run this first
 # @name login
 POST {{baseUrl}}/api/auth/login
-Content-Type: application/json`nX-Client-Type: mobile
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
 {
   "emailOrUsername": "owner@clinic.com",
   "password": "Password123!"
 }
 
-@token = {{login.response.body.$.accessToken}}
+### Login as SuperAdmin
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+X-Client-Type: mobile
 
-### ── Get patients list (paginated) ──────────────────────────────────────────
+{
+  "emailOrUsername": "admin@system.com",
+  "password": "Password123!"
+}
 
+### Get patients list (paginated)
 GET {{baseUrl}}/api/patients?pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
 ### Search patients
-
 GET {{baseUrl}}/api/patients?searchTerm=Ahmed&gender=Male&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
 ### Sort patients
-
 GET {{baseUrl}}/api/patients?sortBy=fullName&sortDirection=asc&pageNumber=1&pageSize=20
 Authorization: Bearer {{token}}
 
 ### Filter by location
-
 GET {{baseUrl}}/api/patients?countryGeonameId=294640&stateGeonameId=294946&pageNumber=1&pageSize=10
 Authorization: Bearer {{token}}
 
-### ── Get patient location options (for filter dropdowns) ─────────────────────
-
+### Get patient location options
 GET {{baseUrl}}/api/patients/location-options
 Authorization: Bearer {{token}}
 
 ### Location options filtered by country
-
 GET {{baseUrl}}/api/patients/location-options?countryGeonameId=294640
 Authorization: Bearer {{token}}
 
 ### Location options filtered by country + state
-
 GET {{baseUrl}}/api/patients/location-options?countryGeonameId=294640&stateGeonameId=294946
 Authorization: Bearer {{token}}
 
-### ── Get patient detail ───────────────────────────────────────────────────────
-
+### Get patient detail
 GET {{baseUrl}}/api/patients/{{patientId}}
 Authorization: Bearer {{token}}
 
-### ── Create patient ──────────────────────────────────────────────────────────
-
+### Create patient
 POST {{baseUrl}}/api/patients
 Authorization: Bearer {{token}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "fullName": "Ahmed Al-Rashid",
@@ -72,11 +77,10 @@ Content-Type: application/json
   "chronicDiseaseIds": []
 }
 
-### ── Update patient ──────────────────────────────────────────────────────────
-
+### Update patient
 PUT {{baseUrl}}/api/patients/{{patientId}}
 Authorization: Bearer {{token}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "fullName": "Ahmed Al-Rashid Updated",
@@ -90,41 +94,22 @@ Content-Type: application/json
   "chronicDiseaseIds": []
 }
 
-### ── Delete patient (soft delete) ───────────────────────────────────────────
-
+### Delete patient (soft delete)
 DELETE {{baseUrl}}/api/patients/{{patientId}}
 Authorization: Bearer {{token}}
 
-### ── SuperAdmin: Get all patients across all clinics ─────────────────────────
-
-# @name loginAdmin
-POST {{baseUrl}}/api/auth/login
-Content-Type: application/json`nX-Client-Type: mobile
-
-{
-  "emailOrUsername": "admin@system.com",
-  "password": "Password123!"
-}
-
-@adminToken = {{loginAdmin.response.body.$.accessToken}}
-
 ### All patients (SuperAdmin)
-
 GET {{baseUrl}}/api/patients/all?pageNumber=1&pageSize=10
 Authorization: Bearer {{adminToken}}
 
-### All patients with clinic filter
-
+### All patients with clinic filter (SuperAdmin)
 GET {{baseUrl}}/api/patients/all?clinicSearch=Al-Shifa&pageNumber=1&pageSize=10
 Authorization: Bearer {{adminToken}}
 
-### SuperAdmin: Get patient detail (cross-clinic)
-
+### Get patient detail (SuperAdmin cross-clinic)
 GET {{baseUrl}}/api/patients/all/{{patientId}}
 Authorization: Bearer {{adminToken}}
 
-### SuperAdmin: Restore soft-deleted patient
-
+### Restore soft-deleted patient (SuperAdmin)
 PATCH {{baseUrl}}/api/patients/{{patientId}}/restore
 Authorization: Bearer {{adminToken}}
-
