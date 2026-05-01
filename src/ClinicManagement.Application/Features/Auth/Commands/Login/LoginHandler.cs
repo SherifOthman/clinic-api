@@ -93,6 +93,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         var roles = await _userManager.GetRolesAsync(user);
 
         Guid? clinicId    = null;
+        Guid? memberId    = null;
         string? countryCode = null;
 
         if (roles.Contains(UserRoles.ClinicOwner))
@@ -100,11 +101,19 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
             clinicId    = clinic?.Id;
             countryCode = clinic?.CountryCode;
+
+            // Owner may also be registered as a doctor — look up their member record once
+            if (clinicId.HasValue)
+            {
+                var ownerMember = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
+                memberId = ownerMember?.Id;
+            }
         }
         else
         {
             var staff = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
             clinicId  = staff?.ClinicId;
+            memberId  = staff?.Id;  // already loaded — no second query needed
 
             if (staff is not null && !staff.IsActive)
             {
@@ -124,8 +133,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             }
         }
 
-        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(),
-            await GetMemberIdAsync(user.Id, clinicId, cancellationToken), clinicId, countryCode);
+        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(), memberId, clinicId, countryCode);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
         await _audit.WriteEventAsync("LoginSuccess",
@@ -137,12 +145,5 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             user.Id, request.IsMobile ? "mobile" : "web", string.Join(", ", roles));
 
         return Result.Success(new TokenResponseDto(accessToken, refreshToken.Token));
-    }
-
-    private async Task<Guid?> GetMemberIdAsync(Guid userId, Guid? clinicId, CancellationToken ct)
-    {
-        if (clinicId is null) return null;
-        var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(userId, ct);
-        return member?.Id;
     }
 }
