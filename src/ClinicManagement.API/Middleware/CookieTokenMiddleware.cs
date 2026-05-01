@@ -31,8 +31,12 @@ public class CookieTokenMiddleware
             return;
         }
 
-        // Mobile clients send Authorization header themselves — leave untouched
-        if (context.Request.Headers.ContainsKey("Authorization"))
+        // Mobile clients send Authorization header themselves — leave untouched.
+        // Only skip if the header contains an actual Bearer token value, not just
+        // an empty/whitespace header that tools like Scalar inject automatically.
+        var authHeader = context.Request.Headers.Authorization.ToString();
+        if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            && authHeader.Length > "Bearer ".Length)
         {
             await _next(context);
             return;
