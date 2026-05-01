@@ -17,7 +17,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
     private readonly UserManager<User> _userManager;
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
     private readonly ILogger<ForgotPasswordHandler> _logger;
 
     public ForgotPasswordHandler(
@@ -25,15 +25,15 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         UserManager<User> userManager,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
-        ISecurityAuditWriter auditWriter,
+        IAuditWriter audit,
         ILogger<ForgotPasswordHandler> logger)
     {
-        _uow         = uow;
-        _userManager = userManager;
+        _uow          = uow;
+        _userManager  = userManager;
         _emailService = emailService;
-        _appOptions  = appOptions.Value;
-        _auditWriter = auditWriter;
-        _logger      = logger;
+        _appOptions   = appOptions.Value;
+        _audit        = audit;
+        _logger       = logger;
     }
 
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
@@ -60,8 +60,9 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
             _logger.LogError(ex, "Failed to send password reset email to: {Email}", user.Email);
         }
 
-        await _auditWriter.WriteAsync(user.Id, user.Person.FullName, user.UserName, user.Email,
-            null, null, "PasswordResetRequested", cancellationToken: cancellationToken);
+        await _audit.WriteEventAsync("PasswordResetRequested",
+            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideEmail: user.Email, ct: cancellationToken);
 
         return Result.Success();
     }

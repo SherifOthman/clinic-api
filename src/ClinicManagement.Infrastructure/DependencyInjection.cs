@@ -17,7 +17,7 @@ public static class DependencyInjection
         services.AddScoped<DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPermissionService, PermissionService>();
-        services.AddScoped<ISecurityAuditWriter, SecurityAuditWriter>();
+        services.AddScoped<IAuditWriter, AuditWriter>();
 
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();

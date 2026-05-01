@@ -12,7 +12,7 @@ namespace ClinicManagement.Domain.Entities;
 /// - Role is per-clinic — same person can be Doctor at Clinic A, Receptionist at Clinic B
 /// - One person can have multiple memberships across different clinics
 /// </summary>
-public class ClinicMember : AuditableTenantEntity
+public class ClinicMember : AuditableTenantEntity, IAuditableEntity
 {
     public Guid PersonId { get; init; }
 

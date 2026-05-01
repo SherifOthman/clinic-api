@@ -13,13 +13,16 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 {
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
 
-    public AcceptInvitationWithRegistrationHandler(IUnitOfWork uow, UserManager<User> userManager, ISecurityAuditWriter auditWriter)
+    public AcceptInvitationWithRegistrationHandler(
+        IUnitOfWork uow,
+        UserManager<User> userManager,
+        IAuditWriter audit)
     {
         _uow         = uow;
         _userManager = userManager;
-        _auditWriter = auditWriter;
+        _audit       = audit;
     }
 
     public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
@@ -31,27 +34,29 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
         var person = new Person { FullName = request.FullName, Gender = gender };
 
-        await _uow.Persons.AddAsync(person,cancellationToken);
+        await _uow.Persons.AddAsync(person, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         var user = new User
         {
-            UserName = request.UserName,
-            Email = invitation.Email,
-            PhoneNumber = request.PhoneNumber,
+            UserName       = request.UserName,
+            Email          = invitation.Email,
+            PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = true,
-            PersonId = person.Id,
+            PersonId       = person.Id,
         };
 
         var createResult = await _userManager.CreateAsync(user, request.Password);
         if (!createResult.Succeeded)
-            return Result.Failure(ErrorCodes.OPERATION_FAILED, string.Join(", ", createResult.Errors.Select(e => e.Description)));
+            return Result.Failure(ErrorCodes.OPERATION_FAILED,
+                string.Join(", ", createResult.Errors.Select(e => e.Description)));
 
         var roleResult = await _userManager.AddToRoleAsync(user, invitation.Role.ToString());
         if (!roleResult.Succeeded)
         {
             await _userManager.DeleteAsync(user);
-            return Result.Failure(ErrorCodes.OPERATION_FAILED, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+            return Result.Failure(ErrorCodes.OPERATION_FAILED,
+                string.Join(", ", roleResult.Errors.Select(e => e.Description)));
         }
 
         var acceptResult = invitation.Accept(user.Id, DateTimeOffset.UtcNow);
@@ -60,9 +65,9 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var member = new ClinicMember
         {
             PersonId = person.Id,
-            UserId = user.Id,
+            UserId   = user.Id,
             ClinicId = invitation.ClinicId,
-            Role = invitation.Role,
+            Role     = invitation.Role,
             IsActive = true,
         };
         await _uow.Members.AddAsync(member);
@@ -71,7 +76,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         {
             await _uow.DoctorInfos.AddAsync(new DoctorInfo
             {
-                ClinicMemberId = member.Id,
+                ClinicMemberId   = member.Id,
                 SpecializationId = invitation.SpecializationId,
             });
         }
@@ -79,9 +84,10 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         await _uow.Permissions.SeedDefaultsAsync(member.Id, invitation.Role, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        await _auditWriter.WriteAsync(user.Id, person.FullName, user.UserName, user.Email,
-            invitation.Role.ToString(), invitation.ClinicId,
-            "StaffInvitationAccepted", $"Role: {invitation.Role}", cancellationToken);
+        await _audit.WriteEventAsync("StaffInvitationAccepted", $"Role: {invitation.Role}",
+            overrideUserId: user.Id, overrideFullName: person.FullName,
+            overrideEmail: user.Email, overrideRole: invitation.Role.ToString(),
+            overrideClinicId: invitation.ClinicId, ct: cancellationToken);
 
         return Result.Success();
     }

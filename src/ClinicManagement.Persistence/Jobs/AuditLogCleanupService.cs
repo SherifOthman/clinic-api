@@ -1,4 +1,5 @@
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,8 +17,8 @@ namespace ClinicManagement.Persistence.Jobs;
 /// </summary>
 public class AuditLogCleanupService
 {
-    private const int RetentionMonths         = 1;
-    private const int SecurityRetentionMonths = 3;
+    private const int RetentionMonths         = 12;
+    private const int SecurityRetentionMonths = 24;
     private const int BatchSize               = 5_000;
 
     private readonly ApplicationDbContext _context;
@@ -36,36 +37,32 @@ public class AuditLogCleanupService
         var standardCutoff = DateTimeOffset.UtcNow.AddMonths(-RetentionMonths);
         var securityCutoff = DateTimeOffset.UtcNow.AddMonths(-SecurityRetentionMonths);
 
-        var securityActions = new[] { "LoginFailed", "LoginBlocked", "AccountLocked", "LoginSuccess" };
-
         _logger.LogInformation(
             "Audit log cleanup starting — standard cutoff: {Standard:yyyy-MM-dd}, security cutoff: {Security:yyyy-MM-dd}",
             standardCutoff, securityCutoff);
 
         var totalDeleted = 0;
 
-        // Delete standard entries in batches
+        // Delete standard (non-security) entries in batches
         int deleted;
         do
         {
             deleted = await _context.Set<AuditLog>()
-                .Where(a => a.Timestamp < standardCutoff
-                         && !securityActions.Contains(a.EntityType))
+                .Where(a => a.Timestamp < standardCutoff && a.Action != AuditAction.Security)
                 .OrderBy(a => a.Timestamp)
                 .Take(BatchSize)
                 .ExecuteDeleteAsync();
 
             totalDeleted += deleted;
         }
-        while (deleted == BatchSize); // keep going until a batch comes back smaller than BatchSize
+        while (deleted == BatchSize);
 
         // Delete security entries with longer retention
         int secDeleted;
         do
         {
             secDeleted = await _context.Set<AuditLog>()
-                .Where(a => a.Timestamp < securityCutoff
-                         && securityActions.Contains(a.EntityType))
+                .Where(a => a.Timestamp < securityCutoff && a.Action == AuditAction.Security)
                 .OrderBy(a => a.Timestamp)
                 .Take(BatchSize)
                 .ExecuteDeleteAsync();

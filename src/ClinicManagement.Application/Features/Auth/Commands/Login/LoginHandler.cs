@@ -17,7 +17,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
     private readonly UserManager<User> _userManager;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
@@ -25,15 +25,15 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         UserManager<User> userManager,
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
-        ISecurityAuditWriter auditWriter,
+        IAuditWriter audit,
         ILogger<LoginHandler> logger)
     {
-        _uow = uow;
-        _userManager = userManager;
-        _tokenService = tokenService;
+        _uow                 = uow;
+        _userManager         = userManager;
+        _tokenService        = tokenService;
         _refreshTokenService = refreshTokenService;
-        _auditWriter = auditWriter;
-        _logger = logger;
+        _audit               = audit;
+        _logger              = logger;
     }
 
     public async Task<Result<TokenResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -43,24 +43,22 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         if (user is null)
         {
             _logger.LogWarning("Failed login attempt for {EmailOrUsername} - user not found", request.EmailOrUsername);
-            await _auditWriter.WriteAsync(null, null, null, null, null, null,
-                "LoginFailed", $"User not found: {request.EmailOrUsername}", cancellationToken);
+            await _audit.WriteEventAsync("LoginFailed", $"User not found: {request.EmailOrUsername}", ct: cancellationToken);
             return Result.Failure<TokenResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
 
         if (await _userManager.IsLockedOutAsync(user))
         {
-            var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+            var lockoutEnd       = await _userManager.GetLockoutEndDateAsync(user);
             var remainingMinutes = lockoutEnd.HasValue ? (int)(lockoutEnd.Value - DateTimeOffset.UtcNow).TotalMinutes + 1 : 30;
 
             _logger.LogWarning("Login attempt for locked account {UserId}", user.Id);
-
-            await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
-                user.UserName, user.Email, null, null,
-                "LoginBlocked", $"Account locked, {remainingMinutes} min remaining", cancellationToken);
+            await _audit.WriteEventAsync("LoginBlocked", $"Account locked, {remainingMinutes} min remaining",
+                overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+                overrideEmail: user.Email, ct: cancellationToken);
 
             return Result.Failure<TokenResponseDto>(ErrorCodes.ACCOUNT_LOCKED,
-                $"Account is locked due to multiple failed login attempts. Please try again in {remainingMinutes} minute(s).");
+                $"Account is locked. Please try again in {remainingMinutes} minute(s).");
         }
 
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
@@ -71,17 +69,17 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             if (await _userManager.IsLockedOutAsync(user))
             {
                 _logger.LogWarning("Account {UserId} locked after multiple failed login attempts", user.Id);
-
-                await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
-                    user.UserName, user.Email, null, null,
-                    "AccountLocked", "Locked after too many failed attempts", cancellationToken);
+                await _audit.WriteEventAsync("AccountLocked", "Locked after too many failed attempts",
+                    overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+                    overrideEmail: user.Email, ct: cancellationToken);
 
                 return Result.Failure<TokenResponseDto>(ErrorCodes.ACCOUNT_LOCKED,
                     "Account is locked due to multiple failed login attempts. Please try again in 30 minutes.");
             }
 
-            await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
-                user.UserName, user.Email, null, null, "LoginFailed", "Invalid password", cancellationToken);
+            await _audit.WriteEventAsync("LoginFailed", "Invalid password",
+                overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+                overrideEmail: user.Email, ct: cancellationToken);
 
             return Result.Failure<TokenResponseDto>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
@@ -92,25 +90,26 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
 
         var roles = await _userManager.GetRolesAsync(user);
 
-        Guid? clinicId = null;
+        Guid? clinicId    = null;
         string? countryCode = null;
+
         if (roles.Contains(UserRoles.ClinicOwner))
         {
-            var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
-            clinicId = clinic?.Id;
+            var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
+            clinicId    = clinic?.Id;
             countryCode = clinic?.CountryCode;
         }
         else
         {
             var staff = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
-            clinicId = staff?.ClinicId;
+            clinicId  = staff?.ClinicId;
 
             if (staff is not null && !staff.IsActive)
             {
                 _logger.LogWarning("Inactive staff {UserId} attempted to log in", user.Id);
-
-                await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
-                    user.UserName, user.Email, null, clinicId, "LoginFailed", "Account inactive", cancellationToken);
+                await _audit.WriteEventAsync("LoginFailed", "Account inactive",
+                    overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+                    overrideEmail: user.Email, overrideClinicId: clinicId, ct: cancellationToken);
 
                 return Result.Failure<TokenResponseDto>(ErrorCodes.STAFF_INACTIVE,
                     "Your account has been deactivated. Please contact your clinic owner.");
@@ -118,20 +117,19 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
 
             if (clinicId.HasValue)
             {
-                var clinic = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
+                var clinic  = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
                 countryCode = clinic?.CountryCode;
             }
         }
 
-        var accessToken = _tokenService.GenerateAccessToken(user, roles.ToList(),
-            await GetMemberIdAsync(user.Id, clinicId, cancellationToken),
-            clinicId, countryCode);
-
+        var accessToken  = _tokenService.GenerateAccessToken(user, roles.ToList(),
+            await GetMemberIdAsync(user.Id, clinicId, cancellationToken), clinicId, countryCode);
         var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, cancellationToken);
 
-        await _auditWriter.WriteAsync(user.Id, user.Person.FullName,
-            user.UserName, user.Email, string.Join(",", roles), clinicId,
-            "LoginSuccess", cancellationToken: cancellationToken);
+        await _audit.WriteEventAsync("LoginSuccess",
+            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideEmail: user.Email, overrideRole: string.Join(",", roles),
+            overrideClinicId: clinicId, ct: cancellationToken);
 
         _logger.LogInformation("User {UserId} logged in ({ClientType}) with roles [{Roles}]",
             user.Id, request.IsMobile ? "mobile" : "web", string.Join(", ", roles));
@@ -139,8 +137,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         return Result.Success(new TokenResponseDto(accessToken, refreshToken.Token));
     }
 
-    private async Task<Guid?> GetMemberIdAsync(
-        Guid userId, Guid? clinicId, CancellationToken ct)
+    private async Task<Guid?> GetMemberIdAsync(Guid userId, Guid? clinicId, CancellationToken ct)
     {
         if (clinicId is null) return null;
         var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(userId, ct);

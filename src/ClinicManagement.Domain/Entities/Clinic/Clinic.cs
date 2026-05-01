@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class Clinic : AuditableEntity, ISoftDeletable
+public class Clinic : AuditableEntity, ISoftDeletable, IAuditableEntity
 {
     public string Name { get; set; } = null!;
     public Guid OwnerUserId { get; init; }

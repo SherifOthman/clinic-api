@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class ClinicBranch : AuditableTenantEntity
+public class ClinicBranch : AuditableTenantEntity, IAuditableEntity
 {
     public string Name { get; set; } = null!;
     public string? AddressLine { get; set; }

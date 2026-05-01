@@ -14,20 +14,20 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
     private readonly ICurrentUserService _currentUser;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
         IUnitOfWork uow,
         UserManager<User> userManager,
         ICurrentUserService currentUser,
-        ISecurityAuditWriter auditWriter,
+        IAuditWriter audit,
         ILogger<ChangePasswordHandler> logger)
     {
         _uow         = uow;
         _userManager = userManager;
         _currentUser = currentUser;
-        _auditWriter = auditWriter;
+        _audit       = audit;
         _logger      = logger;
     }
 
@@ -46,9 +46,9 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         if (!result.Succeeded)
         {
             _logger.LogWarning("Failed to change password for user {UserId}", user.Id);
-            // Audit failure manually — behavior only runs on success
-            await _auditWriter.WriteAsync(user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
-                _currentUser.Roles.FirstOrDefault(), null, "PasswordChangeFailed", "Incorrect current password", cancellationToken);
+            // Audit failure — no entity change, must be manual
+            await _audit.WriteEventAsync("PasswordChangeFailed", "Incorrect current password",
+                overrideUserId: user.Id, overrideEmail: user.Email, ct: cancellationToken);
             return Result.Failure(ErrorCodes.INVALID_CREDENTIALS, "Current password is incorrect");
         }
 
@@ -56,10 +56,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         await _uow.SaveChangesAsync(cancellationToken);
 
         // Manual audit — UserManager handles the password hash; no entity diff is captured by SaveChanges
-        await _auditWriter.WriteAsync(
-            user.Id, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
-            _currentUser.Roles.FirstOrDefault(), null,
-            "PasswordChanged", null, cancellationToken);
+        await _audit.WriteEventAsync("PasswordChanged", ct: cancellationToken);
 
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);
         return Result.Success();

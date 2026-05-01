@@ -11,13 +11,13 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
 {
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
 
-    public SetMemberPermissionsHandler(IUnitOfWork uow, ICurrentUserService currentUser, ISecurityAuditWriter auditWriter)
+    public SetMemberPermissionsHandler(IUnitOfWork uow, ICurrentUserService currentUser, IAuditWriter audit)
     {
         _uow         = uow;
         _currentUser = currentUser;
-        _auditWriter = auditWriter;
+        _audit       = audit;
     }
 
     public async Task<Result> Handle(SetMemberPermissionsCommand request, CancellationToken cancellationToken)
@@ -46,11 +46,8 @@ public class SetMemberPermissionsHandler : IRequestHandler<SetMemberPermissionsC
         var removed = previousPermissions.Except(permissions).Select(p => p.ToString());
         var detail  = $"Granted: [{string.Join(", ", added)}] | Revoked: [{string.Join(", ", removed)}]";
 
-        // Manual audit — needs DB diff that the behavior can't compute
-        await _auditWriter.WriteAsync(
-            _currentUser.UserId, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
-            _currentUser.Roles.FirstOrDefault(), clinicId,
-            "PermissionsChanged", detail, cancellationToken);
+        // Manual audit — batch permission changes need a human-readable diff, not raw row inserts/deletes
+        await _audit.WriteEventAsync("PermissionsChanged", detail, ct: cancellationToken);
 
         return Result.Success();
     }

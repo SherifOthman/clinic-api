@@ -15,18 +15,18 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailService _emailService;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
 
     public InviteStaffHandler(
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IEmailService emailService,
-        ISecurityAuditWriter auditWriter)
+        IAuditWriter audit)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _uow          = uow;
+        _currentUser  = currentUser;
         _emailService = emailService;
-        _auditWriter = auditWriter;
+        _audit        = audit;
     }
 
     public async Task<Result<InviteStaffResponseDto>> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
@@ -57,12 +57,8 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Manual audit — SaveChanges captures the Invitation row creation, but the
-        // business context ("who was invited as what role") is more useful here.
-        await _auditWriter.WriteAsync(
-            _currentUser.UserId, _currentUser.FullName, _currentUser.Username, _currentUser.Email,
-            _currentUser.Roles.FirstOrDefault(), clinicId,
-            "StaffInvited", $"Invited {request.Email} as {request.Role}", cancellationToken);
+        // Manual audit — business context ("who was invited as what role") is more useful than the row creation diff
+        await _audit.WriteEventAsync("StaffInvited", $"Invited {request.Email} as {request.Role}", ct: cancellationToken);
 
         return Result.Success(new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt));
     }

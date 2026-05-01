@@ -2,17 +2,29 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
+using System.Text.Json;
 
 namespace ClinicManagement.Persistence;
 
 public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 {
     private readonly ICurrentUserService? _currentUserService;
+
+    // Fields that must never appear in audit diffs — hashes, tokens, internal EF fields
+    private static readonly HashSet<string> ExcludedFromAudit = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "PasswordHash", "SecurityStamp", "ConcurrencyStamp",
+        "NormalizedEmail", "NormalizedUserName",
+        "RefreshToken", "TokenHash", "InvitationToken",
+        "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy",  // stamped separately
+    };
 
     // ── Location reference tables (GeoNames seed) ─────────────────────────────
     public DbSet<GeoCountry> GeoCountries => Set<GeoCountry>();
@@ -30,10 +42,10 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var userId = _currentUserService?.UserId;
         var now    = DateTimeOffset.UtcNow;
+        var userId = _currentUserService?.UserId;
 
-        // Stamp CreatedAt/UpdatedAt/CreatedBy/UpdatedBy on all auditable entities
+        // ── 1. Stamp CreatedAt/UpdatedAt/CreatedBy/UpdatedBy ─────────────────
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)
@@ -48,12 +60,136 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        // ── 2. Capture audit entries BEFORE saving ────────────────────────────
+        // OriginalValues are only available before base.SaveChangesAsync is called.
+        var auditEntries = CaptureAuditEntries(now, userId);
+
+        // ── 3. Save the actual changes ────────────────────────────────────────
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // ── 4. Write audit logs in a second save ──────────────────────────────
+        // Done after the main save so that:
+        //   a) If the main save fails, no audit entry is written (correct — nothing happened)
+        //   b) Newly created entity IDs are available (Guid is client-generated so this
+        //      is actually fine either way, but the pattern is cleaner)
+        if (auditEntries.Count > 0)
+        {
+            Set<AuditLog>().AddRange(auditEntries);
+            await base.SaveChangesAsync(cancellationToken);
+        }
+
+        return result;
     }
+
+    // ── Audit capture ─────────────────────────────────────────────────────────
+
+    private List<AuditLog> CaptureAuditEntries(DateTimeOffset now, Guid? userId)
+    {
+        // Only process entities that opted in via IAuditableEntity
+        var entries = ChangeTracker
+            .Entries<IAuditableEntity>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .ToList();
+
+        if (entries.Count == 0) return [];
+
+        var clinicId  = _currentUserService?.ClinicId;
+        var fullName  = _currentUserService?.FullName;
+        var username  = _currentUserService?.Username;
+        var email     = _currentUserService?.Email;
+        var role      = _currentUserService?.Roles.FirstOrDefault();
+        var ipAddress = _currentUserService?.IpAddress;
+        var userAgent = _currentUserService?.UserAgent;
+
+        var auditLogs = new List<AuditLog>(entries.Count);
+
+        foreach (var entry in entries)
+        {
+            var action = entry.State switch
+            {
+                EntityState.Added    => AuditAction.Create,
+                EntityState.Modified => AuditAction.Update,
+                EntityState.Deleted  => AuditAction.Delete,
+                _                    => AuditAction.Update,
+            };
+
+            var changes = BuildChanges(entry, action);
+
+            // Skip Update entries where nothing meaningful changed
+            // (e.g. only excluded fields like UpdatedAt were touched)
+            if (action == AuditAction.Update && changes is null) continue;
+
+            // Resolve ClinicId: prefer current user's clinic, fall back to entity's own ClinicId
+            var entityClinicId = clinicId
+                ?? (entry.Entity is ITenantEntity tenant ? tenant.ClinicId : null);
+
+            auditLogs.Add(new AuditLog
+            {
+                Timestamp  = now,
+                ClinicId   = entityClinicId,
+                UserId     = userId,
+                FullName   = fullName,
+                Username   = username,
+                UserEmail  = email,
+                UserRole   = role,
+                IpAddress  = ipAddress,
+                UserAgent  = userAgent,
+                EntityType = entry.Entity.GetType().Name,
+                EntityId   = entry.Property("Id").CurrentValue?.ToString() ?? "unknown",
+                Action     = action,
+                Changes    = changes,
+            });
+        }
+
+        return auditLogs;
+    }
+
+    /// <summary>
+    /// Builds a JSON diff string for the changed properties.
+    /// Returns null if nothing meaningful changed (all modified props were excluded).
+    /// For Create/Delete, returns a snapshot of all non-excluded properties.
+    /// </summary>
+    private static string? BuildChanges(EntityEntry<IAuditableEntity> entry, AuditAction action)
+    {
+        if (action == AuditAction.Create)
+        {
+            // Snapshot of all non-excluded properties at creation time
+            var snapshot = entry.Properties
+                .Where(p => !ExcludedFromAudit.Contains(p.Metadata.Name))
+                .Where(p => p.CurrentValue is not null)
+                .ToDictionary(p => p.Metadata.Name, p => p.CurrentValue);
+
+            return snapshot.Count > 0 ? JsonSerializer.Serialize(snapshot) : null;
+        }
+
+        if (action == AuditAction.Delete)
+        {
+            // Snapshot of what was deleted
+            var snapshot = entry.Properties
+                .Where(p => !ExcludedFromAudit.Contains(p.Metadata.Name))
+                .Where(p => p.OriginalValue is not null)
+                .ToDictionary(p => p.Metadata.Name, p => p.OriginalValue);
+
+            return snapshot.Count > 0 ? JsonSerializer.Serialize(snapshot) : null;
+        }
+
+        // Update — only include properties that actually changed
+        var diff = entry.Properties
+            .Where(p => p.IsModified && !ExcludedFromAudit.Contains(p.Metadata.Name))
+            .Where(p => !Equals(p.OriginalValue, p.CurrentValue))
+            .ToDictionary(
+                p => p.Metadata.Name,
+                p => new { Old = p.OriginalValue, New = p.CurrentValue });
+
+        return diff.Count > 0 ? JsonSerializer.Serialize(diff) : null;
+    }
+
+    // ── Model configuration ───────────────────────────────────────────────────
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
         // Rename Identity tables
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<Role>().ToTable("Roles");
@@ -63,11 +199,10 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
         modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
 
-        // Apply entity configurations
+        // Apply entity configurations from assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // Apply tenant filter to all ITenantEntity types automatically
-        // Apply soft-delete filter to all AuditableEntity types automatically
+        // Apply tenant and soft-delete filters automatically to all matching entity types
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             var clrType = entityType.ClrType;

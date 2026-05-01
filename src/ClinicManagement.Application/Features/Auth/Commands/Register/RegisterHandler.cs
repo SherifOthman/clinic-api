@@ -16,21 +16,21 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
     private readonly IEmailTokenService _emailTokenService;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
     private readonly ILogger<RegisterHandler> _logger;
 
     public RegisterHandler(
         IUnitOfWork uow,
         UserManager<User> userManager,
         IEmailTokenService emailTokenService,
-        ISecurityAuditWriter auditWriter,
+        IAuditWriter audit,
         ILogger<RegisterHandler> logger)
     {
-        _uow = uow;
-        _userManager = userManager;
+        _uow               = uow;
+        _userManager       = userManager;
         _emailTokenService = emailTokenService;
-        _auditWriter = auditWriter;
-        _logger = logger;
+        _audit             = audit;
+        _logger            = logger;
     }
 
     public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -81,8 +81,9 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
                 request.Email, ex.Message);
         }
 
-        await _auditWriter.WriteAsync(user.Id, user.Person.FullName, user.UserName, user.Email,
-            UserRoles.ClinicOwner, clinicId: null, "Register", cancellationToken: cancellationToken);
+        await _audit.WriteEventAsync("Register",
+            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideEmail: user.Email, overrideRole: UserRoles.ClinicOwner, ct: cancellationToken);
 
         _logger.LogInformation("User registered successfully: {Email} with role {Role}", request.Email, UserRoles.ClinicOwner);
         return Result.Success();

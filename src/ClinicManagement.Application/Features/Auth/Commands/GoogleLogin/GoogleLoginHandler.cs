@@ -18,7 +18,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
     private readonly UserManager<User> _userManager;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenService _refreshTokenService;
-    private readonly ISecurityAuditWriter _auditWriter;
+    private readonly IAuditWriter _audit;
     private readonly ILogger<GoogleLoginHandler> _logger;
 
     public GoogleLoginHandler(
@@ -26,14 +26,14 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         UserManager<User> userManager,
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService,
-        ISecurityAuditWriter auditWriter,
+        IAuditWriter audit,
         ILogger<GoogleLoginHandler> logger)
     {
         _uow                 = uow;
         _userManager         = userManager;
         _tokenService        = tokenService;
         _refreshTokenService = refreshTokenService;
-        _auditWriter         = auditWriter;
+        _audit               = audit;
         _logger              = logger;
     }
 
@@ -59,10 +59,10 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
         var tokens = await IssueTokensAsync(user, roles, tokenContext.Value!, cancellationToken);
 
-        await _auditWriter.WriteAsync(
-            user.Id, user.Person.FullName, user.UserName, user.Email,
-            string.Join(",", roles), tokenContext.Value!.ClinicId,
-            "GoogleLoginSuccess", cancellationToken: cancellationToken);
+        await _audit.WriteEventAsync("GoogleLoginSuccess",
+            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideEmail: user.Email, overrideRole: string.Join(",", roles),
+            overrideClinicId: tokenContext.Value!.ClinicId, ct: cancellationToken);
 
         _logger.LogInformation("Google OAuth login successful for {Email}", request.Email);
 
