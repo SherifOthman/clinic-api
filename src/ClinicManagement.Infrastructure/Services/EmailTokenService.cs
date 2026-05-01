@@ -51,10 +51,4 @@ public class EmailTokenService : IEmailTokenService
 
     public async Task<bool> IsEmailConfirmedAsync(User user, CancellationToken cancellationToken = default)
         => await _userManager.IsEmailConfirmedAsync(user);
-
-    public string GeneratePasswordResetToken(Guid userId, string email, string passwordHash)
-        => throw new NotSupportedException("Use UserManager.GeneratePasswordResetTokenAsync instead");
-
-    public bool ValidatePasswordResetToken(Guid userId, string email, string passwordHash, string token)
-        => throw new NotSupportedException("Use UserManager.ResetPasswordAsync instead");
 }

@@ -27,8 +27,9 @@ public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerific
 
         if (user is null)
         {
-            _logger.LogWarning("Resend email verification attempted for non-existent user: {Email}", request.Email);
-            return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
+            // Silent success — don't reveal whether the email is registered
+            _logger.LogInformation("Resend email verification requested for non-existent email: {Email}", request.Email);
+            return Result.Success();
         }
 
         if (user.EmailConfirmed)
