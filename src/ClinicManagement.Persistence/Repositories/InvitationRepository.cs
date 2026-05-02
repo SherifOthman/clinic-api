@@ -2,9 +2,9 @@ using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Staff.Queries;
 using ClinicManagement.Application.Features.Staff.QueryModels;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
@@ -17,8 +17,7 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         => await DbSet.Include(si => si.Specialization).FirstOrDefaultAsync(si => si.Id == id, ct);
 
     public async Task<StaffInvitation?> GetByTokenAsync(string token, CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        => await TenantGuard.AsSystemQuery(DbSet)
             .FirstOrDefaultAsync(si => si.InvitationToken == token && !si.IsDeleted, ct);
 
     public async Task<int> CountPendingAsync(CancellationToken ct = default)

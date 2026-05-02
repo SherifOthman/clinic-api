@@ -21,7 +21,7 @@ public static class TestHandlerHelpers
         var currentUser = new TestCurrentUserService(clinicId);
         var context = new ApplicationDbContext(options, currentUser);
         var cache = new MemoryCache(new MemoryCacheOptions());
-        return new UnitOfWork(context, cache);
+        return new UnitOfWork(context, cache, currentUser);
     }
 
     public static Mock<UserManager<User>> CreateMockUserManager()

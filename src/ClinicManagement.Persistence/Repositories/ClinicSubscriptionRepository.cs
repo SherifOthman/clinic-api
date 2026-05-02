@@ -1,8 +1,8 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.SubscriptionPlans.QueryModels;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
+using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
@@ -22,7 +22,6 @@ public class ClinicSubscriptionRepository : Repository<ClinicSubscription>, ICli
             .FirstOrDefaultAsync(ct);
 
     public async Task<int> CountByStatusIgnoreFiltersAsync(SubscriptionStatus status, CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        => await TenantGuard.AsSystemQuery(DbSet)
             .CountAsync(s => s.Status == status, ct);
 }

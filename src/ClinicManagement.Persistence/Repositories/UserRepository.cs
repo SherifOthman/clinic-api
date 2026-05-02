@@ -2,6 +2,7 @@ using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Auth.QueryModels;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Persistence.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -120,11 +121,10 @@ public class UserRepository : IUserRepository
 
         // Query 2: member + clinic context — one join covers all roles.
         // SuperAdmin has no member record → returns null → all context fields stay null.
-        // IgnoreQueryFilters: we filter by UserId directly — tenant filter not needed here
+        // AsSystemQuery: we filter by UserId directly — tenant filter not needed here
         // and would throw when ClinicId is null (e.g. owner before onboarding completes).
-        var context = await _members
+        var context = await TenantGuard.AsSystemQuery(_members)
             .AsNoTracking()
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .Where(m => m.UserId == userId)
             .Select(m => new
             {
@@ -147,13 +147,11 @@ public class UserRepository : IUserRepository
 
         if (context is null)
         {
-            var ownedClinic = await _clinics
+            var ownedClinic = await TenantGuard.AsSystemQuery(_clinics)
                 .AsNoTracking()
-                .IgnoreQueryFilters([QueryFilterNames.Tenant])
                 .Where(c => c.OwnerUserId == userId)
                 .Select(c => new { c.WeekStartDay, c.OnboardingCompleted })
                 .FirstOrDefaultAsync(ct);
-
             weekStartDay         = ownedClinic?.WeekStartDay ?? 6;
             onboardingCompleted  = ownedClinic?.OnboardingCompleted ?? false;
         }

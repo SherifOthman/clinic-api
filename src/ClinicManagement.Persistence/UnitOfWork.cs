@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Repositories;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence.Repositories;
 using Microsoft.Extensions.Caching.Memory;
@@ -10,14 +11,16 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private readonly IMemoryCache _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public UnitOfWork(ApplicationDbContext context, IMemoryCache cache)
+    public UnitOfWork(ApplicationDbContext context, IMemoryCache cache, ICurrentUserService currentUser)
     {
-        _context = context;
-        _cache   = cache;
+        _context     = context;
+        _cache       = cache;
+        _currentUser = currentUser;
     }
 
-    public IPatientRepository            Patients           => field ??= new PatientRepository(_context);
+    public IPatientRepository            Patients           => field ??= new PatientRepository(_context, _currentUser);
     public IClinicMemberRepository       Members            => field ??= new ClinicMemberRepository(_context);
     public IDoctorInfoRepository         DoctorInfos        => field ??= new DoctorInfoRepository(_context);
     public IDoctorScheduleRepository     DoctorSchedules    => field ??= new DoctorScheduleRepository(_context);

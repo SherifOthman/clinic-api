@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ClinicManagement.Application\ClinicManagement.Application.csproj" />
+    <ProjectReference Include="..\ClinicManagement.Analyzers\ClinicManagement.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

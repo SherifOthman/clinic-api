@@ -1,8 +1,8 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Staff.QueryModels;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Persistence.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,13 +23,11 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         => await DbSet.FirstOrDefaultAsync(m => m.UserId == userId, ct);
 
     public async Task<ClinicMember?> GetByUserIdIgnoreFiltersAsync(Guid userId, CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        => await TenantGuard.AsSystemQuery(DbSet)
             .FirstOrDefaultAsync(m => m.UserId == userId, ct);
 
     public async Task<ClinicMember?> GetByUserIdWithClinicAsync(Guid userId, CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        => await TenantGuard.AsSystemQuery(DbSet)
             .Include(m => m.Clinic)
             .FirstOrDefaultAsync(m => m.UserId == userId, ct);
 
@@ -40,8 +38,7 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         => await DbSet.CountAsync(m => m.IsActive, ct);
 
     public async Task<int> CountActiveIgnoreFiltersAsync(CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        => await TenantGuard.AsSystemQuery(DbSet)
             .CountAsync(m => m.IsActive, ct);
 
     public async Task<PaginatedResult<StaffListRow>> GetProjectedPageAsync(

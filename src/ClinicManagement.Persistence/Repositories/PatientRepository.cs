@@ -1,9 +1,11 @@
 using ClinicManagement.Application.Abstractions.Repositories;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.QueryModels;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
+using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using static ClinicManagement.Domain.Enums.BloodTypeExtensions;
 
@@ -11,7 +13,13 @@ namespace ClinicManagement.Persistence.Repositories;
 
 public class PatientRepository : Repository<Patient>, IPatientRepository
 {
-    public PatientRepository(ApplicationDbContext context) : base(context) { }
+    private readonly ICurrentUserService _currentUser;
+
+    public PatientRepository(ApplicationDbContext context, ICurrentUserService currentUser)
+        : base(context)
+    {
+        _currentUser = currentUser;
+    }
 
     // ── Simple lookups ────────────────────────────────────────────────────────
 
@@ -23,13 +31,13 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<Patient?> GetDeletedByIdAsync(Guid id, CancellationToken ct = default)
-        => await DbSet.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == id, ct);
+        => await TenantGuard.AsUnfilteredQuery(DbSet).FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<bool> AnyByCodeAsync(string code, CancellationToken ct = default)
-        => await DbSet.IgnoreQueryFilters().AnyAsync(p => p.PatientCode == code, ct);
+        => await TenantGuard.AsUnfilteredQuery(DbSet).AnyAsync(p => p.PatientCode == code, ct);
 
     public async Task<int> CountIgnoreFiltersAsync(CancellationToken ct = default)
-        => await DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).CountAsync(ct);
+        => await TenantGuard.AsSystemQuery(DbSet).CountAsync(ct);
 
     public async Task<int> CountCreatedFromAsync(DateTimeOffset from, CancellationToken ct = default)
         => await DbSet.CountAsync(p => p.CreatedAt >= from, ct);
@@ -98,7 +106,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking();
+        var query = TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking();
         query = ApplyPatientFilters(query, searchTerm, nationalSearch, gender, countryGeonameId, stateGeonameId, cityGeonameId);
 
         // Clinic search — admin only
@@ -108,11 +116,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 query = query.Where(p => p.ClinicId == clinicGuid);
             else
             {
-                var matchingClinicIds = Context.Set<Clinic>()
-                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
+                var matchingClinicIds = TenantGuard.AsSystemQuery(Context.Set<Clinic>())
                     .Where(c => c.Name.StartsWith(clinicSearch))
-                    .Select(c => c.Id);
-                query = query.Where(p => matchingClinicIds.Contains(p.ClinicId));
+                    .Select(c => c.Id);                query = query.Where(p => matchingClinicIds.Contains(p.ClinicId));
             }
         }
 
@@ -128,7 +134,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     public async Task<PatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default)
         => await FetchDetailAsync(
-            DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking(),
+            TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking(),
             id, includeClinicName: true, ct);
 
     // ── Admin (cross-tenant) location options ─────────────────────────────────
@@ -136,7 +142,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     public Task<List<LocationOption>> GetAdminLocationOptionsAsync(
         int? countryGeonameId, int? stateGeonameId, CancellationToken ct = default)
         => FetchLocationOptionsAsync(
-            DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking(),
+            TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking(),
             countryGeonameId, stateGeonameId, ct);
 
     // ── Child entity helpers ──────────────────────────────────────────────────
@@ -328,16 +334,14 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     {
         var ids = clinicIds.Distinct().ToList();
         if (ids.Count == 0) return [];
-        return await Context.Set<Clinic>()
-            .IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+        return await TenantGuard.AsSystemQuery(Context.Set<Clinic>()).AsNoTracking()
             .Where(c => ids.Contains(c.Id))
             .Select(c => new { c.Id, c.Name })
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
     }
 
     private async Task<string?> LoadClinicNameAsync(Guid clinicId, CancellationToken ct)
-        => await Context.Set<Clinic>()
-            .IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+        => await TenantGuard.AsSystemQuery(Context.Set<Clinic>()).AsNoTracking()
             .Where(c => c.Id == clinicId).Select(c => c.Name).FirstOrDefaultAsync(ct);
 
     private async Task<Dictionary<Guid, string>> LoadAuditUserNamesAsync(

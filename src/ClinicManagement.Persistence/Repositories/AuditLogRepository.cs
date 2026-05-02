@@ -1,8 +1,8 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
+using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
@@ -63,8 +63,7 @@ public class AuditLogRepository : Repository<AuditLog>, IAuditLogRepository
         if (Guid.TryParse(clinicSearch, out var clinicGuid))
             return clinicGuid;
 
-        return await _clinics
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        return await TenantGuard.AsSystemQuery(_clinics)
             .Where(c => c.Name.StartsWith(clinicSearch))
             .Select(c => (Guid?)c.Id)
             .FirstOrDefaultAsync(ct);
@@ -72,8 +71,7 @@ public class AuditLogRepository : Repository<AuditLog>, IAuditLogRepository
 
     public async Task<Dictionary<Guid, string>> GetClinicNamesByIdsAsync(
         List<Guid> clinicIds, CancellationToken ct = default)
-        => await _clinics
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        => await TenantGuard.AsSystemQuery(_clinics)
             .Where(c => clinicIds.Contains(c.Id))
             .Select(c => new { c.Id, c.Name })
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct);

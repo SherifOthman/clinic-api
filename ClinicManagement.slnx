@@ -3,6 +3,7 @@
     <File Path=".editorconfig" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/ClinicManagement.Analyzers/ClinicManagement.Analyzers.csproj" />
     <Project Path="src/ClinicManagement.API/ClinicManagement.API.csproj" />
     <Project Path="src/ClinicManagement.Application/ClinicManagement.Application.csproj" />
     <Project Path="src/ClinicManagement.Domain/ClinicManagement.Domain.csproj" />

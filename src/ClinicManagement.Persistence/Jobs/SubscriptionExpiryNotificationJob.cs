@@ -2,6 +2,7 @@ using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
+using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -25,8 +26,7 @@ public class SubscriptionExpiryNotificationJob
         var now             = DateTimeOffset.UtcNow;
         var expiryThreshold = now.AddDays(7);
 
-        var expiring = await _context.Set<ClinicSubscription>()
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+        var expiring = await TenantGuard.AsSystemQuery(_context.Set<ClinicSubscription>())
             .Where(s =>
                 s.Status == SubscriptionStatus.Active &&
                 s.EndDate > now &&
@@ -42,8 +42,7 @@ public class SubscriptionExpiryNotificationJob
         {
             try
             {
-                var clinic = await _context.Set<Clinic>()
-                    .IgnoreQueryFilters([QueryFilterNames.Tenant])
+                var clinic = await TenantGuard.AsSystemQuery(_context.Set<Clinic>())
                     .FirstOrDefaultAsync(c => c.Id == subscription.ClinicId);
                 if (clinic is null) continue;
 
