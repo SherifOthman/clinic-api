@@ -2,7 +2,7 @@ namespace ClinicManagement.Persistence.Seeders;
 
 /// <summary>
 /// Credentials for the four required system users.
-/// Bound from appsettings.json under the "Seed" section.
+/// Defaults are defined here in code — no JSON config needed.
 /// Override per environment via environment variables:
 ///   Seed__SuperAdmin__Password=...
 ///   Seed__ClinicOwner__Password=...
