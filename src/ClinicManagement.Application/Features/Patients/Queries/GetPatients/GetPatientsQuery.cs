@@ -11,17 +11,14 @@ public record GetPatientsQuery(
     string? SortBy,
     string SortDirection,
     string? Gender,
-    string? ClinicSearch = null,
     int? StateGeonameId = null,
     int? CityGeonameId = null,
-    int? CountryGeonameId = null,
-    bool IsSuperAdmin = false
+    int? CountryGeonameId = null
 ) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<PatientDto>>>;
 
 /// <summary>
 /// List DTO — both EN and AR location names are always returned.
 /// The frontend picks which to display based on the current language.
-/// No re-fetching needed when the user switches language.
 /// </summary>
 public record PatientDto
 {
@@ -35,11 +32,9 @@ public record PatientDto
     public string? PrimaryPhone { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public string? ClinicName { get; init; }
-    // IDs — kept for filtering and the edit form
     public int? CountryGeonameId { get; init; }
     public int? StateGeonameId { get; init; }
     public int? CityGeonameId { get; init; }
-    // City name for the table column — country/state not shown in the list
     public string? CityNameEn { get; init; }
     public string? CityNameAr { get; init; }
 }

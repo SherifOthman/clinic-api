@@ -23,19 +23,13 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<Patient?> GetDeletedByIdAsync(Guid id, CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(p => p.Id == id, ct);
+        => await DbSet.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<bool> AnyByCodeAsync(string code, CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters()
-            .AnyAsync(p => p.PatientCode == code, ct);
+        => await DbSet.IgnoreQueryFilters().AnyAsync(p => p.PatientCode == code, ct);
 
     public async Task<int> CountIgnoreFiltersAsync(CancellationToken ct = default)
-        => await DbSet
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .CountAsync(ct);
+        => await DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).CountAsync(ct);
 
     public async Task<int> CountCreatedFromAsync(DateTimeOffset from, CancellationToken ct = default)
         => await DbSet.CountAsync(p => p.CreatedAt >= from, ct);
@@ -43,9 +37,54 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     public async Task<int> CountCreatedBetweenAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
         => await DbSet.CountAsync(p => p.CreatedAt >= from && p.CreatedAt < to, ct);
 
-    // ── Paginated list ────────────────────────────────────────────────────────
+    // ── Tenant-scoped list ────────────────────────────────────────────────────
 
     public async Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
+        string? searchTerm,
+        string? nationalSearch,
+        string? gender,
+        string? sortBy,
+        string? sortDirection,
+        int? stateGeonameId,
+        int? cityGeonameId,
+        int? countryGeonameId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = DbSet.AsNoTracking();
+        query = ApplyPatientFilters(query, searchTerm, nationalSearch, gender, countryGeonameId, stateGeonameId, cityGeonameId);
+        query = ApplyPatientSort(query, searchTerm, sortBy, sortDirection);
+
+        var rawPage = await ProjectPatientList(query, pageNumber, pageSize, ct);
+        var items   = MapPatientListRows(rawPage.Items, clinicNames: []);
+        return PaginatedResult<PatientListRow>.Create(items, rawPage.TotalCount, pageNumber, pageSize);    }
+
+    // ── Tenant-scoped detail ──────────────────────────────────────────────────
+
+    public async Task<PatientDetailData?> GetDetailAsync(Guid id, CancellationToken ct = default)
+        => await FetchDetailAsync(DbSet.AsNoTracking(), id, includeClinicName: false, ct);
+
+    // ── Tenant-scoped location options ────────────────────────────────────────
+
+    public Task<List<LocationOption>> GetLocationOptionsAsync(
+        int? countryGeonameId, int? stateGeonameId, CancellationToken ct = default)
+        => FetchLocationOptionsAsync(DbSet.AsNoTracking(), countryGeonameId, stateGeonameId, ct);
+
+    // ── Recent patients (dashboard) ───────────────────────────────────────────
+
+    public async Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default)
+        => await DbSet.AsNoTracking()
+            .OrderByDescending(p => p.CreatedAt)
+            .Take(count)
+            .Select(p => new RecentPatientRow(
+                p.Id.ToString(), p.PatientCode,
+                p.FullName, p.DateOfBirth, p.Gender.ToString(), p.CreatedAt))
+            .ToListAsync(ct);
+
+    // ── Admin (cross-tenant) list ─────────────────────────────────────────────
+
+    public async Task<PaginatedResult<PatientListRow>> GetAdminProjectedPageAsync(
         string? searchTerm,
         string? nationalSearch,
         string? gender,
@@ -55,39 +94,15 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         int? stateGeonameId,
         int? cityGeonameId,
         int? countryGeonameId,
-        bool isSuperAdmin,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = isSuperAdmin
-            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
-            : DbSet.AsNoTracking();
+        var query = DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking();
+        query = ApplyPatientFilters(query, searchTerm, nationalSearch, gender, countryGeonameId, stateGeonameId, cityGeonameId);
 
-        // ── Filters ───────────────────────────────────────────────────────────
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-            query = query.Where(p =>
-                p.FullName.StartsWith(searchTerm) ||
-                p.PatientCode.StartsWith(searchTerm) ||
-                p.Phones.Any(ph =>
-                    ph.PhoneNumber.StartsWith(searchTerm) ||
-                    (nationalSearch != null && ph.NationalNumber.StartsWith(nationalSearch))));
-
-        if (!string.IsNullOrWhiteSpace(gender) &&
-            Enum.TryParse<Gender>(gender, ignoreCase: true, out var genderEnum))
-            query = query.Where(p => p.Gender == genderEnum);
-
-        if (countryGeonameId.HasValue)
-            query = query.Where(p => p.CountryGeonameId == countryGeonameId.Value);
-
-        if (stateGeonameId.HasValue)
-            query = query.Where(p => p.StateGeonameId == stateGeonameId.Value);
-
-        if (cityGeonameId.HasValue)
-            query = query.Where(p => p.CityGeonameId == cityGeonameId.Value);
-
-        if (isSuperAdmin && !string.IsNullOrWhiteSpace(clinicSearch))
+        // Clinic search — admin only
+        if (!string.IsNullOrWhiteSpace(clinicSearch))
         {
             if (Guid.TryParse(clinicSearch, out var clinicGuid))
                 query = query.Where(p => p.ClinicId == clinicGuid);
@@ -101,36 +116,88 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             }
         }
 
-        // ── Sorting ───────────────────────────────────────────────────────────
+        query = ApplyPatientSort(query, searchTerm, sortBy, sortDirection);
 
+        var rawPage    = await ProjectPatientList(query, pageNumber, pageSize, ct);
+        var clinicNames = await LoadClinicNamesAsync(rawPage.Items.Select(p => p.ClinicId).ToList(), ct);
+        var items       = MapPatientListRows(rawPage.Items, clinicNames);
+        return PaginatedResult<PatientListRow>.Create(items, rawPage.TotalCount, pageNumber, pageSize);
+    }
+
+    // ── Admin (cross-tenant) detail ───────────────────────────────────────────
+
+    public async Task<PatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default)
+        => await FetchDetailAsync(
+            DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking(),
+            id, includeClinicName: true, ct);
+
+    // ── Admin (cross-tenant) location options ─────────────────────────────────
+
+    public Task<List<LocationOption>> GetAdminLocationOptionsAsync(
+        int? countryGeonameId, int? stateGeonameId, CancellationToken ct = default)
+        => FetchLocationOptionsAsync(
+            DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking(),
+            countryGeonameId, stateGeonameId, ct);
+
+    // ── Child entity helpers ──────────────────────────────────────────────────
+
+    public void AddPhone(PatientPhone phone)           => Context.Set<PatientPhone>().Add(phone);
+    public void RemovePhone(PatientPhone phone)         => Context.Set<PatientPhone>().Remove(phone);
+    public void AddChronicDisease(PatientChronicDisease d) => Context.Set<PatientChronicDisease>().Add(d);
+    public void RemoveChronicDisease(PatientChronicDisease d) => Context.Set<PatientChronicDisease>().Remove(d);
+
+    // ── Shared private helpers ────────────────────────────────────────────────
+
+    private static IQueryable<Patient> ApplyPatientFilters(
+        IQueryable<Patient> query,
+        string? searchTerm, string? nationalSearch, string? gender,
+        int? countryGeonameId, int? stateGeonameId, int? cityGeonameId)
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+            query = query.Where(p =>
+                p.FullName.StartsWith(searchTerm) ||
+                p.PatientCode.StartsWith(searchTerm) ||
+                p.Phones.Any(ph =>
+                    ph.PhoneNumber.StartsWith(searchTerm) ||
+                    (nationalSearch != null && ph.NationalNumber.StartsWith(nationalSearch))));
+
+        if (!string.IsNullOrWhiteSpace(gender) &&
+            Enum.TryParse<Gender>(gender, ignoreCase: true, out var genderEnum))
+            query = query.Where(p => p.Gender == genderEnum);
+
+        if (countryGeonameId.HasValue) query = query.Where(p => p.CountryGeonameId == countryGeonameId.Value);
+        if (stateGeonameId.HasValue)   query = query.Where(p => p.StateGeonameId   == stateGeonameId.Value);
+        if (cityGeonameId.HasValue)    query = query.Where(p => p.CityGeonameId    == cityGeonameId.Value);
+
+        return query;
+    }
+
+    private static IQueryable<Patient> ApplyPatientSort(
+        IQueryable<Patient> query, string? searchTerm, string? sortBy, string? sortDirection)
+    {
         var desc = sortDirection.IsDescending();
 
-        // When searching, rank by match quality instead of a sort column
         if (!string.IsNullOrWhiteSpace(searchTerm) && sortBy == null)
-        {
-            query = query
+            return query
                 .OrderByDescending(p => p.PatientCode == searchTerm)
                 .ThenByDescending(p => p.FullName == searchTerm)
                 .ThenByDescending(p => p.PatientCode.StartsWith(searchTerm))
                 .ThenByDescending(p => p.FullName.StartsWith(searchTerm))
                 .ThenByDescending(p => p.CreatedAt);
-        }
-        else
+
+        return sortBy?.Trim().ToLower() switch
         {
-            query = sortBy?.Trim().ToLower() switch
-            {
-                "fullname" => desc ? query.OrderByDescending(p => p.FullName)
-                                       : query.OrderBy(p => p.FullName),
-                "age" => desc ? query.OrderByDescending(p => p.DateOfBirth) : query.OrderBy(p => p.DateOfBirth),
-                "createdat" => desc ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt),
-                "chronicdiseasecount" => desc ? query.OrderByDescending(p => p.ChronicDiseases.Count) : query.OrderBy(p => p.ChronicDiseases.Count),
-                _ => query.OrderByDescending(p => p.CreatedAt),
-            };
-        }
+            "fullname"           => desc ? query.OrderByDescending(p => p.FullName)              : query.OrderBy(p => p.FullName),
+            "age"                => desc ? query.OrderByDescending(p => p.DateOfBirth)           : query.OrderBy(p => p.DateOfBirth),
+            "createdat"          => desc ? query.OrderByDescending(p => p.CreatedAt)             : query.OrderBy(p => p.CreatedAt),
+            "chronicdiseasecount"=> desc ? query.OrderByDescending(p => p.ChronicDiseases.Count) : query.OrderBy(p => p.ChronicDiseases.Count),
+            _                    => query.OrderByDescending(p => p.CreatedAt),
+        };
+    }
 
-        // ── Projection ────────────────────────────────────────────────────────
-        // Only city name is shown in the table — country/state names not needed here
-
+    private static async Task<(List<PatientListRaw> Items, int TotalCount)> ProjectPatientList(
+        IQueryable<Patient> query, int pageNumber, int pageSize, CancellationToken ct)
+    {
         var rawPage = await query
             .Select(p => new PatientListRaw(
                 Id: p.Id.ToString(),
@@ -150,10 +217,12 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 CityNameAr: p.City != null ? p.City.NameAr : null))
             .ToPagedAsync(pageNumber, pageSize, ct);
 
-        // Clinic names are loaded separately — only for SuperAdmin
-        var clinicNames = await LoadClinicNamesAsync(rawPage.Items.Select(p => p.ClinicId), isSuperAdmin, ct);
+        return (rawPage.Items.ToList(), rawPage.TotalCount);
+    }
 
-        var items = rawPage.Items.Select(p => new PatientListRow(
+    private static List<PatientListRow> MapPatientListRows(
+        List<PatientListRaw> items, Dictionary<Guid, string> clinicNames)
+        => items.Select(p => new PatientListRow(
             Id: p.Id,
             PatientCode: p.PatientCode,
             FullName: p.FullName,
@@ -171,54 +240,26 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             CityNameEn: p.CityNameEn,
             CityNameAr: p.CityNameAr)).ToList();
 
-        return PaginatedResult<PatientListRow>.Create(items, rawPage.TotalCount, pageNumber, pageSize);
-    }
-
-    // ── Recent patients (dashboard) ───────────────────────────────────────────
-
-    public async Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default)
-        => await DbSet.AsNoTracking()
-            .OrderByDescending(p => p.CreatedAt)
-            .Take(count)
-            .Select(p => new RecentPatientRow(
-                p.Id.ToString(), p.PatientCode,
-                p.FullName,
-                p.DateOfBirth, p.Gender.ToString(), p.CreatedAt))
-            .ToListAsync(ct);
-
-    // ── Full detail ───────────────────────────────────────────────────────────
-
-    public async Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default)
+    private async Task<PatientDetailData?> FetchDetailAsync(
+        IQueryable<Patient> query, Guid id, bool includeClinicName, CancellationToken ct)
     {
-        var baseQuery = isSuperAdmin
-            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
-            : DbSet.AsNoTracking();
-
-        var patient = await baseQuery
+        var patient = await query
             .Where(p => p.Id == id)
             .Select(p => new
             {
-                p.Id,
-                p.PatientCode,
-                p.BloodType,
-                FullName = p.FullName,
+                p.Id, p.PatientCode, p.BloodType,
+                FullName    = p.FullName,
                 DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender,
-                p.CountryGeonameId,
-                p.StateGeonameId,
-                p.CityGeonameId,
+                Gender      = p.Gender,
+                p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
                 CountryNameEn = p.Country != null ? p.Country.NameEn : null,
                 CountryNameAr = p.Country != null ? p.Country.NameAr : null,
-                StateNameEn = p.State != null ? p.State.NameEn : null,
-                StateNameAr = p.State != null ? p.State.NameAr : null,
-                CityNameEn = p.City != null ? p.City.NameEn : null,
-                CityNameAr = p.City != null ? p.City.NameAr : null,
-                p.ClinicId,
-                p.CreatedAt,
-                p.UpdatedAt,
-                p.CreatedBy,
-                p.UpdatedBy,
-                Phones = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
+                StateNameEn   = p.State   != null ? p.State.NameEn   : null,
+                StateNameAr   = p.State   != null ? p.State.NameAr   : null,
+                CityNameEn    = p.City    != null ? p.City.NameEn    : null,
+                CityNameAr    = p.City    != null ? p.City.NameAr    : null,
+                p.ClinicId, p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
+                Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
                 Diseases = p.ChronicDiseases
                     .Select(cd => new PatientDiseaseRow(
                         cd.ChronicDiseaseId.ToString().ToLower(),
@@ -231,58 +272,35 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         if (patient is null) return null;
 
         var auditNames = await LoadAuditUserNamesAsync([patient.CreatedBy, patient.UpdatedBy], ct);
-        var clinicName = isSuperAdmin ? await LoadClinicNameAsync(patient.ClinicId, ct) : null;
+        var clinicName = includeClinicName ? await LoadClinicNameAsync(patient.ClinicId, ct) : null;
 
         return new PatientDetailData(
-            Id: patient.Id,
-            PatientCode: patient.PatientCode,
-            FullName: patient.FullName,
-            DateOfBirth: patient.DateOfBirth,
-            Gender: patient.Gender.ToString(),
-            BloodType: patient.BloodType?.ToDisplayString(),
-            CountryGeonameId: patient.CountryGeonameId,
-            StateGeonameId: patient.StateGeonameId,
+            Id: patient.Id, PatientCode: patient.PatientCode,
+            FullName: patient.FullName, DateOfBirth: patient.DateOfBirth,
+            Gender: patient.Gender.ToString(), BloodType: patient.BloodType?.ToDisplayString(),
+            CountryGeonameId: patient.CountryGeonameId, StateGeonameId: patient.StateGeonameId,
             CityGeonameId: patient.CityGeonameId,
-            CountryNameEn: patient.CountryNameEn,
-            CountryNameAr: patient.CountryNameAr,
-            StateNameEn: patient.StateNameEn,
-            StateNameAr: patient.StateNameAr,
-            CityNameEn: patient.CityNameEn,
-            CityNameAr: patient.CityNameAr,
-            ClinicId: patient.ClinicId,
-            CreatedAt: patient.CreatedAt,
-            UpdatedAt: patient.UpdatedAt,
-            CreatedBy: patient.CreatedBy,
-            UpdatedBy: patient.UpdatedBy,
-            Phones: patient.Phones,
-            Diseases: patient.Diseases,
-            AuditUserNames: auditNames,
-            ClinicName: clinicName);
+            CountryNameEn: patient.CountryNameEn, CountryNameAr: patient.CountryNameAr,
+            StateNameEn: patient.StateNameEn, StateNameAr: patient.StateNameAr,
+            CityNameEn: patient.CityNameEn, CityNameAr: patient.CityNameAr,
+            ClinicId: patient.ClinicId, CreatedAt: patient.CreatedAt,
+            UpdatedAt: patient.UpdatedAt, CreatedBy: patient.CreatedBy, UpdatedBy: patient.UpdatedBy,
+            Phones: patient.Phones, Diseases: patient.Diseases,
+            AuditUserNames: auditNames, ClinicName: clinicName);
     }
 
-    // ── Location filter options ───────────────────────────────────────────────
-
-    public async Task<List<LocationOption>> GetLocationOptionsAsync(
-        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin,
-        CancellationToken ct = default)
+    private static async Task<List<LocationOption>> FetchLocationOptionsAsync(
+        IQueryable<Patient> query, int? countryGeonameId, int? stateGeonameId, CancellationToken ct)
     {
-        var query = isSuperAdmin
-            ? DbSet.IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
-            : DbSet.AsNoTracking();
-
         if (stateGeonameId.HasValue)
         {
             var rows = await query
                 .Where(p => p.StateGeonameId == stateGeonameId.Value && p.CityGeonameId != null)
                 .Select(p => new { p.CityGeonameId, p.City!.NameEn, p.City!.NameAr })
-                .Distinct()
-                .ToListAsync(ct);
-
-            return rows
-                .DistinctBy(r => r.CityGeonameId)
+                .Distinct().ToListAsync(ct);
+            return rows.DistinctBy(r => r.CityGeonameId)
                 .Select(r => new LocationOption(r.CityGeonameId!.Value, r.NameEn, r.NameAr))
-                .OrderBy(o => o.NameEn)
-                .ToList();
+                .OrderBy(o => o.NameEn).ToList();
         }
 
         if (countryGeonameId.HasValue)
@@ -290,48 +308,28 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             var rows = await query
                 .Where(p => p.CountryGeonameId == countryGeonameId.Value && p.StateGeonameId != null)
                 .Select(p => new { p.StateGeonameId, p.State!.NameEn, p.State!.NameAr })
-                .Distinct()
-                .ToListAsync(ct);
-
-            return rows
-                .DistinctBy(r => r.StateGeonameId)
+                .Distinct().ToListAsync(ct);
+            return rows.DistinctBy(r => r.StateGeonameId)
                 .Select(r => new LocationOption(r.StateGeonameId!.Value, r.NameEn, r.NameAr))
-                .OrderBy(o => o.NameEn)
-                .ToList();
+                .OrderBy(o => o.NameEn).ToList();
         }
 
         var countryRows = await query
             .Where(p => p.CountryGeonameId != null)
             .Select(p => new { p.CountryGeonameId, p.Country!.NameEn, p.Country!.NameAr })
-            .Distinct()
-            .ToListAsync(ct);
-
-        return countryRows
-            .DistinctBy(r => r.CountryGeonameId)
+            .Distinct().ToListAsync(ct);
+        return countryRows.DistinctBy(r => r.CountryGeonameId)
             .Select(r => new LocationOption(r.CountryGeonameId!.Value, r.NameEn, r.NameAr))
-            .OrderBy(o => o.NameEn)
-            .ToList();
+            .OrderBy(o => o.NameEn).ToList();
     }
 
-    // ── Child entity helpers (use navigation properties via Context.Entry) ────
-
-    public void AddPhone(PatientPhone phone) => Context.Set<PatientPhone>().Add(phone);
-    public void RemovePhone(PatientPhone phone) => Context.Set<PatientPhone>().Remove(phone);
-    public void AddChronicDisease(PatientChronicDisease d) => Context.Set<PatientChronicDisease>().Add(d);
-    public void RemoveChronicDisease(PatientChronicDisease d) => Context.Set<PatientChronicDisease>().Remove(d);
-
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     private async Task<Dictionary<Guid, string>> LoadClinicNamesAsync(
-        IEnumerable<Guid> clinicIds, bool isSuperAdmin, CancellationToken ct)
+        IEnumerable<Guid> clinicIds, CancellationToken ct)
     {
-        if (!isSuperAdmin) return [];
         var ids = clinicIds.Distinct().ToList();
         if (ids.Count == 0) return [];
-
         return await Context.Set<Clinic>()
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .AsNoTracking()
+            .IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
             .Where(c => ids.Contains(c.Id))
             .Select(c => new { c.Id, c.Name })
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
@@ -339,26 +337,19 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     private async Task<string?> LoadClinicNameAsync(Guid clinicId, CancellationToken ct)
         => await Context.Set<Clinic>()
-            .IgnoreQueryFilters([QueryFilterNames.Tenant])
-            .AsNoTracking()
-            .Where(c => c.Id == clinicId)
-            .Select(c => c.Name)
-            .FirstOrDefaultAsync(ct);
+            .IgnoreQueryFilters([QueryFilterNames.Tenant]).AsNoTracking()
+            .Where(c => c.Id == clinicId).Select(c => c.Name).FirstOrDefaultAsync(ct);
 
     private async Task<Dictionary<Guid, string>> LoadAuditUserNamesAsync(
         IEnumerable<Guid?> userIds, CancellationToken ct)
     {
         var ids = userIds.Where(x => x.HasValue).Select(x => x!.Value).Distinct().ToList();
         if (ids.Count == 0) return [];
-
-        return await Context.Set<User>()
-            .AsNoTracking()
+        return await Context.Set<User>().AsNoTracking()
             .Where(u => ids.Contains(u.Id))
             .Select(u => new { u.Id, Name = u.FullName })
             .ToDictionaryAsync(u => u.Id, u => u.Name, ct);
     }
-
-    // ── Private projection record ─────────────────────────────────────────────
 
     private record PatientListRaw(
         string Id, string PatientCode, string FullName, DateOnly? DateOfBirth,

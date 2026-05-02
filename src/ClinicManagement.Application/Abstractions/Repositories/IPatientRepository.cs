@@ -15,11 +15,37 @@ public interface IPatientRepository : IRepository<Patient>
     Task<Patient?> GetDeletedByIdAsync(Guid id, CancellationToken ct = default);
     Task<bool> AnyByCodeAsync(string code, CancellationToken ct = default);
     Task<int> CountIgnoreFiltersAsync(CancellationToken ct = default);
-
     Task<int> CountCreatedFromAsync(DateTimeOffset from, CancellationToken ct = default);
     Task<int> CountCreatedBetweenAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 
+    // ── Tenant-scoped (clinic users) ──────────────────────────────────────────
+
     Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
+        string? searchTerm,
+        string? nationalSearch,
+        string? gender,
+        string? sortBy,
+        string? sortDirection,
+        int? stateGeonameId,
+        int? cityGeonameId,
+        int? countryGeonameId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken ct = default);
+
+    Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
+    Task<PatientDetailData?> GetDetailAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns distinct location options from the current clinic's patient data.
+    /// </summary>
+    Task<List<LocationOption>> GetLocationOptionsAsync(
+        int? countryGeonameId, int? stateGeonameId,
+        CancellationToken ct = default);
+
+    // ── Cross-tenant (SuperAdmin only) ────────────────────────────────────────
+
+    Task<PaginatedResult<PatientListRow>> GetAdminProjectedPageAsync(
         string? searchTerm,
         string? nationalSearch,
         string? gender,
@@ -29,24 +55,17 @@ public interface IPatientRepository : IRepository<Patient>
         int? stateGeonameId,
         int? cityGeonameId,
         int? countryGeonameId,
-        bool isSuperAdmin,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default);
 
-    Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
-    Task<PatientDetailData?> GetDetailAsync(Guid id, bool isSuperAdmin, CancellationToken ct = default);
+    Task<PatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default);
 
-    /// <summary>
-    /// Returns distinct location options from actual patient data.
-    /// - countryGeonameId = null, stateGeonameId = null → distinct countries
-    /// - countryGeonameId set                          → distinct states in that country
-    /// - stateGeonameId set                            → distinct cities in that state
-    /// Both EN and AR names are always returned.
-    /// </summary>
-    Task<List<LocationOption>> GetLocationOptionsAsync(
-        int? countryGeonameId, int? stateGeonameId, bool isSuperAdmin,
+    Task<List<LocationOption>> GetAdminLocationOptionsAsync(
+        int? countryGeonameId, int? stateGeonameId,
         CancellationToken ct = default);
+
+    // ── Child entity helpers ──────────────────────────────────────────────────
 
     void AddPhone(PatientPhone phone);
     void RemovePhone(PatientPhone phone);
