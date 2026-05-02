@@ -50,7 +50,6 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.Section));
         services.AddScoped<RoleSeedService>();
         services.AddScoped<SpecializationSeedService>();
         services.AddScoped<ChronicDiseaseSeedService>();
