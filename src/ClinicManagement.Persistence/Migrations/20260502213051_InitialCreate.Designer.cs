@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260502171117_SyncModelAfterPersonRemoval")]
-    partial class SyncModelAfterPersonRemoval
+    [Migration("20260502213051_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -444,7 +444,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("ClinicMemberId", "Permission")
                         .IsUnique();
 
-                    b.ToTable("ClinicMemberPermission");
+                    b.ToTable("ClinicMemberPermission", t =>
+                        {
+                            t.HasCheckConstraint("CK_ClinicMemberPermission_Permission", "[Permission] IN ('ViewPatients','CreatePatient','EditPatient','DeletePatient','ViewStaff','InviteStaff','ManageStaffStatus','ViewBranches','ManageBranches','ManageSchedule','ManageVisitTypes','ViewAppointments','ManageAppointments','ViewInvoices','ManageInvoices')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.ClinicSubscription", b =>
@@ -739,7 +742,10 @@ namespace ClinicManagement.Persistence.Migrations
                     b.HasIndex("DoctorInfoId", "BranchId", "Date")
                         .IsUnique();
 
-                    b.ToTable("DoctorSessions", (string)null);
+                    b.ToTable("DoctorSessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DoctorSession_DelayHandling", "[DelayHandling] IS NULL OR [DelayHandling] IN ('AutoShift', 'MarkMissed', 'Manual')");
+                        });
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.EmailQueue", b =>
