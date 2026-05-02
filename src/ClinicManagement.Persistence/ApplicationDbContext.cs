@@ -12,11 +12,11 @@ namespace ClinicManagement.Persistence;
 
 public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 {
-    private readonly ICurrentUserService? _currentUserService;
+    private readonly ICurrentUserService _currentUserService;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
-        ICurrentUserService? currentUserService = null)
+        ICurrentUserService currentUserService)
         : base(options)
     {
         _currentUserService = currentUserService;
@@ -79,7 +79,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     private void StampAuditFields(DateTimeOffset now)
     {
-        var userId = _currentUserService?.UserId;
+        var userId = _currentUserService.UserId;
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
@@ -111,9 +111,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         => modelBuilder.Entity<TEntity>()
             .HasQueryFilter(
                 QueryFilterNames.Tenant,
-                e => _currentUserService == null
-                     || !_currentUserService.IsAuthenticated
-                     || _currentUserService.ClinicId == null
+                e => _currentUserService.ClinicId == null
                      || e.ClinicId == _currentUserService.ClinicId.Value);
 
     private static void ApplySoftDeleteFilter(ModelBuilder modelBuilder, Type entityType)

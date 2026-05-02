@@ -85,7 +85,7 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         var pagedRaw = await projected.ToPagedAsync(pageNumber, pageSize, ct);
 
         var items = pagedRaw.Items.Select(m => new StaffListRow(
-            m.Id, m.UserId, m.IsActive, m.JoinedAt,
+            m.Id, m.UserId ?? Guid.Empty, m.IsActive, m.JoinedAt,
             m.FullName, m.Gender.ToString(), m.ProfileImageUrl
         )).ToList();
 
@@ -119,7 +119,7 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         if (member is null) return null;
 
         return new StaffDetailRow(
-            member.Id, member.UserId, member.IsActive, member.JoinedAt,
+            member.Id, member.UserId ?? Guid.Empty, member.IsActive, member.JoinedAt,
             member.FullName.Trim(), member.Gender.ToString(),
             member.Email, member.PhoneNumber, member.ProfileImageUrl, member.DoctorInfo);
     }

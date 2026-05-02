@@ -96,7 +96,7 @@ public class SaveWorkingDaysHandlerTests
     public async Task Handle_ShouldSaveWorkingDays_AsDoctor_WhenCanSelfManage()
     {
         var (member, _, branchId) = await SeedDoctorAsync();
-        var handler = CreateHandlerAsDoctor(member.UserId);
+        var handler = CreateHandlerAsDoctor(member.UserId!.Value);
 
         var result = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, [
             new(Day: 3, StartTime: "08:00", EndTime: "16:00", IsAvailable: true),
@@ -112,7 +112,7 @@ public class SaveWorkingDaysHandlerTests
         doctorInfo.CanSelfManageSchedule = false;
         await _uow.SaveChangesAsync();
 
-        var handler = CreateHandlerAsDoctor(member.UserId);
+        var handler = CreateHandlerAsDoctor(member.UserId!.Value);
         var result  = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, []), default);
 
         result.IsSuccess.Should().BeFalse();

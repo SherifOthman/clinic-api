@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence;
@@ -12,12 +13,13 @@ namespace ClinicManagement.Application.Tests.Common;
 
 public static class TestHandlerHelpers
 {
-    public static IUnitOfWork CreateUow()
+    public static IUnitOfWork CreateUow(Guid? clinicId = null)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        var context = new ApplicationDbContext(options);
+        var currentUser = new TestCurrentUserService(clinicId);
+        var context = new ApplicationDbContext(options, currentUser);
         var cache = new MemoryCache(new MemoryCacheOptions());
         return new UnitOfWork(context, cache);
     }
@@ -125,4 +127,28 @@ public static class TestHandlerHelpers
     /// <summary>Creates a DoctorInfo for a ClinicMember.</summary>
     public static DoctorInfo CreateTestDoctorInfo(Guid clinicMemberId, Guid? specializationId = null) =>
         new() { ClinicMemberId = clinicMemberId, SpecializationId = specializationId };
+}
+
+/// <summary>
+/// Minimal ICurrentUserService for unit tests.
+/// Tenant filter passes through when ClinicId is null (no filtering).
+/// </summary>
+internal sealed class TestCurrentUserService : ICurrentUserService
+{
+    private readonly Guid? _clinicId;
+    public TestCurrentUserService(Guid? clinicId = null) => _clinicId = clinicId;
+
+    public Guid?   UserId      => Guid.NewGuid();
+    public Guid?   MemberId    => null;
+    public Guid?   ClinicId    => _clinicId;
+    public string? CountryCode => null;
+    public string? FullName    => "Test User";
+    public string? Username    => "testuser";
+    public string? Email       => "test@test.com";
+    public string  IpAddress   => "127.0.0.1";
+    public string? UserAgent   => null;
+    public IEnumerable<string> Roles => [];
+    public bool IsAuthenticated => true;
+    public Guid GetRequiredUserId()   => UserId!.Value;
+    public Guid GetRequiredClinicId() => _clinicId ?? throw new InvalidOperationException("No clinic in test context.");
 }
