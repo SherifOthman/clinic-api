@@ -30,7 +30,8 @@ public class UnitOfWork : IUnitOfWork
     public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);
     public IGeoLocationRepository        GeoLocations       => field ??= new GeoLocationRepository(_context);
 
-    public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context, _cache);    public IPatientCounterRepository     PatientCounters    => field ??= new PatientCounterRepository(_context);
+    public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context, _cache);
+    public IPatientCounterRepository     PatientCounters    => field ??= new PatientCounterRepository(_context);
 
     public IRepository<ChronicDisease>   ChronicDiseases   => field ??= new Repository<ChronicDisease>(_context);
     public IRepository<Specialization>   Specializations   => field ??= new Repository<Specialization>(_context);

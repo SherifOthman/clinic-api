@@ -21,12 +21,14 @@ public class SubscriptionExpiryNotificationJob
 
     public async Task ExecuteAsync()
     {
-        var expiryThreshold = DateTimeOffset.UtcNow.AddDays(7);
+        var now             = DateTimeOffset.UtcNow;
+        var expiryThreshold = now.AddDays(7);
+
         var expiring = await _context.Set<ClinicSubscription>()
-            .Where(s => s.EndDate.HasValue &&
-                        s.EndDate.Value <= expiryThreshold &&
-                        s.EndDate.Value > DateTimeOffset.UtcNow &&
-                        s.Status == SubscriptionStatus.Active)
+            .Where(s => s.Status == SubscriptionStatus.Active &&
+                        s.EndDate.HasValue &&
+                        s.EndDate <= expiryThreshold &&
+                        s.EndDate > now)
             .ToListAsync();
 
         if (!expiring.Any()) return;
@@ -46,9 +48,7 @@ public class SubscriptionExpiryNotificationJob
                     .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId);
                 if (owner is null) continue;
 
-                var daysLeft = subscription.EndDate.HasValue
-                    ? (subscription.EndDate.Value.Date - DateTimeOffset.UtcNow.Date).Days
-                    : 0;
+                var daysLeft = (int)(subscription.EndDate!.Value.Date - now.Date).TotalDays;
 
                 _context.Set<Notification>().Add(new Notification
                 {
