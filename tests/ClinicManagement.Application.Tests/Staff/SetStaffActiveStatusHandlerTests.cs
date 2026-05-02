@@ -27,7 +27,7 @@ public class SetStaffActiveStatusHandlerTests
     [InlineData(false, true)]
     public async Task Handle_ShouldToggleActiveStatus(bool initial, bool target)
     {
-        var (_, member) = TestHandlerHelpers.CreateTestMember();
+        var member = TestHandlerHelpers.CreateTestMember();
         member.IsActive = initial;
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();

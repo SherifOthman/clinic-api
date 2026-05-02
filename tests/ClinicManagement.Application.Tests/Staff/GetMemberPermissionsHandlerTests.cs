@@ -33,7 +33,7 @@ public class GetMemberPermissionsHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenMemberBelongsToDifferentClinic()
     {
-        var (_, member) = TestHandlerHelpers.CreateTestMember(clinicId: Guid.NewGuid()); // different clinic
+        var member = TestHandlerHelpers.CreateTestMember(clinicId: Guid.NewGuid()); // different clinic
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 
@@ -45,7 +45,7 @@ public class GetMemberPermissionsHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnPermissions_WhenMemberBelongsToClinic()
     {
-        var (_, member) = TestHandlerHelpers.CreateTestMember(clinicId: _clinicId);
+        var member = TestHandlerHelpers.CreateTestMember(clinicId: _clinicId);
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 
@@ -64,7 +64,7 @@ public class GetMemberPermissionsHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnEmptyList_WhenMemberHasNoPermissions()
     {
-        var (_, member) = TestHandlerHelpers.CreateTestMember(clinicId: _clinicId);
+        var member = TestHandlerHelpers.CreateTestMember(clinicId: _clinicId);
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 

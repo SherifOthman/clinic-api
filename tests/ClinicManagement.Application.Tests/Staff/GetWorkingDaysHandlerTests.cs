@@ -31,7 +31,7 @@ public class GetWorkingDaysHandlerTests
         var spec = TestHandlerHelpers.CreateTestSpecialization();
         await _uow.Specializations.AddAsync(spec);
 
-        var (_, member) = TestHandlerHelpers.CreateTestMember();
+        var member = TestHandlerHelpers.CreateTestMember();
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
 

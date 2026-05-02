@@ -27,24 +27,18 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         var gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male;
         var dob = DateOnly.Parse(request.DateOfBirth);
 
-        var person = new Person
-        {
-            FullName = request.FullName.Trim(),
-            Gender = gender,
-            DateOfBirth = dob,
-        };
-
         var patient = new Patient
         {
             ClinicId = clinicId,
             PatientCode = patientCode,
+            FullName = request.FullName.Trim(),
+            Gender = gender,
+            DateOfBirth = dob,
             CountryGeonameId = request.CountryGeonameId,
             StateGeonameId = request.StateGeonameId,
             CityGeonameId = request.CityGeonameId,
             BloodType = ParseBloodType(request.BloodType),
             CreatedAt = DateTimeOffset.UtcNow,
-            PersonId = person.Id,
-            Person = person,
         };
 
         await _uow.Patients.AddAsync(patient);

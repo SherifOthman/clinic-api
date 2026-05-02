@@ -62,12 +62,12 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
         var projected = query.Select(m => new
         {
             m.Id,
-            UserId = m.UserId ?? Guid.Empty,
+            UserId = m.UserId,
             m.IsActive,
             m.JoinedAt,
-            FullName = m.Person.FullName,
-            Gender = m.Person.Gender,
-            ProfileImageUrl = m.Person.ProfileImageUrl,
+            FullName = m.User!.FullName,
+            Gender = m.User!.Gender,
+            ProfileImageUrl = m.User!.ProfileImageUrl,
         });
 
         var desc = sortDirection.IsDescending();
@@ -99,14 +99,14 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             .Select(m => new
             {
                 m.Id,
-                UserId = m.UserId ?? Guid.Empty,
+                UserId = m.UserId,
                 m.IsActive,
                 m.JoinedAt,
-                FullName = m.Person.FullName,
-                Gender = m.Person.Gender,
+                FullName = m.User!.FullName,
+                Gender = m.User!.Gender,
                 Email = m.User != null ? m.User.Email : null,
                 PhoneNumber = m.User != null ? m.User.PhoneNumber : null,
-                ProfileImageUrl = m.Person.ProfileImageUrl,
+                ProfileImageUrl = m.User!.ProfileImageUrl,
                 DoctorInfo = m.DoctorInfo == null ? null : new DoctorDetailRow(
                     m.DoctorInfo.Id,
                     m.DoctorInfo.Specialization != null ? m.DoctorInfo.Specialization.NameEn : "",

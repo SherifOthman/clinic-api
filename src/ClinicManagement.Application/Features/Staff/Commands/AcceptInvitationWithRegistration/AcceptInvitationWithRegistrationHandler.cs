@@ -31,19 +31,14 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         if (invitation is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
-        var gender = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male;
-        var person = new Person { FullName = request.FullName, Gender = gender };
-
-        await _uow.Persons.AddAsync(person, cancellationToken);
-        await _uow.SaveChangesAsync(cancellationToken);
-
         var user = new User
         {
             UserName       = request.UserName,
             Email          = invitation.Email,
             PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = true,
-            PersonId       = person.Id,
+            FullName       = request.FullName,
+            Gender         = Enum.TryParse<Gender>(request.Gender, out var g) ? g : Gender.Male,
         };
 
         var createResult = await _userManager.CreateAsync(user, request.Password);
@@ -64,7 +59,6 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
         var member = new ClinicMember
         {
-            PersonId = person.Id,
             UserId   = user.Id,
             ClinicId = invitation.ClinicId,
             Role     = invitation.Role,
@@ -85,7 +79,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         await _uow.SaveChangesAsync(cancellationToken);
 
         await _audit.WriteEventAsync("StaffInvitationAccepted", $"Role: {invitation.Role}",
-            overrideUserId: user.Id, overrideFullName: person.FullName,
+            overrideUserId: user.Id, overrideFullName: user.FullName,
             overrideEmail: user.Email, overrideRole: invitation.Role.ToString(),
             overrideClinicId: invitation.ClinicId, ct: cancellationToken);
 

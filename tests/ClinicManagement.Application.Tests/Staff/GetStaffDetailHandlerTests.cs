@@ -20,7 +20,7 @@ public class GetStaffDetailHandlerTests
     private async Task<ClinicMember> SeedMemberAsync(
         string firstName = "Ahmed", string lastName = "Ali", Gender gender = Gender.Male)
     {
-        var (_, member) = TestHandlerHelpers.CreateTestMember(
+        var member = TestHandlerHelpers.CreateTestMember(
             firstName: firstName, lastName: lastName, gender: gender,
             role: ClinicMemberRole.Receptionist);
         await _uow.Members.AddAsync(member);
@@ -56,7 +56,7 @@ public class GetStaffDetailHandlerTests
         await _uow.Specializations.AddAsync(spec);
         await _uow.SaveChangesAsync();
 
-        var (_, member) = TestHandlerHelpers.CreateTestMember(
+        var member = TestHandlerHelpers.CreateTestMember(
             firstName: "Sara", lastName: "Doctor", gender: Gender.Female,
             role: ClinicMemberRole.Doctor);
         await _uow.Members.AddAsync(member);

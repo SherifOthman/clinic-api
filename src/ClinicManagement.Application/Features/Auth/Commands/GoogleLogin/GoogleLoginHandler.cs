@@ -48,8 +48,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
         await EnsureEmailConfirmedAsync(user);
         await LinkGoogleLoginIfMissingAsync(user, request.GoogleId);
-        await EnsurePersonLoadedAsync(user, cancellationToken);
-        await UpdateProfilePictureIfMissingAsync(user, request.PictureUrl);
+        UpdateProfilePictureIfMissing(user, request.PictureUrl);
 
         var roles = await EnsureRolesAssignedAsync(user);
 
@@ -60,7 +59,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         var tokens = await IssueTokensAsync(user, roles, tokenContext.Value!, cancellationToken);
 
         await _audit.WriteEventAsync("GoogleLoginSuccess",
-            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideUserId: user.Id, overrideFullName: user.FullName,
             overrideEmail: user.Email, overrideRole: string.Join(",", roles),
             overrideClinicId: tokenContext.Value!.ClinicId, ct: cancellationToken);
 
@@ -73,93 +72,65 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
     private async Task<User?> ResolveUserAsync(GoogleLoginCommand request, CancellationToken ct)
     {
-        // Prefer lookup by Google ID — fastest and most reliable
         if (!string.IsNullOrEmpty(request.GoogleId))
         {
             var byLogin = await _userManager.FindByLoginAsync("Google", request.GoogleId);
             if (byLogin is not null) return byLogin;
         }
 
-        // Fall back to email — handles existing password accounts logging in via Google for the first time
         var byEmail = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, ct);
         if (byEmail is not null) return byEmail;
 
-        // Brand new user — create account
         return await CreateUserFromGoogleAsync(request, ct);
     }
 
-    // ── Step 2: Google already verified the email — mark it confirmed ─────────
+    // ── Step 2: Google already verified the email ─────────────────────────────
 
     private async Task EnsureEmailConfirmedAsync(User user)
     {
         if (user.EmailConfirmed) return;
-
         user.EmailConfirmed = true;
         await _userManager.UpdateAsync(user);
     }
 
-    // ── Step 3: Record the Google login in AspNetUserLogins (standard Identity) ─
+    // ── Step 3: Record the Google login in AspNetUserLogins ──────────────────
 
     private async Task LinkGoogleLoginIfMissingAsync(User user, string? googleId)
     {
         if (string.IsNullOrEmpty(googleId)) return;
-
         var existingLogins = await _userManager.GetLoginsAsync(user);
-        var alreadyLinked  = existingLogins.Any(l => l.LoginProvider == "Google" && l.ProviderKey == googleId);
-
-        if (!alreadyLinked)
+        if (!existingLogins.Any(l => l.LoginProvider == "Google" && l.ProviderKey == googleId))
             await _userManager.AddLoginAsync(user, new UserLoginInfo("Google", googleId, "Google"));
     }
 
-    // ── Step 4: FindByLoginAsync doesn't load navigation — reload if needed ───
+    // ── Step 4: Sync Google profile picture ──────────────────────────────────
 
-    private async Task EnsurePersonLoadedAsync(User user, CancellationToken ct)
+    private static void UpdateProfilePictureIfMissing(User user, string? pictureUrl)
     {
-        if (user.Person is not null) return;
+        if (string.IsNullOrWhiteSpace(pictureUrl)) return;
 
-        var reloaded = await _uow.Users.GetByIdWithPersonAsync(user.Id, ct)
-            ?? throw new InvalidOperationException($"User {user.Id} not found after reload.");
-
-        // Copy the loaded Person onto the tracked instance
-        user.Person = reloaded.Person;
-    }
-
-    // ── Step 5: Store/update Google profile picture ───────────────────────────
-    // Always sync the Google picture URL so it stays current.
-    // We only skip the update if the user has a custom (non-Google) picture uploaded.
-
-    private static Task UpdateProfilePictureIfMissingAsync(User user, string? pictureUrl)
-    {
-        if (string.IsNullOrWhiteSpace(pictureUrl)) return Task.CompletedTask;
-
-        var current = user.Person.ProfileImageUrl;
-
-        // Update if: no picture yet, OR current picture is already a Google URL
+        var current = user.ProfileImageUrl;
         bool isGooglePicture = !string.IsNullOrWhiteSpace(current)
             && (current.Contains("googleusercontent.com") || current.Contains("lh3.google"));
 
         if (string.IsNullOrWhiteSpace(current) || isGooglePicture)
-            user.Person.ProfileImageUrl = pictureUrl;
-
-        return Task.CompletedTask;
+            user.ProfileImageUrl = pictureUrl;
     }
 
-    // ── Step 6: Assign ClinicOwner role to new users (safety net for edge cases) ─
+    // ── Step 5: Assign ClinicOwner role to new users ──────────────────────────
 
     private async Task<List<string>> EnsureRolesAssignedAsync(User user)
     {
         var roles = (await _userManager.GetRolesAsync(user)).ToList();
-
         if (roles.Count == 0)
         {
             await _userManager.AddToRoleAsync(user, UserRoles.ClinicOwner);
             roles = [UserRoles.ClinicOwner];
         }
-
         return roles;
     }
 
-    // ── Step 7: Resolve clinic + member context needed for the JWT ────────────
+    // ── Step 6: Resolve clinic + member context for the JWT ──────────────────
 
     private async Task<Result<TokenContext>> BuildTokenContextAsync(
         User user, List<string> roles, CancellationToken ct)
@@ -192,7 +163,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
             }
         }
 
-        // ClinicOwner who is also registered as a doctor — resolve their memberId too
         if (memberId is null && clinicId.HasValue)
         {
             var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, ct);
@@ -202,7 +172,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         return Result.Success(new TokenContext(clinicId, memberId, countryCode));
     }
 
-    // ── Step 8: Generate access + refresh tokens and stamp last login ─────────
+    // ── Step 7: Generate tokens and stamp last login ──────────────────────────
 
     private async Task<TokenResponseDto> IssueTokensAsync(
         User user, List<string> roles, TokenContext ctx, CancellationToken ct)
@@ -220,23 +190,14 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
     private async Task<User?> CreateUserFromGoogleAsync(GoogleLoginCommand request, CancellationToken ct)
     {
-        var person = new Person
-        {
-            FullName        = request.FullName,
-            Gender          = Gender.Male,       // default — user can update in profile
-            ProfileImageUrl = request.PictureUrl,
-        };
-
-        await _uow.Persons.AddAsync(person, ct);
-        await _uow.SaveChangesAsync(ct);
-
         var user = new User
         {
             Email          = request.Email,
             UserName       = await GenerateUniqueUsernameAsync(request.Email),
             EmailConfirmed = true,
-            PersonId       = person.Id,
-            Person         = person,
+            FullName       = request.FullName,
+            Gender         = Gender.Male,
+            ProfileImageUrl = request.PictureUrl,
         };
 
         var result = await _userManager.CreateAsync(user);
@@ -263,8 +224,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
         return candidate;
     }
-
-    // ── Internal record to carry JWT context between steps ───────────────────
 
     private record TokenContext(Guid? ClinicId, Guid? MemberId, string? CountryCode);
 }

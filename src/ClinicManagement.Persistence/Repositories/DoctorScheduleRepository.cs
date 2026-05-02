@@ -49,8 +49,8 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
             {
                 s.DoctorInfoId,
                 MemberId        = s.DoctorInfo.ClinicMemberId,
-                FullName        = s.DoctorInfo.ClinicMember.Person.FullName,
-                ProfileImageUrl = s.DoctorInfo.ClinicMember.Person.ProfileImageUrl,
+                FullName        = s.DoctorInfo.ClinicMember.User!.FullName,
+                ProfileImageUrl = s.DoctorInfo.ClinicMember.User!.ProfileImageUrl,
                 AppointmentType = s.AppointmentType.ToString(),
                 s.DoctorInfo.DefaultVisitDurationMinutes,
             })

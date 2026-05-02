@@ -29,7 +29,7 @@ public class SaveWorkingDaysHandlerTests
         svc.Setup(s => s.GetRequiredUserId()).Returns(ownerId);
 
         // Seed an owner member so PermissionService.GetCurrentMemberAsync finds it
-        var (_, ownerMember) = TestHandlerHelpers.CreateTestMember(
+        var ownerMember = TestHandlerHelpers.CreateTestMember(
             userId: ownerId, role: ClinicMemberRole.Owner);
         _uow.Members.AddAsync(ownerMember).GetAwaiter().GetResult();
         _uow.SaveChangesAsync().GetAwaiter().GetResult();
@@ -50,11 +50,9 @@ public class SaveWorkingDaysHandlerTests
         var spec = TestHandlerHelpers.CreateTestSpecialization();
         await _uow.Specializations.AddAsync(spec);
 
-        var (_, member) = TestHandlerHelpers.CreateTestMember();
+        var member = TestHandlerHelpers.CreateTestMember();
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();
-
-        // Seed ManageSchedule permission for the doctor
         await _uow.Permissions.SeedDefaultsAsync(member.Id, ClinicMemberRole.Doctor, default);
 
         var doctorInfo = TestHandlerHelpers.CreateTestDoctorInfo(member.Id, spec.Id);
@@ -98,7 +96,7 @@ public class SaveWorkingDaysHandlerTests
     public async Task Handle_ShouldSaveWorkingDays_AsDoctor_WhenCanSelfManage()
     {
         var (member, _, branchId) = await SeedDoctorAsync();
-        var handler = CreateHandlerAsDoctor(member.UserId!.Value);
+        var handler = CreateHandlerAsDoctor(member.UserId);
 
         var result = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, [
             new(Day: 3, StartTime: "08:00", EndTime: "16:00", IsAvailable: true),
@@ -114,7 +112,7 @@ public class SaveWorkingDaysHandlerTests
         doctorInfo.CanSelfManageSchedule = false;
         await _uow.SaveChangesAsync();
 
-        var handler = CreateHandlerAsDoctor(member.UserId!.Value);
+        var handler = CreateHandlerAsDoctor(member.UserId);
         var result  = await handler.Handle(new SaveWorkingDaysCommand(member.Id, branchId, []), default);
 
         result.IsSuccess.Should().BeFalse();

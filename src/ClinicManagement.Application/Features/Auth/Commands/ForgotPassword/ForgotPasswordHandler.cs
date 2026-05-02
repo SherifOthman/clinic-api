@@ -47,7 +47,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         }
 
         var token       = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var displayName = user.Person.FullName;
+        var displayName = user.FullName;
         var resetLink   = $"{_appOptions.FrontendUrl}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
 
         try
@@ -61,7 +61,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
         }
 
         await _audit.WriteEventAsync("PasswordResetRequested",
-            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideUserId: user.Id, overrideFullName: user.FullName,
             overrideEmail: user.Email, ct: cancellationToken);
 
         return Result.Success();

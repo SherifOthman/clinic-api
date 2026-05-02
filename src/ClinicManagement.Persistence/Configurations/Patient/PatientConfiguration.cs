@@ -11,17 +11,15 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         // PatientCode is string — stored as nvarchar(4) for StartsWith search support
         builder.Property(p => p.PatientCode).HasMaxLength(4).IsRequired();
         builder.Property(p => p.BloodType).HasConversion<string>().HasMaxLength(15);
+        builder.Property(p => p.FullName).HasMaxLength(200).IsRequired();
+        builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(10).IsRequired();
 
-        builder.ToTable(t => t.HasCheckConstraint("CK_Patient_BloodType",
-            "[BloodType] IS NULL OR [BloodType] IN ('APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative')"));
-
-        // PersonId — required, every patient must have a Person
-        builder.Property(p => p.PersonId).IsRequired();
-        builder.HasOne(p => p.Person)
-            .WithMany(per => per.PatientRecords)
-            .HasForeignKey(p => p.PersonId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_Patient_BloodType",
+                "[BloodType] IS NULL OR [BloodType] IN ('APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative')");
+            t.HasCheckConstraint("CK_Patient_Gender", "[Gender] IN ('Male', 'Female')");
+        });
 
         builder.HasOne<Clinic>()
             .WithMany()

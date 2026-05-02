@@ -33,18 +33,20 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
-    public async Task<User?> GetByIdWithPersonAsync(Guid id, CancellationToken ct = default)
-        => await _users.Include(u => u.Person).FirstOrDefaultAsync(u => u.Id == id, ct);
+    /// <summary>
+    /// Kept for API compatibility — Person is no longer a separate entity,
+    /// so this simply delegates to GetByIdAsync.
+    /// </summary>
+    public Task<User?> GetByIdWithPersonAsync(Guid id, CancellationToken ct = default)
+        => GetByIdAsync(id, ct);
 
     public async Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername, CancellationToken ct = default)
         => await _users
-            .Include(u => u.Person)
             .FirstOrDefaultAsync(u => u.Email == emailOrUsername || u.UserName == emailOrUsername, ct);
 
     public async Task<UserWithRoles?> GetByEmailOrUsernameWithRolesAsync(string emailOrUsername, CancellationToken ct = default)
     {
         var user = await _users
-            .Include(u => u.Person)
             .FirstOrDefaultAsync(u => u.Email == emailOrUsername || u.UserName == emailOrUsername, ct);
 
         if (user is null) return null;
@@ -104,9 +106,9 @@ public class UserRepository : IUserRepository
                 u.UserName,
                 u.Email,
                 u.PhoneNumber,
-                u.Person.FullName,
-                u.Person.ProfileImageUrl,
-                Gender         = u.Person.Gender.ToString(),
+                u.FullName,
+                u.ProfileImageUrl,
+                Gender         = u.Gender.ToString(),
                 u.EmailConfirmed,
                 HasPassword    = u.PasswordHash != null,
                 u.LastLoginAt,

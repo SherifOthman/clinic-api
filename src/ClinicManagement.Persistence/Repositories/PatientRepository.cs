@@ -17,7 +17,6 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     public async Task<Patient?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct = default)
         => await DbSet
-            .Include(p => p.Person)
             .Include(p => p.Phones)
             .Include(p => p.ChronicDiseases)
             .AsSplitQuery()
@@ -69,7 +68,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
             query = query.Where(p =>
-                p.Person.FullName.StartsWith(searchTerm) ||
+                p.FullName.StartsWith(searchTerm) ||
                 p.PatientCode.StartsWith(searchTerm) ||
                 p.Phones.Any(ph =>
                     ph.PhoneNumber.StartsWith(searchTerm) ||
@@ -77,7 +76,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(gender) &&
             Enum.TryParse<Gender>(gender, ignoreCase: true, out var genderEnum))
-            query = query.Where(p => p.Person.Gender == genderEnum);
+            query = query.Where(p => p.Gender == genderEnum);
 
         if (countryGeonameId.HasValue)
             query = query.Where(p => p.CountryGeonameId == countryGeonameId.Value);
@@ -111,18 +110,18 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         {
             query = query
                 .OrderByDescending(p => p.PatientCode == searchTerm)
-                .ThenByDescending(p => p.Person.FullName == searchTerm)
+                .ThenByDescending(p => p.FullName == searchTerm)
                 .ThenByDescending(p => p.PatientCode.StartsWith(searchTerm))
-                .ThenByDescending(p => p.Person.FullName.StartsWith(searchTerm))
+                .ThenByDescending(p => p.FullName.StartsWith(searchTerm))
                 .ThenByDescending(p => p.CreatedAt);
         }
         else
         {
             query = sortBy?.Trim().ToLower() switch
             {
-                "fullname" => desc ? query.OrderByDescending(p => p.Person.FullName)
-                                       : query.OrderBy(p => p.Person.FullName),
-                "age" => desc ? query.OrderByDescending(p => p.Person.DateOfBirth) : query.OrderBy(p => p.Person.DateOfBirth),
+                "fullname" => desc ? query.OrderByDescending(p => p.FullName)
+                                       : query.OrderBy(p => p.FullName),
+                "age" => desc ? query.OrderByDescending(p => p.DateOfBirth) : query.OrderBy(p => p.DateOfBirth),
                 "createdat" => desc ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt),
                 "chronicdiseasecount" => desc ? query.OrderByDescending(p => p.ChronicDiseases.Count) : query.OrderBy(p => p.ChronicDiseases.Count),
                 _ => query.OrderByDescending(p => p.CreatedAt),
@@ -136,9 +135,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Select(p => new PatientListRaw(
                 Id: p.Id.ToString(),
                 PatientCode: p.PatientCode,
-                FullName: p.Person.FullName,
-                DateOfBirth: p.Person.DateOfBirth,
-                Gender: p.Person.Gender,
+                FullName: p.FullName,
+                DateOfBirth: p.DateOfBirth,
+                Gender: p.Gender,
                 BloodType: p.BloodType,
                 ChronicDiseaseCount: p.ChronicDiseases.Count,
                 PrimaryPhone: p.Phones.OrderBy(ph => ph.Id).Select(ph => ph.PhoneNumber).FirstOrDefault(),
@@ -183,8 +182,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Take(count)
             .Select(p => new RecentPatientRow(
                 p.Id.ToString(), p.PatientCode,
-                p.Person.FullName,
-                p.Person.DateOfBirth, p.Person.Gender.ToString(), p.CreatedAt))
+                p.FullName,
+                p.DateOfBirth, p.Gender.ToString(), p.CreatedAt))
             .ToListAsync(ct);
 
     // ── Full detail ───────────────────────────────────────────────────────────
@@ -202,9 +201,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 p.Id,
                 p.PatientCode,
                 p.BloodType,
-                FullName = p.Person.FullName,
-                DateOfBirth = p.Person.DateOfBirth,
-                Gender = p.Person.Gender,
+                FullName = p.FullName,
+                DateOfBirth = p.DateOfBirth,
+                Gender = p.Gender,
                 p.CountryGeonameId,
                 p.StateGeonameId,
                 p.CityGeonameId,
@@ -355,7 +354,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return await Context.Set<User>()
             .AsNoTracking()
             .Where(u => ids.Contains(u.Id))
-            .Select(u => new { u.Id, Name = u.Person.FullName })
+            .Select(u => new { u.Id, Name = u.FullName })
             .ToDictionaryAsync(u => u.Id, u => u.Name, ct);
     }
 

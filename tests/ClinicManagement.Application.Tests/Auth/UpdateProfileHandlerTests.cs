@@ -45,10 +45,10 @@ public class UpdateProfileHandlerTests
 
         result.IsSuccess.Should().BeTrue();
 
-        var updated = await _uow.Users.GetByIdWithPersonAsync(user.Id);
-        updated!.Person.FullName.Should().Be("New Name");
+        var updated = await _uow.Users.GetByIdAsync(user.Id);
+        updated!.FullName.Should().Be("New Name");
         updated.UserName.Should().Be("newuser");
-        updated.Person.Gender.Should().Be(Gender.Male);
+        updated.Gender.Should().Be(Gender.Male);
         updated.PhoneNumber.Should().Be("+966500000001");
     }
 

@@ -28,15 +28,14 @@ public static class ClinicHelper
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-        var person = new Person { FullName = "Clinic Owner", Gender = Gender.Male };
         var user = new User
         {
             UserName = username,
             Email = email,
             PhoneNumber = "+966500000001",
             EmailConfirmed = true,
-            PersonId = person.Id,
-            Person = person,
+            FullName = "Clinic Owner",
+            Gender = Gender.Male,
         };
         await userManager.CreateAsync(user, "Test@1234!");
         await userManager.AddToRoleAsync(user, "ClinicOwner");
@@ -92,7 +91,6 @@ public static class ClinicHelper
 
         var member = new ClinicMember
         {
-            PersonId = user.PersonId,
             UserId = user.Id,
             ClinicId = clinic.Id,
             Role = ClinicMemberRole.Owner,

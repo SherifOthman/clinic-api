@@ -18,7 +18,7 @@ public class ForgotPasswordHandlerTests
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<IEmailService> _emailMock = new();
-    private readonly Mock<ISecurityAuditWriter> _auditWriterMock = new();
+    private readonly Mock<IAuditWriter> _auditWriterMock = new();
     private readonly ForgotPasswordHandler _handler;
 
     public ForgotPasswordHandlerTests()

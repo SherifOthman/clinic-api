@@ -67,7 +67,7 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
                 si.Specialization != null ? si.Specialization.NameEn : null,
                 si.Specialization != null ? si.Specialization.NameAr : null,
                 si.CreatedAt, si.ExpiresAt, si.IsAccepted, si.IsCanceled,
-                (si.CreatedByUser.Person.FullName).Trim()))
+                (si.CreatedByUser.FullName).Trim()))
             .ToPagedAsync(pageNumber, pageSize, ct);
     }
 
@@ -87,9 +87,9 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
                 x.AcceptedAt,
                 SpecializationNameEn = x.Specialization != null ? x.Specialization.NameEn : null,
                 SpecializationNameAr = x.Specialization != null ? x.Specialization.NameAr : null,
-                CreatedByName = x.CreatedByUser.Person.FullName,
+                CreatedByName = x.CreatedByUser.FullName,
                 AcceptedByName = x.AcceptedByUser != null
-                    ? x.AcceptedByUser.Person.FullName
+                    ? x.AcceptedByUser.FullName
                     : null,
             })
             .FirstOrDefaultAsync(ct);

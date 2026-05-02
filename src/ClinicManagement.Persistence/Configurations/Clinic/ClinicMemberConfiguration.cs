@@ -13,19 +13,15 @@ public class ClinicMemberConfiguration : IEntityTypeConfiguration<ClinicMember>
         builder.ToTable(t => t.HasCheckConstraint("CK_ClinicMember_Role",
             "[Role] IN ('Owner', 'Doctor', 'Receptionist', 'Nurse')"));
 
-        // A person can be a member at multiple clinics, but only once per clinic
-        builder.HasIndex(m => new { m.PersonId, m.ClinicId }).IsUnique();
+        // A user can be a member at multiple clinics, but only once per clinic
+        builder.HasIndex(m => new { m.UserId, m.ClinicId }).IsUnique()
+            .HasFilter("[UserId] IS NOT NULL");
         builder.HasIndex(m => new { m.ClinicId, m.IsActive });
 
         // Only one Owner per clinic — enforced at DB level
         builder.HasIndex(m => new { m.ClinicId, m.Role })
             .IsUnique()
             .HasFilter("[Role] = 'Owner'");
-
-        builder.HasOne(m => m.Person)
-            .WithMany(p => p.ClinicMemberships)
-            .HasForeignKey(m => m.PersonId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(m => m.User)
             .WithMany()

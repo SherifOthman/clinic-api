@@ -4,19 +4,13 @@ using ClinicManagement.Domain.Enums;
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// A person's membership at a specific clinic with a specific role.
-///
-/// Key design decisions:
-/// - PersonId required — every member is a real person
-/// - UserId nullable — set when the person accepts their invitation
-/// - Role is per-clinic — same person can be Doctor at Clinic A, Receptionist at Clinic B
-/// - One person can have multiple memberships across different clinics
+/// A user's membership at a specific clinic with a specific role.
+/// UserId is nullable — set when the person accepts their invitation and creates an account.
+/// Role is per-clinic — same user can be Doctor at Clinic A, Receptionist at Clinic B.
 /// </summary>
 public class ClinicMember : AuditableTenantEntity, IAuditableEntity
 {
-    public Guid PersonId { get; init; }
-
-    /// <summary>Nullable — set when the person accepts their invitation and creates an account.</summary>
+    /// <summary>Nullable — set when the invitation is accepted and the user account is created.</summary>
     public Guid? UserId { get; set; }
 
     public ClinicMemberRole Role { get; set; }
@@ -31,7 +25,6 @@ public class ClinicMember : AuditableTenantEntity, IAuditableEntity
     public bool IsNurse        => Role == ClinicMemberRole.Nurse;
 
     // Navigation
-    public Person Person { get; set; } = null!;
     public User? User { get; set; }
     public Clinic Clinic { get; set; } = null!;
     public DoctorInfo? DoctorInfo { get; set; }

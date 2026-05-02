@@ -35,25 +35,14 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
 
     public async Task<Result> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        // Create Person first — the human being behind the account
-        var person = new Person
-        {
-            FullName = request.FullName,
-            Gender = Enum.TryParse<Gender>(request.Gender, out var pg) ? pg : Gender.Male,
-        };
-
-
-        // Person must be persisted before UserManager.CreateAsync so the FK is satisfied
-        await _uow.Persons.AddAsync(person);
-        await _uow.SaveChangesAsync(cancellationToken);
-
         var user = new User
         {
-            Email = request.Email,
-            UserName = request.UserName ?? request.Email,
-            PhoneNumber = request.PhoneNumber,
+            Email          = request.Email,
+            UserName       = request.UserName ?? request.Email,
+            PhoneNumber    = request.PhoneNumber,
             EmailConfirmed = false,
-            PersonId = person.Id,
+            FullName       = request.FullName,
+            Gender         = Enum.TryParse<Gender>(request.Gender, out var pg) ? pg : Gender.Male,
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
@@ -76,13 +65,12 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
         try { await _emailTokenService.SendConfirmationEmailAsync(user, cancellationToken); }
         catch (Exception ex)
         {
-            // Email failure is non-fatal — user is created but must resend verification manually
-            _logger.LogError(ex, "SMTP ERROR: Failed to send confirmation email to {Email}. SMTP may be misconfigured. Error: {Message}",
+            _logger.LogError(ex, "SMTP ERROR: Failed to send confirmation email to {Email}. Error: {Message}",
                 request.Email, ex.Message);
         }
 
         await _audit.WriteEventAsync("Register",
-            overrideUserId: user.Id, overrideFullName: user.Person.FullName,
+            overrideUserId: user.Id, overrideFullName: user.FullName,
             overrideEmail: user.Email, overrideRole: UserRoles.ClinicOwner, ct: cancellationToken);
 
         _logger.LogInformation("User registered successfully: {Email} with role {Role}", request.Email, UserRoles.ClinicOwner);

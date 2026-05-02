@@ -4,7 +4,6 @@ using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Auth.Commands.Register;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -17,7 +16,7 @@ public class RegisterHandlerTests
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<IEmailTokenService> _emailTokenMock = new();
-    private readonly Mock<ISecurityAuditWriter> _auditWriterMock = new();
+    private readonly Mock<IAuditWriter> _auditWriterMock = new();
     private readonly RegisterHandler _handler;
 
     public RegisterHandlerTests()
@@ -30,15 +29,13 @@ public class RegisterHandlerTests
     private RegisterCommand ValidCommand(string email = "new@test.com") =>
         new(email, "newuser", "Test@1234!", "+966500000001", "Male", "New User");
 
-    // The handler accesses user.Person.FullName for the audit log after CreateAsync.
-    // Since UserManager is mocked, we must ensure Person is set on the user object.
+    // The handler sets FullName directly on User — no Person needed.
     private void SetupCreateAsync()
     {
         _userManagerMock
             .Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
             .Callback<User, string>((u, _) =>
             {
-                u.Person ??= new Person { FullName = "New User", Gender = Gender.Male };
                 _uow.UserEntities.Add(u);
             })
             .ReturnsAsync(IdentityResult.Success);

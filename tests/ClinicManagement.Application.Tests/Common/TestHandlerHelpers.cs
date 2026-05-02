@@ -34,14 +34,13 @@ public static class TestHandlerHelpers
 
     public static User CreateTestUser(string email = "test@test.com", bool emailConfirmed = true)
     {
-        var person = new Person { FullName = "Test User", Gender = Gender.Male };
         return new User
         {
             Email = email,
             UserName = email,
             EmailConfirmed = emailConfirmed,
-            PersonId = person.Id,
-            Person = person,
+            FullName = "Test User",
+            Gender = Gender.Male,
         };
     }
 
@@ -91,45 +90,36 @@ public static class TestHandlerHelpers
             IsActive = true,
         };
 
-    /// <summary>Creates a Person + Patient for testing.</summary>
+    /// <summary>Creates a Patient for testing.</summary>
     public static Patient CreateTestPatient(
         string firstName = "Test", string lastName = "Patient",
         Gender gender = Gender.Male,
         string patientCode = "0001",
         Guid? clinicId = null)
     {
-        var person = new Person
-        {
-            FullName = $"{firstName} {lastName}".Trim(),
-            Gender = gender,
-            DateOfBirth = new DateOnly(1990, 1, 1),
-        };
         return new Patient
         {
             ClinicId = clinicId ?? Guid.NewGuid(),
             PatientCode = patientCode,
-            PersonId = person.Id,
-            Person = person,
+            FullName = $"{firstName} {lastName}".Trim(),
+            Gender = gender,
+            DateOfBirth = new DateOnly(1990, 1, 1),
             CreatedAt = DateTimeOffset.UtcNow,
         };
     }
-    public static (Person person, ClinicMember member) CreateTestMember(
+    public static ClinicMember CreateTestMember(
         Guid? userId = null, Guid? clinicId = null,
         string firstName = "Test", string lastName = "User",
         Gender gender = Gender.Male,
         ClinicMemberRole role = ClinicMemberRole.Doctor)
     {
-        var person = new Person { FullName = $"{firstName} {lastName}".Trim(), Gender = gender };
-        var member = new ClinicMember
+        return new ClinicMember
         {
-            PersonId = person.Id,
             UserId = userId ?? Guid.NewGuid(),
             ClinicId = clinicId ?? Guid.NewGuid(),
             Role = role,
             IsActive = true,
-            Person = person,
         };
-        return (person, member);
     }
 
     /// <summary>Creates a DoctorInfo for a ClinicMember.</summary>

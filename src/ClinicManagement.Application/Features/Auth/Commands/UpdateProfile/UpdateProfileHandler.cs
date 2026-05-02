@@ -23,7 +23,7 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Result
     public async Task<Result> Handle(UpdateProfileCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var user = await _uow.Users.GetByIdWithPersonAsync(userId, cancellationToken);
+        var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -31,9 +31,8 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Result
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        user.Person.FullName = request.FullName.Trim();
-     
-        user.Person.Gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var g) ? g : Domain.Enums.Gender.Male;
+        user.FullName = request.FullName.Trim();
+        user.Gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var g) ? g : Domain.Enums.Gender.Male;
         user.UserName = request.userName.Trim();
         user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
 

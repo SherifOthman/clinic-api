@@ -8,11 +8,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.Property(u => u.PersonId).IsRequired();
+        builder.Property(u => u.FullName).HasMaxLength(200).IsRequired();
+        builder.Property(u => u.ProfileImageUrl).HasMaxLength(500);
+        builder.Property(u => u.Gender).HasConversion<string>().HasMaxLength(10).IsRequired();
 
-        builder.HasOne(u => u.Person)
-            .WithOne(p => p.User)
-            .HasForeignKey<User>(u => u.PersonId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.ToTable(t => t.HasCheckConstraint("CK_User_Gender", "[Gender] IN ('Male', 'Female')"));
     }
 }

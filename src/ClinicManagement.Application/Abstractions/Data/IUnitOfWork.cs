@@ -28,7 +28,6 @@ public interface IUnitOfWork
     IRepository<ChronicDisease>   ChronicDiseases   { get; }
     IRepository<Specialization>   Specializations   { get; }
     IRepository<SubscriptionPlan> SubscriptionPlans { get; }
-    IRepository<Person>           Persons           { get; }
     IRefreshTokenRepository       RefreshTokens     { get; }
     IUserSeedRepository           UserEntities      { get; }
     ITestimonialRepository        Testimonials      { get; }

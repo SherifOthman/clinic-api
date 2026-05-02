@@ -25,18 +25,13 @@ public class GetPatientsQueryHandlerTests
 
     private Patient MakePatient(string name, Gender gender, string code, int chronicDiseaseCount = 0)
     {
-        var person = new Person
-        {
-            FullName = name,
-            Gender = gender,
-            DateOfBirth = new DateOnly(1990, 1, 1),
-        };
         var patient = new Patient
         {
             ClinicId = Guid.NewGuid(),
             PatientCode = code,
-            PersonId = person.Id,
-            Person = person,
+            FullName = name,
+            Gender = gender,
+            DateOfBirth = new DateOnly(1990, 1, 1),
             CreatedAt = DateTimeOffset.UtcNow,
         };
         for (var i = 0; i < chronicDiseaseCount; i++)

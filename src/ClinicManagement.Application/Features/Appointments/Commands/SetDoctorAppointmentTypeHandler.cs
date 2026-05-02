@@ -29,7 +29,7 @@ public class SetDoctorAppointmentTypeHandler : IRequestHandler<SetDoctorAppointm
 
         // Allow: clinic owner OR the doctor themselves (when CanSelfManageSchedule is true)
         var isOwner   = _currentUser.Roles.Contains(UserRoles.ClinicOwner);
-        var isSelf    = member.UserId.HasValue && member.UserId == _currentUser.UserId;
+        var isSelf    = member.UserId == _currentUser.UserId;
         var canManage = isOwner || (isSelf && member.DoctorInfo.CanSelfManageSchedule);
 
         if (!canManage)

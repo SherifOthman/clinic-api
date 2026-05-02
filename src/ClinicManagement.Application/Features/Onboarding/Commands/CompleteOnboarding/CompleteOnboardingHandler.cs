@@ -66,7 +66,6 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
 
     private static ClinicMember CreateOwnerMember(User user, Guid clinicId) => new()
     {
-        PersonId = user.PersonId,
         UserId   = user.Id,
         ClinicId = clinicId,
         Role     = Domain.Enums.ClinicMemberRole.Owner,

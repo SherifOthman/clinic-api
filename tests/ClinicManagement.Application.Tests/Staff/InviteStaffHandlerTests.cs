@@ -18,13 +18,14 @@ public class InviteStaffHandlerTests
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly Mock<IEmailService> _emailMock = new();
+    private readonly Mock<IAuditWriter> _auditMock = new();
     private readonly InviteStaffHandler _handler;
 
     public InviteStaffHandlerTests()
     {
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(Guid.NewGuid());
         _currentUserMock.Setup(x => x.GetRequiredClinicId()).Returns(Guid.NewGuid());
-        _handler = new InviteStaffHandler(_uow, _currentUserMock.Object, _emailMock.Object);
+        _handler = new InviteStaffHandler(_uow, _currentUserMock.Object, _emailMock.Object, _auditMock.Object);
     }
 
     [Fact]

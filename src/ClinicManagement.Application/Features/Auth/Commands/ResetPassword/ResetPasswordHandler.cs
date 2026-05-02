@@ -46,7 +46,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
             _logger.LogWarning("Invalid password reset token for user: {Email} - {Errors}", request.Email, errors);
            
             await _audit.WriteEventAsync("PasswordResetFailed", "Invalid or expired token",
-                overrideUserId: user.Id, overrideFullName: user.Person?.FullName,
+                overrideUserId: user.Id, overrideFullName: user.FullName,
                 overrideEmail: user.Email, ct: cancellationToken);
 
             return Result.Failure(ErrorCodes.TOKEN_INVALID, "Invalid or expired reset token");
@@ -56,7 +56,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
         await _uow.SaveChangesAsync(cancellationToken);
 
         await _audit.WriteEventAsync("PasswordReset",
-            overrideUserId: user.Id, overrideFullName: user.Person?.FullName,
+            overrideUserId: user.Id, overrideFullName: user.FullName,
             overrideEmail: user.Email, ct: cancellationToken);
 
         _logger.LogInformation("Password reset successfully for user: {UserId}", user.Id);

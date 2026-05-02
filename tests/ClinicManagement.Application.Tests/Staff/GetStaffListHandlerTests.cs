@@ -21,18 +21,17 @@ public class GetStaffListHandlerTests
     {
         var user = TestHandlerHelpers.CreateTestUser($"u_{Guid.NewGuid():N}@test.com");
         user.UserName = $"u_{Guid.NewGuid():N}";
+        user.FullName = "Test User";
+        user.Gender = gender;
         _uow.UserEntities.Add(user);
         await _uow.SaveChangesAsync();
 
-        var person = new Person { FullName = "Test User", Gender = gender };
         var member = new ClinicMember
         {
-            PersonId = person.Id,
             UserId = user.Id,
             ClinicId = Guid.NewGuid(),
             Role = ClinicMemberRole.Doctor,
             IsActive = isActive,
-            Person = person,
         };
         await _uow.Members.AddAsync(member);
         await _uow.SaveChangesAsync();

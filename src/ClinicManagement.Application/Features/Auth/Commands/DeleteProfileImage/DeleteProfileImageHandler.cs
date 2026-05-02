@@ -30,7 +30,7 @@ public class DeleteProfileImageHandler : IRequestHandler<DeleteProfileImageComma
     public async Task<Result> Handle(DeleteProfileImageCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var user   = await _uow.Users.GetByIdWithPersonAsync(userId, cancellationToken);
+        var user   = await _uow.Users.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -38,10 +38,10 @@ public class DeleteProfileImageHandler : IRequestHandler<DeleteProfileImageComma
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        if (!string.IsNullOrWhiteSpace(user.Person.ProfileImageUrl))
-            await _fileStorageService.DeleteFileAsync(user.Person.ProfileImageUrl, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl))
+            await _fileStorageService.DeleteFileAsync(user.ProfileImageUrl, cancellationToken);
 
-        user.Person.ProfileImageUrl = null;
+        user.ProfileImageUrl = null;
         await _uow.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Profile image deleted successfully for user: {UserId}", user.Id);

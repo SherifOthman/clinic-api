@@ -17,7 +17,7 @@ public class LoginHandlerTests
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<ITokenService> _tokenServiceMock = new();
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock = new();
-    private readonly Mock<ISecurityAuditWriter> _auditWriterMock = new();
+    private readonly Mock<IAuditWriter> _auditWriterMock = new();
     private readonly LoginHandler _handler;
 
     public LoginHandlerTests()

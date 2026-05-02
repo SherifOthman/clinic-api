@@ -23,7 +23,7 @@ public class ConfirmEmailHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenUserNotFound()
     {
-        var result = await _handler.Handle(new ConfirmEmailCommand("nobody@test.com", "token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(Guid.NewGuid(), "token"), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -37,7 +37,7 @@ public class ConfirmEmailHandlerTests
 
         _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(It.IsAny<User>(), default)).ReturnsAsync(true);
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(user.Email!, "token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "token"), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -53,7 +53,7 @@ public class ConfirmEmailHandlerTests
         _emailTokenMock.Setup(x => x.ConfirmEmailAsync(It.IsAny<User>(), "bad-token", default))
             .ThrowsAsync(new InvalidOperationException("Invalid token"));
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(user.Email!, "bad-token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "bad-token"), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -68,7 +68,7 @@ public class ConfirmEmailHandlerTests
         _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(It.IsAny<User>(), default)).ReturnsAsync(false);
         _emailTokenMock.Setup(x => x.ConfirmEmailAsync(It.IsAny<User>(), "valid-token", default)).Returns(Task.CompletedTask);
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(user.Email!, "valid-token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "valid-token"), default);
 
         result.IsSuccess.Should().BeTrue();
     }

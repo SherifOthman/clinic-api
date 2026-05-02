@@ -45,7 +45,7 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
             invitation.Email,
             clinic?.Name ?? "Clinic",
             invitation.Role.ToString(),
-            inviter?.Person.FullName ?? "Clinic Administrator",
+            inviter?.FullName ?? "Clinic Administrator",
             $"/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 

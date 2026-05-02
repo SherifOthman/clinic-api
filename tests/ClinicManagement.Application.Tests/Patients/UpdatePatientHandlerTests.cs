@@ -48,8 +48,8 @@ public class UpdatePatientHandlerTests
         result.IsSuccess.Should().BeTrue();
 
         var updated = await _uow.Patients.GetByIdWithDetailsAsync(patient.Id);
-        updated!.Person.FullName.Should().Be("New Name");
-        updated.Person.Gender.Should().Be(Gender.Female);
+        updated!.FullName.Should().Be("New Name");
+        updated.Gender.Should().Be(Gender.Female);
     }
 
     [Fact]

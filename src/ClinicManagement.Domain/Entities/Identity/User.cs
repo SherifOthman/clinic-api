@@ -1,10 +1,11 @@
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
-/// Authentication identity — email, password, tokens only.
-/// All personal data (name, gender, photo) lives on Person.
+/// Authentication identity — credentials, tokens, and personal profile in one place.
+/// Removing the Person split eliminates a mandatory JOIN on every auth operation.
 /// </summary>
 public class User : IdentityUser<Guid>
 {
@@ -13,13 +14,12 @@ public class User : IdentityUser<Guid>
         Id = Guid.NewGuid();
     }
 
+    // Profile
+    public string FullName { get; set; } = null!;
+    public Gender Gender { get; set; }
+    public string? ProfileImageUrl { get; set; }
+
     // Security
     public DateTimeOffset? LastLoginAt { get; set; }
     public DateTimeOffset? LastPasswordChangeAt { get; set; }
-
-    public Guid PersonId { get; set; }
-    
-
-    // Navigation
-    public Person Person { get; set; } = null!;
 }

@@ -15,7 +15,7 @@ public class ChangePasswordHandlerTests
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly Mock<ISecurityAuditWriter> _auditWriterMock = new();
+    private readonly Mock<IAuditWriter> _auditWriterMock = new();
     private readonly ChangePasswordHandler _handler;
 
     public ChangePasswordHandlerTests()

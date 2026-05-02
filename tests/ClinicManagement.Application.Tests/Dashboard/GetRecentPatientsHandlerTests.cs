@@ -19,18 +19,13 @@ public class GetRecentPatientsHandlerTests
 
     private Patient MakePatient(string name, Gender gender, DateTimeOffset createdAt)
     {
-        var person = new Person
-        {
-            FullName = name,
-            Gender = gender,
-            DateOfBirth = new DateOnly(1990, 1, 1),
-        };
         return new Patient
         {
             ClinicId = Guid.NewGuid(),
             PatientCode = Guid.NewGuid().ToString()[..7],
-            PersonId = person.Id,
-            Person = person,
+            FullName = name,
+            Gender = gender,
+            DateOfBirth = new DateOnly(1990, 1, 1),
             CreatedAt = createdAt,
         };
     }

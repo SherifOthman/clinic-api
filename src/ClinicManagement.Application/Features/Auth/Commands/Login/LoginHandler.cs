@@ -186,7 +186,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         List<string>? roles = null)
         => _audit.WriteEventAsync(eventName, detail,
             overrideUserId:   user.Id,
-            overrideFullName: user.Person.FullName,
+            overrideFullName: user.FullName,
             overrideEmail:    user.Email,
             overrideRole:     roles is not null ? string.Join(",", roles) : null,
             overrideClinicId: clinicId,

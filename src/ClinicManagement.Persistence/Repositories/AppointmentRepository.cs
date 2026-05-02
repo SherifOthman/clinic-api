@@ -23,9 +23,9 @@ public class AppointmentRepository : IAppointmentRepository
                .Select(a => new AppointmentDto(
                    a.Id,
                    a.DoctorInfoId,
-                   a.Doctor != null ? a.Doctor.ClinicMember.Person.FullName : "—",
+                   a.Doctor != null ? a.Doctor.ClinicMember.User!.FullName : "—",
                    a.PatientId,
-                   a.Patient != null ? a.Patient.Person.FullName : "—",
+                   a.Patient != null ? a.Patient.FullName : "—",
                    a.Patient != null ? a.Patient.PatientCode : null,
                    a.QueueNumber,
                    a.ScheduledTime != null ? a.ScheduledTime.Value.ToString("HH:mm") : null,
@@ -36,8 +36,8 @@ public class AppointmentRepository : IAppointmentRepository
                    a.VisitType != null ? a.VisitType.Name : "—",
                    a.FinalPrice,
                    a.CreatedAt,
-                   a.Patient != null ? a.Patient.Person.Gender.ToString() : null,
-                   a.Patient != null ? a.Patient.Person.DateOfBirth : null))
+                   a.Patient != null ? a.Patient.Gender.ToString() : null,
+                   a.Patient != null ? a.Patient.DateOfBirth : null))
                .ToListAsync(ct);
 
     public Task<List<AppointmentDto>> GetProjectedByBranchAndDateAsync(
@@ -50,9 +50,9 @@ public class AppointmentRepository : IAppointmentRepository
                .Select(a => new AppointmentDto(
                    a.Id,
                    a.DoctorInfoId,
-                   a.Doctor != null ? a.Doctor.ClinicMember.Person.FullName : "—",
+                   a.Doctor != null ? a.Doctor.ClinicMember.User!.FullName : "—",
                    a.PatientId,
-                   a.Patient != null ? a.Patient.Person.FullName : "—",
+                   a.Patient != null ? a.Patient.FullName : "—",
                    a.Patient != null ? a.Patient.PatientCode : null,
                    a.QueueNumber,
                    a.ScheduledTime != null ? a.ScheduledTime.Value.ToString("HH:mm") : null,
@@ -63,21 +63,21 @@ public class AppointmentRepository : IAppointmentRepository
                    a.VisitType != null ? a.VisitType.Name : "—",
                    a.FinalPrice,
                    a.CreatedAt,
-                   a.Patient != null ? a.Patient.Person.Gender.ToString() : null,
-                   a.Patient != null ? a.Patient.Person.DateOfBirth : null))
+                   a.Patient != null ? a.Patient.Gender.ToString() : null,
+                   a.Patient != null ? a.Patient.DateOfBirth : null))
                .ToListAsync(ct);
 
     // ── Entity reads — AsNoTracking for performance ───────────────────────────
 
     public Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => _set.AsNoTracking()
-               .Include(a => a.Patient).ThenInclude(p => p.Person)
+               .Include(a => a.Patient)
                .Include(a => a.VisitType)
                .FirstOrDefaultAsync(a => a.Id == id, ct);
 
     public Task<List<Appointment>> GetByDoctorAndDateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default)
         => _set.AsNoTracking()
-               .Include(a => a.Patient).ThenInclude(p => p.Person)
+               .Include(a => a.Patient)
                .Include(a => a.VisitType)
                .Where(a => a.DoctorInfoId == doctorInfoId && a.Date == date)
                .OrderBy(a => a.QueueNumber ?? 0)
@@ -86,9 +86,9 @@ public class AppointmentRepository : IAppointmentRepository
 
     public Task<List<Appointment>> GetByDoctorsAndDateAsync(List<Guid> doctorInfoIds, DateOnly date, CancellationToken ct = default)
         => _set.AsNoTracking()
-               .Include(a => a.Patient).ThenInclude(p => p.Person)
+               .Include(a => a.Patient)
                .Include(a => a.VisitType)
-               .Include(a => a.Doctor).ThenInclude(d => d.ClinicMember).ThenInclude(m => m.Person)
+               .Include(a => a.Doctor).ThenInclude(d => d.ClinicMember).ThenInclude(m => m.User)
                .Where(a => doctorInfoIds.Contains(a.DoctorInfoId) && a.Date == date)
                .OrderBy(a => a.DoctorInfoId)
                .ThenBy(a => a.QueueNumber ?? 0)
@@ -97,9 +97,9 @@ public class AppointmentRepository : IAppointmentRepository
 
     public Task<List<Appointment>> GetByBranchAndDateAsync(Guid branchId, DateOnly date, CancellationToken ct = default)
         => _set.AsNoTracking()
-               .Include(a => a.Patient).ThenInclude(p => p.Person)
+               .Include(a => a.Patient)
                .Include(a => a.VisitType)
-               .Include(a => a.Doctor).ThenInclude(d => d.ClinicMember).ThenInclude(m => m.Person)
+               .Include(a => a.Doctor).ThenInclude(d => d.ClinicMember).ThenInclude(m => m.User)
                .Where(a => a.BranchId == branchId && a.Date == date)
                .OrderBy(a => a.DoctorInfoId)
                .ThenBy(a => a.QueueNumber ?? 0)

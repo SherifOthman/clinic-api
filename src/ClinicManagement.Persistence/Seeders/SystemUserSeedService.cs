@@ -79,15 +79,14 @@ public class SystemUserSeedService
         if (await _userManager.FindByEmailAsync(email) is not null)
             return;
 
-        var person = new Person { FullName = fullName, Gender = gender };
-        var user   = new User
+        var user = new User
         {
             UserName       = username,
             Email          = email,
             PhoneNumber    = phone,
             EmailConfirmed = true,
-            PersonId       = person.Id,
-            Person         = person,
+            FullName       = fullName,
+            Gender         = gender,
         };
 
         var result = await _userManager.CreateAsync(user, password);

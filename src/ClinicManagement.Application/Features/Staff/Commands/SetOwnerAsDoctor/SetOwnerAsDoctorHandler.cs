@@ -52,7 +52,6 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
         {
             existingMember = new ClinicMember
             {
-                PersonId = user.PersonId,
                 UserId   = userId,
                 ClinicId = clinic.Id,
                 Role     = Domain.Enums.ClinicMemberRole.Owner,

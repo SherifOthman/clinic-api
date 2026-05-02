@@ -44,14 +44,14 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
         var invitation = StaffInvitation.Create(clinicId, request.Email, role, currentUserId, request.SpecializationId);
         await _uow.Invitations.AddAsync(invitation);
 
-        var inviter = await _uow.Users.GetByIdWithPersonAsync(currentUserId, cancellationToken);
+        var inviter = await _uow.Users.GetByIdAsync(currentUserId, cancellationToken);
         var clinic  = await _uow.Clinics.GetByIdAsync(clinicId, cancellationToken);
 
         await _emailService.SendStaffInvitationEmailAsync(
             request.Email,
             clinic?.Name ?? "Clinic",
             request.Role,
-            inviter?.Person.FullName ?? "Clinic Administrator",
+            inviter?.FullName ?? "Clinic Administrator",
             $"/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 

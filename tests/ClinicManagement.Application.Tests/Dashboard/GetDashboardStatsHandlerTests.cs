@@ -1,18 +1,24 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Dashboard.Queries;
 using ClinicManagement.Application.Tests.Common;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
+using Moq;
 
 namespace ClinicManagement.Application.Tests.Dashboard;
 
 public class GetDashboardStatsHandlerTests
 {
     private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly GetDashboardStatsHandler _handler;
 
     public GetDashboardStatsHandlerTests()
     {
-        _handler = new GetDashboardStatsHandler(_uow);
+        _currentUserMock.Setup(x => x.GetRequiredClinicId()).Returns(Guid.NewGuid());
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        _handler = new GetDashboardStatsHandler(_uow, cache, _currentUserMock.Object);
     }
 
     [Fact]
@@ -46,8 +52,8 @@ public class GetDashboardStatsHandlerTests
     public async Task Handle_ShouldCountActiveStaff_WhenMembersExist()
     {
         var clinicId = Guid.NewGuid();
-        var (_, activeMember) = TestHandlerHelpers.CreateTestMember(clinicId: clinicId);
-        var (_, inactiveMember) = TestHandlerHelpers.CreateTestMember(clinicId: clinicId);
+        var activeMember = TestHandlerHelpers.CreateTestMember(clinicId: clinicId);
+        var inactiveMember = TestHandlerHelpers.CreateTestMember(clinicId: clinicId);
         inactiveMember.IsActive = false;
 
         await _uow.Members.AddAsync(activeMember);
