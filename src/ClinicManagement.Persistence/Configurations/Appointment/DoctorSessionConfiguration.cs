@@ -14,6 +14,10 @@ public class DoctorSessionConfiguration : IEntityTypeConfiguration<DoctorSession
         builder.Property(s => s.Date).HasColumnType("date");
         builder.Property(s => s.DelayHandling).HasConversion<string>().HasMaxLength(20);
 
+        builder.ToTable("DoctorSessions", t => t.HasCheckConstraint(
+            "CK_DoctorSession_DelayHandling",
+            "[DelayHandling] IS NULL OR [DelayHandling] IN ('AutoShift', 'MarkMissed', 'Manual')"));
+
         builder.HasIndex(s => new { s.DoctorInfoId, s.BranchId, s.Date }).IsUnique();
 
         builder.HasOne(s => s.Doctor)

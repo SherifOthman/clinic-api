@@ -10,6 +10,15 @@ public class ClinicMemberPermissionConfiguration : IEntityTypeConfiguration<Clin
     {
         builder.Property(p => p.Permission).HasConversion<string>().HasMaxLength(50).IsRequired();
 
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_ClinicMemberPermission_Permission",
+            "[Permission] IN ('ViewPatients','CreatePatient','EditPatient','DeletePatient'," +
+            "'ViewStaff','InviteStaff','ManageStaffStatus'," +
+            "'ViewBranches','ManageBranches'," +
+            "'ManageSchedule','ManageVisitTypes'," +
+            "'ViewAppointments','ManageAppointments'," +
+            "'ViewInvoices','ManageInvoices')"));
+
         // One row per permission per member
         builder.HasIndex(p => new { p.ClinicMemberId, p.Permission }).IsUnique();
 
