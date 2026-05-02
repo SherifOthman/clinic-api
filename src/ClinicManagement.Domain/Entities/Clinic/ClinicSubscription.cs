@@ -36,4 +36,5 @@ public class ClinicSubscription : AuditableTenantEntity
 
     // Navigation properties
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
+
 }

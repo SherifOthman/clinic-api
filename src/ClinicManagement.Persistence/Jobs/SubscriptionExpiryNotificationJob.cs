@@ -25,10 +25,11 @@ public class SubscriptionExpiryNotificationJob
         var expiryThreshold = now.AddDays(7);
 
         var expiring = await _context.Set<ClinicSubscription>()
-            .Where(s => s.Status == SubscriptionStatus.Active &&
-                        s.EndDate.HasValue &&
-                        s.EndDate <= expiryThreshold &&
-                        s.EndDate > now)
+            .Where(s =>
+                s.Status == SubscriptionStatus.Active &&
+                s.EndDate > now &&
+                s.EndDate <= expiryThreshold
+            )
             .ToListAsync();
 
         if (!expiring.Any()) return;

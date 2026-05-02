@@ -15,17 +15,14 @@ namespace ClinicManagement.Infrastructure.Services;
 public class TokenService : ITokenService
 {
     private readonly JwtOptions _jwtOptions;
-    private readonly DateTimeProvider _dateTimeProvider;
     private readonly ILogger<TokenService> _logger;
 
     public TokenService(
-        IOptions<JwtOptions> jwtOptions, 
-        DateTimeProvider dateTimeProvider,
+        IOptions<JwtOptions> jwtOptions,
         ILogger<TokenService> logger)
     {
         _jwtOptions = jwtOptions.Value;
-        _dateTimeProvider = dateTimeProvider;
-        _logger = logger;
+        _logger     = logger;
     }
 
     public string GenerateAccessToken(
@@ -64,7 +61,7 @@ public class TokenService : ITokenService
             issuer: _jwtOptions.Issuer,
             audience: _jwtOptions.Audience,
             claims: claims,
-            expires: _dateTimeProvider.UtcNow.UtcDateTime.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
+            expires: DateTimeOffset.UtcNow.UtcDateTime.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
             signingCredentials: credentials
         );
 

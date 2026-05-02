@@ -14,7 +14,6 @@ public static class DependencyInjection
     {
         services.AddHttpContextAccessor();
 
-        services.AddScoped<DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IAuditWriter, AuditWriter>();
