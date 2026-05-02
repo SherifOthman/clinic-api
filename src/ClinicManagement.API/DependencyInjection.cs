@@ -202,11 +202,16 @@ public static class DependencyInjection
 
     public static WebApplication UseAppConfigurations(this WebApplication app)
     {
+        // CORS must be first — before exception middleware — so CORS headers are
+        // present even when the app throws a 500. Without this, browsers report
+        // CORS errors instead of the actual error.
+        app.UseCors("AllowAll");
+
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseStaticFiles();
         app.UseRouting();
 
-        // Hangfire dashboard — before CORS, after routing so embedded assets are served
+        // Hangfire dashboard — after routing so embedded assets are served
         if (!app.Environment.IsEnvironment("Testing"))
         {
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
@@ -216,7 +221,6 @@ public static class DependencyInjection
             });
         }
 
-        app.UseCors("AllowAll");
         app.UseRateLimiter();
         app.UseMiddleware<CookieTokenMiddleware>(); // inject cookie access token as Bearer header
         app.UseAuthentication();
