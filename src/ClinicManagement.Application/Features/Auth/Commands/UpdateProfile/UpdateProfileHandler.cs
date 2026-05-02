@@ -31,9 +31,9 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Result
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
         }
 
-        user.FullName = request.FullName.Trim();
-        user.Gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var g) ? g : Domain.Enums.Gender.Male;
-        user.UserName = request.userName.Trim();
+        user.FullName    = request.FullName.Trim();
+        user.Gender      = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var g) ? g : Domain.Enums.Gender.Male;
+        user.UserName    = request.userName.Trim();
         user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
 
         await _uow.SaveChangesAsync(cancellationToken);

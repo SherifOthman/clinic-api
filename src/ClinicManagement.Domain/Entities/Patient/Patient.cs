@@ -5,7 +5,6 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// A patient's medical record at a specific clinic.
-/// Personal data (name, gender, DOB) lives directly on this entity — no Person join needed.
 /// </summary>
 public class Patient : AuditableTenantEntity, ISoftDeletable, IAuditableEntity
 {

@@ -192,11 +192,11 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
     {
         var user = new User
         {
-            Email          = request.Email,
-            UserName       = await GenerateUniqueUsernameAsync(request.Email),
-            EmailConfirmed = true,
-            FullName       = request.FullName,
-            Gender         = Gender.Male,
+            Email           = request.Email,
+            UserName        = await GenerateUniqueUsernameAsync(request.Email),
+            EmailConfirmed  = true,
+            FullName        = request.FullName,
+            Gender          = Gender.Male,
             ProfileImageUrl = request.PictureUrl,
         };
 

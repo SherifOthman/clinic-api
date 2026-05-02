@@ -125,6 +125,11 @@ namespace ClinicManagement.Persistence.Migrations
                 table: "Patient",
                 sql: "[Gender] IN ('Male', 'Female')");
 
+            migrationBuilder.AddCheckConstraint(
+                name: "CK_User_Gender",
+                table: "Users",
+                sql: "[Gender] IN ('Male', 'Female')");
+
             migrationBuilder.CreateIndex(
                 name: "IX_ClinicMember_UserId_ClinicId",
                 table: "ClinicMember",
@@ -139,6 +144,10 @@ namespace ClinicManagement.Persistence.Migrations
             migrationBuilder.DropCheckConstraint(
                 name: "CK_Patient_Gender",
                 table: "Patient");
+
+            migrationBuilder.DropCheckConstraint(
+                name: "CK_User_Gender",
+                table: "Users");
 
             migrationBuilder.DropIndex(
                 name: "IX_ClinicMember_UserId_ClinicId",
