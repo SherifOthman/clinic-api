@@ -13,9 +13,11 @@ using ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerificatio
 using ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 using ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
 using ClinicManagement.Application.Features.Auth.Queries;
+using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -25,12 +27,18 @@ public class AuthController : BaseApiController
     private readonly ICookieService _cookieService;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<AuthController> _logger;
+    private readonly int _accessTokenExpiryMinutes;
 
-    public AuthController(ICookieService cookieService, ICurrentUserService currentUser, ILogger<AuthController> logger)
+    public AuthController(
+        ICookieService cookieService,
+        ICurrentUserService currentUser,
+        ILogger<AuthController> logger,
+        IOptions<JwtOptions> jwtOptions)
     {
-        _cookieService = cookieService;
-        _currentUser = currentUser;
-        _logger = logger;
+        _cookieService            = cookieService;
+        _currentUser              = currentUser;
+        _logger                   = logger;
+        _accessTokenExpiryMinutes = jwtOptions.Value.AccessTokenExpirationMinutes;
     }
 
     /// <summary>
@@ -63,7 +71,7 @@ public class AuthController : BaseApiController
         if (!isMobile && result.Value!.RefreshToken != null)
         {
             // Web clients: both tokens go in HttpOnly cookies — no tokens in response body
-            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, 60);
+            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, _accessTokenExpiryMinutes);
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
             return Ok(new TokenResponseDto(null, null));
         }
@@ -144,7 +152,7 @@ public class AuthController : BaseApiController
         if (!isMobile && result.Value!.RefreshToken != null)
         {
             // Web: rotate both cookies, return nothing in body
-            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, 60);
+            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, _accessTokenExpiryMinutes);
             _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
             return Ok(new TokenResponseDto(null, null));
         }

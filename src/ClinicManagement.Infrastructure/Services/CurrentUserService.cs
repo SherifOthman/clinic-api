@@ -6,108 +6,55 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public class CurrentUserService : ICurrentUserService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor _http;
 
     public CurrentUserService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
+        => _http = httpContextAccessor;
 
-    public Guid? UserId
-    {
-        get
-        {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
-        }
-    }
+    // ── Claims ────────────────────────────────────────────────────────────────
 
-    public Guid? MemberId
-    {
-        get
-        {
-            var memberIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("MemberId")?.Value;
-            return Guid.TryParse(memberIdClaim, out var memberId) ? memberId : null;
-        }
-    }
+    public Guid?   UserId      => ParseGuid(ClaimTypes.NameIdentifier);
+    public Guid?   MemberId    => ParseGuid("MemberId");
+    public Guid?   ClinicId    => ParseGuid("ClinicId");
+    public string? CountryCode => Claim("CountryCode");
+    public string? FullName    => Claim(ClaimTypes.Name);
+    public string? Username    => _http.HttpContext?.User?.Identity?.Name;
+    public string? Email       => Claim(ClaimTypes.Email);
+    public string? UserAgent   => _http.HttpContext?.Request.Headers["User-Agent"].FirstOrDefault();
+    public bool    IsAuthenticated => _http.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
-    public Guid? ClinicId
-    {
-        get
-        {
-            var clinicIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("ClinicId")?.Value;
-            return Guid.TryParse(clinicIdClaim, out var clinicId) ? clinicId : null;
-        }
-    }
-
-    public string? CountryCode =>
-        _httpContextAccessor.HttpContext?.User?.FindFirst("CountryCode")?.Value;
-
-    public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
-
-    public string? FullName => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
-
-    public string? Username => _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+    public IEnumerable<string> Roles
+        => _http.HttpContext?.User?.FindAll(ClaimTypes.Role).Select(c => c.Value)
+           ?? Enumerable.Empty<string>();
 
     public string IpAddress
     {
         get
         {
-            var context = _httpContextAccessor.HttpContext;
-            if (context == null) return "unknown";
+            var ctx = _http.HttpContext;
+            if (ctx is null) return "unknown";
 
-            var xForwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(xForwardedFor))
-                return xForwardedFor.Split(',')[0].Trim();
+            var forwarded = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(forwarded))
+                return forwarded.Split(',')[0].Trim();
 
-            return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         }
     }
 
-    public string? UserAgent => _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].FirstOrDefault();
-
-    public IEnumerable<string> Roles => _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)?.Select(x => x.Value) ?? Enumerable.Empty<string>();
-
-    public IEnumerable<string> Permissions => Enumerable.Empty<string>(); // Permissions are resolved from cache by PermissionAuthorizationHandler, not from JWT claims.
-
-    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    // ── Required helpers ──────────────────────────────────────────────────────
 
     public Guid GetRequiredUserId()
-    {
-        if (!UserId.HasValue)
-            throw new UnauthorizedAccessException("User ID is required but not available");
-
-        return UserId.Value;
-    }
+        => UserId ?? throw new UnauthorizedAccessException("User ID claim is missing.");
 
     public Guid GetRequiredClinicId()
-    {
-        if (!ClinicId.HasValue)
-            throw new UnauthorizedAccessException("Clinic ID is required but not available");
+        => ClinicId ?? throw new UnauthorizedAccessException("Clinic ID claim is missing.");
 
-        return ClinicId.Value;
-    }
+    // ── Private ───────────────────────────────────────────────────────────────
 
-    public bool TryGetUserId(out Guid userId)
-    {
-        userId = Guid.Empty;
-        if (UserId.HasValue)
-        {
-            userId = UserId.Value;
-            return true;
-        }
-        return false;
-    }
+    private string? Claim(string type)
+        => _http.HttpContext?.User?.FindFirstValue(type);
 
-    public bool TryGetClinicId(out Guid clinicId)
-    {
-        clinicId = Guid.Empty;
-        if (ClinicId.HasValue)
-        {
-            clinicId = ClinicId.Value;
-            return true;
-        }
-        return false;
-    }
+    private Guid? ParseGuid(string type)
+        => Guid.TryParse(Claim(type), out var id) ? id : null;
 }
-

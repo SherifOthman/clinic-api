@@ -2,6 +2,7 @@ using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Features.Auth.QueryModels;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -44,8 +45,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         if (userResult.IsFailure)
             return Result.Failure<TokenResponseDto>(userResult.ErrorCode!, userResult.ErrorMessage!);
 
-        var user  = userResult.Value!;
-        var roles = (await _userManager.GetRolesAsync(user)).ToList();
+        var (user, roles) = userResult.Value!;
 
         var contextResult = await ResolveClinicContextAsync(user.Id, roles, ct);
         if (contextResult.IsFailure)
@@ -68,19 +68,22 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
     // ── Authentication ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Validates the credentials and returns the authenticated user.
-    /// Handles: user not found, account locked, wrong password, lockout-on-fail.
-    /// Stamps LastLoginAt and resets the fail counter on success.
+    /// Validates the credentials and returns the authenticated user + roles.
+    /// Roles are loaded in the same query as the user — no separate GetRolesAsync call.
+    /// Stamps LastLoginAt before ResetAccessFailedCountAsync so both are saved
+    /// in a single UPDATE — no second SaveChanges needed.
     /// </summary>
-    private async Task<Result<User>> AuthenticateAsync(LoginCommand request, CancellationToken ct)
+    private async Task<Result<UserWithRoles>> AuthenticateAsync(LoginCommand request, CancellationToken ct)
     {
-        var user = await _uow.Users.GetByEmailOrUsernameAsync(request.EmailOrUsername, ct);
-        if (user is null)
+        var result = await _uow.Users.GetByEmailOrUsernameWithRolesAsync(request.EmailOrUsername, ct);
+        if (result is null)
         {
             _logger.LogWarning("Login failed — user not found: {Input}", request.EmailOrUsername);
             await _audit.WriteEventAsync("LoginFailed", $"User not found: {request.EmailOrUsername}", ct: ct);
-            return Result.Failure<User>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
+            return Result.Failure<UserWithRoles>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
         }
+
+        var user = result.User;
 
         if (await _userManager.IsLockedOutAsync(user))
             return await FailLockedOutAsync(user, ct);
@@ -88,14 +91,15 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
             return await FailWrongPasswordAsync(user, ct);
 
-        await _userManager.ResetAccessFailedCountAsync(user);
+        // Stamp LastLoginAt first — UserManager.ResetAccessFailedCountAsync calls
+        // UpdateAsync internally, which saves all dirty properties in one UPDATE.
         user.LastLoginAt = DateTimeOffset.UtcNow;
-        await _uow.SaveChangesAsync(ct);
+        await _userManager.ResetAccessFailedCountAsync(user);
 
-        return Result.Success(user);
+        return Result.Success(result);
     }
 
-    private async Task<Result<User>> FailLockedOutAsync(User user, CancellationToken ct)
+    private async Task<Result<UserWithRoles>> FailLockedOutAsync(User user, CancellationToken ct)
     {
         var lockoutEnd       = await _userManager.GetLockoutEndDateAsync(user);
         var remainingMinutes = lockoutEnd.HasValue
@@ -105,11 +109,11 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         _logger.LogWarning("Login blocked — account locked: {UserId}", user.Id);
         await AuditAsync("LoginBlocked", $"Account locked, {remainingMinutes} min remaining", user, clinicId: null, ct);
 
-        return Result.Failure<User>(ErrorCodes.ACCOUNT_LOCKED,
+        return Result.Failure<UserWithRoles>(ErrorCodes.ACCOUNT_LOCKED,
             $"Account is locked. Please try again in {remainingMinutes} minute(s).");
     }
 
-    private async Task<Result<User>> FailWrongPasswordAsync(User user, CancellationToken ct)
+    private async Task<Result<UserWithRoles>> FailWrongPasswordAsync(User user, CancellationToken ct)
     {
         _logger.LogWarning("Login failed — wrong password: {UserId}", user.Id);
         await _userManager.AccessFailedAsync(user);
@@ -118,12 +122,12 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         {
             _logger.LogWarning("Account locked after failed attempts: {UserId}", user.Id);
             await AuditAsync("AccountLocked", "Locked after too many failed attempts", user, clinicId: null, ct);
-            return Result.Failure<User>(ErrorCodes.ACCOUNT_LOCKED,
+            return Result.Failure<UserWithRoles>(ErrorCodes.ACCOUNT_LOCKED,
                 "Account is locked due to multiple failed login attempts. Please try again in 30 minutes.");
         }
 
         await AuditAsync("LoginFailed", "Invalid password", user, clinicId: null, ct);
-        return Result.Failure<User>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
+        return Result.Failure<UserWithRoles>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
     }
 
     // ── Clinic context ────────────────────────────────────────────────────────
@@ -153,14 +157,17 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         if (clinic is null)
             return Result.Success(LoginContext.Empty);
 
-        // Owner may also be registered as a doctor — look up their member record
-        var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(userId, ct);
+        // Owner may also be registered as a doctor — member record carries the MemberId for the JWT.
+        // Use WithClinic variant so we get CountryCode from the already-loaded clinic nav property
+        // instead of a second query. For owners the clinic is the same one we just loaded.
+        var member = await _uow.Members.GetByUserIdWithClinicAsync(userId, ct);
         return Result.Success(new LoginContext(clinic.Id, member?.Id, clinic.CountryCode));
     }
 
     private async Task<Result<LoginContext>> ResolveStaffContextAsync(Guid userId, CancellationToken ct)
     {
-        var staff = await _uow.Members.GetByUserIdIgnoreFiltersAsync(userId, ct);
+        // Single query: member + clinic JOIN — gives us ClinicId, MemberId, and CountryCode
+        var staff = await _uow.Members.GetByUserIdWithClinicAsync(userId, ct);
         if (staff is null)
             return Result.Success(LoginContext.Empty);
 
@@ -168,8 +175,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
             return Result.Failure<LoginContext>(ErrorCodes.STAFF_INACTIVE,
                 "Your account has been deactivated. Please contact your clinic owner.");
 
-        var countryCode = await _uow.Clinics.GetCountryCodeAsync(staff.ClinicId, ct);
-        return Result.Success(new LoginContext(staff.ClinicId, staff.Id, countryCode));
+        return Result.Success(new LoginContext(staff.ClinicId, staff.Id, staff.Clinic.CountryCode));
     }
 
     // ── Audit helper ──────────────────────────────────────────────────────────

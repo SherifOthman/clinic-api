@@ -9,10 +9,9 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
     public RefreshTokenRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<RefreshToken?> GetActiveTokenAsync(string token, DateTimeOffset now, CancellationToken ct = default)
-    {
-        var refreshToken = await DbSet.FirstOrDefaultAsync(rt => rt.Token == token, ct);
-        return refreshToken is { IsRevoked: false } && refreshToken.ExpiryTime > now ? refreshToken : null;
-    }
+        => await DbSet
+            .Where(rt => rt.Token == token && !rt.IsRevoked && rt.ExpiryTime > now)
+            .FirstOrDefaultAsync(ct);
 
     public async Task RevokeAllForUserAsync(Guid userId, string ipAddress, DateTimeOffset now, CancellationToken ct = default)
     {

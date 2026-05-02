@@ -6,7 +6,6 @@ using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
@@ -17,20 +16,17 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
     private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _userLocks = new();
 
     private readonly IUnitOfWork _uow;
-    private readonly UserManager<User> _userManager;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ITokenService _tokenService;
     private readonly ILogger<RefreshTokenHandler> _logger;
 
     public RefreshTokenHandler(
         IUnitOfWork uow,
-        UserManager<User> userManager,
         IRefreshTokenService refreshTokenService,
         ITokenService tokenService,
         ILogger<RefreshTokenHandler> logger)
     {
         _uow = uow;
-        _userManager = userManager;
         _refreshTokenService = refreshTokenService;
         _tokenService = tokenService;
         _logger = logger;
@@ -59,28 +55,29 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
                 return Result.Failure<TokenResponseDto>(ErrorCodes.USER_NOT_FOUND, "User not found");
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = (await _uow.Users.GetRolesByUserIdAsync(user.Id, cancellationToken))
+                .Select(r => r.RoleName)
+                .ToList();
 
-            Guid? clinicId = null;
+            Guid? clinicId    = null;
             string? countryCode = null;
-            var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, cancellationToken);
+
+            // Single query: member + clinic JOIN covers both staff and owner-as-doctor cases.
+            var member = await _uow.Members.GetByUserIdWithClinicAsync(user.Id, cancellationToken);
 
             if (roles.Contains(UserRoles.ClinicOwner))
             {
-                var clinic = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
-                clinicId = clinic?.Id;
+                // Owner's authoritative clinic comes from the Clinic table (they own it).
+                // The member record may exist if they're also registered as a doctor.
+                var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, cancellationToken);
+                clinicId    = clinic?.Id;
                 countryCode = clinic?.CountryCode;
             }
-            else
+            else if (member is not null)
             {
-                var staff = member;
-                clinicId = staff?.ClinicId;
-
-                if (clinicId.HasValue)
-                {
-                    var clinic = await _uow.Clinics.GetByIdAsync(clinicId.Value, cancellationToken);
-                    countryCode = clinic?.CountryCode;
-                }
+                // Staff: clinic is already loaded via the Include in GetByUserIdWithClinicAsync
+                clinicId    = member.ClinicId;
+                countryCode = member.Clinic.CountryCode;
             }
 
             var newAccessToken = _tokenService.GenerateAccessToken(user, roles.ToList(),

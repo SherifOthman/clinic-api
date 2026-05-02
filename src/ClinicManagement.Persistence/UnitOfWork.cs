@@ -24,7 +24,7 @@ public class UnitOfWork : IUnitOfWork
     public IInvitationRepository         Invitations        => field ??= new InvitationRepository(_context);
     public IClinicRepository             Clinics            => field ??= new ClinicRepository(_context);
     public IBranchRepository             Branches           => field ??= new BranchRepository(_context);
-    public IUserRepository               Users              => field ??= new UserRepository(_context);
+    public IUserRepository               Users              => field ??= new UserRepository(_context, _cache);
     public IAuditLogRepository           AuditLogs          => field ??= new AuditLogRepository(_context);
     public IReferenceRepository          Reference          => field ??= new ReferenceRepository(_context, _cache);
     public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);

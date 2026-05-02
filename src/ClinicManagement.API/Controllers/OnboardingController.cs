@@ -3,9 +3,11 @@ using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Auth.Commands;
 using ClinicManagement.Application.Features.Onboarding.Commands;
+using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.API.Controllers;
 
@@ -14,10 +16,12 @@ namespace ClinicManagement.API.Controllers;
 public class OnboardingController : BaseApiController
 {
     private readonly ICookieService _cookieService;
+    private readonly int _accessTokenExpiryMinutes;
 
-    public OnboardingController(ICookieService cookieService)
+    public OnboardingController(ICookieService cookieService, IOptions<JwtOptions> jwtOptions)
     {
-        _cookieService = cookieService;
+        _cookieService            = cookieService;
+        _accessTokenExpiryMinutes = jwtOptions.Value.AccessTokenExpirationMinutes;
     }
 
     [HttpPost("complete")]
@@ -43,7 +47,7 @@ public class OnboardingController : BaseApiController
 
             if (refreshResult.IsSuccess && refreshResult.Value is not null)
             {
-                _cookieService.SetAccessTokenCookie(refreshResult.Value.AccessToken!, 60);
+                _cookieService.SetAccessTokenCookie(refreshResult.Value.AccessToken!, _accessTokenExpiryMinutes);
                 _cookieService.SetRefreshTokenCookie(refreshResult.Value.RefreshToken!);
             }
         }

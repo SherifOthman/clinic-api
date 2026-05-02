@@ -113,7 +113,9 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         => modelBuilder.Entity<TEntity>()
             .HasQueryFilter(
                 QueryFilterNames.Tenant,
-                e => _currentUserService == null || e.ClinicId == (_currentUserService.ClinicId ?? Guid.Empty));
+                e => _currentUserService == null
+                     || !_currentUserService.IsAuthenticated
+                     || e.ClinicId == (_currentUserService.ClinicId == null ? e.ClinicId : _currentUserService.ClinicId.Value));
 
     private static void ApplySoftDeleteFilter(ModelBuilder modelBuilder, Type entityType)
         => typeof(ApplicationDbContext)

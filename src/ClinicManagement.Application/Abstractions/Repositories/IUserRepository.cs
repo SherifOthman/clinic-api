@@ -8,12 +8,17 @@ public interface IUserRepository
     Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<User?> GetByIdWithPersonAsync(Guid id, CancellationToken ct = default);
     Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername, CancellationToken ct = default);
+
+    /// <summary>
+    /// Loads user + person + roles in a single round-trip.
+    /// Use for login — avoids the separate GetRolesAsync call.
+    /// </summary>
+    Task<UserWithRoles?> GetByEmailOrUsernameWithRolesAsync(string emailOrUsername, CancellationToken ct = default);
     Task<bool> AnyByEmailAsync(string email, CancellationToken ct = default);
     Task<bool> AnyByUsernameAsync(string username, CancellationToken ct = default);
     Task<bool> AnyByNormalizedEmailAsync(string normalizedEmail, CancellationToken ct = default);
     Task<bool> AnyByNormalizedUsernameAsync(string normalizedUsername, CancellationToken ct = default);
     Task<List<UserRoleRow>> GetRolesByUserIdAsync(Guid userId, CancellationToken ct = default);
-
     /// <summary>
     /// Single-query projection for GET /auth/me.
     /// Returns profile + member + clinic week start day in one round-trip.

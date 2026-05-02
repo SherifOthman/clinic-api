@@ -11,6 +11,7 @@ public interface IClinicMemberRepository : IRepository<ClinicMember>
 {
     Task<ClinicMember?> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     Task<ClinicMember?> GetByUserIdIgnoreFiltersAsync(Guid userId, CancellationToken ct = default);
+    Task<ClinicMember?> GetByUserIdWithClinicAsync(Guid userId, CancellationToken ct = default);
     Task<ClinicMember?> GetByIdWithDoctorInfoAsync(Guid id, CancellationToken ct = default);
     Task<int> CountActiveAsync(CancellationToken ct = default);
     Task<int> CountActiveIgnoreFiltersAsync(CancellationToken ct = default);

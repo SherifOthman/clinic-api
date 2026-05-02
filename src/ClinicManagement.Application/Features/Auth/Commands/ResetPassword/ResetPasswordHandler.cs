@@ -44,9 +44,11 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             _logger.LogWarning("Invalid password reset token for user: {Email} - {Errors}", request.Email, errors);
+           
             await _audit.WriteEventAsync("PasswordResetFailed", "Invalid or expired token",
                 overrideUserId: user.Id, overrideFullName: user.Person?.FullName,
                 overrideEmail: user.Email, ct: cancellationToken);
+
             return Result.Failure(ErrorCodes.TOKEN_INVALID, "Invalid or expired reset token");
         }
 

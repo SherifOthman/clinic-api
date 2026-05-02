@@ -27,6 +27,12 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             .IgnoreQueryFilters([QueryFilterNames.Tenant])
             .FirstOrDefaultAsync(m => m.UserId == userId, ct);
 
+    public async Task<ClinicMember?> GetByUserIdWithClinicAsync(Guid userId, CancellationToken ct = default)
+        => await DbSet
+            .IgnoreQueryFilters([QueryFilterNames.Tenant])
+            .Include(m => m.Clinic)
+            .FirstOrDefaultAsync(m => m.UserId == userId, ct);
+
     public async Task<ClinicMember?> GetByIdWithDoctorInfoAsync(Guid id, CancellationToken ct = default)
         => await DbSet.AsNoTracking().Include(m => m.DoctorInfo).FirstOrDefaultAsync(m => m.Id == id, ct);
 

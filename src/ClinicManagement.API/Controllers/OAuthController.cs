@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Application.Features.Auth.Commands.GoogleLogin;
+using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -26,15 +27,18 @@ public class OAuthController : BaseApiController
     private readonly ICookieService _cookieService;
     private readonly AppOptions _appOptions;
     private readonly ILogger<OAuthController> _logger;
+    private readonly int _accessTokenExpiryMinutes;
 
     public OAuthController(
         ICookieService cookieService,
         IOptions<AppOptions> appOptions,
+        IOptions<JwtOptions> jwtOptions,
         ILogger<OAuthController> logger)
     {
-        _cookieService = cookieService;
-        _appOptions    = appOptions.Value;
-        _logger        = logger;
+        _cookieService            = cookieService;
+        _appOptions               = appOptions.Value;
+        _logger                   = logger;
+        _accessTokenExpiryMinutes = jwtOptions.Value.AccessTokenExpirationMinutes;
     }
 
     // ── Step 1: Redirect to Google ────────────────────────────────────────────
@@ -100,7 +104,7 @@ public class OAuthController : BaseApiController
         }
 
         // Set both tokens as HttpOnly cookies — same as credentials login
-        _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, 60);
+        _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, _accessTokenExpiryMinutes);
         _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken!);
 
         _logger.LogInformation("Google OAuth complete — redirecting to {Url}", dashboardUrl);
