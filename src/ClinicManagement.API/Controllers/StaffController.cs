@@ -198,7 +198,7 @@ public class StaffController : BaseApiController
             : StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
-    [Authorize]
+    [RequirePermission(Permission.ManageVisitTypes)]
     [HttpPut("{id:guid}/visit-types/{visitTypeId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -211,7 +211,7 @@ public class StaffController : BaseApiController
         return HandleNoContent(result, "Failed to update visit type");
     }
 
-    [Authorize]
+    [RequirePermission(Permission.ManageVisitTypes)]
     [HttpDelete("{id:guid}/visit-types/{visitTypeId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

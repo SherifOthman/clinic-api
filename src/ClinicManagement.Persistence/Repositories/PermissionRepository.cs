@@ -60,6 +60,10 @@ public class PermissionRepository : IPermissionRepository
     public async Task SeedDefaultsAsync(
         Guid memberId, ClinicMemberRole role, CancellationToken ct = default)
     {
+        // Owner bypasses permission checks entirely in PermissionAuthorizationHandler —
+        // seeding rows for them is wasted writes. Skip.
+        if (role == ClinicMemberRole.Owner) return;
+
         var rows = DefaultPermissions.ForRole(role).Select(p => new ClinicMemberPermission
         {
             ClinicMemberId = memberId,
