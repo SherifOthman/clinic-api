@@ -11,49 +11,32 @@ namespace ClinicManagement.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ClinicMember_Person_PersonId",
-                table: "ClinicMember");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Patient_Person_PersonId",
-                table: "Patient");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Users_Person_PersonId",
-                table: "Users");
-
-            migrationBuilder.DropTable(
-                name: "Person");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Users_PersonId",
-                table: "Users");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Patient_PersonId",
-                table: "Patient");
-
-            migrationBuilder.DropIndex(
-                name: "IX_ClinicMember_PersonId_ClinicId",
-                table: "ClinicMember");
-
-            migrationBuilder.DropIndex(
-                name: "IX_ClinicMember_UserId",
-                table: "ClinicMember");
-
-            migrationBuilder.DropColumn(
-                name: "PersonId",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "PersonId",
-                table: "Patient");
-
-            migrationBuilder.DropColumn(
-                name: "PersonId",
-                table: "ClinicMember");
-
+            // These objects only exist if the Person table was previously created.
+            // On fresh databases the Person entity was never applied, so skip safely.
+            migrationBuilder.Sql(@"
+                IF OBJECT_ID('FK_ClinicMember_Person_PersonId', 'F') IS NOT NULL
+                    ALTER TABLE [ClinicMember] DROP CONSTRAINT [FK_ClinicMember_Person_PersonId];
+                IF OBJECT_ID('FK_Patient_Person_PersonId', 'F') IS NOT NULL
+                    ALTER TABLE [Patient] DROP CONSTRAINT [FK_Patient_Person_PersonId];
+                IF OBJECT_ID('FK_Users_Person_PersonId', 'F') IS NOT NULL
+                    ALTER TABLE [Users] DROP CONSTRAINT [FK_Users_Person_PersonId];
+                IF OBJECT_ID('Person', 'U') IS NOT NULL
+                    DROP TABLE [Person];
+                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_PersonId' AND object_id = OBJECT_ID('Users'))
+                    DROP INDEX [IX_Users_PersonId] ON [Users];
+                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Patient_PersonId' AND object_id = OBJECT_ID('Patient'))
+                    DROP INDEX [IX_Patient_PersonId] ON [Patient];
+                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ClinicMember_PersonId_ClinicId' AND object_id = OBJECT_ID('ClinicMember'))
+                    DROP INDEX [IX_ClinicMember_PersonId_ClinicId] ON [ClinicMember];
+                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ClinicMember_UserId' AND object_id = OBJECT_ID('ClinicMember'))
+                    DROP INDEX [IX_ClinicMember_UserId] ON [ClinicMember];
+                IF COL_LENGTH('Users', 'PersonId') IS NOT NULL
+                    ALTER TABLE [Users] DROP COLUMN [PersonId];
+                IF COL_LENGTH('Patient', 'PersonId') IS NOT NULL
+                    ALTER TABLE [Patient] DROP COLUMN [PersonId];
+                IF COL_LENGTH('ClinicMember', 'PersonId') IS NOT NULL
+                    ALTER TABLE [ClinicMember] DROP COLUMN [PersonId];
+            ");
             migrationBuilder.AddColumn<string>(
                 name: "FullName",
                 table: "Users",
@@ -100,35 +83,39 @@ namespace ClinicManagement.Persistence.Migrations
                 defaultValue: "");
 
             // ── Data migration: copy personal data from Person to Users and Patient ──
+            // Only runs if Person table exists (may have been dropped already)
             migrationBuilder.Sql(@"
-                UPDATE u
-                SET u.FullName = p.FullName,
-                    u.Gender   = p.Gender,
-                    u.ProfileImageUrl = p.ProfileImageUrl
-                FROM Users u
-                INNER JOIN Person p ON u.PersonId = p.Id
-                WHERE u.PersonId IS NOT NULL;
+                IF OBJECT_ID('Person', 'U') IS NOT NULL
+                BEGIN
+                    UPDATE u
+                    SET u.FullName = p.FullName,
+                        u.Gender   = p.Gender,
+                        u.ProfileImageUrl = p.ProfileImageUrl
+                    FROM Users u
+                    INNER JOIN Person p ON u.PersonId = p.Id
+                    WHERE u.PersonId IS NOT NULL;
+                END
             ");
 
             migrationBuilder.Sql(@"
-                UPDATE pt
-                SET pt.FullName     = p.FullName,
-                    pt.Gender       = p.Gender,
-                    pt.DateOfBirth  = p.DateOfBirth
-                FROM Patient pt
-                INNER JOIN Person p ON pt.PersonId = p.Id
-                WHERE pt.PersonId IS NOT NULL;
+                IF OBJECT_ID('Person', 'U') IS NOT NULL
+                BEGIN
+                    UPDATE pt
+                    SET pt.FullName     = p.FullName,
+                        pt.Gender       = p.Gender,
+                        pt.DateOfBirth  = p.DateOfBirth
+                    FROM Patient pt
+                    INNER JOIN Person p ON pt.PersonId = p.Id
+                    WHERE pt.PersonId IS NOT NULL;
+                END
             ");
 
-            migrationBuilder.AddCheckConstraint(
-                name: "CK_Patient_Gender",
-                table: "Patient",
-                sql: "[Gender] IN ('Male', 'Female')");
+            // Fix any invalid Gender values before adding check constraints
+            migrationBuilder.Sql("UPDATE [Patient] SET [Gender] = 'Male' WHERE [Gender] NOT IN ('Male', 'Female') OR [Gender] IS NULL OR [Gender] = '';");
+            migrationBuilder.Sql("UPDATE [Users]   SET [Gender] = 'Male' WHERE [Gender] NOT IN ('Male', 'Female') OR [Gender] IS NULL OR [Gender] = '';");
 
-            migrationBuilder.AddCheckConstraint(
-                name: "CK_User_Gender",
-                table: "Users",
-                sql: "[Gender] IN ('Male', 'Female')");
+            migrationBuilder.Sql("IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_Patient_Gender') ALTER TABLE [Patient] ADD CONSTRAINT [CK_Patient_Gender] CHECK ([Gender] IN ('Male', 'Female'));");
+            migrationBuilder.Sql("IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_User_Gender')    ALTER TABLE [Users]   ADD CONSTRAINT [CK_User_Gender]   CHECK ([Gender] IN ('Male', 'Female'));");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClinicMember_UserId_ClinicId",
