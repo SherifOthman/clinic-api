@@ -6,7 +6,6 @@ using ClinicManagement.Persistence.Audit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
 
 namespace ClinicManagement.Persistence;
@@ -17,8 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
-        ICurrentUserService? currentUserService = null,
-        IMemoryCache? cache = null)
+        ICurrentUserService? currentUserService = null)
         : base(options)
     {
         _currentUserService = currentUserService;
@@ -115,7 +113,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
                 QueryFilterNames.Tenant,
                 e => _currentUserService == null
                      || !_currentUserService.IsAuthenticated
-                     || e.ClinicId == (_currentUserService.ClinicId == null ? e.ClinicId : _currentUserService.ClinicId.Value));
+                     || _currentUserService.ClinicId == null
+                     || e.ClinicId == _currentUserService.ClinicId.Value);
 
     private static void ApplySoftDeleteFilter(ModelBuilder modelBuilder, Type entityType)
         => typeof(ApplicationDbContext)
