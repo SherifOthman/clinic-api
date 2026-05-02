@@ -1,37 +1,37 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Patients.Queries;
+namespace ClinicManagement.Application.Features.Admin.Patients;
 
-public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<PaginatedResult<PatientDto>>>
+public class GetAdminPatientsHandler : IRequestHandler<GetAdminPatientsQuery, Result<PaginatedResult<PatientDto>>>
 {
     private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUser;
     private readonly IPhoneNormalizer _phoneNormalizer;
 
-    public GetPatientsQueryHandler(IUnitOfWork uow, ICurrentUserService currentUser, IPhoneNormalizer phoneNormalizer)
+    public GetAdminPatientsHandler(IUnitOfWork uow, IPhoneNormalizer phoneNormalizer)
     {
         _uow             = uow;
-        _currentUser     = currentUser;
         _phoneNormalizer = phoneNormalizer;
     }
 
     public async Task<Result<PaginatedResult<PatientDto>>> Handle(
-        GetPatientsQuery request, CancellationToken cancellationToken)
+        GetAdminPatientsQuery request, CancellationToken cancellationToken)
     {
         var nationalSearch = !string.IsNullOrWhiteSpace(request.SearchTerm)
-            ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, _currentUser.CountryCode)
+            ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, null)
             : null;
 
-        var result = await _uow.Patients.GetProjectedPageAsync(
+        var result = await _uow.Patients.GetAdminProjectedPageAsync(
             request.SearchTerm,
             nationalSearch,
             request.Gender,
             request.SortBy,
             request.SortDirection,
+            request.ClinicSearch,
             request.StateGeonameId,
             request.CityGeonameId,
             request.CountryGeonameId,

@@ -6,12 +6,12 @@ using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Features.Patients.Queries;
-using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;namespace ClinicManagement.API.Controllers;
+using Microsoft.AspNetCore.RateLimiting;
+
+namespace ClinicManagement.API.Controllers;
 
 [Route("api/patients")]
 public class PatientsController : BaseApiController
@@ -31,7 +31,12 @@ public class PatientsController : BaseApiController
         [FromQuery] string sortDirection = "asc",
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, StateGeonameId: stateGeonameId, CityGeonameId: cityGeonameId, CountryGeonameId: countryGeonameId);
+        var query = new GetPatientsQuery(
+            searchTerm, pagination.PageNumber, pagination.PageSize,
+            sortBy, sortDirection, gender,
+            StateGeonameId: stateGeonameId,
+            CityGeonameId: cityGeonameId,
+            CountryGeonameId: countryGeonameId);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }
@@ -45,31 +50,10 @@ public class PatientsController : BaseApiController
         [FromQuery] int? stateGeonameId,
         CancellationToken cancellationToken = default)
     {
-        var isSuperAdmin = User.IsInRole(UserRoles.SuperAdmin);
-        var query = new GetPatientLocationOptionsQuery(countryGeonameId, stateGeonameId, isSuperAdmin);
-        var result = await Sender.Send(query, cancellationToken);
+        var result = await Sender.Send(
+            new GetPatientLocationOptionsQuery(countryGeonameId, stateGeonameId),
+            cancellationToken);
         return HandleResult(result, "Failed to retrieve location options");
-    }
-
-    [HttpGet("all")]
-    [Authorize(Policy = "SuperAdmin")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(PaginatedResult<PatientDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllPatients(
-        [FromQuery] string? searchTerm,
-        [FromQuery] string? gender,
-        [FromQuery] string? clinicSearch,
-        [FromQuery] int? stateGeonameId,
-        [FromQuery] int? cityGeonameId,
-        [FromQuery] int? countryGeonameId,
-        [FromQuery] PaginationRequest pagination,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string sortDirection = "asc",
-        CancellationToken cancellationToken = default)
-    {
-        var query = new GetPatientsQuery(searchTerm, pagination.PageNumber, pagination.PageSize, sortBy, sortDirection, gender, clinicSearch, stateGeonameId, cityGeonameId, countryGeonameId, IsSuperAdmin: true);
-        var result = await Sender.Send(query, cancellationToken);
-        return HandleResult(result, "Failed to retrieve patients");
     }
 
     [HttpGet("{id:guid}")]
@@ -80,17 +64,6 @@ public class PatientsController : BaseApiController
     public async Task<IActionResult> GetPatientDetail(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await Sender.Send(new GetPatientDetailQuery(id), cancellationToken);
-        return HandleResult(result, "Failed to retrieve patient detail");
-    }
-
-    [HttpGet("all/{id:guid}")]
-    [Authorize(Policy = "SuperAdmin")]
-    [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(PatientDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPatientDetailAdmin(Guid id, CancellationToken cancellationToken = default)
-    {
-        var result = await Sender.Send(new GetPatientDetailQuery(id, IsSuperAdmin: true), cancellationToken);
         return HandleResult(result, "Failed to retrieve patient detail");
     }
 
@@ -134,16 +107,5 @@ public class PatientsController : BaseApiController
     {
         var result = await Sender.Send(new DeletePatientCommand(id), cancellationToken);
         return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to delete patient");
-    }
-
-    [HttpPatch("{id}/restore")]
-    [Authorize(Policy = "SuperAdmin")]
-    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RestorePatient([FromRoute] Guid id, CancellationToken cancellationToken = default)
-    {
-        var result = await Sender.Send(new RestorePatientCommand(id), cancellationToken);
-        return result.IsSuccess ? NoContent() : HandleResult(result, "Failed to restore patient");
     }
 }

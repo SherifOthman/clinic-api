@@ -18,7 +18,6 @@ public class GetPatientLocationOptionsHandler
         var options = await _uow.Patients.GetLocationOptionsAsync(
             request.CountryGeonameId,
             request.StateGeonameId,
-            request.IsSuperAdmin,
             ct);
 
         return Result.Success(options);

@@ -1,20 +1,21 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Patients.Queries;
+namespace ClinicManagement.Application.Features.Admin.Patients;
 
-public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Result<PatientDetailDto>>
+public class GetAdminPatientDetailHandler : IRequestHandler<GetAdminPatientDetailQuery, Result<PatientDetailDto>>
 {
     private readonly IUnitOfWork _uow;
 
-    public GetPatientDetailHandler(IUnitOfWork uow) => _uow = uow;
+    public GetAdminPatientDetailHandler(IUnitOfWork uow) => _uow = uow;
 
     public async Task<Result<PatientDetailDto>> Handle(
-        GetPatientDetailQuery request, CancellationToken cancellationToken)
+        GetAdminPatientDetailQuery request, CancellationToken cancellationToken)
     {
-        var data = await _uow.Patients.GetDetailAsync(request.PatientId, cancellationToken);
+        var data = await _uow.Patients.GetAdminDetailAsync(request.PatientId, cancellationToken);
 
         if (data is null)
             return Result.Failure<PatientDetailDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
@@ -42,8 +43,8 @@ public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Re
             UpdatedAt        = data.UpdatedAt,
             CreatedBy        = data.CreatedBy.HasValue && data.AuditUserNames.TryGetValue(data.CreatedBy.Value, out var cb) ? cb : null,
             UpdatedBy        = data.UpdatedBy.HasValue && data.AuditUserNames.TryGetValue(data.UpdatedBy.Value, out var ub) ? ub : null,
-            ClinicId         = null, // not exposed to clinic users
-            ClinicName       = null,
+            ClinicId         = data.ClinicId.ToString(),
+            ClinicName       = data.ClinicName,
         });
     }
 }

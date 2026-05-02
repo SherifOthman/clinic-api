@@ -2,12 +2,13 @@ using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
-namespace ClinicManagement.Application.Features.Patients.Queries;
+namespace ClinicManagement.Application.Features.Admin.Patients;
 
 /// <summary>
-/// Returns distinct location options from the current clinic's patient data.
+/// Cross-tenant location options — SuperAdmin only.
+/// Returns distinct locations from ALL clinics' patient data.
 /// </summary>
-public record GetPatientLocationOptionsQuery(
+public record GetAdminPatientLocationOptionsQuery(
     int? CountryGeonameId,
     int? StateGeonameId
 ) : IRequest<Result<List<LocationOption>>>;
