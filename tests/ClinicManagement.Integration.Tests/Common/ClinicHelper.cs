@@ -82,11 +82,11 @@ public static class ClinicHelper
             ClinicId = clinic.Id,
             Name = "Main Branch",
             AddressLine = "123 Test St",
-
             StateGeonameId = 2,
             CityGeonameId = 3,
             IsMainBranch = true,
             IsActive = true,
+            IsDeleted = false,
         });
 
         var member = new ClinicMember
@@ -95,6 +95,7 @@ public static class ClinicHelper
             ClinicId = clinic.Id,
             Role = ClinicMemberRole.Owner,
             IsActive = true,
+            IsDeleted = false,
         };
         db.Set<ClinicMember>().Add(member);
 
