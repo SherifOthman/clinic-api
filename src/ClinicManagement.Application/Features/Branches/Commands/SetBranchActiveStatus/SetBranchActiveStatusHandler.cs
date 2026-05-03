@@ -22,7 +22,6 @@ public class SetBranchActiveStatusHandler : IRequestHandler<SetBranchActiveStatu
             return Result.Failure(ErrorCodes.OPERATION_NOT_ALLOWED, "Cannot deactivate the main branch");
 
         branch.IsActive = request.IsActive;
-        branch.Touch();
 
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();

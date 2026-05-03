@@ -23,7 +23,6 @@ public class UpdateBranchHandler : IRequestHandler<UpdateBranchCommand, Result>
         branch.AddressLine    = request.AddressLine;
         branch.StateGeonameId = request.StateGeonameId;
         branch.CityGeonameId  = request.CityGeonameId;
-        branch.Touch();
 
         // Replace phone numbers
         branch.PhoneNumbers.Clear();

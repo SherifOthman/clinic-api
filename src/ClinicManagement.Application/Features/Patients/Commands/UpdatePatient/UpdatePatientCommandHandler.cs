@@ -62,7 +62,6 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
                 _uow.Patients.AddChronicDisease(new PatientChronicDisease { PatientId = patient.Id, ChronicDiseaseId = diseaseId });
         }
 
-        patient.Touch();
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

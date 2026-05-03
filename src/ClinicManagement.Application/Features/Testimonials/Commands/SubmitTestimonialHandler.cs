@@ -33,7 +33,6 @@ public class SubmitTestimonialHandler : IRequestHandler<SubmitTestimonialCommand
             existing.Text       = request.Text;
             existing.Rating     = request.Rating;
             existing.IsApproved = false; // re-submit resets approval — admin must re-approve
-            existing.Touch();
             _uow.Testimonials.Update(existing);
         }
         else

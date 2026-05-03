@@ -16,7 +16,6 @@ public class ToggleTestimonialApprovalHandler : IRequestHandler<ToggleTestimonia
         if (t is null) return Result.Failure(ErrorCodes.NOT_FOUND, "Testimonial not found");
 
         t.IsApproved = !t.IsApproved;
-        t.Touch();
         _uow.Testimonials.Update(t);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
