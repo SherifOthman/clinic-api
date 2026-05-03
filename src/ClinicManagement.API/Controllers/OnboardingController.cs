@@ -43,7 +43,7 @@ public class OnboardingController : BaseApiController
         if (!string.IsNullOrEmpty(refreshToken))
         {
             var refreshResult = await Sender.Send(
-                new RefreshTokenCommand(refreshToken, IsMobile: false),
+                new RefreshTokenCommand(refreshToken),
                 cancellationToken);
 
             if (refreshResult.IsSuccess && refreshResult.Value is not null)

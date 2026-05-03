@@ -139,7 +139,7 @@ public class CookieTokenMiddleware
             var sender        = context.RequestServices.GetRequiredService<ISender>();
             var cookieService = context.RequestServices.GetRequiredService<ICookieService>();
 
-            var result = await sender.Send(new RefreshTokenCommand(refreshToken, IsMobile: false));
+            var result = await sender.Send(new RefreshTokenCommand(refreshToken));
 
             if (result.IsFailure || result.Value is null)
             {

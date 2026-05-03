@@ -66,8 +66,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, Result<T
             var newTokens = await _tokenIssuer.IssueTokenPairAsync(user, roles, contextResult.Value!, ct);
             await _refreshTokenService.RevokeRefreshTokenAsync(request.Token, null, newTokens.RefreshToken, ct);
 
-            _logger.LogInformation("Token refreshed for user {UserId} ({ClientType})",
-                userId, request.IsMobile ? "mobile" : "web");
+            _logger.LogInformation("Token refreshed for user {UserId}", userId);
 
             return Result.Success(newTokens);
         }

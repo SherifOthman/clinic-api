@@ -4,7 +4,4 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Commands;
 
-public record RefreshTokenCommand(
-    string Token,
-    bool IsMobile
-) : IRequest<Result<TokenResponseDto>>;
+public record RefreshTokenCommand(string Token) : IRequest<Result<TokenResponseDto>>;

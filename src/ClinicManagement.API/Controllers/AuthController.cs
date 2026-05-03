@@ -114,53 +114,34 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
-    /// Refresh access token
+    /// Refresh access token — mobile clients only.
+    /// Web clients are refreshed automatically by the server-side middleware
+    /// using HttpOnly cookies; they must not call this endpoint.
     /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
     [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest? request, CancellationToken ct)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
     {
         var clientType = HttpContext.Request.Headers["X-Client-Type"].ToString();
-        var isMobile = clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase);
+        if (!clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("This endpoint is for mobile clients only. Web clients are refreshed automatically.");
 
-        var refreshToken = isMobile
-            ? request?.RefreshToken
-            : _cookieService.GetRefreshTokenFromCookie();
-
-        _logger.LogInformation("RefreshToken called: isMobile={IsMobile}, HasRefreshToken={HasToken}",
-            isMobile, !string.IsNullOrEmpty(refreshToken));
-
-        if (string.IsNullOrEmpty(refreshToken))
-        {
-            _logger.LogWarning("RefreshToken failed: No refresh token provided");
+        if (string.IsNullOrEmpty(request.RefreshToken))
             return Unauthorized();
-        }
 
-        var command = new RefreshTokenCommand(refreshToken, isMobile);
-        var result = await Sender.Send(command, ct);
+        var result = await Sender.Send(new RefreshTokenCommand(request.RefreshToken), ct);
 
         if (result.IsFailure)
         {
             _logger.LogWarning("RefreshToken failed: {Error}", result.ErrorMessage);
-            if (!isMobile) _cookieService.ClearAllAuthCookies();
             return Unauthorized();
         }
 
-        if (!isMobile && result.Value!.RefreshToken != null)
-        {
-            // Web: rotate both cookies, return nothing in body
-            _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, _accessTokenExpiryMinutes);
-            _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken);
-            return Ok(new TokenResponseDto(null, null));
-        }
-
-        return Ok(new TokenResponseDto(
-            result.Value!.AccessToken,
-            isMobile ? result.Value.RefreshToken : null
-        ));
+        return Ok(new TokenResponseDto(result.Value!.AccessToken, result.Value.RefreshToken));
     }
 
     /// <summary>
