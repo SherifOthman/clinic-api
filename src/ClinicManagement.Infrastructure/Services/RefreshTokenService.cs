@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Entities;
@@ -27,47 +26,46 @@ public class RefreshTokenService : IRefreshTokenService
         _logger             = logger;
     }
 
-    public async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
+    public async Task<string> GenerateRefreshTokenAsync(
+        Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
-        var now = DateTimeOffset.UtcNow;
-        var expiryTime = _jwtOptions.RefreshTokenExpirationMinutes.HasValue
-            ? now.AddMinutes(_jwtOptions.RefreshTokenExpirationMinutes.Value)
-            : now.AddDays(_jwtOptions.RefreshTokenExpirationDays);
+        var now        = DateTimeOffset.UtcNow;
+        var expiryTime = now.AddDays(_jwtOptions.RefreshTokenExpirationDays);
 
         var (entity, rawToken) = RefreshToken.Create(userId, expiryTime, ipAddress ?? _currentUserService.IpAddress);
 
-        // Persist the entity (Token field holds the hash)
         await _uow.RefreshTokens.AddAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Overwrite Token with the raw value so callers can send it to the client.
-        // The raw token is never stored — this is purely an in-memory transport.
-        entity.SetRawTokenForTransport(rawToken);
+        _logger.LogInformation("Generated refresh token for user {UserId}, expires in {Days} days",
+            userId, _jwtOptions.RefreshTokenExpirationDays);
 
-        _logger.LogInformation("Generated refresh token for user {UserId}, expires in {Minutes} minutes",
-            userId, (expiryTime - now).TotalMinutes);
-        return entity;
+        return rawToken;
     }
 
-    public async Task<RefreshToken?> GetActiveRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
+    public async Task<RefreshToken?> GetActiveRefreshTokenAsync(
+        string rawToken, CancellationToken cancellationToken = default)
     {
-        var hash = RefreshToken.Hash(token);
+        var hash = RefreshToken.Hash(rawToken);
         return await _uow.RefreshTokens.GetActiveTokenAsync(hash, DateTimeOffset.UtcNow, cancellationToken);
     }
 
-    public async Task RevokeRefreshTokenAsync(string token, string? ipAddress = null, string? replacedByToken = null, CancellationToken cancellationToken = default)
+    public async Task RevokeRefreshTokenAsync(
+        string rawToken, string? ipAddress = null, string? replacedByRawToken = null,
+        CancellationToken cancellationToken = default)
     {
-        var hash         = RefreshToken.Hash(token);
+        var hash         = RefreshToken.Hash(rawToken);
         var refreshToken = await _uow.RefreshTokens.GetActiveTokenAsync(hash, DateTimeOffset.UtcNow, cancellationToken);
         if (refreshToken is null) return;
 
-        refreshToken.Revoke(ipAddress ?? _currentUserService.IpAddress, DateTimeOffset.UtcNow, replacedByToken);
+        refreshToken.Revoke(ipAddress ?? _currentUserService.IpAddress, DateTimeOffset.UtcNow, replacedByRawToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Revoked refresh token for user {UserId}", refreshToken.UserId);
     }
 
-    public async Task RevokeAllUserRefreshTokensAsync(Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
+    public async Task RevokeAllUserRefreshTokensAsync(
+        Guid userId, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
         await _uow.RefreshTokens.RevokeAllForUserAsync(
             userId,
@@ -75,7 +73,7 @@ public class RefreshTokenService : IRefreshTokenService
             DateTimeOffset.UtcNow,
             cancellationToken);
 
-        _logger.LogInformation("Revoked refresh tokens for user {UserId}", userId);
+        _logger.LogInformation("Revoked all refresh tokens for user {UserId}", userId);
     }
 
     public async Task<int> CleanupExpiredTokensAsync(CancellationToken cancellationToken = default)

@@ -79,8 +79,8 @@ public sealed class TokenIssuer : ITokenIssuer
         var accessToken  = _tokenService.GenerateAccessToken(
             user, roles, context.MemberId, context.ClinicId, context.CountryCode);
 
-        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
+        var rawRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
 
-        return new TokenResponseDto(accessToken, refreshToken.Token);
+        return new TokenResponseDto(accessToken, rawRefreshToken);
     }
 }

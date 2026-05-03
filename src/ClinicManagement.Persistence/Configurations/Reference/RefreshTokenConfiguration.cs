@@ -8,12 +8,12 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)
     {
-        builder.Property(rt => rt.Token).HasMaxLength(500).IsRequired();
+        builder.Property(rt => rt.TokenHash).HasMaxLength(500).IsRequired();
         builder.Property(rt => rt.CreatedByIp).HasMaxLength(50).IsRequired();
         builder.Property(rt => rt.RevokedByIp).HasMaxLength(50);
-        builder.Property(rt => rt.ReplacedByToken).HasMaxLength(500);
-        
-        builder.HasIndex(rt => rt.Token).IsUnique();
+        builder.Property(rt => rt.ReplacedByTokenHash).HasMaxLength(500);
+
+        builder.HasIndex(rt => rt.TokenHash).IsUnique();
         builder.HasIndex(rt => rt.UserId);
 
         // No nav property on RefreshToken — FK only

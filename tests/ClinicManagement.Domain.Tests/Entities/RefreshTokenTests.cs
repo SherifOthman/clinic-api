@@ -33,9 +33,9 @@ public class RefreshTokenTests
     public void Create_ShouldStoreHashNotRawToken()
     {
         var (entity, raw) = Make();
-        // The stored Token must be the hash, not the raw value
-        entity.Token.Should().NotBe(raw);
-        entity.Token.Should().Be(RefreshToken.Hash(raw));
+        // The stored TokenHash must be the hash, not the raw value
+        entity.TokenHash.Should().NotBe(raw);
+        entity.TokenHash.Should().Be(RefreshToken.Hash(raw));
     }
 
     [Fact]
@@ -171,9 +171,9 @@ public class RefreshTokenTests
         var (entity, _) = Make();
         var (_, newRaw) = Make();
         entity.Revoke("1.2.3.4", Now, newRaw);
-        // ReplacedByToken stores the hash, not the raw value
-        entity.ReplacedByToken.Should().Be(RefreshToken.Hash(newRaw));
-        entity.ReplacedByToken.Should().NotBe(newRaw);
+        // ReplacedByTokenHash stores the hash, not the raw value
+        entity.ReplacedByTokenHash.Should().Be(RefreshToken.Hash(newRaw));
+        entity.ReplacedByTokenHash.Should().NotBe(newRaw);
     }
 
     [Fact]
@@ -181,6 +181,6 @@ public class RefreshTokenTests
     {
         var (entity, _) = Make();
         entity.Revoke("1.2.3.4", Now);
-        entity.ReplacedByToken.Should().BeNull();
+        entity.ReplacedByTokenHash.Should().BeNull();
     }
 }
