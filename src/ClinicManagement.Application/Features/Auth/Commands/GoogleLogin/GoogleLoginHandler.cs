@@ -16,32 +16,28 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 {
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
-    private readonly ITokenService _tokenService;
-    private readonly IRefreshTokenService _refreshTokenService;
+    private readonly ITokenIssuer _tokenIssuer;
     private readonly IAuditWriter _audit;
     private readonly ILogger<GoogleLoginHandler> _logger;
 
     public GoogleLoginHandler(
         IUnitOfWork uow,
         UserManager<User> userManager,
-        ITokenService tokenService,
-        IRefreshTokenService refreshTokenService,
+        ITokenIssuer tokenIssuer,
         IAuditWriter audit,
         ILogger<GoogleLoginHandler> logger)
     {
-        _uow                 = uow;
-        _userManager         = userManager;
-        _tokenService        = tokenService;
-        _refreshTokenService = refreshTokenService;
-        _audit               = audit;
-        _logger              = logger;
+        _uow         = uow;
+        _userManager = userManager;
+        _tokenIssuer = tokenIssuer;
+        _audit       = audit;
+        _logger      = logger;
     }
 
     public async Task<Result<TokenResponseDto>> Handle(
-        GoogleLoginCommand request, CancellationToken cancellationToken)
+        GoogleLoginCommand request, CancellationToken ct)
     {
-        var user = await ResolveUserAsync(request, cancellationToken);
-
+        var user = await ResolveUserAsync(request, ct);
         if (user is null)
             return Result.Failure<TokenResponseDto>(ErrorCodes.USER_CREATION_FAILED,
                 "Failed to create user from Google account");
@@ -52,19 +48,24 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
         var roles = await EnsureRolesAssignedAsync(user);
 
-        var tokenContext = await BuildTokenContextAsync(user, roles, cancellationToken);
-        if (tokenContext.IsFailure)
-            return Result.Failure<TokenResponseDto>(tokenContext.ErrorCode!, tokenContext.ErrorMessage!);
+        var contextResult = await _tokenIssuer.ResolveContextAsync(user.Id, roles, ct);
+        if (contextResult.IsFailure)
+            return Result.Failure<TokenResponseDto>(contextResult.ErrorCode!, contextResult.ErrorMessage!);
 
-        var tokens = await IssueTokensAsync(user, roles, tokenContext.Value!, cancellationToken);
+        var tokens = await _tokenIssuer.IssueTokenPairAsync(user, roles, contextResult.Value!, ct);
+
+        user.LastLoginAt = DateTimeOffset.UtcNow;
+        await _uow.SaveChangesAsync(ct);
 
         await _audit.WriteEventAsync("GoogleLoginSuccess",
-            overrideUserId: user.Id, overrideFullName: user.FullName,
-            overrideEmail: user.Email, overrideRole: string.Join(",", roles),
-            overrideClinicId: tokenContext.Value!.ClinicId, ct: cancellationToken);
+            overrideUserId:   user.Id,
+            overrideFullName: user.FullName,
+            overrideEmail:    user.Email,
+            overrideRole:     string.Join(",", roles),
+            overrideClinicId: contextResult.Value!.ClinicId,
+            ct: ct);
 
         _logger.LogInformation("Google OAuth login successful for {Email}", request.Email);
-
         return Result.Success(tokens);
     }
 
@@ -109,8 +110,8 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
     {
         if (string.IsNullOrWhiteSpace(pictureUrl)) return;
 
-        var current = user.ProfileImageUrl;
-        bool isGooglePicture = !string.IsNullOrWhiteSpace(current)
+        var current         = user.ProfileImageUrl;
+        var isGooglePicture = !string.IsNullOrWhiteSpace(current)
             && (current.Contains("googleusercontent.com") || current.Contains("lh3.google"));
 
         if (string.IsNullOrWhiteSpace(current) || isGooglePicture)
@@ -130,62 +131,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         return roles;
     }
 
-    // ── Step 6: Resolve clinic + member context for the JWT ──────────────────
-
-    private async Task<Result<TokenContext>> BuildTokenContextAsync(
-        User user, List<string> roles, CancellationToken ct)
-    {
-        Guid?   clinicId    = null;
-        Guid?   memberId    = null;
-        string? countryCode = null;
-
-        if (roles.Contains(UserRoles.ClinicOwner))
-        {
-            var clinic  = await _uow.Clinics.GetByOwnerIdAsync(user.Id, ct);
-            clinicId    = clinic?.Id;
-            countryCode = clinic?.CountryCode;
-        }
-        else
-        {
-            var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, ct);
-
-            if (member is { IsActive: false })
-                return Result.Failure<TokenContext>(ErrorCodes.STAFF_INACTIVE,
-                    "Your account has been deactivated.");
-
-            clinicId = member?.ClinicId;
-            memberId = member?.Id;
-
-            if (clinicId.HasValue)
-            {
-                var clinic  = await _uow.Clinics.GetByIdAsync(clinicId.Value, ct);
-                countryCode = clinic?.CountryCode;
-            }
-        }
-
-        if (memberId is null && clinicId.HasValue)
-        {
-            var member = await _uow.Members.GetByUserIdIgnoreFiltersAsync(user.Id, ct);
-            memberId   = member?.Id;
-        }
-
-        return Result.Success(new TokenContext(clinicId, memberId, countryCode));
-    }
-
-    // ── Step 7: Generate tokens and stamp last login ──────────────────────────
-
-    private async Task<TokenResponseDto> IssueTokensAsync(
-        User user, List<string> roles, TokenContext ctx, CancellationToken ct)
-    {
-        var accessToken  = _tokenService.GenerateAccessToken(user, roles, ctx.MemberId, ctx.ClinicId, ctx.CountryCode);
-        var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);
-
-        user.LastLoginAt = DateTimeOffset.UtcNow;
-        await _uow.SaveChangesAsync(ct);
-
-        return new TokenResponseDto(accessToken, refreshToken.Token);
-    }
-
     // ── Create: brand new user from Google profile ────────────────────────────
 
     private async Task<User?> CreateUserFromGoogleAsync(GoogleLoginCommand request, CancellationToken ct)
@@ -201,7 +146,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         };
 
         var result = await _userManager.CreateAsync(user);
-
         if (!result.Succeeded)
         {
             _logger.LogError("Failed to create user from Google OAuth {Email}: {Errors}",
@@ -224,6 +168,4 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
         return candidate;
     }
-
-    private record TokenContext(Guid? ClinicId, Guid? MemberId, string? CountryCode);
 }

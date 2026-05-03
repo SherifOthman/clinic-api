@@ -20,6 +20,7 @@ public static class DependencyInjection
 
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<ITokenIssuer, TokenIssuer>();
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<IEmailTokenService, EmailTokenService>();
         services.AddScoped<IEmailService, EmailService>();
