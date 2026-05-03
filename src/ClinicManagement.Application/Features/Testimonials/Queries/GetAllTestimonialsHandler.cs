@@ -13,17 +13,7 @@ public class GetAllTestimonialsHandler : IRequestHandler<GetAllTestimonialsQuery
     {
         var list = await _uow.Testimonials.GetAllAsync(ct);
 
-        var dtos = list.Select(t => new AdminTestimonialDto(
-            Id:         t.Id,
-            AuthorName: t.User.FullName,
-            Position:   "Clinic Owner",
-            ClinicName: t.Clinic.Name,
-            Text:       t.Text,
-            Rating:     t.Rating,
-            AvatarUrl:  t.User.ProfileImageUrl,
-            IsApproved: t.IsApproved,
-            CreatedAt:  t.CreatedAt
-        )).ToList();
+        var dtos = list.Select(TestimonialMapping.ToAdminDto).ToList();
 
         return Result.Success(dtos);
     }

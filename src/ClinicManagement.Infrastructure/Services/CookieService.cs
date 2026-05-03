@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ClinicManagement.Infrastructure.Services;
@@ -10,16 +9,13 @@ public class CookieService : ICookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CookieSettings _cookieSettings;
-    private readonly ILogger<CookieService> _logger;
 
     public CookieService(
         IHttpContextAccessor httpContextAccessor,
-        IOptions<CookieSettings> cookieSettings,
-        ILogger<CookieService> logger)
+        IOptions<CookieSettings> cookieSettings)
     {
         _httpContextAccessor = httpContextAccessor;
         _cookieSettings      = cookieSettings.Value;
-        _logger              = logger;
     }
 
     // ── Access token ──────────────────────────────────────────────────────────
@@ -27,41 +23,36 @@ public class CookieService : ICookieService
     public void SetAccessTokenCookie(string accessToken, int expiryMinutes)
     {
         if (string.IsNullOrEmpty(accessToken)) return;
-        var options = CreateSecureCookieOptions(TimeSpan.FromMinutes(expiryMinutes));
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(
-            CookieConstants.AccessToken, accessToken, options);
+            CookieConstants.AccessToken,
+            accessToken,
+            CreateSecureCookieOptions(TimeSpan.FromMinutes(expiryMinutes)));
     }
 
     public string? GetAccessTokenFromCookie()
         => _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.AccessToken];
-
-    public void ClearAccessTokenCookie()
-        => _httpContextAccessor.HttpContext?.Response.Cookies.Append(
-            CookieConstants.AccessToken, "", CreateSecureCookieOptions(TimeSpan.FromDays(-1)));
 
     // ── Refresh token ─────────────────────────────────────────────────────────
 
     public void SetRefreshTokenCookie(string refreshToken)
     {
         if (string.IsNullOrEmpty(refreshToken)) return;
-        var options = CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays));
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(
-            CookieConstants.RefreshToken, refreshToken, options);
+            CookieConstants.RefreshToken,
+            refreshToken,
+            CreateSecureCookieOptions(TimeSpan.FromDays(_cookieSettings.RefreshTokenExpiryInDays)));
     }
 
     public string? GetRefreshTokenFromCookie()
         => _httpContextAccessor.HttpContext?.Request.Cookies[CookieConstants.RefreshToken];
 
-    public void ClearRefreshTokenCookie()
-        => _httpContextAccessor.HttpContext?.Response.Cookies.Append(
-            CookieConstants.RefreshToken, "", CreateSecureCookieOptions(TimeSpan.FromDays(-1)));
-
     // ── Clear both ────────────────────────────────────────────────────────────
 
     public void ClearAllAuthCookies()
     {
-        ClearAccessTokenCookie();
-        ClearRefreshTokenCookie();
+        var expired = CreateSecureCookieOptions(TimeSpan.FromDays(-1));
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.AccessToken,  "", expired);
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieConstants.RefreshToken, "", expired);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -71,12 +62,12 @@ public class CookieService : ICookieService
         var isProduction = _cookieSettings.IsProduction;
         return new CookieOptions
         {
-            HttpOnly  = true,
-            Secure    = isProduction,
-            SameSite  = isProduction ? SameSiteMode.None : SameSiteMode.Lax,
-            Expires   = DateTimeOffset.UtcNow.Add(expiry),
-            Domain    = _cookieSettings.CookieDomain,   // e.g. ".yourapp.com" for cross-subdomain
-            Path      = "/",
+            HttpOnly    = true,
+            Secure      = isProduction,
+            SameSite    = isProduction ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires     = DateTimeOffset.UtcNow.Add(expiry),
+            Domain      = _cookieSettings.CookieDomain,  // e.g. ".yourapp.com" for cross-subdomain
+            Path        = "/",
             IsEssential = true,
         };
     }

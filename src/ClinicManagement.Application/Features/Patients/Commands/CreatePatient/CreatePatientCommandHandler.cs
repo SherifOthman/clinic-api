@@ -43,15 +43,10 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
 
         await _uow.Patients.AddAsync(patient);
 
-        var countryCode = _currentUser.CountryCode;
-
-        foreach (var phone in request.PhoneNumbers)
-            _uow.Patients.AddPhone(new PatientPhone
-            {
-                PatientId = patient.Id,
-                PhoneNumber = phone,
-                NationalNumber = _phoneNormalizer.GetNationalNumber(phone, countryCode) ?? phone,
-            });
+        PatientPhoneHelper.ReplacePhones(
+            _uow.Patients, _phoneNormalizer,
+            patient.Id, request.PhoneNumbers,
+            _currentUser.CountryCode);
 
         foreach (var diseaseId in request.ChronicDiseaseIds)
             _uow.Patients.AddChronicDisease(new PatientChronicDisease { PatientId = patient.Id, ChronicDiseaseId = diseaseId });

@@ -38,19 +38,11 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
 
         if (request.PhoneNumbers != null)
         {
-            foreach (var phone in patient.Phones?.ToList() ?? [])
-                _uow.Patients.RemovePhone(phone);
-
-            // Read from JWT — no DB call
-            var countryCode = _currentUser.CountryCode;
-
-            foreach (var phone in request.PhoneNumbers)
-                _uow.Patients.AddPhone(new PatientPhone
-                {
-                    PatientId = patient.Id,
-                    PhoneNumber = phone,
-                    NationalNumber = _phoneNormalizer.GetNationalNumber(phone, countryCode) ?? phone,
-                });
+            PatientPhoneHelper.ReplacePhones(
+                _uow.Patients, _phoneNormalizer,
+                patient.Id, request.PhoneNumbers,
+                _currentUser.CountryCode,
+                existingPhones: patient.Phones);
         }
 
         if (request.ChronicDiseaseIds != null)

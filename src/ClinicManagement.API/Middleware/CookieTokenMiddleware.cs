@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Auth.Commands;
 using ClinicManagement.Infrastructure.Options;
+using ClinicManagement.Infrastructure.Services;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -23,10 +24,6 @@ namespace ClinicManagement.API.Middleware;
 /// </summary>
 public class CookieTokenMiddleware
 {
-    private const string AccessTokenCookie  = "accessToken";
-    private const string RefreshTokenCookie = "refreshToken";
-
-    // Key = refresh token hash, Value = new access token (cached for 10s to cover burst)
     private static readonly MemoryCache _refreshDebounce = new(new MemoryCacheOptions());
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim>
         _refreshLocks = new();
@@ -59,8 +56,8 @@ public class CookieTokenMiddleware
             return;
         }
 
-        var accessToken  = context.Request.Cookies[AccessTokenCookie];
-        var refreshToken = context.Request.Cookies[RefreshTokenCookie];
+        var accessToken  = context.Request.Cookies[CookieConstants.AccessToken];
+        var refreshToken = context.Request.Cookies[CookieConstants.RefreshToken];
 
         // Happy path — valid, non-expired token
         if (!string.IsNullOrEmpty(accessToken) && !IsTokenExpired(accessToken))

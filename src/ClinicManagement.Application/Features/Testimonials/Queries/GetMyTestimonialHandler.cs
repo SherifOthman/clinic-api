@@ -24,14 +24,6 @@ public class GetMyTestimonialHandler : IRequestHandler<GetMyTestimonialQuery, Re
         if (t is null)
             return Result.Success<MyTestimonialDto?>(null);
 
-        // AuthorName, Position, AvatarUrl, ClinicName come from navigation properties —
-        // always the current values, no stale denormalized data on the entity.
-        return Result.Success<MyTestimonialDto?>(new MyTestimonialDto(
-            AuthorName: t.User.FullName,
-            Position:   "Clinic Owner",
-            Text:       t.Text,
-            Rating:     t.Rating,
-            AvatarUrl:  t.User.ProfileImageUrl,
-            IsApproved: t.IsApproved));
+        return Result.Success<MyTestimonialDto?>(TestimonialMapping.ToMyDto(t));
     }
 }
