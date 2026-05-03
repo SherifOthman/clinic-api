@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Repositories;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,11 +15,9 @@ public class ContactMessageRepository : IContactMessageRepository
     public async Task AddAsync(ContactMessage message, CancellationToken ct = default)
         => await _set.AddAsync(message, ct);
 
-    public Task<List<ContactMessage>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+    public Task<PaginatedResult<ContactMessage>> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
         => _set.OrderByDescending(m => m.CreatedAt)
-               .Skip((page - 1) * pageSize)
-               .Take(pageSize)
-               .ToListAsync(ct);
+               .ToPagedAsync(pageNumber, pageSize, ct);
 
     public Task<int> CountUnreadAsync(CancellationToken ct = default)
         => _set.CountAsync(m => !m.IsRead, ct);

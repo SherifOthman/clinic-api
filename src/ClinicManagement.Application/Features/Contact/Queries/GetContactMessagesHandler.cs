@@ -1,23 +1,25 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Contact.Queries;
 
-public class GetContactMessagesHandler : IRequestHandler<GetContactMessagesQuery, Result<List<ContactMessageDto>>>
+public class GetContactMessagesHandler : IRequestHandler<GetContactMessagesQuery, Result<PaginatedResult<ContactMessageDto>>>
 {
     private readonly IUnitOfWork _uow;
 
     public GetContactMessagesHandler(IUnitOfWork uow) => _uow = uow;
 
-    public async Task<Result<List<ContactMessageDto>>> Handle(GetContactMessagesQuery request, CancellationToken ct)
+    public async Task<Result<PaginatedResult<ContactMessageDto>>> Handle(GetContactMessagesQuery request, CancellationToken ct)
     {
-        var messages = await _uow.ContactMessages.GetPagedAsync(request.Page, request.PageSize, ct);
-        var list = messages.Select(m => new ContactMessageDto(
+        var result = await _uow.ContactMessages.GetPagedAsync(request.PageNumber, request.PageSize, ct);
+
+        var dtos = result.Items.Select(m => new ContactMessageDto(
             m.Id, m.FirstName, m.LastName, m.Email, m.Phone, m.Company,
             m.Subject, m.Message, m.IsRead, m.CreatedAt
         )).ToList();
 
-        return Result.Success(list);
+        return Result.Success(PaginatedResult<ContactMessageDto>.Create(dtos, result.TotalCount, result.PageNumber, result.PageSize));
     }
 }

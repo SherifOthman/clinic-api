@@ -1,4 +1,6 @@
+using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Contact.Commands;
 using ClinicManagement.Application.Features.Contact.Queries;
 using Microsoft.AspNetCore.Authorization;
@@ -26,10 +28,10 @@ public class ContactController : BaseApiController
     [HttpGet]
     [Authorize(Policy = "SuperAdmin")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<ContactMessageDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMessages([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    [ProducesResponseType(typeof(PaginatedResult<ContactMessageDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMessages([FromQuery] PaginationRequest pagination, CancellationToken ct = default)
     {
-        var result = await Sender.Send(new GetContactMessagesQuery(page, pageSize), ct);
+        var result = await Sender.Send(new GetContactMessagesQuery(pagination.PageNumber, pagination.PageSize), ct);
         return HandleResult(result, "Failed to retrieve contact messages");
     }
 }

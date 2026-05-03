@@ -26,14 +26,12 @@ public class PatientsController : BaseApiController
         [FromQuery] int? stateGeonameId,
         [FromQuery] int? cityGeonameId,
         [FromQuery] int? countryGeonameId,
-        [FromQuery] PaginationRequest pagination,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string sortDirection = "asc",
+        [FromQuery] SortedPaginationRequest pagination,
         CancellationToken cancellationToken = default)
     {
         var query = new GetPatientsQuery(
             searchTerm, pagination.PageNumber, pagination.PageSize,
-            sortBy, sortDirection, gender,
+            pagination.SortBy, pagination.SortDirection ?? "asc", gender,
             StateGeonameId: stateGeonameId,
             CityGeonameId: cityGeonameId,
             CountryGeonameId: countryGeonameId);
