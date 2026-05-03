@@ -1,6 +1,7 @@
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Application.Features.Audit.Queries;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -33,7 +34,9 @@ public class AuditController : BaseApiController
         [FromQuery] PaginationRequest pagination,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetAuditLogsQuery(entityType, entityId, action, from, to, userSearch, clinicSearch, pagination.PageNumber, pagination.PageSize);
+        var query = new GetAuditLogsQuery(
+            new(entityType, entityId, action, from, to, userSearch, clinicSearch),
+            pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve audit logs");
     }

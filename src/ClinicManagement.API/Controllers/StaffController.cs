@@ -40,7 +40,9 @@ public class StaffController : BaseApiController
         [FromQuery] SortedPaginationRequest pagination,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetInvitationsQuery(status, role, pagination.SortBy, pagination.SortDirection, pagination.PageNumber, pagination.PageSize);
+        var query = new GetInvitationsQuery(
+            new(status, role, pagination.SortBy, pagination.SortDirection),
+            pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve invitations");
     }
@@ -105,7 +107,9 @@ public class StaffController : BaseApiController
         [FromQuery] SortedPaginationRequest pagination,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetStaffListQuery(role, isActive, pagination.SortBy, pagination.SortDirection, pagination.PageNumber, pagination.PageSize);
+        var query = new GetStaffListQuery(
+            new(role, isActive, pagination.SortBy, pagination.SortDirection),
+            pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve staff");
     }

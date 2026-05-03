@@ -14,11 +14,10 @@ public class GetStaffListHandler : IRequestHandler<GetStaffListQuery, Result<Pag
     public async Task<Result<PaginatedResult<StaffDto>>> Handle(
         GetStaffListQuery request, CancellationToken cancellationToken)
     {
-        // Use new Members repository
         var result = await _uow.Members.GetProjectedPageAsync(
-            request.IsActive, request.Role,
-            request.SortBy, request.SortDirection,
-            request.PageNumber, request.PageSize,
+            request.Filter,
+            request.PageNumber,
+            request.PageSize,
             cancellationToken);
 
         var userIds  = result.Items.Select(s => s.UserId).ToList();

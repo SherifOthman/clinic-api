@@ -33,11 +33,9 @@ public class AdminPatientsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var query = new GetAdminPatientsQuery(
-            searchTerm, pagination.PageNumber, pagination.PageSize,
-            pagination.SortBy, pagination.SortDirection ?? "asc", gender, clinicSearch,
-            StateGeonameId: stateGeonameId,
-            CityGeonameId: cityGeonameId,
-            CountryGeonameId: countryGeonameId);
+            new(searchTerm, gender, countryGeonameId, stateGeonameId, cityGeonameId,
+                pagination.SortBy, pagination.SortDirection ?? "asc", clinicSearch),
+            pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }

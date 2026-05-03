@@ -17,10 +17,7 @@ public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result
     {
         var now    = DateTimeOffset.UtcNow;
         var result = await _uow.Invitations.GetProjectedPageAsync(
-            request.Status,
-            request.Role,
-            request.SortBy,
-            request.SortDirection,
+            request.Filter,
             request.PageNumber,
             request.PageSize,
             cancellationToken);

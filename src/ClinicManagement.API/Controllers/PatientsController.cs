@@ -30,11 +30,9 @@ public class PatientsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var query = new GetPatientsQuery(
-            searchTerm, pagination.PageNumber, pagination.PageSize,
-            pagination.SortBy, pagination.SortDirection ?? "asc", gender,
-            StateGeonameId: stateGeonameId,
-            CityGeonameId: cityGeonameId,
-            CountryGeonameId: countryGeonameId);
+            new(searchTerm, gender, countryGeonameId, stateGeonameId, cityGeonameId,
+                pagination.SortBy, pagination.SortDirection ?? "asc"),
+            pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }

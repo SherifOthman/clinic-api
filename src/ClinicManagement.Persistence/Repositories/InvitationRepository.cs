@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Application.Features.Staff.Queries;
 using ClinicManagement.Application.Features.Staff.QueryModels;
 using ClinicManagement.Domain.Enums;
@@ -28,10 +29,7 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
     }
 
     public async Task<PaginatedResult<InvitationListRow>> GetProjectedPageAsync(
-        InvitationStatus? status,
-        string? role,
-        string? sortBy,
-        string? sortDirection,
+        InvitationFilter filter,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default)
@@ -39,25 +37,25 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         var now = DateTimeOffset.UtcNow;
         var query = DbSet.AsNoTracking();
 
-        if (status.HasValue)
-            query = status.Value switch
+        if (filter.Status.HasValue)
+            query = filter.Status.Value switch
             {
-                InvitationStatus.Pending => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt > now),
+                InvitationStatus.Pending  => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt > now),
                 InvitationStatus.Accepted => query.Where(si => si.IsAccepted),
                 InvitationStatus.Canceled => query.Where(si => si.IsCanceled),
-                InvitationStatus.Expired => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt <= now),
+                InvitationStatus.Expired  => query.Where(si => !si.IsAccepted && !si.IsCanceled && si.ExpiresAt <= now),
                 _ => query
             };
 
-        if (!string.IsNullOrWhiteSpace(role) &&
-            Enum.TryParse<ClinicMemberRole>(role, ignoreCase: true, out var roleEnum))
+        if (!string.IsNullOrWhiteSpace(filter.Role) &&
+            Enum.TryParse<ClinicMemberRole>(filter.Role, ignoreCase: true, out var roleEnum))
             query = query.Where(si => si.Role == roleEnum);
 
-        var desc = sortDirection.IsDescending();
-        query = sortBy?.Trim().ToLower() switch
+        var desc = filter.SortDirection.IsDescending();
+        query = filter.SortBy?.Trim().ToLower() switch
         {
             "email" => desc ? query.OrderByDescending(si => si.Email) : query.OrderBy(si => si.Email),
-            _ => query.OrderByDescending(si => si.CreatedAt),
+            _       => query.OrderByDescending(si => si.CreatedAt),
         };
 
         return await query

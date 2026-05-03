@@ -1,19 +1,14 @@
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Patients.Queries;
 
 public record GetPatientsQuery(
-    string? SearchTerm,
-    int PageNumber,
-    int PageSize,
-    string? SortBy,
-    string SortDirection,
-    string? Gender,
-    int? StateGeonameId = null,
-    int? CityGeonameId = null,
-    int? CountryGeonameId = null
+    PatientFilter Filter,
+    int PageNumber = 1,
+    int PageSize   = 10
 ) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<PatientDto>>>;
 
 /// <summary>

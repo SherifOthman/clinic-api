@@ -21,20 +21,14 @@ public class GetAdminPatientsHandler : IRequestHandler<GetAdminPatientsQuery, Re
     public async Task<Result<PaginatedResult<PatientDto>>> Handle(
         GetAdminPatientsQuery request, CancellationToken cancellationToken)
     {
-        var nationalSearch = !string.IsNullOrWhiteSpace(request.SearchTerm)
-            ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, null)
+        // No country code for SuperAdmin — phone normalization skipped
+        var nationalSearch = !string.IsNullOrWhiteSpace(request.Filter.SearchTerm)
+            ? _phoneNormalizer.GetNationalNumber(request.Filter.SearchTerm, null)
             : null;
 
         var result = await _uow.Patients.GetAdminProjectedPageAsync(
-            request.SearchTerm,
+            request.Filter,
             nationalSearch,
-            request.Gender,
-            request.SortBy,
-            request.SortDirection,
-            request.ClinicSearch,
-            request.StateGeonameId,
-            request.CityGeonameId,
-            request.CountryGeonameId,
             request.PageNumber,
             request.PageSize,
             cancellationToken);

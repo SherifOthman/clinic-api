@@ -1,7 +1,7 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,49 +9,43 @@ namespace ClinicManagement.Persistence.Repositories;
 
 public class AuditLogRepository : Repository<AuditLog>, IAuditLogRepository
 {
-    // Inline DbSet — same pattern as every other repository in this project
     private readonly DbSet<Clinic> _clinics;
 
     public AuditLogRepository(ApplicationDbContext context) : base(context)
         => _clinics = context.Set<Clinic>();
 
     public async Task<PaginatedResult<AuditLog>> GetProjectedPageAsync(
-        string? entityType,
-        string? entityId,
-        AuditAction? action,
-        string? userSearch,
-        Guid? clinicId,
-        DateTimeOffset? from,
-        DateTimeOffset? to,
+        AuditLogFilter filter,
+        Guid? resolvedClinicId,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default)
     {
         var query = DbSet.AsNoTracking();
 
-        if (!string.IsNullOrWhiteSpace(entityType))
-            query = query.Where(a => a.EntityType == entityType);
+        if (!string.IsNullOrWhiteSpace(filter.EntityType))
+            query = query.Where(a => a.EntityType == filter.EntityType);
 
-        if (!string.IsNullOrWhiteSpace(entityId))
-            query = query.Where(a => a.EntityId == entityId);
+        if (!string.IsNullOrWhiteSpace(filter.EntityId))
+            query = query.Where(a => a.EntityId == filter.EntityId);
 
-        if (action.HasValue)
-            query = query.Where(a => a.Action == action.Value);
+        if (filter.Action.HasValue)
+            query = query.Where(a => a.Action == filter.Action.Value);
 
-        if (!string.IsNullOrWhiteSpace(userSearch))
+        if (!string.IsNullOrWhiteSpace(filter.UserSearch))
             query = query.Where(a =>
-                (a.FullName  != null && a.FullName.StartsWith(userSearch))  ||
-                (a.Username  != null && a.Username.StartsWith(userSearch))  ||
-                (a.UserEmail != null && a.UserEmail.StartsWith(userSearch)));
+                (a.FullName  != null && a.FullName.StartsWith(filter.UserSearch))  ||
+                (a.Username  != null && a.Username.StartsWith(filter.UserSearch))  ||
+                (a.UserEmail != null && a.UserEmail.StartsWith(filter.UserSearch)));
 
-        if (clinicId.HasValue)
-            query = query.Where(a => a.ClinicId == clinicId.Value);
+        if (resolvedClinicId.HasValue)
+            query = query.Where(a => a.ClinicId == resolvedClinicId.Value);
 
-        if (from.HasValue)
-            query = query.Where(a => a.Timestamp >= from.Value);
+        if (filter.From.HasValue)
+            query = query.Where(a => a.Timestamp >= filter.From.Value);
 
-        if (to.HasValue)
-            query = query.Where(a => a.Timestamp <= to.Value);
+        if (filter.To.HasValue)
+            query = query.Where(a => a.Timestamp <= filter.To.Value);
 
         query = query.OrderByDescending(a => a.Timestamp);
 

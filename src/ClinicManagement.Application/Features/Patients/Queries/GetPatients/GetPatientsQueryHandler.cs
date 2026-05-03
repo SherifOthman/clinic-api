@@ -22,19 +22,13 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
     public async Task<Result<PaginatedResult<PatientDto>>> Handle(
         GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        var nationalSearch = !string.IsNullOrWhiteSpace(request.SearchTerm)
-            ? _phoneNormalizer.GetNationalNumber(request.SearchTerm, _currentUser.CountryCode)
+        var nationalSearch = !string.IsNullOrWhiteSpace(request.Filter.SearchTerm)
+            ? _phoneNormalizer.GetNationalNumber(request.Filter.SearchTerm, _currentUser.CountryCode)
             : null;
 
         var result = await _uow.Patients.GetProjectedPageAsync(
-            request.SearchTerm,
+            request.Filter,
             nationalSearch,
-            request.Gender,
-            request.SortBy,
-            request.SortDirection,
-            request.StateGeonameId,
-            request.CityGeonameId,
-            request.CountryGeonameId,
             request.PageNumber,
             request.PageSize,
             cancellationToken);

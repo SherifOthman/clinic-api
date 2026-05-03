@@ -1,17 +1,14 @@
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Enums;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Staff.Queries;
 
 public record GetInvitationsQuery(
-    InvitationStatus? Status = null,
-    string? Role = null,
-    string? SortBy = null,
-    string? SortDirection = null,
+    InvitationFilter Filter,
     int PageNumber = 1,
-    int PageSize = 10
+    int PageSize   = 10
 ) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<InvitationDto>>>;
 
 public record InvitationDto(
@@ -20,7 +17,7 @@ public record InvitationDto(
     string Role,
     string? SpecializationNameEn,
     string? SpecializationNameAr,
-    InvitationStatus Status,
+    Domain.Enums.InvitationStatus Status,
     DateTimeOffset InvitedAt,
     DateTimeOffset ExpiresAt,
     string InvitedBy

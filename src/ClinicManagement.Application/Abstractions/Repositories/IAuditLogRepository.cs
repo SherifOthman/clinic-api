@@ -1,20 +1,15 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
 public interface IAuditLogRepository : IRepository<AuditLog>
 {
     Task<PaginatedResult<AuditLog>> GetProjectedPageAsync(
-        string? entityType,
-        string? entityId,
-        AuditAction? action,
-        string? userSearch,
-        Guid? clinicId,
-        DateTimeOffset? from,
-        DateTimeOffset? to,
+        AuditLogFilter filter,
+        Guid? resolvedClinicId,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default);

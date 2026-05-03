@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Application.Features.Staff.QueryModels;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence.Security;
@@ -42,17 +43,17 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             .CountAsync(m => m.IsActive, ct);
 
     public async Task<PaginatedResult<StaffListRow>> GetProjectedPageAsync(
-        bool? isActive, string? role, string? sortBy, string? sortDirection,
+        StaffFilter filter,
         int pageNumber, int pageSize, CancellationToken ct = default)
     {
         var query = DbSet.AsNoTracking();
 
-        if (isActive.HasValue)
-            query = query.Where(m => m.IsActive == isActive.Value);
+        if (filter.IsActive.HasValue)
+            query = query.Where(m => m.IsActive == filter.IsActive.Value);
 
-        if (!string.IsNullOrWhiteSpace(role))
+        if (!string.IsNullOrWhiteSpace(filter.Role))
         {
-            if (Enum.TryParse<Domain.Enums.ClinicMemberRole>(role, out var roleEnum))
+            if (Enum.TryParse<Domain.Enums.ClinicMemberRole>(filter.Role, out var roleEnum))
                 query = query.Where(m => m.Role == roleEnum);
         }
 
@@ -67,8 +68,8 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             ProfileImageUrl = m.User!.ProfileImageUrl,
         });
 
-        var desc = sortDirection.IsDescending();
-        projected = sortBy?.Trim().ToLower() switch
+        var desc = filter.SortDirection.IsDescending();
+        projected = filter.SortBy?.Trim().ToLower() switch
         {
             "fullname" => desc
                 ? projected.OrderByDescending(m => m.FullName)

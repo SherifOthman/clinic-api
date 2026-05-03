@@ -1,9 +1,8 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Application.Features.Staff.QueryModels;
-using ClinicManagement.Application.Features.Staff.Queries;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
@@ -16,10 +15,7 @@ public interface IInvitationRepository : IRepository<StaffInvitation>
     Task<int> CountPendingAsync(CancellationToken ct = default);
 
     Task<PaginatedResult<InvitationListRow>> GetProjectedPageAsync(
-        InvitationStatus? status,
-        string? role,
-        string? sortBy,
-        string? sortDirection,
+        InvitationFilter filter,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default);

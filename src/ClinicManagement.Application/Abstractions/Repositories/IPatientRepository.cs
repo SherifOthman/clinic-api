@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Application.Features.Patients.QueryModels;
 using ClinicManagement.Application.Features.Patients.Queries;
 using ClinicManagement.Domain.Entities;
@@ -21,14 +22,8 @@ public interface IPatientRepository : IRepository<Patient>
     // ── Tenant-scoped (clinic users) ──────────────────────────────────────────
 
     Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
-        string? searchTerm,
+        PatientFilter filter,
         string? nationalSearch,
-        string? gender,
-        string? sortBy,
-        string? sortDirection,
-        int? stateGeonameId,
-        int? cityGeonameId,
-        int? countryGeonameId,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default);
@@ -36,9 +31,6 @@ public interface IPatientRepository : IRepository<Patient>
     Task<List<RecentPatientRow>> GetRecentAsync(int count, CancellationToken ct = default);
     Task<PatientDetailData?> GetDetailAsync(Guid id, CancellationToken ct = default);
 
-    /// <summary>
-    /// Returns distinct location options from the current clinic's patient data.
-    /// </summary>
     Task<List<LocationOption>> GetLocationOptionsAsync(
         int? countryGeonameId, int? stateGeonameId,
         CancellationToken ct = default);
@@ -46,15 +38,8 @@ public interface IPatientRepository : IRepository<Patient>
     // ── Cross-tenant (SuperAdmin only) ────────────────────────────────────────
 
     Task<PaginatedResult<PatientListRow>> GetAdminProjectedPageAsync(
-        string? searchTerm,
+        AdminPatientFilter filter,
         string? nationalSearch,
-        string? gender,
-        string? sortBy,
-        string? sortDirection,
-        string? clinicSearch,
-        int? stateGeonameId,
-        int? cityGeonameId,
-        int? countryGeonameId,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default);

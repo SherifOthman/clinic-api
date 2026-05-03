@@ -1,17 +1,15 @@
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Staff.Queries;
 
 public record GetStaffListQuery(
-    string? Role = null,
-    bool? IsActive = null,
-    string? SortBy = null,
-    string? SortDirection = null,
+    StaffFilter Filter,
     int PageNumber = 1,
-    int PageSize = 10)
-    : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<StaffDto>>>;
+    int PageSize   = 10
+) : PaginatedQuery(PageNumber, PageSize), IRequest<Result<PaginatedResult<StaffDto>>>;
 
 public record StaffDto(
     Guid Id,

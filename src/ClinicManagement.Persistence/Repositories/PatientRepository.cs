@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
+using ClinicManagement.Application.Common.Models.Filters;
 using ClinicManagement.Application.Features.Patients.QueryModels;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -48,21 +49,15 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     // ── Tenant-scoped list ────────────────────────────────────────────────────
 
     public async Task<PaginatedResult<PatientListRow>> GetProjectedPageAsync(
-        string? searchTerm,
+        PatientFilter filter,
         string? nationalSearch,
-        string? gender,
-        string? sortBy,
-        string? sortDirection,
-        int? stateGeonameId,
-        int? cityGeonameId,
-        int? countryGeonameId,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default)
     {
         var query = DbSet.AsNoTracking();
-        query = ApplyPatientFilters(query, searchTerm, nationalSearch, gender, countryGeonameId, stateGeonameId, cityGeonameId);
-        query = ApplyPatientSort(query, searchTerm, sortBy, sortDirection);
+        query = ApplyPatientFilters(query, filter.SearchTerm, nationalSearch, filter.Gender, filter.CountryGeonameId, filter.StateGeonameId, filter.CityGeonameId);
+        query = ApplyPatientSort(query, filter.SearchTerm, filter.SortBy, filter.SortDirection);
 
         var rawPage = await ProjectPatientList(query, pageNumber, pageSize, ct);
         var items   = MapPatientListRows(rawPage.Items, clinicNames: []);
@@ -93,36 +88,28 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     // ── Admin (cross-tenant) list ─────────────────────────────────────────────
 
     public async Task<PaginatedResult<PatientListRow>> GetAdminProjectedPageAsync(
-        string? searchTerm,
+        AdminPatientFilter filter,
         string? nationalSearch,
-        string? gender,
-        string? sortBy,
-        string? sortDirection,
-        string? clinicSearch,
-        int? stateGeonameId,
-        int? cityGeonameId,
-        int? countryGeonameId,
         int pageNumber,
         int pageSize,
         CancellationToken ct = default)
     {
         var query = TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking();
-        query = ApplyPatientFilters(query, searchTerm, nationalSearch, gender, countryGeonameId, stateGeonameId, cityGeonameId);
+        query = ApplyPatientFilters(query, filter.SearchTerm, nationalSearch, filter.Gender, filter.CountryGeonameId, filter.StateGeonameId, filter.CityGeonameId);
 
-        // Clinic search — admin only
-        if (!string.IsNullOrWhiteSpace(clinicSearch))
+        if (!string.IsNullOrWhiteSpace(filter.ClinicSearch))
         {
-            if (Guid.TryParse(clinicSearch, out var clinicGuid))
+            if (Guid.TryParse(filter.ClinicSearch, out var clinicGuid))
                 query = query.Where(p => p.ClinicId == clinicGuid);
             else
             {
                 var matchingClinicIds = TenantGuard.AsSystemQuery(Context.Set<Clinic>())
-                    .Where(c => c.Name.StartsWith(clinicSearch))
+                    .Where(c => c.Name.StartsWith(filter.ClinicSearch))
                     .Select(c => c.Id);                query = query.Where(p => matchingClinicIds.Contains(p.ClinicId));
             }
         }
 
-        query = ApplyPatientSort(query, searchTerm, sortBy, sortDirection);
+        query = ApplyPatientSort(query, filter.SearchTerm, filter.SortBy, filter.SortDirection);
 
         var rawPage    = await ProjectPatientList(query, pageNumber, pageSize, ct);
         var clinicNames = await LoadClinicNamesAsync(rawPage.Items.Select(p => p.ClinicId).ToList(), ct);

@@ -14,18 +14,14 @@ public class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Result<Pag
     public async Task<Result<PaginatedResult<AuditLogDto>>> Handle(
         GetAuditLogsQuery request, CancellationToken cancellationToken)
     {
+        // Resolve clinic name search to an ID once — repository doesn't need the raw string
         Guid? clinicId = null;
-        if (!string.IsNullOrWhiteSpace(request.ClinicSearch))
-            clinicId = await _uow.AuditLogs.ResolveClinicIdAsync(request.ClinicSearch, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.Filter.ClinicSearch))
+            clinicId = await _uow.AuditLogs.ResolveClinicIdAsync(request.Filter.ClinicSearch, cancellationToken);
 
         var result = await _uow.AuditLogs.GetProjectedPageAsync(
-            request.EntityType,
-            request.EntityId,
-            request.Action,
-            request.UserSearch,
+            request.Filter,
             clinicId,
-            request.From,
-            request.To,
             request.PageNumber,
             request.PageSize,
             cancellationToken);
