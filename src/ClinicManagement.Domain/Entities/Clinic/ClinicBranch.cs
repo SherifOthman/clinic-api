@@ -2,7 +2,7 @@ using ClinicManagement.Domain.Common;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class ClinicBranch : AuditableTenantEntity, IAuditableEntity
+public class ClinicBranch : AuditableTenantEntity, IAuditableEntity, ISoftDeletable
 {
     public string Name { get; set; } = null!;
     public string? AddressLine { get; set; }
@@ -15,6 +15,7 @@ public class ClinicBranch : AuditableTenantEntity, IAuditableEntity
 
     public bool IsMainBranch { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
 
     // Navigation properties
     public Clinic Clinic { get; set; } = null!;

@@ -5,9 +5,12 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// Email delivery queue with retry logic.
+/// System-generated — no human creator, so CreatedBy/UpdatedBy are meaningless.
+/// Uses BaseEntity + explicit CreatedAt instead of AuditableEntity.
 /// </summary>
-public class EmailQueue : AuditableEntity
+public class EmailQueue : BaseEntity
 {
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public string ToEmail { get; set; } = null!;
     public string? ToName { get; set; }
     public string Subject { get; set; } = null!;

@@ -15,7 +15,7 @@ public record PatientFilter(
 );
 
 /// <summary>
-/// Extends PatientFilter with cross-clinic search — SuperAdmin only.
+/// Extends PatientFilter with cross-clinic search and deleted-record visibility — SuperAdmin only.
 /// </summary>
 public record AdminPatientFilter(
     string? SearchTerm       = null,
@@ -25,5 +25,6 @@ public record AdminPatientFilter(
     int?    CityGeonameId    = null,
     string? SortBy           = null,
     string  SortDirection    = "asc",
-    string? ClinicSearch     = null
+    string? ClinicSearch     = null,
+    bool    IncludeDeleted   = false
 );

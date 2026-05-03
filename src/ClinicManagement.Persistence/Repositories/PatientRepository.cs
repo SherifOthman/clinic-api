@@ -94,7 +94,11 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking();
+        // IncludeDeleted = true → bypass both tenant AND soft-delete filters
+        var query = filter.IncludeDeleted
+            ? TenantGuard.AsUnfilteredQuery(DbSet).AsNoTracking()
+            : TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking();
+
         query = ApplyPatientFilters(query, filter.SearchTerm, nationalSearch, filter.Gender, filter.CountryGeonameId, filter.StateGeonameId, filter.CityGeonameId);
 
         if (!string.IsNullOrWhiteSpace(filter.ClinicSearch))
@@ -207,7 +211,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 StateGeonameId: p.StateGeonameId,
                 CityGeonameId: p.CityGeonameId,
                 CityNameEn: p.City != null ? p.City.NameEn : null,
-                CityNameAr: p.City != null ? p.City.NameAr : null))
+                CityNameAr: p.City != null ? p.City.NameAr : null,
+                IsDeleted: p.IsDeleted))
             .ToPagedAsync(pageNumber, pageSize, ct);
 
         return (rawPage.Items.ToList(), rawPage.TotalCount);
@@ -231,7 +236,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             StateGeonameId: p.StateGeonameId,
             CityGeonameId: p.CityGeonameId,
             CityNameEn: p.CityNameEn,
-            CityNameAr: p.CityNameAr)).ToList();
+            CityNameAr: p.CityNameAr,
+            IsDeleted: p.IsDeleted)).ToList();
 
     private async Task<PatientDetailData?> FetchDetailAsync(
         IQueryable<Patient> query, Guid id, bool includeClinicName, CancellationToken ct)
@@ -347,5 +353,5 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         Gender Gender, BloodType? BloodType, int ChronicDiseaseCount,
         string? PrimaryPhone, DateTimeOffset CreatedAt, Guid ClinicId,
         int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
-        string? CityNameEn, string? CityNameAr);
+        string? CityNameEn, string? CityNameAr, bool IsDeleted);
 }

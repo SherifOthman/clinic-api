@@ -3,8 +3,14 @@ using System.Security.Cryptography;
 
 namespace ClinicManagement.Domain.Entities;
 
-public class RefreshToken : AuditableEntity
+/// <summary>
+/// JWT refresh token.
+/// System-generated — no human creator, so CreatedBy/UpdatedBy are meaningless.
+/// Uses BaseEntity + explicit CreatedAt instead of AuditableEntity.
+/// </summary>
+public class RefreshToken : BaseEntity
 {
+    public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
     public string Token { get; private set; } = string.Empty;
     public Guid UserId { get; private set; }
     public DateTimeOffset ExpiryTime { get; private set; }

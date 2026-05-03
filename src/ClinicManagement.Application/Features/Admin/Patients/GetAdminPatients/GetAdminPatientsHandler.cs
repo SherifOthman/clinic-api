@@ -50,6 +50,7 @@ public class GetAdminPatientsHandler : IRequestHandler<GetAdminPatientsQuery, Re
             CityGeonameId       = p.CityGeonameId,
             CityNameEn          = p.CityNameEn,
             CityNameAr          = p.CityNameAr,
+            IsDeleted           = p.IsDeleted,
         }).ToList();
 
         return Result.Success(PaginatedResult<PatientDto>.Create(dtos, result.TotalCount, result.PageNumber, result.PageSize));

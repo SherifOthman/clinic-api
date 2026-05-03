@@ -29,12 +29,13 @@ public class AdminPatientsController : BaseApiController
         [FromQuery] int? stateGeonameId,
         [FromQuery] int? cityGeonameId,
         [FromQuery] int? countryGeonameId,
-        [FromQuery] SortedPaginationRequest pagination,
+        [FromQuery] bool includeDeleted = false,
+        [FromQuery] SortedPaginationRequest pagination = default!,
         CancellationToken cancellationToken = default)
     {
         var query = new GetAdminPatientsQuery(
             new(searchTerm, gender, countryGeonameId, stateGeonameId, cityGeonameId,
-                pagination.SortBy, pagination.SortDirection ?? "asc", clinicSearch),
+                pagination.SortBy, pagination.SortDirection ?? "asc", clinicSearch, includeDeleted),
             pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");

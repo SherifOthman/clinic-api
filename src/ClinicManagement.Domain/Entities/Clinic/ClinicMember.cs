@@ -8,13 +8,14 @@ namespace ClinicManagement.Domain.Entities;
 /// UserId is nullable — set when the person accepts their invitation and creates an account.
 /// Role is per-clinic — same user can be Doctor at Clinic A, Receptionist at Clinic B.
 /// </summary>
-public class ClinicMember : AuditableTenantEntity, IAuditableEntity
+public class ClinicMember : AuditableTenantEntity, IAuditableEntity, ISoftDeletable
 {
     /// <summary>Nullable — set when the invitation is accepted and the user account is created.</summary>
     public Guid? UserId { get; set; }
 
     public ClinicMemberRole Role { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
     public DateTimeOffset JoinedAt { get; set; } = DateTimeOffset.UtcNow;
 
     // ── Computed ──────────────────────────────────────────────────────────────

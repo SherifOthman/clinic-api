@@ -7,7 +7,7 @@ namespace ClinicManagement.Domain.Entities;
 /// AuthorName, Position, ClinicName, and AvatarUrl are NOT stored here — they are resolved
 /// at query time by joining User and Clinic, so they always reflect the current source of truth.
 /// </summary>
-public class Testimonial : AuditableEntity
+public class Testimonial : AuditableEntity, ISoftDeletable
 {
     public Guid ClinicId { get; set; }
     public Guid UserId { get; set; }
@@ -20,6 +20,9 @@ public class Testimonial : AuditableEntity
 
     /// <summary>Only approved testimonials are shown publicly.</summary>
     public bool IsApproved { get; set; } = false;
+
+    /// <summary>Soft-deleted testimonials are hidden from all queries but preserved for audit.</summary>
+    public bool IsDeleted { get; set; } = false;
 
     // Navigation
     public Clinic Clinic { get; set; } = null!;

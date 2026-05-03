@@ -32,4 +32,6 @@ public record PatientDto
     public int? CityGeonameId { get; init; }
     public string? CityNameEn { get; init; }
     public string? CityNameAr { get; init; }
+    /// <summary>Only populated in SuperAdmin cross-tenant queries when includeDeleted=true.</summary>
+    public bool IsDeleted { get; init; }
 }

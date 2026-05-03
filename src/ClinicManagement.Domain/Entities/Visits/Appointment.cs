@@ -8,7 +8,7 @@ namespace ClinicManagement.Domain.Entities;
 /// Previously used AuditableEntity (no ClinicId), which meant tenant isolation
 /// depended entirely on BranchId — a single-hop FK, not a direct filter.
 /// </summary>
-public class Appointment : AuditableTenantEntity, IAuditableEntity
+public class Appointment : AuditableTenantEntity, IAuditableEntity, ISoftDeletable
 {
     public Guid BranchId { get; set; }
     public Guid PatientId { get; set; }
@@ -36,6 +36,7 @@ public class Appointment : AuditableTenantEntity, IAuditableEntity
     public decimal FinalPrice { get; private set; }
 
     public Guid? InvoiceId { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public void ApplyPrice(decimal price, decimal? discountPercent = null)
     {
