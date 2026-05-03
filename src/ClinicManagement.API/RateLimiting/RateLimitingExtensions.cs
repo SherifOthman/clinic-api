@@ -84,8 +84,8 @@ public static class RateLimitingExtensions
 
             // ── Auth endpoints (unauthenticated, per-device fingerprint) ──────
 
-            // Login: 30 attempts per 15 min — enough for normal use, blocks brute-force
-            // A real user might mistype their password a few times; 30 is generous
+            // Login: 10 attempts per 15 min — blocks brute-force while allowing genuine retries
+            // Identity lockout (5 fails → 30 min) is the primary guard; this is defense-in-depth
             options.AddPolicy(RateLimitPolicies.AuthLogin, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
                     GetDeviceFingerprint(ctx),
@@ -93,7 +93,7 @@ public static class RateLimitingExtensions
                     {
                         Window            = TimeSpan.FromMinutes(15),
                         SegmentsPerWindow = 3,
-                        PermitLimit       = 30,
+                        PermitLimit       = 10,
                         QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
@@ -175,15 +175,17 @@ public static class RateLimitingExtensions
                         AutoReplenishment = true,
                     }));
 
-            // Email/username availability check: 60 per minute — fires on every keystroke (debounced)
+            // Email/username availability check: 20 per 5 min — fires on keystroke (debounced)
+            // 60/min was too generous for enumeration attacks — 20/5min makes scripted
+            // enumeration slow enough to be impractical (1000 emails = 4+ hours)
             options.AddPolicy(RateLimitPolicies.AuthEnumeration, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
                     GetDeviceFingerprint(ctx),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        Window            = TimeSpan.FromMinutes(1),
-                        SegmentsPerWindow = 4,
-                        PermitLimit       = 60,
+                        Window            = TimeSpan.FromMinutes(5),
+                        SegmentsPerWindow = 5,
+                        PermitLimit       = 20,
                         QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
@@ -219,8 +221,8 @@ public static class RateLimitingExtensions
                         AutoReplenishment   = true,
                     }));
 
-            // Deletes: 30 per minute per user — stricter, no burst
-            // Bulk patient deletion is a real use case but should be deliberate
+            // Deletes: 10 per minute per user — stricter, no burst
+            // Protects against accidental mass deletion (30/min was too permissive)
             options.AddPolicy(RateLimitPolicies.UserDeletes, ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
                     GetUserId(ctx),
@@ -228,7 +230,7 @@ public static class RateLimitingExtensions
                     {
                         Window            = TimeSpan.FromMinutes(1),
                         SegmentsPerWindow = 4,
-                        PermitLimit       = 30,
+                        PermitLimit       = 10,
                         QueueLimit        = 0,
                         AutoReplenishment = true,
                     }));
@@ -274,10 +276,10 @@ public static class RateLimitingExtensions
             // ── Anonymous / public endpoints (per-IP) ─────────────────────────
 
             // Static reference data: pricing, locations, stats, subscription plans
-            // Page load fetches several simultaneously — burst of 30, 120/min sustained
+            // Uses real client IP (X-Forwarded-For) so SSR servers don't share one bucket
             options.AddPolicy(RateLimitPolicies.AnonStatic, ctx =>
                 RateLimitPartition.GetTokenBucketLimiter(
-                    ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    GetClientIp(ctx),
                     _ => new TokenBucketRateLimiterOptions
                     {
                         TokenLimit          = 30,   // burst: 30 simultaneous page-load requests
@@ -290,7 +292,7 @@ public static class RateLimitingExtensions
             // Contact form: 5 per hour per IP — prevents spam, allows genuine retries
             options.AddPolicy(RateLimitPolicies.AnonContact, ctx =>
                 RateLimitPartition.GetFixedWindowLimiter(
-                    ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    GetClientIp(ctx),
                     _ => new FixedWindowRateLimiterOptions
                     {
                         Window            = TimeSpan.FromHours(1),
@@ -305,14 +307,29 @@ public static class RateLimitingExtensions
 
     private static string GetUserId(HttpContext context)
         => context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-           ?? context.Connection.RemoteIpAddress?.ToString()
-           ?? "unknown";
+           ?? GetClientIp(context);
+
+    /// <summary>
+    /// Returns the real client IP, respecting X-Forwarded-For for reverse proxies and SSR servers.
+    /// Without this, all Next.js SSR requests come from the Vercel server IP and share one bucket.
+    /// </summary>
+    private static string GetClientIp(HttpContext context)
+    {
+        var forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(forwarded))
+        {
+            // X-Forwarded-For can be a comma-separated list — first entry is the real client
+            var clientIp = forwarded.Split(',')[0].Trim();
+            if (!string.IsNullOrEmpty(clientIp)) return clientIp;
+        }
+        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
 
     private static string GetDeviceFingerprint(HttpContext context)
     {
-        var ip          = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var userAgent   = context.Request.Headers.UserAgent.ToString();
-        var acceptLang  = context.Request.Headers.AcceptLanguage.ToString();
+        var ip         = GetClientIp(context);
+        var userAgent  = context.Request.Headers.UserAgent.ToString();
+        var acceptLang = context.Request.Headers.AcceptLanguage.ToString();
         return $"{ip}|{userAgent}|{acceptLang}";
     }
 }
