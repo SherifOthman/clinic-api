@@ -151,7 +151,8 @@ public class StaffController : BaseApiController
 
     // ── Schedule endpoints — accessible by clinic owner OR the doctor themselves ──
 
-    [RequirePermission(Permission.ManageSchedule)]
+    /// <summary>Read working days — needed by anyone booking appointments.</summary>
+    [RequirePermission(Permission.ViewAppointments)]
     [HttpGet("{id:guid}/working-days")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<WorkingDayDto>), StatusCodes.Status200OK)]
@@ -162,6 +163,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve working days");
     }
 
+    /// <summary>Write working days — requires schedule management permission.</summary>
     [RequirePermission(Permission.ManageSchedule)]
     [HttpPut("{id:guid}/working-days")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
@@ -177,7 +179,8 @@ public class StaffController : BaseApiController
         return HandleNoContent(result, "Failed to save working days");
     }
 
-    [RequirePermission(Permission.ManageVisitTypes)]
+    /// <summary>Read visit types — needed by anyone booking appointments.</summary>
+    [RequirePermission(Permission.ViewAppointments)]
     [HttpGet("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<DoctorVisitTypeDto>), StatusCodes.Status200OK)]
@@ -187,6 +190,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve visit types");
     }
 
+    /// <summary>Create visit type — requires visit type management permission.</summary>
     [RequirePermission(Permission.ManageVisitTypes)]
     [HttpPost("{id:guid}/visit-types")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]

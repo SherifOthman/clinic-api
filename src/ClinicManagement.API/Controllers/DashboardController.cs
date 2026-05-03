@@ -1,6 +1,8 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Dashboard.Queries;
+using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -42,9 +44,9 @@ public class DashboardController : BaseApiController
         return HandleResult(result, "Failed to retrieve superadmin stats");
     }
 
-    /// <summary>Recent patients for ClinicOwner dashboard.</summary>
+    /// <summary>Recent patients for any staff member with patient access.</summary>
     [HttpGet("recent-patients")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [RequirePermission(Permission.ViewPatients)]
     [ProducesResponseType(typeof(List<RecentPatientDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRecentPatients(CancellationToken cancellationToken = default)
     {

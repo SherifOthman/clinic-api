@@ -25,6 +25,7 @@ public class OnboardingController : BaseApiController
     }
 
     [HttpPost("complete")]
+    [Authorize(Policy = "RequireClinicOwner")]
     [EnableRateLimiting(RateLimitPolicies.UserOnce)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
