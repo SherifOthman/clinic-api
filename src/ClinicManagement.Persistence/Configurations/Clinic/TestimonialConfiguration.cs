@@ -11,11 +11,7 @@ public class TestimonialConfiguration : IEntityTypeConfiguration<Testimonial>
         builder.ToTable("Testimonials");
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.AuthorName).IsRequired().HasMaxLength(200);
-        builder.Property(t => t.Position).IsRequired().HasMaxLength(200);
-        builder.Property(t => t.ClinicName).IsRequired().HasMaxLength(200);
         builder.Property(t => t.Text).IsRequired().HasMaxLength(1000);
-        builder.Property(t => t.AvatarUrl).HasMaxLength(500);
         builder.Property(t => t.Rating).IsRequired();
 
         builder.HasOne(t => t.Clinic)

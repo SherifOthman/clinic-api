@@ -24,16 +24,14 @@ public class GetMyTestimonialHandler : IRequestHandler<GetMyTestimonialQuery, Re
         if (t is null)
             return Result.Success<MyTestimonialDto?>(null);
 
-        // Read live name and avatar from User — stays current if profile is updated
-        var userId = _currentUser.GetRequiredUserId();
-        var user   = await _uow.Users.GetByIdAsync(userId, ct);
-
+        // AuthorName, Position, AvatarUrl, ClinicName come from navigation properties —
+        // always the current values, no stale denormalized data on the entity.
         return Result.Success<MyTestimonialDto?>(new MyTestimonialDto(
-            AuthorName: user?.FullName ?? t.AuthorName,
+            AuthorName: t.User.FullName,
             Position:   "Clinic Owner",
             Text:       t.Text,
             Rating:     t.Rating,
-            AvatarUrl:  user?.ProfileImageUrl ?? t.AvatarUrl,
+            AvatarUrl:  t.User.ProfileImageUrl,
             IsApproved: t.IsApproved));
     }
 }

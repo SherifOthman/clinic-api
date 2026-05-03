@@ -15,12 +15,12 @@ public class GetPublicTestimonialsHandler : IRequestHandler<GetPublicTestimonial
         var testimonials = await _uow.Testimonials.GetApprovedAsync(ct);
 
         var list = testimonials.Select(t => new TestimonialDto(
-            t.AuthorName,
-            t.Position,
-            t.ClinicName,
-            t.Text,
-            t.Rating,
-            t.AvatarUrl
+            AuthorName: t.User.FullName,
+            Position:   "Clinic Owner",
+            ClinicName: t.Clinic.Name,
+            Text:       t.Text,
+            Rating:     t.Rating,
+            AvatarUrl:  t.User.ProfileImageUrl
         )).ToList();
 
         return Result.Success(list);

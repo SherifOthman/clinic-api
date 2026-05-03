@@ -12,18 +12,27 @@ public class TestimonialRepository : ITestimonialRepository
         => _set = context.Set<Testimonial>();
 
     public Task<List<Testimonial>> GetApprovedAsync(CancellationToken ct = default)
-        => _set.Where(t => t.IsApproved)
+        => _set.Include(t => t.User)
+               .Include(t => t.Clinic)
+               .Where(t => t.IsApproved)
                .OrderByDescending(t => t.CreatedAt)
                .ToListAsync(ct);
 
     public Task<List<Testimonial>> GetAllAsync(CancellationToken ct = default)
-        => _set.OrderByDescending(t => t.CreatedAt).ToListAsync(ct);
+        => _set.Include(t => t.User)
+               .Include(t => t.Clinic)
+               .OrderByDescending(t => t.CreatedAt)
+               .ToListAsync(ct);
 
     public Task<Testimonial?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => _set.FirstOrDefaultAsync(t => t.Id == id, ct);
+        => _set.Include(t => t.User)
+               .Include(t => t.Clinic)
+               .FirstOrDefaultAsync(t => t.Id == id, ct);
 
     public Task<Testimonial?> GetByClinicIdAsync(Guid clinicId, CancellationToken ct = default)
-        => _set.FirstOrDefaultAsync(t => t.ClinicId == clinicId, ct);
+        => _set.Include(t => t.User)
+               .Include(t => t.Clinic)
+               .FirstOrDefaultAsync(t => t.ClinicId == clinicId, ct);
 
     public async Task AddAsync(Testimonial testimonial, CancellationToken ct = default)
         => await _set.AddAsync(testimonial, ct);

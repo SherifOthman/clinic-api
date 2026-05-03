@@ -12,9 +12,17 @@ public class GetAllTestimonialsHandler : IRequestHandler<GetAllTestimonialsQuery
     public async Task<Result<List<AdminTestimonialDto>>> Handle(GetAllTestimonialsQuery request, CancellationToken ct)
     {
         var list = await _uow.Testimonials.GetAllAsync(ct);
+
         var dtos = list.Select(t => new AdminTestimonialDto(
-            t.Id, t.AuthorName, t.Position, t.ClinicName,
-            t.Text, t.Rating, t.AvatarUrl, t.IsApproved, t.CreatedAt
+            Id:         t.Id,
+            AuthorName: t.User.FullName,
+            Position:   "Clinic Owner",
+            ClinicName: t.Clinic.Name,
+            Text:       t.Text,
+            Rating:     t.Rating,
+            AvatarUrl:  t.User.ProfileImageUrl,
+            IsApproved: t.IsApproved,
+            CreatedAt:  t.CreatedAt
         )).ToList();
 
         return Result.Success(dtos);
