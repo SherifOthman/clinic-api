@@ -42,8 +42,8 @@ public class UsageMetricsAggregationJob
 
                 if (existing is not null)
                 {
-                    existing.ActiveStaffCount = activeStaffCount;
-                    existing.UpdatedAt        = DateTimeOffset.UtcNow;
+                    existing.ActiveStaffCount  = activeStaffCount;
+                    existing.LastAggregatedAt  = DateTimeOffset.UtcNow;
                 }
                 else
                 {
@@ -57,7 +57,7 @@ public class UsageMetricsAggregationJob
                         AppointmentsCount  = 0,
                         InvoicesCount      = 0,
                         StorageUsedGB      = 0,
-                        UpdatedAt          = DateTimeOffset.UtcNow,
+                        LastAggregatedAt   = DateTimeOffset.UtcNow,
                     });
                 }
 

@@ -5,8 +5,11 @@ namespace ClinicManagement.Domain.Entities;
 
 /// <summary>
 /// Tracks subscription payment history.
+/// Payment records are created by gateway callbacks — no human creator.
+/// Has its own PaymentDate, so CreatedAt/CreatedBy add no value.
+/// Uses BaseEntity instead of AuditableEntity.
 /// </summary>
-public class SubscriptionPayment : AuditableEntity
+public class SubscriptionPayment : BaseEntity
 {
     public Guid SubscriptionId { get; set; }
     public decimal Amount { get; set; }
