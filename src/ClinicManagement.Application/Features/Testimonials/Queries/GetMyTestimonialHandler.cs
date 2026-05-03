@@ -1,7 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
-using ClinicManagement.Domain.Common.Constants;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Testimonials.Queries;
@@ -25,7 +24,16 @@ public class GetMyTestimonialHandler : IRequestHandler<GetMyTestimonialQuery, Re
         if (t is null)
             return Result.Success<MyTestimonialDto?>(null);
 
-        return Result.Success<MyTestimonialDto?>(
-            new MyTestimonialDto(t.AuthorName, t.Position, t.Text, t.Rating, t.AvatarUrl, t.IsApproved));
+        // Read live name and avatar from User — stays current if profile is updated
+        var userId = _currentUser.GetRequiredUserId();
+        var user   = await _uow.Users.GetByIdAsync(userId, ct);
+
+        return Result.Success<MyTestimonialDto?>(new MyTestimonialDto(
+            AuthorName: user?.FullName ?? t.AuthorName,
+            Position:   "Clinic Owner",
+            Text:       t.Text,
+            Rating:     t.Rating,
+            AvatarUrl:  user?.ProfileImageUrl ?? t.AvatarUrl,
+            IsApproved: t.IsApproved));
     }
 }

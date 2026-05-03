@@ -20,23 +20,32 @@ public class SubmitTestimonialHandler : IRequestHandler<SubmitTestimonialCommand
 
     public async Task<Result> Handle(SubmitTestimonialCommand request, CancellationToken ct)
     {
+        if (request.Rating is < 1 or > 5)
+            return Result.Failure(ErrorCodes.VALIDATION_ERROR, "Rating must be between 1 and 5");
+
         var clinicId = _currentUser.GetRequiredClinicId();
         var userId   = _currentUser.GetRequiredUserId();
+
+        // Resolve author info from source of truth — not from request body
+        var user = await _uow.Users.GetByIdAsync(userId, ct);
+        if (user is null)
+            return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
 
         var clinic = await _uow.Clinics.GetByIdAsync(clinicId, ct);
         if (clinic is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Clinic not found");
 
-        // One testimonial per clinic — update if exists
+        // One testimonial per clinic — update if exists, create if not
         var existing = await _uow.Testimonials.GetByClinicIdAsync(clinicId, ct);
         if (existing is not null)
         {
-            existing.AuthorName = request.AuthorName;
-            existing.Position   = request.Position;
+            existing.AuthorName = user.FullName;
+            existing.Position   = "Clinic Owner";
+            existing.ClinicName = clinic.Name;
+            existing.AvatarUrl  = user.ProfileImageUrl;
             existing.Text       = request.Text;
             existing.Rating     = request.Rating;
-            existing.AvatarUrl  = request.AvatarUrl;
-            existing.IsApproved = true;
+            existing.IsApproved = false; // re-submit resets approval — admin must re-approve
             existing.Touch();
             _uow.Testimonials.Update(existing);
         }
@@ -46,13 +55,13 @@ public class SubmitTestimonialHandler : IRequestHandler<SubmitTestimonialCommand
             {
                 ClinicId   = clinicId,
                 UserId     = userId,
+                AuthorName = user.FullName,
+                Position   = "Clinic Owner",
                 ClinicName = clinic.Name,
-                AuthorName = request.AuthorName,
-                Position   = request.Position,
+                AvatarUrl  = user.ProfileImageUrl,
                 Text       = request.Text,
                 Rating     = request.Rating,
-                AvatarUrl  = request.AvatarUrl,
-                IsApproved = true,
+                IsApproved = false,
             }, ct);
         }
 
