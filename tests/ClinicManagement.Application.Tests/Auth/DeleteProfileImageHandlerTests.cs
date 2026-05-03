@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Application.Features.Auth.Commands;
@@ -13,22 +14,28 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class DeleteProfileImageHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IUserRepository> _usersMock = new();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly DeleteProfileImageHandler _handler;
 
     public DeleteProfileImageHandlerTests()
     {
+        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
         _handler = new DeleteProfileImageHandler(
-            _uow, _currentUserMock.Object, _fileStorageMock.Object,
+            _uowMock.Object, _currentUserMock.Object, _fileStorageMock.Object,
             NullLogger<DeleteProfileImageHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenUserNotFound()
     {
-        _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(userId);
+        _usersMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync((User?)null);
 
         var result = await _handler.Handle(new DeleteProfileImageCommand(), default);
 
@@ -40,9 +47,8 @@ public class DeleteProfileImageHandlerTests
     public async Task Handle_ShouldSucceed_WhenUserHasNoImage()
     {
         var user = TestHandlerHelpers.CreateTestUser();
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
 
         var result = await _handler.Handle(new DeleteProfileImageCommand(), default);
 
@@ -55,16 +61,13 @@ public class DeleteProfileImageHandlerTests
     {
         var user = TestHandlerHelpers.CreateTestUser();
         user.ProfileImageUrl = "profile.jpg";
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
 
         var result = await _handler.Handle(new DeleteProfileImageCommand(), default);
 
         result.IsSuccess.Should().BeTrue();
         _fileStorageMock.Verify(x => x.DeleteFileAsync("profile.jpg", default), Times.Once);
-
-        var updated = await _uow.Users.GetByIdAsync(user.Id);
-        updated!.ProfileImageUrl.Should().BeNull();
+        user.ProfileImageUrl.Should().BeNull();
     }
 }

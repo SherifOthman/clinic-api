@@ -13,7 +13,7 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class RegisterHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<IEmailTokenService> _emailTokenMock = new();
     private readonly Mock<IAuditWriter> _auditWriterMock = new();
@@ -21,30 +21,22 @@ public class RegisterHandlerTests
 
     public RegisterHandlerTests()
     {
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
         _handler = new RegisterHandler(
-            _uow, _userManagerMock.Object, _emailTokenMock.Object,
+            _uowMock.Object, _userManagerMock.Object, _emailTokenMock.Object,
             _auditWriterMock.Object, NullLogger<RegisterHandler>.Instance);
     }
 
     private RegisterCommand ValidCommand(string email = "new@test.com") =>
         new(email, "newuser", "Test@1234!", "+966500000001", "Male", "New User");
 
-    // The handler sets FullName directly on User — no Person needed.
-    private void SetupCreateAsync()
-    {
-        _userManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
-            .Callback<User, string>((u, _) =>
-            {
-                _uow.UserEntities.Add(u);
-            })
-            .ReturnsAsync(IdentityResult.Success);
-    }
-
     [Fact]
     public async Task Handle_ShouldSucceed_WithValidData()
     {
-        SetupCreateAsync();
+        _userManagerMock
+            .Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Success);
         _userManagerMock.Setup(x => x.AddToRoleAsync(It.IsAny<User>(), "ClinicOwner"))
             .ReturnsAsync(IdentityResult.Success);
 
@@ -84,7 +76,9 @@ public class RegisterHandlerTests
     [Fact]
     public async Task Handle_ShouldStillSucceed_WhenEmailSendingFails()
     {
-        SetupCreateAsync();
+        _userManagerMock
+            .Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Success);
         _userManagerMock.Setup(x => x.AddToRoleAsync(It.IsAny<User>(), "ClinicOwner"))
             .ReturnsAsync(IdentityResult.Success);
         _emailTokenMock.Setup(x => x.SendConfirmationEmailAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))

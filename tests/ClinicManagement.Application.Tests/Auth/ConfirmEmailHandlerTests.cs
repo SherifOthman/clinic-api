@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
@@ -11,19 +12,25 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class ConfirmEmailHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IUserRepository> _usersMock = new();
     private readonly Mock<IEmailTokenService> _emailTokenMock = new();
     private readonly ConfirmEmailHandler _handler;
 
     public ConfirmEmailHandlerTests()
     {
-        _handler = new ConfirmEmailHandler(_uow, _emailTokenMock.Object, NullLogger<ConfirmEmailHandler>.Instance);
+        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
+
+        _handler = new ConfirmEmailHandler(_uowMock.Object, _emailTokenMock.Object, NullLogger<ConfirmEmailHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenUserNotFound()
     {
-        var result = await _handler.Handle(new ConfirmEmailCommand(Guid.NewGuid(), "token"), default);
+        var userId = Guid.NewGuid();
+        _usersMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync((User?)null);
+
+        var result = await _handler.Handle(new ConfirmEmailCommand(userId, "token"), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -32,10 +39,8 @@ public class ConfirmEmailHandlerTests
     public async Task Handle_ShouldFail_WhenEmailAlreadyConfirmed()
     {
         var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: true);
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
-
-        _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(It.IsAny<User>(), default)).ReturnsAsync(true);
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
+        _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(user, default)).ReturnsAsync(true);
 
         var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "token"), default);
 
@@ -46,11 +51,9 @@ public class ConfirmEmailHandlerTests
     public async Task Handle_ShouldFail_WhenTokenIsInvalid()
     {
         var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: false);
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
-
-        _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(It.IsAny<User>(), default)).ReturnsAsync(false);
-        _emailTokenMock.Setup(x => x.ConfirmEmailAsync(It.IsAny<User>(), "bad-token", default))
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
+        _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(user, default)).ReturnsAsync(false);
+        _emailTokenMock.Setup(x => x.ConfirmEmailAsync(user, "bad-token", default))
             .ThrowsAsync(new InvalidOperationException("Invalid token"));
 
         var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "bad-token"), default);
@@ -62,11 +65,9 @@ public class ConfirmEmailHandlerTests
     public async Task Handle_ShouldSucceed_WhenTokenIsValid()
     {
         var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: false);
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
-
-        _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(It.IsAny<User>(), default)).ReturnsAsync(false);
-        _emailTokenMock.Setup(x => x.ConfirmEmailAsync(It.IsAny<User>(), "valid-token", default)).Returns(Task.CompletedTask);
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
+        _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(user, default)).ReturnsAsync(false);
+        _emailTokenMock.Setup(x => x.ConfirmEmailAsync(user, "valid-token", default)).Returns(Task.CompletedTask);
 
         var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "valid-token"), default);
 

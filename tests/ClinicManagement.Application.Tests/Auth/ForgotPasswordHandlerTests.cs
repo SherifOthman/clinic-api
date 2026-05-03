@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
@@ -15,7 +16,8 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class ForgotPasswordHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IUserRepository> _usersMock = new();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<IEmailService> _emailMock = new();
     private readonly Mock<IAuditWriter> _auditWriterMock = new();
@@ -23,8 +25,10 @@ public class ForgotPasswordHandlerTests
 
     public ForgotPasswordHandlerTests()
     {
+        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
+
         _handler = new ForgotPasswordHandler(
-            _uow, _userManagerMock.Object, _emailMock.Object,
+            _uowMock.Object, _userManagerMock.Object, _emailMock.Object,
             Options.Create(new AppOptions { FrontendUrl = "https://example.com" }),
             _auditWriterMock.Object, NullLogger<ForgotPasswordHandler>.Instance);
     }
@@ -32,6 +36,9 @@ public class ForgotPasswordHandlerTests
     [Fact]
     public async Task Handle_ShouldSucceed_AndNotSendEmail_WhenUserDoesNotExist()
     {
+        _usersMock.Setup(x => x.GetByEmailOrUsernameAsync("nobody@test.com", default))
+            .ReturnsAsync((User?)null);
+
         var result = await _handler.Handle(new ForgotPasswordCommand("nobody@test.com"), default);
 
         result.IsSuccess.Should().BeTrue();
@@ -45,10 +52,8 @@ public class ForgotPasswordHandlerTests
     {
         var user = TestHandlerHelpers.CreateTestUser();
         user.PasswordHash = "hash";
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
-
-        _userManagerMock.Setup(x => x.GeneratePasswordResetTokenAsync(It.IsAny<User>()))
+        _usersMock.Setup(x => x.GetByEmailOrUsernameAsync(user.Email!, default)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.GeneratePasswordResetTokenAsync(user))
             .ReturnsAsync("reset-token-123");
 
         var result = await _handler.Handle(new ForgotPasswordCommand(user.Email!), default);
@@ -65,10 +70,8 @@ public class ForgotPasswordHandlerTests
     {
         var user = TestHandlerHelpers.CreateTestUser();
         user.PasswordHash = "hash";
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
-
-        _userManagerMock.Setup(x => x.GeneratePasswordResetTokenAsync(It.IsAny<User>())).ReturnsAsync("token");
+        _usersMock.Setup(x => x.GetByEmailOrUsernameAsync(user.Email!, default)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.GeneratePasswordResetTokenAsync(user)).ReturnsAsync("token");
         _emailMock.Setup(x => x.SendPasswordResetEmailAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("SMTP error"));

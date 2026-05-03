@@ -1,26 +1,34 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Patients.Commands;
 using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using FluentAssertions;
+using Moq;
 
 namespace ClinicManagement.Application.Tests.Patients;
 
 public class RestorePatientHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IPatientRepository> _patientsMock = new();
     private readonly RestorePatientCommandHandler _handler;
 
     public RestorePatientHandlerTests()
     {
-        _handler = new RestorePatientCommandHandler(_uow);
+        _uowMock.Setup(u => u.Patients).Returns(_patientsMock.Object);
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        _handler = new RestorePatientCommandHandler(_uowMock.Object);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenPatientNotFound()
     {
-        var result = await _handler.Handle(new RestorePatientCommand(Guid.NewGuid()), default);
+        var id = Guid.NewGuid();
+        _patientsMock.Setup(x => x.GetDeletedByIdAsync(id, default)).ReturnsAsync((Patient?)null);
+
+        var result = await _handler.Handle(new RestorePatientCommand(id), default);
 
         result.IsSuccess.Should().BeFalse();
     }
@@ -29,8 +37,8 @@ public class RestorePatientHandlerTests
     public async Task Handle_ShouldFail_WhenPatientNotDeleted()
     {
         var patient = TestHandlerHelpers.CreateTestPatient();
-        await _uow.Patients.AddAsync(patient);
-        await _uow.SaveChangesAsync();
+        patient.IsDeleted = false;
+        _patientsMock.Setup(x => x.GetDeletedByIdAsync(patient.Id, default)).ReturnsAsync(patient);
 
         var result = await _handler.Handle(new RestorePatientCommand(patient.Id), default);
 
@@ -42,14 +50,12 @@ public class RestorePatientHandlerTests
     {
         var patient = TestHandlerHelpers.CreateTestPatient();
         patient.IsDeleted = true;
-        await _uow.Patients.AddAsync(patient);
-        await _uow.SaveChangesAsync();
+        _patientsMock.Setup(x => x.GetDeletedByIdAsync(patient.Id, default)).ReturnsAsync(patient);
 
         var result = await _handler.Handle(new RestorePatientCommand(patient.Id), default);
 
         result.IsSuccess.Should().BeTrue();
-
-        var restored = await _uow.Patients.GetDeletedByIdAsync(patient.Id);
-        restored!.IsDeleted.Should().BeFalse();
+        patient.IsDeleted.Should().BeFalse();
+        _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 }

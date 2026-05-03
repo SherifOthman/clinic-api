@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 using ClinicManagement.Application.Tests.Common;
@@ -12,7 +13,8 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class ChangePasswordHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IUserRepository> _usersMock = new();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly Mock<IAuditWriter> _auditWriterMock = new();
@@ -20,15 +22,20 @@ public class ChangePasswordHandlerTests
 
     public ChangePasswordHandlerTests()
     {
+        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
         _handler = new ChangePasswordHandler(
-            _uow, _userManagerMock.Object, _currentUserMock.Object,
+            _uowMock.Object, _userManagerMock.Object, _currentUserMock.Object,
             _auditWriterMock.Object, NullLogger<ChangePasswordHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_ShouldFail_WhenUserNotFound()
     {
-        _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(userId);
+        _usersMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync((User?)null);
 
         var result = await _handler.Handle(new ChangePasswordCommand("old", "new"), default);
 
@@ -39,10 +46,9 @@ public class ChangePasswordHandlerTests
     public async Task Handle_ShouldFail_WhenCurrentPasswordIsWrong()
     {
         var user = TestHandlerHelpers.CreateTestUser();
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
-        _userManagerMock.Setup(x => x.ChangePasswordAsync(It.IsAny<User>(), "wrong", "new"))
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "wrong", "new"))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Wrong password" }));
 
         var result = await _handler.Handle(new ChangePasswordCommand("wrong", "new"), default);
@@ -54,17 +60,14 @@ public class ChangePasswordHandlerTests
     public async Task Handle_ShouldSucceed_AndStampLastPasswordChange()
     {
         var user = TestHandlerHelpers.CreateTestUser();
-        _uow.UserEntities.Add(user);
-        await _uow.SaveChangesAsync();
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(user.Id);
-        _userManagerMock.Setup(x => x.ChangePasswordAsync(It.IsAny<User>(), "old", "new"))
+        _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "old", "new"))
             .ReturnsAsync(IdentityResult.Success);
 
         var result = await _handler.Handle(new ChangePasswordCommand("old", "new"), default);
 
         result.IsSuccess.Should().BeTrue();
-
-        var updated = await _uow.Users.GetByIdAsync(user.Id);
-        updated!.LastPasswordChangeAt.Should().NotBeNull();
+        user.LastPasswordChangeAt.Should().NotBeNull();
     }
 }

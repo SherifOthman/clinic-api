@@ -1,49 +1,41 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Appointments.Commands;
-using ClinicManagement.Application.Tests.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using FluentAssertions;
+using Moq;
 
 namespace ClinicManagement.Application.Tests.Appointments;
 
 public class UpdateAppointmentStatusHandlerTests
 {
-    private readonly IUnitOfWork _uow = TestHandlerHelpers.CreateUow();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IAppointmentRepository> _appointmentsMock = new();
     private readonly UpdateAppointmentStatusHandler _handler;
 
     public UpdateAppointmentStatusHandlerTests()
     {
-        _handler = new UpdateAppointmentStatusHandler(_uow);
+        _uowMock.Setup(u => u.Appointments).Returns(_appointmentsMock.Object);
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        _handler = new UpdateAppointmentStatusHandler(_uowMock.Object);
     }
 
-    private async Task<Appointment> SeedAppointmentAsync(AppointmentStatus status = AppointmentStatus.Pending)
+    private Appointment MakeAppointment(AppointmentStatus status) => new()
     {
-        var clinic  = TestHandlerHelpers.CreateTestClinic();
-        var branch  = TestHandlerHelpers.CreateTestBranch(clinic.Id);
-        var patient = TestHandlerHelpers.CreateTestPatient(clinicId: clinic.Id);
-        await _uow.Clinics.AddAsync(clinic);
-        await _uow.Branches.AddAsync(branch);
-        await _uow.Patients.AddAsync(patient);
-
-        var appt = new Appointment
-        {
-            ClinicId     = clinic.Id,
-            BranchId     = branch.Id,
-            PatientId    = patient.Id,
-            DoctorInfoId = Guid.NewGuid(),
-            VisitTypeId  = Guid.NewGuid(),
-            Date         = DateOnly.FromDateTime(DateTime.Today),
-            Type         = AppointmentType.Queue,
-            QueueNumber  = 1,
-            Status       = status,
-        };
-        appt.ApplyPrice(100);
-        await _uow.Appointments.AddAsync(appt);
-        await _uow.SaveChangesAsync();
-        return appt;
-    }
+        ClinicId     = Guid.NewGuid(),
+        BranchId     = Guid.NewGuid(),
+        PatientId    = Guid.NewGuid(),
+        DoctorInfoId = Guid.NewGuid(),
+        VisitTypeId  = Guid.NewGuid(),
+        Date         = DateOnly.FromDateTime(DateTime.Today),
+        Type         = AppointmentType.Queue,
+        QueueNumber  = 1,
+        Status       = status,
+        IsDeleted    = false,
+    };
 
     [Theory]
     [InlineData(AppointmentStatus.Pending,    AppointmentStatus.Waiting,    true)]
@@ -61,7 +53,9 @@ public class UpdateAppointmentStatusHandlerTests
     public async Task Handle_ShouldRespectValidTransitions(
         AppointmentStatus from, AppointmentStatus to, bool shouldSucceed)
     {
-        var appt = await SeedAppointmentAsync(from);
+        var appt = MakeAppointment(from);
+        _appointmentsMock.Setup(x => x.GetByIdForUpdateAsync(appt.Id, default)).ReturnsAsync(appt);
+
         var result = await _handler.Handle(new UpdateAppointmentStatusCommand(appt.Id, to), default);
 
         if (shouldSucceed)
@@ -76,8 +70,11 @@ public class UpdateAppointmentStatusHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenAppointmentNotFound()
     {
+        var id = Guid.NewGuid();
+        _appointmentsMock.Setup(x => x.GetByIdForUpdateAsync(id, default)).ReturnsAsync((Appointment?)null);
+
         var result = await _handler.Handle(
-            new UpdateAppointmentStatusCommand(Guid.NewGuid(), AppointmentStatus.InProgress), default);
+            new UpdateAppointmentStatusCommand(id, AppointmentStatus.InProgress), default);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be(ErrorCodes.NOT_FOUND);
