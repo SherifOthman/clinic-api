@@ -7,59 +7,89 @@ public class RefreshTokenTests
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
+    // Helper — returns both the entity (Token = hash) and the raw token
+    private static (RefreshToken Entity, string RawToken) Make(
+        DateTimeOffset? expiry = null, string? ip = null)
+        => RefreshToken.Create(Guid.NewGuid(), expiry ?? Now.AddDays(30), ip);
+
     // ── Create ────────────────────────────────────────────────────────────────
 
     [Fact]
-    public void Create_ShouldGenerateNonEmptyToken()
+    public void Create_ShouldGenerateNonEmptyRawToken()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(30));
-        token.Token.Should().NotBeNullOrWhiteSpace();
+        var (_, raw) = Make();
+        raw.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public void Create_ShouldGenerateUniqueTokens()
+    public void Create_ShouldGenerateUniqueRawTokens()
     {
-        var userId = Guid.NewGuid();
-        var t1 = RefreshToken.Create(userId, Now.AddDays(30));
-        var t2 = RefreshToken.Create(userId, Now.AddDays(30));
-        t1.Token.Should().NotBe(t2.Token);
+        var (_, raw1) = Make();
+        var (_, raw2) = Make();
+        raw1.Should().NotBe(raw2);
+    }
+
+    [Fact]
+    public void Create_ShouldStoreHashNotRawToken()
+    {
+        var (entity, raw) = Make();
+        // The stored Token must be the hash, not the raw value
+        entity.Token.Should().NotBe(raw);
+        entity.Token.Should().Be(RefreshToken.Hash(raw));
     }
 
     [Fact]
     public void Create_ShouldSetUserId()
     {
         var userId = Guid.NewGuid();
-        var token = RefreshToken.Create(userId, Now.AddDays(30));
-        token.UserId.Should().Be(userId);
+        var (entity, _) = RefreshToken.Create(userId, Now.AddDays(30));
+        entity.UserId.Should().Be(userId);
     }
 
     [Fact]
     public void Create_ShouldSetExpiryTime()
     {
         var expiry = Now.AddDays(30);
-        var token = RefreshToken.Create(Guid.NewGuid(), expiry);
-        token.ExpiryTime.Should().Be(expiry);
+        var (entity, _) = RefreshToken.Create(Guid.NewGuid(), expiry);
+        entity.ExpiryTime.Should().Be(expiry);
     }
 
     [Fact]
     public void Create_ShouldStoreCreatedByIp_WhenProvided()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(30), "192.168.1.1");
-        token.CreatedByIp.Should().Be("192.168.1.1");
+        var (entity, _) = Make(ip: "192.168.1.1");
+        entity.CreatedByIp.Should().Be("192.168.1.1");
     }
 
     [Fact]
     public void Create_ShouldHaveNullCreatedByIp_WhenNotProvided()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(30));
-        token.CreatedByIp.Should().BeNull();
+        var (entity, _) = Make();
+        entity.CreatedByIp.Should().BeNull();
     }
 
     [Fact]
     public void Create_ShouldNotBeRevoked()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(30));
-        token.IsRevoked.Should().BeFalse();
+        var (entity, _) = Make();
+        entity.IsRevoked.Should().BeFalse();
+    }
+
+    // ── Hash ──────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Hash_ShouldBeDeterministic()
+    {
+        var (_, raw) = Make();
+        RefreshToken.Hash(raw).Should().Be(RefreshToken.Hash(raw));
+    }
+
+    [Fact]
+    public void Hash_ShouldProduceDifferentValuesForDifferentTokens()
+    {
+        var (_, raw1) = Make();
+        var (_, raw2) = Make();
+        RefreshToken.Hash(raw1).Should().NotBe(RefreshToken.Hash(raw2));
     }
 
     // ── IsExpired ─────────────────────────────────────────────────────────────
@@ -67,22 +97,22 @@ public class RefreshTokenTests
     [Fact]
     public void IsExpired_ShouldReturnFalse_WhenBeforeExpiry()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.IsExpired(Now).Should().BeFalse();
+        var (entity, _) = Make(expiry: Now.AddDays(1));
+        entity.IsExpired(Now).Should().BeFalse();
     }
 
     [Fact]
     public void IsExpired_ShouldReturnTrue_WhenAfterExpiry()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(-1));
-        token.IsExpired(Now).Should().BeTrue();
+        var (entity, _) = Make(expiry: Now.AddDays(-1));
+        entity.IsExpired(Now).Should().BeTrue();
     }
 
     [Fact]
     public void IsExpired_ShouldReturnTrue_WhenExactlyAtExpiry()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now);
-        token.IsExpired(Now).Should().BeTrue();
+        var (entity, _) = Make(expiry: Now);
+        entity.IsExpired(Now).Should().BeTrue();
     }
 
     // ── IsActive ──────────────────────────────────────────────────────────────
@@ -90,31 +120,23 @@ public class RefreshTokenTests
     [Fact]
     public void IsActive_ShouldReturnTrue_WhenNotRevokedAndNotExpired()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.IsActive(Now).Should().BeTrue();
+        var (entity, _) = Make(expiry: Now.AddDays(1));
+        entity.IsActive(Now).Should().BeTrue();
     }
 
     [Fact]
     public void IsActive_ShouldReturnFalse_WhenExpired()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(-1));
-        token.IsActive(Now).Should().BeFalse();
+        var (entity, _) = Make(expiry: Now.AddDays(-1));
+        entity.IsActive(Now).Should().BeFalse();
     }
 
     [Fact]
     public void IsActive_ShouldReturnFalse_WhenRevoked()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.Revoke("1.2.3.4", Now);
-        token.IsActive(Now).Should().BeFalse();
-    }
-
-    [Fact]
-    public void IsActive_ShouldReturnFalse_WhenRevokedAndExpired()
-    {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(-1));
-        token.Revoke("1.2.3.4", Now);
-        token.IsActive(Now).Should().BeFalse();
+        var (entity, _) = Make(expiry: Now.AddDays(1));
+        entity.Revoke("1.2.3.4", Now);
+        entity.IsActive(Now).Should().BeFalse();
     }
 
     // ── Revoke ────────────────────────────────────────────────────────────────
@@ -122,40 +144,43 @@ public class RefreshTokenTests
     [Fact]
     public void Revoke_ShouldSetIsRevoked()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.Revoke("1.2.3.4", Now);
-        token.IsRevoked.Should().BeTrue();
+        var (entity, _) = Make();
+        entity.Revoke("1.2.3.4", Now);
+        entity.IsRevoked.Should().BeTrue();
     }
 
     [Fact]
     public void Revoke_ShouldStampRevokedAt()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.Revoke("1.2.3.4", Now);
-        token.RevokedAt.Should().Be(Now);
+        var (entity, _) = Make();
+        entity.Revoke("1.2.3.4", Now);
+        entity.RevokedAt.Should().Be(Now);
     }
 
     [Fact]
     public void Revoke_ShouldStoreRevokedByIp()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.Revoke("1.2.3.4", Now);
-        token.RevokedByIp.Should().Be("1.2.3.4");
+        var (entity, _) = Make();
+        entity.Revoke("1.2.3.4", Now);
+        entity.RevokedByIp.Should().Be("1.2.3.4");
     }
 
     [Fact]
-    public void Revoke_ShouldStoreReplacedByToken_WhenProvided()
+    public void Revoke_ShouldStoreHashOfReplacedByToken_WhenProvided()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.Revoke("1.2.3.4", Now, "new-token-xyz");
-        token.ReplacedByToken.Should().Be("new-token-xyz");
+        var (entity, _) = Make();
+        var (_, newRaw) = Make();
+        entity.Revoke("1.2.3.4", Now, newRaw);
+        // ReplacedByToken stores the hash, not the raw value
+        entity.ReplacedByToken.Should().Be(RefreshToken.Hash(newRaw));
+        entity.ReplacedByToken.Should().NotBe(newRaw);
     }
 
     [Fact]
     public void Revoke_ShouldLeaveReplacedByTokenNull_WhenNotProvided()
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), Now.AddDays(1));
-        token.Revoke("1.2.3.4", Now);
-        token.ReplacedByToken.Should().BeNull();
+        var (entity, _) = Make();
+        entity.Revoke("1.2.3.4", Now);
+        entity.ReplacedByToken.Should().BeNull();
     }
 }

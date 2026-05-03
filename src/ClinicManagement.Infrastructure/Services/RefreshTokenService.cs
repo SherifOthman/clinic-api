@@ -34,24 +34,31 @@ public class RefreshTokenService : IRefreshTokenService
             ? now.AddMinutes(_jwtOptions.RefreshTokenExpirationMinutes.Value)
             : now.AddDays(_jwtOptions.RefreshTokenExpirationDays);
 
-        var refreshToken = RefreshToken.Create(userId, expiryTime, ipAddress ?? _currentUserService.IpAddress);
+        var (entity, rawToken) = RefreshToken.Create(userId, expiryTime, ipAddress ?? _currentUserService.IpAddress);
 
-        await _uow.RefreshTokens.AddAsync(refreshToken, cancellationToken);
+        // Persist the entity (Token field holds the hash)
+        await _uow.RefreshTokens.AddAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
+
+        // Overwrite Token with the raw value so callers can send it to the client.
+        // The raw token is never stored — this is purely an in-memory transport.
+        entity.SetRawTokenForTransport(rawToken);
 
         _logger.LogInformation("Generated refresh token for user {UserId}, expires in {Minutes} minutes",
             userId, (expiryTime - now).TotalMinutes);
-        return refreshToken;
+        return entity;
     }
 
     public async Task<RefreshToken?> GetActiveRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
-        return await _uow.RefreshTokens.GetActiveTokenAsync(token, DateTimeOffset.UtcNow, cancellationToken);
+        var hash = RefreshToken.Hash(token);
+        return await _uow.RefreshTokens.GetActiveTokenAsync(hash, DateTimeOffset.UtcNow, cancellationToken);
     }
 
     public async Task RevokeRefreshTokenAsync(string token, string? ipAddress = null, string? replacedByToken = null, CancellationToken cancellationToken = default)
     {
-        var refreshToken = await GetActiveRefreshTokenAsync(token, cancellationToken);
+        var hash         = RefreshToken.Hash(token);
+        var refreshToken = await _uow.RefreshTokens.GetActiveTokenAsync(hash, DateTimeOffset.UtcNow, cancellationToken);
         if (refreshToken is null) return;
 
         refreshToken.Revoke(ipAddress ?? _currentUserService.IpAddress, DateTimeOffset.UtcNow, replacedByToken);
