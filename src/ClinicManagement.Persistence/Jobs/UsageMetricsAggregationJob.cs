@@ -1,5 +1,6 @@
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence;
+using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -21,7 +22,7 @@ public class UsageMetricsAggregationJob
     public async Task ExecuteAsync()
     {
         var yesterday     = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
-        var activeClinics = await _context.Set<Clinic>()
+        var activeClinics = await TenantGuard.AsSystemQuery(_context.Set<Clinic>())
             .Where(c => c.IsActive && !c.IsDeleted)
             .ToListAsync();
 
@@ -33,10 +34,10 @@ public class UsageMetricsAggregationJob
         {
             try
             {
-                var activeStaffCount = await _context.Set<ClinicMember>()
+                var activeStaffCount = await TenantGuard.AsSystemQuery(_context.Set<ClinicMember>())
                     .CountAsync(m => m.ClinicId == clinic.Id && m.IsActive);
 
-                var existing = await _context.Set<ClinicUsageMetrics>()
+                var existing = await TenantGuard.AsSystemQuery(_context.Set<ClinicUsageMetrics>())
                     .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == yesterday);
 
                 if (existing is not null)

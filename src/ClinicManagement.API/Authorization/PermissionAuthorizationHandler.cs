@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Repositories;
+using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 
@@ -31,7 +32,7 @@ public class PermissionAuthorizationHandler
         PermissionRequirement requirement)
     {
         // ClinicOwner has implicit access to all permissions — they own the clinic
-        if (context.User.IsInRole("ClinicOwner"))
+        if (context.User.IsInRole(UserRoles.ClinicOwner))
         {
             context.Succeed(requirement);
             return;
