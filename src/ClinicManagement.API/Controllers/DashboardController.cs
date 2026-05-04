@@ -53,4 +53,14 @@ public class DashboardController : BaseApiController
         var result = await Sender.Send(new GetRecentPatientsQuery(5), cancellationToken);
         return HandleResult(result, "Failed to retrieve recent patients");
     }
+
+    /// <summary>Clinic owner — today's usage metrics vs subscription plan limits.</summary>
+    [HttpGet("usage-metrics")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
+    [ProducesResponseType(typeof(UsageMetricsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUsageMetrics(CancellationToken cancellationToken = default)
+    {
+        var result = await Sender.Send(new GetUsageMetricsQuery(), cancellationToken);
+        return HandleResult(result, "Failed to retrieve usage metrics");
+    }
 }

@@ -24,4 +24,19 @@ public class ClinicSubscriptionRepository : Repository<ClinicSubscription>, ICli
     public async Task<int> CountByStatusIgnoreFiltersAsync(SubscriptionStatus status, CancellationToken ct = default)
         => await TenantGuard.AsSystemQuery(DbSet)
             .CountAsync(s => s.Status == status, ct);
+
+    public async Task<ClinicUsageMetrics?> GetTodayMetricsAsync(Guid clinicId, CancellationToken ct = default)
+    {
+        var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
+        return await Context.Set<ClinicUsageMetrics>()
+            .FirstOrDefaultAsync(m => m.ClinicId == clinicId && m.MetricDate == today, ct);
+    }
+
+    public async Task<SubscriptionPlan?> GetActivePlanLimitsAsync(Guid clinicId, CancellationToken ct = default)
+        => await DbSet
+            .Where(s => s.ClinicId == clinicId &&
+                        (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
+            .OrderByDescending(s => s.StartDate)
+            .Select(s => s.SubscriptionPlan)
+            .FirstOrDefaultAsync(ct);
 }

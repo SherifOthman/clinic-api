@@ -2,15 +2,13 @@ using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.API.Authorization;
-using ClinicManagement.API.Hangfire;
 using ClinicManagement.API.Middleware;
 using ClinicManagement.API.OpenApi;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Infrastructure.Options;
 using Hangfire;
 using Hangfire.SqlServer;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OAuth.Claims;
@@ -209,16 +207,6 @@ public static class DependencyInjection
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseStaticFiles();
         app.UseRouting();
-
-        // Hangfire dashboard — only if Hangfire was registered (connection string present)
-        if (app.Services.GetService<Hangfire.IGlobalConfiguration>() is not null)
-        {
-            app.UseHangfireDashboard("/hangfire", new DashboardOptions
-            {
-                Authorization = [new HangfireAuthorizationFilter(
-                    app.Configuration[HangfireAuthorizationFilter.DashboardKeyConfigPath])],
-            });
-        }
 
         app.UseRateLimiter();
         app.UseMiddleware<CookieTokenMiddleware>(); // inject cookie access token as Bearer header
