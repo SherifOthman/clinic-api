@@ -17,7 +17,7 @@ public class GetBranchesHandler : IRequestHandler<GetBranchesQuery, Result<List<
             b.Id, b.Name, b.AddressLine,
             b.StateGeonameId, b.CityGeonameId,
             b.IsMainBranch, b.IsActive,
-            b.PhoneNumbers.Select(p => new BranchPhoneDto(p, null)).ToList()
+            b.PhoneNumbers.Select(p => new BranchPhoneDto(p.PhoneNumber, p.Label)).ToList()
         )).ToList();
         return Result.Success(dtos);
     }

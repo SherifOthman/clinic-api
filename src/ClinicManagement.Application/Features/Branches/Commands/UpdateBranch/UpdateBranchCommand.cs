@@ -9,5 +9,5 @@ public record UpdateBranchCommand(
     string AddressLine,
     int? StateGeonameId,
     int? CityGeonameId,
-    List<string> PhoneNumbers
+    List<BranchPhoneInput> PhoneNumbers
 ) : IRequest<Result>;

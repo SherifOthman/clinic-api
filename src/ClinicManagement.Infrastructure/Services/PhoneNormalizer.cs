@@ -32,8 +32,8 @@ public class PhoneNormalizer : IPhoneNormalizer
         {
             // For full valid numbers (E.164 or complete national) — use proper parse
             var region = cleaned.StartsWith("+") ? null : (defaultRegion ?? "EG");
-            var parsed = _util.Parse(cleaned, region);
 
+            var parsed = _util.Parse(cleaned, region);
             if (_util.IsValidNumber(parsed))
                 return _util.GetNationalSignificantNumber(parsed);
         }

@@ -53,8 +53,8 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             IsMainBranch   = true,
             IsActive       = true,
             PhoneNumbers   = request.PhoneNumbers?
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.Trim() })
+                .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
+                .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.PhoneNumber.Trim(), Label = p.Label?.Trim() })
                 .ToList() ?? [],
         });
 

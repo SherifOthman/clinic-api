@@ -33,6 +33,7 @@ public class PatientsController : BaseApiController
             new(searchTerm, gender, countryGeonameId, stateGeonameId, cityGeonameId,
                 pagination.SortBy, pagination.SortDirection ?? "asc"),
             pagination.PageNumber, pagination.PageSize);
+
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");
     }

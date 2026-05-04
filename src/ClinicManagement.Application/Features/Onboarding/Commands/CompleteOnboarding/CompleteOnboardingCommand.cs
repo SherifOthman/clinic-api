@@ -1,3 +1,4 @@
+using ClinicManagement.Application.Features.Branches.Commands;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
@@ -11,5 +12,5 @@ public record CompleteOnboarding(
     int? StateGeonameId,
     int? CityGeonameId,
     string? CountryCode,
-    List<string>? PhoneNumbers
+    List<BranchPhoneInput>? PhoneNumbers
 ) : IRequest<Result>;

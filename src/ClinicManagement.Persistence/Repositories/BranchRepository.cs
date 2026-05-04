@@ -18,7 +18,7 @@ public class BranchRepository : Repository<ClinicBranch>, IBranchRepository
                 b.Id, b.Name, b.AddressLine,
                 b.StateGeonameId, b.CityGeonameId,
                 b.IsMainBranch, b.IsActive,
-                b.PhoneNumbers.Select(p => p.PhoneNumber).ToList()))
+                b.PhoneNumbers.Select(p => new BranchPhoneRow(p.PhoneNumber, p.Label)).ToList()))
             .ToListAsync(ct);
 
     public async Task<Guid> GetMainBranchIdAsync(CancellationToken ct = default)

@@ -31,8 +31,8 @@ public class CreateBranchHandler : IRequestHandler<CreateBranchCommand, Result<G
             IsMainBranch    = false,
             IsActive        = true,
             PhoneNumbers    = request.PhoneNumbers
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.Trim() })
+                .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
+                .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.PhoneNumber.Trim(), Label = p.Label?.Trim() })
                 .ToList(),
         };
 

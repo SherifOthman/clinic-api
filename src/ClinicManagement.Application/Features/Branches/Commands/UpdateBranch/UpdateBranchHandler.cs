@@ -26,8 +26,8 @@ public class UpdateBranchHandler : IRequestHandler<UpdateBranchCommand, Result>
 
         // Replace phone numbers
         branch.PhoneNumbers.Clear();
-        foreach (var phone in request.PhoneNumbers.Where(p => !string.IsNullOrWhiteSpace(p)))
-            branch.PhoneNumbers.Add(new ClinicBranchPhoneNumber { PhoneNumber = phone.Trim() });
+        foreach (var p in request.PhoneNumbers.Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber)))
+            branch.PhoneNumbers.Add(new ClinicBranchPhoneNumber { PhoneNumber = p.PhoneNumber.Trim(), Label = p.Label?.Trim() });
 
         await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
