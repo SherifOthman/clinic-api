@@ -9,27 +9,31 @@ public class QueueCounterRepository : IQueueCounterRepository
 
     public QueueCounterRepository(ApplicationDbContext db) => _db = db;
 
-    public Task<int> NextAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default)
+    public async Task<int> NextAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default)
     {
-        // SQL Server date literal: 'YYYY-MM-DD'
+        // UPDATE existing row and return the new value.
+        // UPDLOCK prevents two concurrent readers from both seeing "no row"
+        // and racing to insert. HOLDLOCK holds the lock until the transaction ends.
+        // If no row exists yet (@@ROWCOUNT = 0), insert the first one and return 1.
         var dateStr = date.ToString("yyyy-MM-dd");
 
         var sql = $"""
-            MERGE QueueCounters WITH (HOLDLOCK) AS target
-            USING (SELECT '{doctorInfoId}' AS DoctorInfoId, CAST('{dateStr}' AS date) AS Date) AS source
-                ON target.DoctorInfoId = source.DoctorInfoId AND target.Date = source.Date
-            WHEN MATCHED THEN
-                UPDATE SET LastValue = target.LastValue + 1
-            WHEN NOT MATCHED THEN
-                INSERT (DoctorInfoId, Date, LastValue) VALUES ('{doctorInfoId}', CAST('{dateStr}' AS date), 1)
-            OUTPUT inserted.LastValue;
+            UPDATE QueueCounters WITH (UPDLOCK, HOLDLOCK)
+            SET LastValue = LastValue + 1
+            OUTPUT inserted.LastValue
+            WHERE DoctorInfoId = '{doctorInfoId}' AND Date = CAST('{dateStr}' AS date);
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                INSERT INTO QueueCounters (DoctorInfoId, Date, LastValue)
+                VALUES ('{doctorInfoId}', CAST('{dateStr}' AS date), 1);
+                SELECT 1;
+            END
             """;
 
-        // MERGE OUTPUT is non-composable — pull to client before First()
-        return Task.FromResult(
-            _db.Database
-               .SqlQueryRaw<int>(sql)
-               .AsEnumerable()
-               .First());
+        return await _db.Database
+            .SqlQueryRaw<int>(sql)
+            .AsAsyncEnumerable()
+            .FirstAsync(ct);
     }
 }

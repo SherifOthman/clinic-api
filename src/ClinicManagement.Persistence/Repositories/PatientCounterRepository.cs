@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Repositories;
-using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
@@ -12,23 +11,27 @@ public class PatientCounterRepository : IPatientCounterRepository
 
     public async Task<string> NextCodeAsync(Guid clinicId, CancellationToken ct = default)
     {
+        // UPDATE existing row and return the new value.
+        // UPDLOCK prevents two concurrent readers from both seeing "no row"
+        // and racing to insert. HOLDLOCK holds the lock until the transaction ends.
+        // If no row exists yet (@@ROWCOUNT = 0), insert the first one and return 1.
         var sql = """
-            MERGE PatientCounters WITH (HOLDLOCK) AS target
-            USING (SELECT {0} AS ClinicId) AS source ON target.ClinicId = source.ClinicId
-            WHEN MATCHED THEN
-                UPDATE SET LastValue = target.LastValue + 1
-            WHEN NOT MATCHED THEN
-                INSERT (ClinicId, LastValue) VALUES ({0}, 1)
-            OUTPUT inserted.LastValue;
+            UPDATE PatientCounters WITH (UPDLOCK, HOLDLOCK)
+            SET LastValue = LastValue + 1
+            OUTPUT inserted.LastValue
+            WHERE ClinicId = {0};
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                INSERT INTO PatientCounters (ClinicId, LastValue) VALUES ({0}, 1);
+                SELECT 1;
+            END
             """;
 
-        // MERGE is non-composable SQL — use AsEnumerable() to pull the OUTPUT
-        // result to the client before calling First(), so EF Core doesn't try
-        // to add a WHERE/ORDER BY on top of the MERGE statement.
-        var result = _db.Database
+        var result = await _db.Database
             .SqlQueryRaw<int>(sql, clinicId)
-            .AsEnumerable()
-            .First();
+            .AsAsyncEnumerable()
+            .FirstAsync(ct);
 
         // Zero-pad to 4 digits: 1 → "0001", 9999 → "9999"
         // Stored as string so StartsWith search works (e.g. "12" finds "0012", "0120", "0121")
