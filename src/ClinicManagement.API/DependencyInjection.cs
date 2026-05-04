@@ -38,30 +38,30 @@ public static class DependencyInjection
 
         services.AddControllers();
 
-        // Hangfire — skip in Testing environment (no SQL Server schema setup needed)
-        var env = services.BuildServiceProvider().GetService<IWebHostEnvironment>();
-        if (env?.IsEnvironment("Testing") != true)
-        {
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("DefaultConnection is missing");
-
-            services.AddHangfire(config => config
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
-                    QueuePollInterval            = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks           = true,
-                }));
-
-            services.AddHangfireServer(options => options.WorkerCount = 2);
-        }
+        AddHangfire(services, configuration);
 
         return services;
+    }
+
+    private static void AddHangfire(IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrEmpty(connectionString)) return; // not configured — skip (e.g. testing)
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout       = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout   = TimeSpan.FromMinutes(5),
+                QueuePollInterval            = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks           = true,
+            }));
+
+        services.AddHangfireServer(options => options.WorkerCount = 2);
     }
 
     private static void AddCaching(IServiceCollection services)
@@ -210,8 +210,8 @@ public static class DependencyInjection
         app.UseStaticFiles();
         app.UseRouting();
 
-        // Hangfire dashboard — after routing so embedded assets are served
-        if (!app.Environment.IsEnvironment("Testing"))
+        // Hangfire dashboard — only if Hangfire was registered (connection string present)
+        if (app.Services.GetService<Hangfire.IGlobalConfiguration>() is not null)
         {
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {

@@ -5,8 +5,9 @@ using ClinicManagement.Infrastructure.Services;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Collections.Concurrent;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.API.Middleware;
 
@@ -25,7 +26,7 @@ namespace ClinicManagement.API.Middleware;
 public class CookieTokenMiddleware
 {
     private static readonly MemoryCache _refreshDebounce = new(new MemoryCacheOptions());
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim>
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim>
         _refreshLocks = new();
 
     private static readonly JwtSecurityTokenHandler _jwtHandler = new();
@@ -56,7 +57,7 @@ public class CookieTokenMiddleware
             return;
         }
 
-        var accessToken  = context.Request.Cookies[CookieConstants.AccessToken];
+        var accessToken = context.Request.Cookies[CookieConstants.AccessToken];
         var refreshToken = context.Request.Cookies[CookieConstants.RefreshToken];
 
         // Happy path — valid, non-expired token
@@ -103,7 +104,7 @@ public class CookieTokenMiddleware
     private async Task<string?> TrySilentRefreshAsync(HttpContext context, string refreshToken)
     {
         // Use a short hash of the refresh token as the dedup key
-        var lockKey = $"refresh:{refreshToken.GetHashCode()}";
+        var lockKey = $"refresh: {RefreshToken.Hash(refreshToken)}";
 
         // Fast path — another request already refreshed, reuse the result
         if (_refreshDebounce.TryGetValue(lockKey, out string? cached))
@@ -136,7 +137,7 @@ public class CookieTokenMiddleware
     {
         try
         {
-            var sender        = context.RequestServices.GetRequiredService<ISender>();
+            var sender = context.RequestServices.GetRequiredService<ISender>();
             var cookieService = context.RequestServices.GetRequiredService<ICookieService>();
 
             var result = await sender.Send(new RefreshTokenCommand(refreshToken));

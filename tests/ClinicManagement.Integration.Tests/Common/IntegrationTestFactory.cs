@@ -87,6 +87,15 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
                 .Where(d => d.ServiceType == typeof(IHostedService))
                 .ToList()
                 .ForEach(d => services.Remove(d));
+
+            // Remove Hangfire — it tries to connect to SQL Server during startup
+            // and the test DB connection string is set in appsettings.Testing.json.
+            // We don't need background jobs in integration tests.
+            services
+                .Where(d => d.ServiceType.FullName?.StartsWith("Hangfire") == true ||
+                            d.ImplementationType?.FullName?.StartsWith("Hangfire") == true)
+                .ToList()
+                .ForEach(d => services.Remove(d));
         });
     }
 

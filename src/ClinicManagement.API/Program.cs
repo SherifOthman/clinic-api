@@ -38,7 +38,7 @@ try
     app.UseAppConfigurations();
 
     // ── Hangfire recurring jobs ───────────────────────────────────────────────
-    if (!app.Environment.IsEnvironment("Testing"))
+    if (app.Services.GetService<Hangfire.IGlobalConfiguration>() is not null)
     {
         try
         {
@@ -52,9 +52,6 @@ try
         }
         catch (Exception hangfireEx)
         {
-            // Hangfire job registration failed — likely a DB connection issue.
-            // Log and continue — the app will still serve requests.
-            // Jobs will be registered on the next successful startup.
             Log.Warning(hangfireEx, "Hangfire recurring job registration failed — check the connection string");
         }
     }
