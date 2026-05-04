@@ -11,21 +11,18 @@ public class PatientCounterRepository : IPatientCounterRepository
 
     public async Task<string> NextCodeAsync(Guid clinicId, CancellationToken ct = default)
     {
-        // UPDATE existing row and return the new value.
-        // UPDLOCK prevents two concurrent readers from both seeing "no row"
-        // and racing to insert. HOLDLOCK holds the lock until the transaction ends.
-        // If no row exists yet (@@ROWCOUNT = 0), insert the first one and return 1.
+        // MERGE is a single atomic statement — the read, match, and write happen
+        // as one unit, so no explicit transaction or locking hints are needed.
+        // HOLDLOCK prevents phantom inserts between the WHEN NOT MATCHED check
+        // and the INSERT on the first call for a new clinic.
         var sql = """
-            UPDATE PatientCounters WITH (UPDLOCK, HOLDLOCK)
-            SET LastValue = LastValue + 1
-            OUTPUT inserted.LastValue
-            WHERE ClinicId = {0};
-
-            IF @@ROWCOUNT = 0
-            BEGIN
-                INSERT INTO PatientCounters (ClinicId, LastValue) VALUES ({0}, 1);
-                SELECT 1;
-            END
+            MERGE PatientCounters WITH (HOLDLOCK) AS target
+            USING (SELECT {0} AS ClinicId) AS source ON target.ClinicId = source.ClinicId
+            WHEN MATCHED THEN
+                UPDATE SET LastValue = target.LastValue + 1
+            WHEN NOT MATCHED THEN
+                INSERT (ClinicId, LastValue) VALUES ({0}, 1)
+            OUTPUT inserted.LastValue;
             """;
 
         var result = await _db.Database

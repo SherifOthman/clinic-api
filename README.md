@@ -56,7 +56,7 @@ Countries, states/governorates, and cities are seeded from GeoNames bulk dump fi
 
 ### Patient Management
 
-Patients have a per-clinic sequential code (e.g. `0001`, `0042`) generated atomically via a `PatientCounters` table. The counter uses `UPDATE ... OUTPUT` with `UPDLOCK, HOLDLOCK` hints — if the row exists it increments and returns the new value in one statement; if not, it inserts the first row. This avoids the `MERGE` statement while preserving the same serialization guarantees under concurrent inserts. The code is stored as a zero-padded string for `StartsWith` search support. Full demographics, multiple phone numbers (validated with libphonenumber-csharp), blood type, date of birth, chronic diseases, and a bilingual location. Soft-delete is supported — deleted patients are retained and can be restored by a SuperAdmin.
+Patients have a per-clinic sequential code (e.g. `0001`, `0042`) generated atomically via a `PatientCounters` table using a `MERGE` statement — no race conditions under concurrent inserts. The code is stored as a zero-padded string for `StartsWith` search support. Full demographics, multiple phone numbers (validated with libphonenumber-csharp), blood type, date of birth, chronic diseases, and a bilingual location. Soft-delete is supported — deleted patients are retained and can be restored by a SuperAdmin.
 
 ### Staff & Invitations
 
@@ -178,7 +178,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | -------------------------------------------------------- | --- | --------------------------------- |
 | Paginated list — search, sort, filter by gender / region | ✅  | Search ranked by relevance        |
 | Create / edit / view / soft-delete / restore             | ✅  | Restore is SuperAdmin only        |
-| Per-clinic sequential patient code                       | ✅  | Atomic UPDATE+INSERT with UPDLOCK/HOLDLOCK, StartsWith search |
+| Per-clinic sequential patient code                       | ✅  | Atomic MERGE, StartsWith search                               |
 | Multiple phone numbers                                   | ✅  | International format validation   |
 | Blood type, DOB, chronic diseases                        | ✅  |                                   |
 | Bilingual location (country / state / city)              | ✅  | Seeded from GeoNames, EN+AR in DB |
@@ -211,7 +211,7 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Doctor check-in with delay detection                     | ✅  |                                        |
 | Delay handling (auto-shift / mark missed / manual)       | ✅  |                                        |
 | Set appointment type per doctor per branch (Queue vs Time) | ✅  |                                        |
-| Queue number assignment (atomic, no race conditions)     | ✅  | UPDATE+INSERT with UPDLOCK/HOLDLOCK                    |
+| Queue number assignment (atomic, no race conditions)     | ✅  |                                                        |
 | Discount support on appointments                         | ✅  |                                        |
 | Auto-create invoice on payment                           | 🗂️  | Flow designed, not implemented         |
 | Calendar view                                            | ❌  |                                        |
