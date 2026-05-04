@@ -22,13 +22,19 @@ Small and mid-sized medical clinics need a way to manage their patients, staff, 
 
 A complete auth system built on top of ASP.NET Identity. Users can register, confirm their email, log in with either email or username, reset their password, and manage their profile including a profile image. Google OAuth is supported. Token refresh is handled automatically. The system supports two client types via the `X-Client-Type` header: web clients get HTTP-only refresh token cookies (`SameSite=None; Secure` for cross-site support), mobile clients get tokens in the response body.
 
+Refresh tokens are stored as SHA-256 hashes — the raw token only ever exists in memory and travels to the client. A database breach exposes only hashes, which cannot be reversed. Token rotation is enforced on every refresh: the old token is revoked and a new one is issued atomically. A per-user semaphore prevents concurrent refresh races.
+
+`POST /api/auth/refresh` is restricted to mobile clients (`X-Client-Type: mobile`). Web clients are refreshed transparently by `CookieTokenMiddleware` — the middleware detects an expired access token cookie, calls `RefreshTokenCommand` internally, rotates both cookies, and lets the request continue without a round-trip to the client. A debounce cache prevents multiple concurrent requests from all triggering a refresh simultaneously.
+
+Token context resolution (clinic ID, member ID, country code from the user's role) is centralised in `ITokenIssuer`, shared by `LoginHandler`, `RefreshTokenHandler`, and `GoogleLoginHandler`.
+
 ### Permission-Based Authorization
 
 Fine-grained access control using a custom RBAC system. Permissions (e.g. `ViewPatients`, `InviteStaff`, `ManageBranches`) are assigned per `ClinicMember` — the same user can have different permissions at different clinics. Role defaults are defined in `DefaultPermissions.cs` and seeded when a new staff member joins; clinic owners can then customize permissions per staff member.
 
 Permissions are resolved from the database on login and cached in `IMemoryCache` per member (10-minute TTL with explicit invalidation on change). The JWT contains only the `MemberId` claim — permissions are resolved from cache on each request by a custom `PermissionAuthorizationHandler`, keeping tokens small and avoiding stale permission data. A dynamic `IAuthorizationPolicyProvider` generates policies on-demand from the `Permission` enum, so adding a new permission requires no DI changes.
 
-Controllers use `[RequirePermission(Permission.X)]` instead of `[Authorize(Roles = "...")]`. Structural operations use `[Authorize(Policy = "RequireClinicOwner")]`. Platform-level operations use `[Authorize(Policy = "SuperAdmin")]`.
+Controllers use `[RequirePermission(Permission.X)]` instead of `[Authorize(Roles = "...")]`. Structural operations use `[Authorize(Policy = AuthorizationPolicies.ClinicOwner)]`. Platform-level operations use `[Authorize(Policy = AuthorizationPolicies.SuperAdmin)]`. Policy names are defined as constants in `AuthorizationPolicies` — no magic strings in controllers.
 
 ### Multi-Tenant Clinic Management
 
@@ -110,7 +116,6 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 | Identity         | ASP.NET Core Identity                |
 | Mediator         | MediatR                              |
 | Validation       | FluentValidation                     |
-| Mapping          | Mapster                              |
 | Auth             | JWT Bearer + HTTP-only cookies       |
 | OAuth            | Google OAuth 2.0                     |
 | Authorization    | Custom RBAC (permissions + policies) |
@@ -159,9 +164,9 @@ Infrastructure → EF Core, ASP.NET Identity, email, file storage, background jo
 
 | Feature                                          | API | Notes                                        |
 | ------------------------------------------------ | --- | -------------------------------------------- |
-| Onboarding wizard (name, branch, location, plan) | ✅  |                                              |
+| Onboarding wizard (name, branch, location, plan) | ✅  | Branch phone numbers included        |
 | View / create / edit / toggle branches           | ✅  | Bilingual location                           |
-| Branch phone numbers                             | ✅  |                                              |
+| Branch phone numbers                             | ✅  | With optional label per number       |
 | Clinic settings (week start day)                 | ✅  |                                              |
 | Clinic subscription management                  | 🗂️  | `ClinicSubscription` modeled                 |
 | Subscription payment history                    | 🗂️  | `SubscriptionPayment` modeled                |
