@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<AuditLogCleanupService>();
         services.AddScoped<UsageMetricsAggregationJob>();
         services.AddScoped<SubscriptionExpiryNotificationJob>();
+        services.AddScoped<UsageLimitNotificationJob>();
 
         return services;
     }

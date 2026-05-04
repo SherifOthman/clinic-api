@@ -24,5 +24,6 @@ public static class HangfireJobRegistration
         RecurringJob.AddOrUpdate<AuditLogCleanupService>           (nameof(AuditLogCleanupService),            j => j.ExecuteAsync(), DailyMidnight);
         RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       (nameof(UsageMetricsAggregationJob),        j => j.ExecuteAsync(), DailyAt1Am);
         RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>(nameof(SubscriptionExpiryNotificationJob), j => j.ExecuteAsync(), DailyAt9Am);
+        RecurringJob.AddOrUpdate<UsageLimitNotificationJob>        (nameof(UsageLimitNotificationJob),         j => j.ExecuteAsync(), DailyAt9Am);
     }
 }
