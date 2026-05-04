@@ -36,7 +36,7 @@ public class GlobalExceptionMiddleware
 
             if (!context.Response.HasStarted)
             {
-                var loginUrl = $"{_appOptions.AuthUrl.TrimEnd('/')}/en/login";
+                var loginUrl = $"{_appOptions.WebsiteUrl.TrimEnd('/')}/en/login";
                 context.Response.Redirect($"{loginUrl}?error=oauth_failed");
             }
         }

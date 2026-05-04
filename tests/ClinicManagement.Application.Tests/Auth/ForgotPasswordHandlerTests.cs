@@ -29,7 +29,7 @@ public class ForgotPasswordHandlerTests
 
         _handler = new ForgotPasswordHandler(
             _uowMock.Object, _userManagerMock.Object, _emailMock.Object,
-            Options.Create(new AppOptions { FrontendUrl = "https://example.com" }),
+            Options.Create(new AppOptions { DashboardUrl = "https://example.com" }),
             _auditWriterMock.Object, NullLogger<ForgotPasswordHandler>.Instance);
     }
 

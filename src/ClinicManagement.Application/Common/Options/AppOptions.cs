@@ -8,9 +8,16 @@ public class AppOptions
 {
     public const string Section = "App";
 
-    /// <summary>Dashboard URL — where users land after login.</summary>
-    public string FrontendUrl { get; set; } = "http://localhost:3000";
+    /// <summary>
+    /// Dashboard app URL (clinic-dashboard).
+    /// Used in email links: email confirmation, password reset, staff invitations.
+    /// Also used as the OAuth redirect destination after a successful Google login.
+    /// </summary>
+    public string DashboardUrl { get; set; } = "http://localhost:3000";
 
-    /// <summary>Next.js auth app URL — where users are sent for login/error pages.</summary>
-    public string AuthUrl { get; set; } = "http://localhost:3001";
+    /// <summary>
+    /// Website app URL (clinic-website).
+    /// Used only for auth redirects: login page and OAuth error pages.
+    /// </summary>
+    public string WebsiteUrl { get; set; } = "http://localhost:3001";
 }

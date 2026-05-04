@@ -27,7 +27,7 @@ public class EmailService : IEmailService
         string toEmail, string clinicName, string role, string invitedBy,
         string invitationLink, CancellationToken cancellationToken = default)
     {
-        var fullLink  = $"{_appOptions.FrontendUrl}{invitationLink}";
+        var fullLink  = $"{_appOptions.DashboardUrl}{invitationLink}";
         var emailBody = EmailTemplates.GetStaffInvitationTemplate(clinicName, role, invitedBy, fullLink);
         await _smtpEmailSender.SendEmailAsync(toEmail, $"Invitation to join {clinicName} as {role}", emailBody, cancellationToken);
     }

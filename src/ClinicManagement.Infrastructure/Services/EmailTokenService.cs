@@ -29,7 +29,7 @@ public class EmailTokenService : IEmailTokenService
     public async Task SendConfirmationEmailAsync(User user, CancellationToken cancellationToken = default)
     {
         var token            = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var confirmationLink = $"{_appOptions.FrontendUrl}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+        var confirmationLink = $"{_appOptions.DashboardUrl}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
         var emailBody        = EmailTemplates.GetEmailConfirmationTemplate(user.FullName, confirmationLink);
 
         await _emailSender.SendEmailAsync(user.Email!, "Confirm your email address", emailBody, cancellationToken);

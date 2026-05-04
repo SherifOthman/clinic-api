@@ -92,6 +92,7 @@ public class PatientsController : BaseApiController
             id, request.FullName, request.DateOfBirth, request.Gender,
             request.CountryGeonameId, request.StateGeonameId, request.CityGeonameId,
             request.BloodType, request.PhoneNumbers, request.ChronicDiseaseIds);
+
         return HandleNoContent(await Sender.Send(command, cancellationToken), "Failed to update patient");
     }
 

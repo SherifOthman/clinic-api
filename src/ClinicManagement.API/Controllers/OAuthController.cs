@@ -46,7 +46,7 @@ public class OAuthController : BaseApiController
     [HttpGet("google")]
     public IActionResult GoogleLogin([FromQuery] string? returnUrl = null)
     {
-        var dashboardUrl = _appOptions.FrontendUrl ?? "http://localhost:3000";
+        var dashboardUrl = _appOptions.DashboardUrl ?? "http://localhost:3000";
 
         // RedirectUri points to our /complete endpoint (not the CallbackPath)
         // returnUrl is passed as a query param to /complete
@@ -67,7 +67,7 @@ public class OAuthController : BaseApiController
     public async Task<IActionResult> GoogleComplete(
         [FromQuery] string? returnUrl, CancellationToken ct)
     {
-        var dashboardUrl = returnUrl ?? _appOptions.FrontendUrl ?? "http://localhost:3000";
+        var dashboardUrl = returnUrl ?? _appOptions.DashboardUrl ?? "http://localhost:3000";
         var loginUrl     = GetLoginUrl();
 
         // Read the principal that the Google handler stored in the Cookie scheme
@@ -114,5 +114,5 @@ public class OAuthController : BaseApiController
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private string GetLoginUrl()
-        => $"{_appOptions.AuthUrl.TrimEnd('/')}/en/login";
+        => $"{_appOptions.WebsiteUrl.TrimEnd('/')}/en/login";
 }

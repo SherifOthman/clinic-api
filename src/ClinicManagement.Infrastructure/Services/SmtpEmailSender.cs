@@ -30,7 +30,7 @@ public class SmtpEmailSender
             _logger.LogInformation("Sending email to {Email} with subject: {Subject}", toEmail, subject);
 
             // Replace frontend URL placeholder in email templates
-            htmlMessage = htmlMessage.Replace("{{FRONTEND_URL}}", _appOptions.FrontendUrl);
+            htmlMessage = htmlMessage.Replace("{{FRONTEND_URL}}", _appOptions.DashboardUrl);
 
             var email = new MimeMessage();
             email.From.Add(new MailboxAddress(_smtpOptions.FromName, _smtpOptions.FromEmail));
