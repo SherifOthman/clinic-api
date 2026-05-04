@@ -145,7 +145,6 @@ public static class DependencyInjection
             options.AddPolicy(AuthorizationPolicies.ClinicOwner, policy =>
             {
                 policy.RequireAuthenticatedUser();
-                policy.RequireClaim("ClinicId");
                 policy.RequireRole(UserRoles.ClinicOwner);
             });
 
