@@ -10,20 +10,17 @@ namespace ClinicManagement.API.Models;
 /// </summary>
 public class PaginationRequest
 {
-    private int _pageNumber = 1;
-    private int _pageSize   = 10;
-
     public int PageNumber
     {
-        get => _pageNumber;
-        init => _pageNumber = value < 1 ? 1 : value;
-    }
+        get;
+        init => field = value < 1 ? 1 : value;
+    } = 1;
 
     public int PageSize
     {
-        get => _pageSize;
-        init => _pageSize = value < 1 ? 10 : value > 100 ? 100 : value;
-    }
+        get;
+        init => field = value < 1 ? 10 : value > 100 ? 100 : value;
+    } = 10;
 }
 
 public class SortedPaginationRequest : PaginationRequest
