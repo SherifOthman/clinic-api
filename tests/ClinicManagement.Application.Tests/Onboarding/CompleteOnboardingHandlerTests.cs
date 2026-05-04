@@ -51,7 +51,7 @@ public class CompleteOnboardingHandlerTests
     }
 
     private CompleteOnboarding MakeCommand() =>
-        new("Test Clinic", _planId, "Main Branch", "123 Test St", 2, 3, null);
+        new("Test Clinic", _planId, "Main Branch", "123 Test St", 2, 3, null, null);
 
     [Fact]
     public async Task Handle_ShouldSucceed_WhenAllDataIsValid()
@@ -95,7 +95,7 @@ public class CompleteOnboardingHandlerTests
         var badPlanId = Guid.NewGuid();
         _referenceMock.Setup(x => x.SubscriptionPlanExistsAsync(badPlanId, default)).ReturnsAsync(false);
 
-        var cmd = new CompleteOnboarding("Clinic", badPlanId, "Branch", "Addr", 1, 2, null);
+        var cmd = new CompleteOnboarding("Clinic", badPlanId, "Branch", "Addr", 1, 2, null, null);
         var result = await _handler.Handle(cmd, default);
 
         result.IsSuccess.Should().BeFalse();

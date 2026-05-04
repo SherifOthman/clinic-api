@@ -1,7 +1,5 @@
-using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,15 +8,13 @@ namespace ClinicManagement.Persistence.Jobs;
 
 public class SubscriptionExpiryNotificationJob
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _db;
     private readonly ILogger<SubscriptionExpiryNotificationJob> _logger;
 
-    public SubscriptionExpiryNotificationJob(
-        ApplicationDbContext context,
-        ILogger<SubscriptionExpiryNotificationJob> logger)
+    public SubscriptionExpiryNotificationJob(ApplicationDbContext db, ILogger<SubscriptionExpiryNotificationJob> logger)
     {
-        _context = context;
-        _logger  = logger;
+        _db     = db;
+        _logger = logger;
     }
 
     public async Task ExecuteAsync()
@@ -26,12 +22,11 @@ public class SubscriptionExpiryNotificationJob
         var now             = DateTimeOffset.UtcNow;
         var expiryThreshold = now.AddDays(7);
 
-        var expiring = await TenantGuard.AsSystemQuery(_context.Set<ClinicSubscription>())
+        var expiring = await TenantGuard.AsSystemQuery(_db.Set<ClinicSubscription>())
             .Where(s =>
                 s.Status == SubscriptionStatus.Active &&
                 s.EndDate > now &&
-                s.EndDate <= expiryThreshold
-            )
+                s.EndDate <= expiryThreshold)
             .ToListAsync();
 
         if (!expiring.Any()) return;
@@ -42,17 +37,17 @@ public class SubscriptionExpiryNotificationJob
         {
             try
             {
-                var clinic = await TenantGuard.AsSystemQuery(_context.Set<Clinic>())
+                var clinic = await TenantGuard.AsSystemQuery(_db.Set<Clinic>())
                     .FirstOrDefaultAsync(c => c.Id == subscription.ClinicId);
                 if (clinic is null) continue;
 
-                var owner = await TenantGuard.AsSystemQuery(_context.Set<User>())
+                var owner = await _db.Users
                     .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId);
                 if (owner is null) continue;
 
                 var daysLeft = (int)(subscription.EndDate!.Value.Date - now.Date).TotalDays;
 
-                _context.Set<Notification>().Add(new Notification
+                _db.Set<Notification>().Add(new Notification
                 {
                     UserId    = owner.Id,
                     Type      = NotificationType.Warning,
@@ -61,7 +56,7 @@ public class SubscriptionExpiryNotificationJob
                     ActionUrl = "/billing/renew",
                 });
 
-                _context.Set<EmailQueue>().Add(new EmailQueue
+                _db.Set<EmailQueue>().Add(new EmailQueue
                 {
                     ToEmail  = !string.IsNullOrWhiteSpace(clinic.BillingEmail) ? clinic.BillingEmail : owner.Email!,
                     ToName   = owner.FullName,
@@ -79,7 +74,6 @@ public class SubscriptionExpiryNotificationJob
             }
         }
 
-        // Save all notifications and emails in one round-trip
-        await _context.SaveChangesAsync();
+        await _db.SaveChangesAsync();
     }
 }

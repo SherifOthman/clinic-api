@@ -40,7 +40,6 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Specialization>   Specializations   => field ??= new Repository<Specialization>(_context);
     public IRepository<SubscriptionPlan> SubscriptionPlans => field ??= new Repository<SubscriptionPlan>(_context);
     public IRefreshTokenRepository       RefreshTokens     => field ??= new RefreshTokenRepository(_context);
-    public IUserSeedRepository           UserEntities      => field ??= new UserSeedRepository(_context);
     public ITestimonialRepository        Testimonials      => field ??= new TestimonialRepository(_context);
     public IContactMessageRepository     ContactMessages   => field ??= new ContactMessageRepository(_context);
     public IAppointmentRepository        Appointments      => field ??= new AppointmentRepository(_context);

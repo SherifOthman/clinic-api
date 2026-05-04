@@ -1,6 +1,5 @@
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
-using ClinicManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -8,12 +7,16 @@ namespace ClinicManagement.Persistence.Jobs;
 
 /// <summary>
 /// Hangfire job that archives old audit log entries.
-/// Runs daily at midnight (configured in Program.cs).
+/// Runs daily at midnight (configured in HangfireJobRegistration).
 ///
 /// Strategy:
 /// - Deletes in batches of 5,000 to avoid long-running transactions and log bloat.
 /// - Default retention: 12 months (configurable via RetentionMonths).
 /// - Security events (Login, LoginFailed, AccountLocked) are kept for 24 months.
+///
+/// Note: uses ApplicationDbContext directly (not IUnitOfWork) because
+/// ExecuteDeleteAsync is a bulk EF operation that bypasses the change tracker.
+/// IRepository does not expose bulk delete — this is intentional.
 /// </summary>
 public class AuditLogCleanupService
 {

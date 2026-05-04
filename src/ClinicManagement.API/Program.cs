@@ -1,10 +1,10 @@
 using ClinicManagement.API;
+using ClinicManagement.API.Hangfire;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
 using ClinicManagement.Infrastructure.Services;
 using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Jobs;
-using Hangfire;
 using Serilog;
 // ── Bootstrap logger (before DI is built) ────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
@@ -40,25 +40,8 @@ try
     // ── Hangfire recurring jobs ───────────────────────────────────────────────
     if (app.Services.GetService<Hangfire.IGlobalConfiguration>() is not null)
     {
-        try
-        {
-            RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           (nameof(EmailQueueProcessorJob),            j => j.ExecuteAsync(), "*/5 * * * *"); // every 5 min
-            RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       (nameof(RefreshTokenCleanupService),        j => j.ExecuteAsync(), "0 */6 * * *"); // every 6h
-            RecurringJob.AddOrUpdate<AuditLogCleanupService>           (nameof(AuditLogCleanupService),            j => j.ExecuteAsync(), "0 0 * * *");   // daily midnight
-            RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       (nameof(UsageMetricsAggregationJob),        j => j.ExecuteAsync(), "0 1 * * *");   // daily 1am
-            RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>(nameof(SubscriptionExpiryNotificationJob), j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
-            RecurringJob.RemoveIfExists("email-queue-processor");
-            RecurringJob.RemoveIfExists("refresh-token-cleanup");
-            RecurringJob.RemoveIfExists("audit-log-cleanup");
-            RecurringJob.RemoveIfExists("usage-metrics-aggregation");
-            RecurringJob.RemoveIfExists("subscription-expiry");
-            RecurringJob.RemoveIfExists("city-seed");
-            RecurringJob.RemoveIfExists("geo-seed");
-        }
-        catch (Exception hangfireEx)
-        {
-            Log.Warning(hangfireEx, "Hangfire recurring job registration failed — check the connection string");
-        }
+        try   { HangfireJobRegistration.RegisterAll(); }
+        catch (Exception ex) { Log.Warning(ex, "Hangfire job registration failed — check the connection string"); }
     }
 
     Log.Information("Clinic Management API started successfully");

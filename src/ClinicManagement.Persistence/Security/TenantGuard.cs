@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common.Constants;
+using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Security;
@@ -29,7 +30,7 @@ public static class TenantGuard
         where TEntity : class
     {
         // Runtime guard — belt-and-suspenders on top of the [Authorize("SuperAdmin")] attribute
-        if (!currentUser.Roles.Contains("SuperAdmin"))
+        if (!currentUser.Roles.Contains(UserRoles.SuperAdmin))
             throw new UnauthorizedAccessException(
                 $"Cross-tenant query attempted by non-admin user {currentUser.UserId}. " +
                 "This is a developer error — AsAdminQuery() must only be called from admin repository methods.");

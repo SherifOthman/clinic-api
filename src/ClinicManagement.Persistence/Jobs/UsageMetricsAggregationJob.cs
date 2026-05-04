@@ -1,5 +1,4 @@
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,21 +7,20 @@ namespace ClinicManagement.Persistence.Jobs;
 
 public class UsageMetricsAggregationJob
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _db;
     private readonly ILogger<UsageMetricsAggregationJob> _logger;
 
-    public UsageMetricsAggregationJob(
-        ApplicationDbContext context,
-        ILogger<UsageMetricsAggregationJob> logger)
+    public UsageMetricsAggregationJob(ApplicationDbContext db, ILogger<UsageMetricsAggregationJob> logger)
     {
-        _context = context;
-        _logger  = logger;
+        _db     = db;
+        _logger = logger;
     }
 
     public async Task ExecuteAsync()
     {
-        var yesterday     = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
-        var activeClinics = await TenantGuard.AsSystemQuery(_context.Set<Clinic>())
+        var yesterday = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
+
+        var activeClinics = await TenantGuard.AsSystemQuery(_db.Set<Clinic>())
             .Where(c => c.IsActive && !c.IsDeleted)
             .ToListAsync();
 
@@ -34,24 +32,24 @@ public class UsageMetricsAggregationJob
         {
             try
             {
-                var activeStaffCount = await TenantGuard.AsSystemQuery(_context.Set<ClinicMember>())
+                var activeStaff = await TenantGuard.AsSystemQuery(_db.Set<ClinicMember>())
                     .CountAsync(m => m.ClinicId == clinic.Id && m.IsActive);
 
-                var existing = await TenantGuard.AsSystemQuery(_context.Set<ClinicUsageMetrics>())
+                var existing = await TenantGuard.AsSystemQuery(_db.Set<ClinicUsageMetrics>())
                     .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == yesterday);
 
                 if (existing is not null)
                 {
-                    existing.ActiveStaffCount  = activeStaffCount;
-                    existing.LastAggregatedAt  = DateTimeOffset.UtcNow;
+                    existing.ActiveStaffCount = activeStaff;
+                    existing.LastAggregatedAt = DateTimeOffset.UtcNow;
                 }
                 else
                 {
-                    _context.Set<ClinicUsageMetrics>().Add(new ClinicUsageMetrics
+                    _db.Set<ClinicUsageMetrics>().Add(new ClinicUsageMetrics
                     {
                         ClinicId           = clinic.Id,
                         MetricDate         = yesterday,
-                        ActiveStaffCount   = activeStaffCount,
+                        ActiveStaffCount   = activeStaff,
                         NewPatientsCount   = 0,
                         TotalPatientsCount = 0,
                         AppointmentsCount  = 0,
@@ -70,9 +68,7 @@ public class UsageMetricsAggregationJob
             }
         }
 
-        // Save all metric upserts in one round-trip
-        await _context.SaveChangesAsync();
-
+        await _db.SaveChangesAsync();
         _logger.LogInformation("Usage metrics aggregation: {Processed} processed, {Errors} errors", processed, errors);
     }
 }
