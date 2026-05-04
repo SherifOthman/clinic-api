@@ -1,10 +1,22 @@
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using ClinicManagement.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ClinicManagement.Persistence.Jobs;
 
+/// <summary>
+/// Runs daily and updates the current month's usage row for each active clinic.
+///
+/// The row represents month-to-date totals so the clinic owner can see
+/// "you've used X of Y this month" and get notified when approaching limits.
+///
+/// Monthly counters (patients, appointments, invoices) are cumulative from
+/// the 1st of the current month to now — matching the plan's monthly limits.
+///
+/// Absolute counters (staff, branches) reflect the current state regardless of month.
+/// </summary>
 public class UsageMetricsAggregationJob
 {
     private readonly ApplicationDbContext _db;
@@ -18,15 +30,17 @@ public class UsageMetricsAggregationJob
 
     public async Task ExecuteAsync()
     {
-        var yesterday      = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
-        var yesterdayStart = yesterday.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var yesterdayEnd   = yesterdayStart.AddDays(1);
+        var now          = DateTimeOffset.UtcNow;
+        var today        = DateOnly.FromDateTime(now.Date);
+        var monthStart   = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var monthStartDate = DateOnly.FromDateTime(monthStart.Date);
 
         var activeClinics = await TenantGuard.AsSystemQuery(_db.Set<Clinic>())
             .Where(c => c.IsActive && !c.IsDeleted)
             .ToListAsync();
 
-        _logger.LogInformation("Aggregating metrics for {Count} clinics for {Date}", activeClinics.Count, yesterday);
+        _logger.LogInformation("Aggregating usage metrics for {Count} clinics ({Month:yyyy-MM})",
+            activeClinics.Count, now);
 
         var processed = 0; var errors = 0;
 
@@ -36,48 +50,57 @@ public class UsageMetricsAggregationJob
             {
                 var clinicId = clinic.Id;
 
+                // ── Absolute limits (current state) ───────────────────────────
                 var activeStaff = await TenantGuard.AsSystemQuery(_db.Set<ClinicMember>())
                     .CountAsync(m => m.ClinicId == clinicId && m.IsActive && !m.IsDeleted);
 
-                var newPatients = await TenantGuard.AsSystemQuery(_db.Set<Patient>())
-                    .CountAsync(p => p.ClinicId == clinicId && !p.IsDeleted
-                        && p.CreatedAt >= yesterdayStart && p.CreatedAt < yesterdayEnd);
+                var activeBranches = await TenantGuard.AsSystemQuery(_db.Set<ClinicBranch>())
+                    .CountAsync(b => b.ClinicId == clinicId && b.IsActive && !b.IsDeleted);
 
                 var totalPatients = await TenantGuard.AsSystemQuery(_db.Set<Patient>())
                     .CountAsync(p => p.ClinicId == clinicId && !p.IsDeleted);
 
-                var appointments = await TenantGuard.AsSystemQuery(_db.Set<Appointment>())
-                    .CountAsync(a => a.ClinicId == clinicId && !a.IsDeleted && a.Date == yesterday);
+                // ── Monthly limits (month-to-date) ────────────────────────────
+                var newPatientsThisMonth = await TenantGuard.AsSystemQuery(_db.Set<Patient>())
+                    .CountAsync(p => p.ClinicId == clinicId && !p.IsDeleted
+                        && p.CreatedAt >= monthStart);
 
-                var invoices = await TenantGuard.AsSystemQuery(_db.Set<Invoice>())
+                var appointmentsThisMonth = await TenantGuard.AsSystemQuery(_db.Set<Appointment>())
+                    .CountAsync(a => a.ClinicId == clinicId && !a.IsDeleted
+                        && a.Date >= monthStartDate);
+
+                var invoicesThisMonth = await TenantGuard.AsSystemQuery(_db.Set<Invoice>())
                     .CountAsync(i => i.ClinicId == clinicId
-                        && i.CreatedAt >= yesterdayStart && i.CreatedAt < yesterdayEnd);
+                        && i.CreatedAt >= monthStart);
 
+                // ── Upsert today's row ────────────────────────────────────────
+                // One row per clinic per day — today's row is the "live" snapshot
+                // the owner sees. Historical rows let us chart usage over time.
                 var existing = await TenantGuard.AsSystemQuery(_db.Set<ClinicUsageMetrics>())
-                    .FirstOrDefaultAsync(m => m.ClinicId == clinicId && m.MetricDate == yesterday);
+                    .FirstOrDefaultAsync(m => m.ClinicId == clinicId && m.MetricDate == today);
 
                 if (existing is not null)
                 {
-                    existing.ActiveStaffCount  = activeStaff;
-                    existing.NewPatientsCount  = newPatients;
+                    existing.ActiveStaffCount   = activeStaff;
+                    existing.NewPatientsCount   = newPatientsThisMonth;
                     existing.TotalPatientsCount = totalPatients;
-                    existing.AppointmentsCount = appointments;
-                    existing.InvoicesCount     = invoices;
-                    existing.LastAggregatedAt  = DateTimeOffset.UtcNow;
+                    existing.AppointmentsCount  = appointmentsThisMonth;
+                    existing.InvoicesCount      = invoicesThisMonth;
+                    existing.LastAggregatedAt   = now;
                 }
                 else
                 {
                     _db.Set<ClinicUsageMetrics>().Add(new ClinicUsageMetrics
                     {
                         ClinicId            = clinicId,
-                        MetricDate          = yesterday,
+                        MetricDate          = today,
                         ActiveStaffCount    = activeStaff,
-                        NewPatientsCount    = newPatients,
+                        NewPatientsCount    = newPatientsThisMonth,
                         TotalPatientsCount  = totalPatients,
-                        AppointmentsCount   = appointments,
-                        InvoicesCount       = invoices,
+                        AppointmentsCount   = appointmentsThisMonth,
+                        InvoicesCount       = invoicesThisMonth,
                         StorageUsedGB       = 0, // file storage not tracked in DB
-                        LastAggregatedAt    = DateTimeOffset.UtcNow,
+                        LastAggregatedAt    = now,
                     });
                 }
 
@@ -91,6 +114,7 @@ public class UsageMetricsAggregationJob
         }
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Usage metrics aggregation: {Processed} processed, {Errors} errors", processed, errors);
+        _logger.LogInformation("Usage metrics aggregation complete: {Processed} processed, {Errors} errors",
+            processed, errors);
     }
 }
