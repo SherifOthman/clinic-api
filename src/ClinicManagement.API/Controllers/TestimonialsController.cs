@@ -1,3 +1,4 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.Testimonials.Commands;
 using ClinicManagement.Application.Features.Testimonials.Queries;
@@ -23,7 +24,7 @@ public class TestimonialsController : BaseApiController
 
     /// <summary>SuperAdmin — all testimonials with approval status.</summary>
     [HttpGet("all")]
-    [Authorize(Policy = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<AdminTestimonialDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
@@ -34,7 +35,7 @@ public class TestimonialsController : BaseApiController
 
     /// <summary>SuperAdmin — toggle published/hidden for a testimonial.</summary>
     [HttpPatch("{id:guid}/toggle")]
-    [Authorize(Policy = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -46,7 +47,7 @@ public class TestimonialsController : BaseApiController
 
     /// <summary>ClinicOwner — get their own testimonial.</summary>
     [HttpGet("mine")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(MyTestimonialDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -59,7 +60,7 @@ public class TestimonialsController : BaseApiController
 
     /// <summary>ClinicOwner — submit or update their testimonial.</summary>
     [HttpPost]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

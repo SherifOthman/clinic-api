@@ -36,7 +36,7 @@ public class DashboardController : BaseApiController
 
     /// <summary>SuperAdmin dashboard stats — cross-clinic totals.</summary>
     [HttpGet("stats/superadmin")]
-    [Authorize(Policy = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
     [ProducesResponseType(typeof(SuperAdminStatsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSuperAdminStats(CancellationToken cancellationToken = default)
     {

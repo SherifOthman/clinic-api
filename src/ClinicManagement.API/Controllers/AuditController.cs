@@ -1,4 +1,5 @@
 using ClinicManagement.API.Models;
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Models.Filters;
@@ -10,7 +11,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize(Policy = "SuperAdmin")]
+[Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
 [Route("api/audit")]
 [EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class AuditController : BaseApiController

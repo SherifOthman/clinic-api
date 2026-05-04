@@ -125,7 +125,7 @@ public class StaffController : BaseApiController
         return HandleResult(result, "Failed to retrieve staff detail");
     }
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [HttpPatch("me/doctor-profile")]
     [EnableRateLimiting(RateLimitPolicies.UserOnce)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -232,7 +232,7 @@ public class StaffController : BaseApiController
 
     // ── Clinic-owner-only: lock/unlock doctor self-management ─────────────────
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [HttpPatch("{id:guid}/schedule-lock")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -246,7 +246,7 @@ public class StaffController : BaseApiController
 
     // ── Permissions ───────────────────────────────────────────────────────────
 
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [HttpGet("{id:guid}/permissions")]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
@@ -257,7 +257,7 @@ public class StaffController : BaseApiController
         if (result.IsFailure) return HandleResult(result, "Failed to retrieve permissions");
         return Ok(result.Value!.Select(p => p.ToString()).ToList());
     }
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [HttpPut("{id:guid}/permissions")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

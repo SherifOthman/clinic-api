@@ -1,6 +1,7 @@
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.ClinicSettings.Commands;
+using ClinicManagement.API.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/clinic")]
-[Authorize(Policy = "RequireClinicOwner")]
+[Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
 public class ClinicController : BaseApiController
 {
     /// <summary>Update clinic-level settings (week start day, etc.).</summary>

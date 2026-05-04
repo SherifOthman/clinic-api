@@ -142,14 +142,14 @@ public static class DependencyInjection
             // Roles are still included in JWT claims so these policies work.
             // Fine-grained access control uses [RequirePermission] instead.
 
-            options.AddPolicy("RequireClinicOwner", policy =>
+            options.AddPolicy(AuthorizationPolicies.ClinicOwner, policy =>
             {
                 policy.RequireAuthenticatedUser();
                 policy.RequireClaim("ClinicId");
                 policy.RequireRole(UserRoles.ClinicOwner);
             });
 
-            options.AddPolicy("SuperAdmin", policy =>
+            options.AddPolicy(AuthorizationPolicies.SuperAdmin, policy =>
             {
                 policy.RequireAuthenticatedUser();
                 policy.RequireRole(UserRoles.SuperAdmin);
@@ -181,7 +181,7 @@ public static class DependencyInjection
         {
             var corsOptions = configuration.GetSection(CorsOptions.Section).Get<CorsOptions>() ?? new CorsOptions();
 
-            options.AddPolicy("AllowAll", policy =>
+            options.AddPolicy(AuthorizationPolicies.Cors, policy =>
             {
                 policy.WithOrigins(corsOptions.AllowedOrigins)
                       .AllowAnyMethod()
@@ -205,7 +205,7 @@ public static class DependencyInjection
         // CORS must be first — before exception middleware — so CORS headers are
         // present even when the app throws a 500. Without this, browsers report
         // CORS errors instead of the actual error.
-        app.UseCors("AllowAll");
+        app.UseCors(AuthorizationPolicies.Cors);
 
         app.UseMiddleware<GlobalExceptionMiddleware>();
         app.UseStaticFiles();

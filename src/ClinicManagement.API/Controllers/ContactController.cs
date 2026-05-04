@@ -1,3 +1,4 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Common.Models;
@@ -26,7 +27,7 @@ public class ContactController : BaseApiController
 
     /// <summary>SuperAdmin only — view all contact messages.</summary>
     [HttpGet]
-    [Authorize(Policy = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(PaginatedResult<ContactMessageDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMessages([FromQuery] PaginationRequest pagination, CancellationToken ct = default)

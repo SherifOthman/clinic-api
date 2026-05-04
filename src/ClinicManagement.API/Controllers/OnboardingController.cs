@@ -1,3 +1,4 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Abstractions.Services;
@@ -25,7 +26,7 @@ public class OnboardingController : BaseApiController
     }
 
     [HttpPost("complete")]
-    [Authorize(Policy = "RequireClinicOwner")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicOwner)]
     [EnableRateLimiting(RateLimitPolicies.UserOnce)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]

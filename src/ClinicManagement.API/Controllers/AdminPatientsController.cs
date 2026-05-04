@@ -1,3 +1,4 @@
+using ClinicManagement.API.Authorization;
 using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Abstractions.Repositories;
@@ -16,7 +17,7 @@ namespace ClinicManagement.API.Controllers;
 /// All queries here bypass the tenant filter and operate across all clinics.
 /// </summary>
 [Route("api/admin/patients")]
-[Authorize(Policy = "SuperAdmin")]
+[Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
 public class AdminPatientsController : BaseApiController
 {
     [HttpGet]
