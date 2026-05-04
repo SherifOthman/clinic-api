@@ -52,6 +52,10 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
             CityGeonameId  = request.CityGeonameId,
             IsMainBranch   = true,
             IsActive       = true,
+            PhoneNumbers   = request.PhoneNumbers?
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.Trim() })
+                .ToList() ?? [],
         });
 
         var ownerMember = CreateOwnerMember(user, clinic.Id);

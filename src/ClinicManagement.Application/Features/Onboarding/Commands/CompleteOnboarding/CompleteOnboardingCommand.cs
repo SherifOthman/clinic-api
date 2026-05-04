@@ -10,5 +10,6 @@ public record CompleteOnboarding(
     string AddressLine,
     int? StateGeonameId,
     int? CityGeonameId,
-    string? CountryCode
+    string? CountryCode,
+    List<string>? PhoneNumbers
 ) : IRequest<Result>;
