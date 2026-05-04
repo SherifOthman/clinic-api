@@ -61,7 +61,6 @@ public class UsageMetricsAggregationJob
                     });
                 }
 
-                await _context.SaveChangesAsync();
                 processed++;
             }
             catch (Exception ex)
@@ -70,6 +69,9 @@ public class UsageMetricsAggregationJob
                 errors++;
             }
         }
+
+        // Save all metric upserts in one round-trip
+        await _context.SaveChangesAsync();
 
         _logger.LogInformation("Usage metrics aggregation: {Processed} processed, {Errors} errors", processed, errors);
     }

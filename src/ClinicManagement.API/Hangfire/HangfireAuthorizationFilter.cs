@@ -11,6 +11,8 @@ namespace ClinicManagement.API.Hangfire;
 /// </summary>
 public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
 {
+    public const string DashboardKeyConfigPath = "HangfireDashboardKey";
+
     private readonly string? _secretKey;
 
     public HangfireAuthorizationFilter(string? secretKey)

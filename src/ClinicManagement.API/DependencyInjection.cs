@@ -216,7 +216,7 @@ public static class DependencyInjection
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
                 Authorization = [new HangfireAuthorizationFilter(
-                    app.Configuration["HangfireDashboardKey"])],
+                    app.Configuration[HangfireAuthorizationFilter.DashboardKeyConfigPath])],
             });
         }
 

@@ -46,7 +46,7 @@ public class SubscriptionExpiryNotificationJob
                     .FirstOrDefaultAsync(c => c.Id == subscription.ClinicId);
                 if (clinic is null) continue;
 
-                var owner = await _context.Users
+                var owner = await TenantGuard.AsSystemQuery(_context.Set<User>())
                     .FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId);
                 if (owner is null) continue;
 
@@ -71,7 +71,6 @@ public class SubscriptionExpiryNotificationJob
                     Priority = 3,
                 });
 
-                await _context.SaveChangesAsync();
                 _logger.LogDebug("Notification queued for clinic {ClinicId} (expires in {Days} days)", clinic.Id, daysLeft);
             }
             catch (Exception ex)
@@ -79,5 +78,8 @@ public class SubscriptionExpiryNotificationJob
                 _logger.LogError(ex, "Error processing subscription {SubscriptionId}", subscription.Id);
             }
         }
+
+        // Save all notifications and emails in one round-trip
+        await _context.SaveChangesAsync();
     }
 }

@@ -42,11 +42,16 @@ try
     {
         try
         {
-            RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           ("email-queue-processor",     j => j.ExecuteAsync(), "*/5 * * * *"); // every 5 min
-            RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       ("refresh-token-cleanup",     j => j.ExecuteAsync(), "0 */6 * * *"); // every 6h
-            RecurringJob.AddOrUpdate<AuditLogCleanupService>           ("audit-log-cleanup",         j => j.ExecuteAsync(), "0 0 * * *");   // daily midnight
-            RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       ("usage-metrics-aggregation", j => j.ExecuteAsync(), "0 1 * * *");   // daily 1am
-            RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>("subscription-expiry",       j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
+            RecurringJob.AddOrUpdate<EmailQueueProcessorJob>           (nameof(EmailQueueProcessorJob),            j => j.ExecuteAsync(), "*/5 * * * *"); // every 5 min
+            RecurringJob.AddOrUpdate<RefreshTokenCleanupService>       (nameof(RefreshTokenCleanupService),        j => j.ExecuteAsync(), "0 */6 * * *"); // every 6h
+            RecurringJob.AddOrUpdate<AuditLogCleanupService>           (nameof(AuditLogCleanupService),            j => j.ExecuteAsync(), "0 0 * * *");   // daily midnight
+            RecurringJob.AddOrUpdate<UsageMetricsAggregationJob>       (nameof(UsageMetricsAggregationJob),        j => j.ExecuteAsync(), "0 1 * * *");   // daily 1am
+            RecurringJob.AddOrUpdate<SubscriptionExpiryNotificationJob>(nameof(SubscriptionExpiryNotificationJob), j => j.ExecuteAsync(), "0 9 * * *");   // daily 9am
+            RecurringJob.RemoveIfExists("email-queue-processor");
+            RecurringJob.RemoveIfExists("refresh-token-cleanup");
+            RecurringJob.RemoveIfExists("audit-log-cleanup");
+            RecurringJob.RemoveIfExists("usage-metrics-aggregation");
+            RecurringJob.RemoveIfExists("subscription-expiry");
             RecurringJob.RemoveIfExists("city-seed");
             RecurringJob.RemoveIfExists("geo-seed");
         }
