@@ -18,7 +18,9 @@ public class UsageMetricsAggregationJob
 
     public async Task ExecuteAsync()
     {
-        var yesterday = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
+        var yesterday      = DateOnly.FromDateTime(DateTimeOffset.UtcNow.AddDays(-1).Date);
+        var yesterdayStart = yesterday.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var yesterdayEnd   = yesterdayStart.AddDays(1);
 
         var activeClinics = await TenantGuard.AsSystemQuery(_db.Set<Clinic>())
             .Where(c => c.IsActive && !c.IsDeleted)
@@ -32,30 +34,50 @@ public class UsageMetricsAggregationJob
         {
             try
             {
+                var clinicId = clinic.Id;
+
                 var activeStaff = await TenantGuard.AsSystemQuery(_db.Set<ClinicMember>())
-                    .CountAsync(m => m.ClinicId == clinic.Id && m.IsActive);
+                    .CountAsync(m => m.ClinicId == clinicId && m.IsActive && !m.IsDeleted);
+
+                var newPatients = await TenantGuard.AsSystemQuery(_db.Set<Patient>())
+                    .CountAsync(p => p.ClinicId == clinicId && !p.IsDeleted
+                        && p.CreatedAt >= yesterdayStart && p.CreatedAt < yesterdayEnd);
+
+                var totalPatients = await TenantGuard.AsSystemQuery(_db.Set<Patient>())
+                    .CountAsync(p => p.ClinicId == clinicId && !p.IsDeleted);
+
+                var appointments = await TenantGuard.AsSystemQuery(_db.Set<Appointment>())
+                    .CountAsync(a => a.ClinicId == clinicId && !a.IsDeleted && a.Date == yesterday);
+
+                var invoices = await TenantGuard.AsSystemQuery(_db.Set<Invoice>())
+                    .CountAsync(i => i.ClinicId == clinicId
+                        && i.CreatedAt >= yesterdayStart && i.CreatedAt < yesterdayEnd);
 
                 var existing = await TenantGuard.AsSystemQuery(_db.Set<ClinicUsageMetrics>())
-                    .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == yesterday);
+                    .FirstOrDefaultAsync(m => m.ClinicId == clinicId && m.MetricDate == yesterday);
 
                 if (existing is not null)
                 {
-                    existing.ActiveStaffCount = activeStaff;
-                    existing.LastAggregatedAt = DateTimeOffset.UtcNow;
+                    existing.ActiveStaffCount  = activeStaff;
+                    existing.NewPatientsCount  = newPatients;
+                    existing.TotalPatientsCount = totalPatients;
+                    existing.AppointmentsCount = appointments;
+                    existing.InvoicesCount     = invoices;
+                    existing.LastAggregatedAt  = DateTimeOffset.UtcNow;
                 }
                 else
                 {
                     _db.Set<ClinicUsageMetrics>().Add(new ClinicUsageMetrics
                     {
-                        ClinicId           = clinic.Id,
-                        MetricDate         = yesterday,
-                        ActiveStaffCount   = activeStaff,
-                        NewPatientsCount   = 0,
-                        TotalPatientsCount = 0,
-                        AppointmentsCount  = 0,
-                        InvoicesCount      = 0,
-                        StorageUsedGB      = 0,
-                        LastAggregatedAt   = DateTimeOffset.UtcNow,
+                        ClinicId            = clinicId,
+                        MetricDate          = yesterday,
+                        ActiveStaffCount    = activeStaff,
+                        NewPatientsCount    = newPatients,
+                        TotalPatientsCount  = totalPatients,
+                        AppointmentsCount   = appointments,
+                        InvoicesCount       = invoices,
+                        StorageUsedGB       = 0, // file storage not tracked in DB
+                        LastAggregatedAt    = DateTimeOffset.UtcNow,
                     });
                 }
 
