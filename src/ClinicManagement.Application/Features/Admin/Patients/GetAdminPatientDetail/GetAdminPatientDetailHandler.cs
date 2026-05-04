@@ -41,8 +41,8 @@ public class GetAdminPatientDetailHandler : IRequestHandler<GetAdminPatientDetai
             ChronicDiseases  = data.Diseases.Select(d => new PatientChronicDiseaseDto(d.Id, d.NameEn, d.NameAr)).ToList(),
             CreatedAt        = data.CreatedAt,
             UpdatedAt        = data.UpdatedAt,
-            CreatedBy        = data.CreatedBy.HasValue && data.AuditUserNames.TryGetValue(data.CreatedBy.Value, out var cb) ? cb : null,
-            UpdatedBy        = data.UpdatedBy.HasValue && data.AuditUserNames.TryGetValue(data.UpdatedBy.Value, out var ub) ? ub : null,
+            CreatedBy        = data.CreatedBy,
+            UpdatedBy        = data.UpdatedBy,
             ClinicId         = data.ClinicId.ToString(),
             ClinicName       = data.ClinicName,
         });

@@ -66,7 +66,48 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
     // ── Tenant-scoped detail ──────────────────────────────────────────────────
 
     public async Task<PatientDetailData?> GetDetailAsync(Guid id, CancellationToken ct = default)
-        => await FetchDetailAsync(DbSet.AsNoTracking(), id, includeClinicName: false, ct);
+    {
+        var patient = await DbSet.AsNoTracking()
+            .Where(p => p.Id == id)
+            .Select(p => new
+            {
+                p.Id, p.PatientCode, p.FullName, p.DateOfBirth, p.Gender, p.BloodType,
+                p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
+                CountryNameEn = p.Country != null ? p.Country.NameEn : null,
+                CountryNameAr = p.Country != null ? p.Country.NameAr : null,
+                StateNameEn   = p.State   != null ? p.State.NameEn   : null,
+                StateNameAr   = p.State   != null ? p.State.NameAr   : null,
+                CityNameEn    = p.City    != null ? p.City.NameEn    : null,
+                CityNameAr    = p.City    != null ? p.City.NameAr    : null,
+                p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
+                Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
+                Diseases = p.ChronicDiseases
+                    .Select(cd => new PatientDiseaseRow(
+                        cd.ChronicDiseaseId.ToString().ToLower(),
+                        cd.ChronicDisease.NameEn,
+                        cd.ChronicDisease.NameAr))
+                    .ToList(),
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (patient is null) return null;
+
+        var auditNames = await LoadAuditUserNamesAsync([patient.CreatedBy, patient.UpdatedBy], ct);
+
+        return new PatientDetailData(
+            Id: patient.Id, PatientCode: patient.PatientCode,
+            FullName: patient.FullName, DateOfBirth: patient.DateOfBirth,
+            Gender: patient.Gender.ToString(), BloodType: patient.BloodType?.ToDisplayString(),
+            CountryGeonameId: patient.CountryGeonameId, StateGeonameId: patient.StateGeonameId,
+            CityGeonameId: patient.CityGeonameId,
+            CountryNameEn: patient.CountryNameEn, CountryNameAr: patient.CountryNameAr,
+            StateNameEn: patient.StateNameEn, StateNameAr: patient.StateNameAr,
+            CityNameEn: patient.CityNameEn, CityNameAr: patient.CityNameAr,
+            CreatedAt: patient.CreatedAt, UpdatedAt: patient.UpdatedAt,
+            CreatedBy: auditNames.GetValueOrDefault(patient.CreatedBy ?? Guid.Empty),
+            UpdatedBy: auditNames.GetValueOrDefault(patient.UpdatedBy ?? Guid.Empty),
+            Phones: patient.Phones, Diseases: patient.Diseases);
+    }
 
     // ── Tenant-scoped location options ────────────────────────────────────────
 
@@ -123,10 +164,51 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     // ── Admin (cross-tenant) detail ───────────────────────────────────────────
 
-    public async Task<PatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default)
-        => await FetchDetailAsync(
-            TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking(),
-            id, includeClinicName: true, ct);
+    public async Task<AdminPatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default)
+    {
+        var patient = await TenantGuard.AsAdminQuery(DbSet, _currentUser).AsNoTracking()
+            .Where(p => p.Id == id)
+            .Select(p => new
+            {
+                p.Id, p.PatientCode, p.FullName, p.DateOfBirth, p.Gender, p.BloodType,
+                p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
+                CountryNameEn = p.Country != null ? p.Country.NameEn : null,
+                CountryNameAr = p.Country != null ? p.Country.NameAr : null,
+                StateNameEn   = p.State   != null ? p.State.NameEn   : null,
+                StateNameAr   = p.State   != null ? p.State.NameAr   : null,
+                CityNameEn    = p.City    != null ? p.City.NameEn    : null,
+                CityNameAr    = p.City    != null ? p.City.NameAr    : null,
+                p.ClinicId, p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
+                Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
+                Diseases = p.ChronicDiseases
+                    .Select(cd => new PatientDiseaseRow(
+                        cd.ChronicDiseaseId.ToString().ToLower(),
+                        cd.ChronicDisease.NameEn,
+                        cd.ChronicDisease.NameAr))
+                    .ToList(),
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (patient is null) return null;
+
+        var auditNames = await LoadAuditUserNamesAsync([patient.CreatedBy, patient.UpdatedBy], ct);
+        var clinicName = await LoadClinicNamesAsync([patient.ClinicId], ct);
+
+        return new AdminPatientDetailData(
+            Id: patient.Id, PatientCode: patient.PatientCode,
+            FullName: patient.FullName, DateOfBirth: patient.DateOfBirth,
+            Gender: patient.Gender.ToString(), BloodType: patient.BloodType?.ToDisplayString(),
+            CountryGeonameId: patient.CountryGeonameId, StateGeonameId: patient.StateGeonameId,
+            CityGeonameId: patient.CityGeonameId,
+            CountryNameEn: patient.CountryNameEn, CountryNameAr: patient.CountryNameAr,
+            StateNameEn: patient.StateNameEn, StateNameAr: patient.StateNameAr,
+            CityNameEn: patient.CityNameEn, CityNameAr: patient.CityNameAr,
+            ClinicId: patient.ClinicId, ClinicName: clinicName.GetValueOrDefault(patient.ClinicId),
+            CreatedAt: patient.CreatedAt, UpdatedAt: patient.UpdatedAt,
+            CreatedBy: auditNames.GetValueOrDefault(patient.CreatedBy ?? Guid.Empty),
+            UpdatedBy: auditNames.GetValueOrDefault(patient.UpdatedBy ?? Guid.Empty),
+            Phones: patient.Phones, Diseases: patient.Diseases);
+    }
 
     // ── Admin (cross-tenant) location options ─────────────────────────────────
 
@@ -239,55 +321,6 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             CityNameAr: p.CityNameAr,
             IsDeleted: p.IsDeleted)).ToList();
 
-    private async Task<PatientDetailData?> FetchDetailAsync(
-        IQueryable<Patient> query, Guid id, bool includeClinicName, CancellationToken ct)
-    {
-        var patient = await query
-            .Where(p => p.Id == id)
-            .Select(p => new
-            {
-                p.Id, p.PatientCode, p.BloodType,
-                FullName    = p.FullName,
-                DateOfBirth = p.DateOfBirth,
-                Gender      = p.Gender,
-                p.CountryGeonameId, p.StateGeonameId, p.CityGeonameId,
-                CountryNameEn = p.Country != null ? p.Country.NameEn : null,
-                CountryNameAr = p.Country != null ? p.Country.NameAr : null,
-                StateNameEn   = p.State   != null ? p.State.NameEn   : null,
-                StateNameAr   = p.State   != null ? p.State.NameAr   : null,
-                CityNameEn    = p.City    != null ? p.City.NameEn    : null,
-                CityNameAr    = p.City    != null ? p.City.NameAr    : null,
-                p.ClinicId, p.CreatedAt, p.UpdatedAt, p.CreatedBy, p.UpdatedBy,
-                Phones   = p.Phones.Select(ph => ph.PhoneNumber).ToList(),
-                Diseases = p.ChronicDiseases
-                    .Select(cd => new PatientDiseaseRow(
-                        cd.ChronicDiseaseId.ToString().ToLower(),
-                        cd.ChronicDisease.NameEn,
-                        cd.ChronicDisease.NameAr))
-                    .ToList(),
-            })
-            .FirstOrDefaultAsync(ct);
-
-        if (patient is null) return null;
-
-        var auditNames = await LoadAuditUserNamesAsync([patient.CreatedBy, patient.UpdatedBy], ct);
-        var clinicName = includeClinicName ? await LoadClinicNameAsync(patient.ClinicId, ct) : null;
-
-        return new PatientDetailData(
-            Id: patient.Id, PatientCode: patient.PatientCode,
-            FullName: patient.FullName, DateOfBirth: patient.DateOfBirth,
-            Gender: patient.Gender.ToString(), BloodType: patient.BloodType?.ToDisplayString(),
-            CountryGeonameId: patient.CountryGeonameId, StateGeonameId: patient.StateGeonameId,
-            CityGeonameId: patient.CityGeonameId,
-            CountryNameEn: patient.CountryNameEn, CountryNameAr: patient.CountryNameAr,
-            StateNameEn: patient.StateNameEn, StateNameAr: patient.StateNameAr,
-            CityNameEn: patient.CityNameEn, CityNameAr: patient.CityNameAr,
-            ClinicId: patient.ClinicId, CreatedAt: patient.CreatedAt,
-            UpdatedAt: patient.UpdatedAt, CreatedBy: patient.CreatedBy, UpdatedBy: patient.UpdatedBy,
-            Phones: patient.Phones, Diseases: patient.Diseases,
-            AuditUserNames: auditNames, ClinicName: clinicName);
-    }
-
     private static async Task<List<LocationOption>> FetchLocationOptionsAsync(
         IQueryable<Patient> query, int? countryGeonameId, int? stateGeonameId, CancellationToken ct)
     {
@@ -332,10 +365,6 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Select(c => new { c.Id, c.Name })
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
     }
-
-    private async Task<string?> LoadClinicNameAsync(Guid clinicId, CancellationToken ct)
-        => await TenantGuard.AsSystemQuery(Context.Set<Clinic>()).AsNoTracking()
-            .Where(c => c.Id == clinicId).Select(c => c.Name).FirstOrDefaultAsync(ct);
 
     private async Task<Dictionary<Guid, string>> LoadAuditUserNamesAsync(
         IEnumerable<Guid?> userIds, CancellationToken ct)

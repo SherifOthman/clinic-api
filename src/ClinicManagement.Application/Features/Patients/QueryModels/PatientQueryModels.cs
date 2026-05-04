@@ -15,7 +15,7 @@ public record RecentPatientRow(
     DateOnly? DateOfBirth, string Gender, DateTimeOffset CreatedAt
 );
 
-/// <summary>Full patient detail including phones, diseases, and audit user names.</summary>
+/// <summary>Full patient detail — phones, diseases, location names, and audit trail.</summary>
 public record PatientDetailData(
     Guid Id, string PatientCode,
     string FullName,
@@ -25,10 +25,28 @@ public record PatientDetailData(
     string? CountryNameEn, string? CountryNameAr,
     string? StateNameEn,   string? StateNameAr,
     string? CityNameEn,    string? CityNameAr,
-    Guid ClinicId, DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt,
-    Guid? CreatedBy, Guid? UpdatedBy,
-    List<string> Phones, List<PatientDiseaseRow> Diseases,
-    Dictionary<Guid, string> AuditUserNames, string? ClinicName
+    DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt,
+    string? CreatedBy, string? UpdatedBy,
+    List<string> Phones, List<PatientDiseaseRow> Diseases
+);
+
+/// <summary>
+/// Admin-only extension — adds clinic context (ClinicId + ClinicName).
+/// SuperAdmin needs this to identify which clinic the patient belongs to.
+/// </summary>
+public record AdminPatientDetailData(
+    Guid Id, string PatientCode,
+    string FullName,
+    DateOnly? DateOfBirth,
+    string Gender, string? BloodType,
+    int? CountryGeonameId, int? StateGeonameId, int? CityGeonameId,
+    string? CountryNameEn, string? CountryNameAr,
+    string? StateNameEn,   string? StateNameAr,
+    string? CityNameEn,    string? CityNameAr,
+    DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt,
+    string? CreatedBy, string? UpdatedBy,
+    Guid ClinicId, string? ClinicName,
+    List<string> Phones, List<PatientDiseaseRow> Diseases
 );
 
 public record PatientDiseaseRow(string Id, string NameEn, string NameAr);

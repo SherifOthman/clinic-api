@@ -44,7 +44,7 @@ public interface IPatientRepository : IRepository<Patient>
         int pageSize,
         CancellationToken ct = default);
 
-    Task<PatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default);
+    Task<AdminPatientDetailData?> GetAdminDetailAsync(Guid id, CancellationToken ct = default);
 
     Task<List<LocationOption>> GetAdminLocationOptionsAsync(
         int? countryGeonameId, int? stateGeonameId,

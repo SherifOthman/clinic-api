@@ -97,14 +97,14 @@ public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRep
             .Select(m => new
             {
                 m.Id,
-                UserId = m.UserId,
+                m.UserId,
                 m.IsActive,
                 m.JoinedAt,
-                FullName = m.User!.FullName,
-                Gender = m.User!.Gender,
+                m.User!.FullName,
+                m.User!.Gender,
                 Email = m.User != null ? m.User.Email : null,
                 PhoneNumber = m.User != null ? m.User.PhoneNumber : null,
-                ProfileImageUrl = m.User!.ProfileImageUrl,
+                m.User!.ProfileImageUrl,
                 DoctorInfo = m.DoctorInfo == null ? null : new DoctorDetailRow(
                     m.DoctorInfo.Id,
                     m.DoctorInfo.Specialization != null ? m.DoctorInfo.Specialization.NameEn : "",
