@@ -51,34 +51,8 @@ public static class RateLimitingExtensions
             options.OnRejected = async (context, ct) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-
-                // Calculate actual retry-after based on the limiter type:
-                // - FixedWindow/SlidingWindow: TryGetMetadata gives the real window remaining
-                // - TokenBucket: refills continuously (pro-rata), so retry-after is the time
-                //   to replenish 1 token = ReplenishmentPeriod / TokensPerPeriod
-                //   We can't read those values here, so we use the metadata if available,
-                //   otherwise fall back to a short default (2s) since token buckets refill fast.
-                int retryAfterSeconds;
-
-                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                {
-                    // FixedWindowLimiter populates this correctly
-                    retryAfterSeconds = (int)Math.Ceiling(retryAfter.TotalSeconds);
-                }
-                else
-                {
-                    // SlidingWindow and TokenBucket don't populate RetryAfter.
-                    // Token buckets refill continuously — 1 token returns in
-                    // ReplenishmentPeriod / TokensPerPeriod seconds.
-                    // We tag the policy name on the partition key to distinguish them,
-                    // but the simplest correct answer is: try again in 1–2 seconds.
-                    retryAfterSeconds = 2;
-                }
-
-                context.HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString();
-
                 await context.HttpContext.Response.WriteAsJsonAsync(
-                    new { error = "Too many requests. Please slow down.", retryAfter = retryAfterSeconds },
+                    new { error = "Too many requests. Please slow down." },
                     ct);
             };
 
