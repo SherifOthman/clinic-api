@@ -2,10 +2,7 @@ using ClinicManagement.API;
 using ClinicManagement.API.Hangfire;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
-using ClinicManagement.Infrastructure.Services;
 using ClinicManagement.Persistence;
-using ClinicManagement.Persistence.Jobs;
-using Hangfire;
 using Serilog;
 // ── Bootstrap logger (before DI is built) ────────────────────────────────────
 Log.Logger = new LoggerConfiguration()

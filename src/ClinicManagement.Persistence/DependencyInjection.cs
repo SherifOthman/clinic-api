@@ -4,6 +4,7 @@ using ClinicManagement.Domain.Entities;
 using ClinicManagement.Persistence.Jobs;
 using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
+using ClinicManagement.Persistence.Seeders.Demo;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -56,6 +57,16 @@ public static class DependencyInjection
         services.AddScoped<SubscriptionPlanSeedService>();
         services.AddScoped<SystemUserSeedService>();
         services.AddScoped<GeoLocationSeedService>();
+
+        // Demo data seeders — only registered, DatabaseInitialiser decides whether to run them
+        services.AddScoped<DemoClinicSeeder>();
+        services.AddScoped<DemoPatientsSeeder>();
+        services.AddScoped<DemoAppointmentsSeeder>();
+        services.AddScoped<DemoContactSeeder>();
+        services.AddScoped<DemoTestimonialsSeeder>();
+        services.AddScoped<DemoNotificationsSeeder>();
+        services.AddScoped<DemoAuditSeeder>();
+        services.AddScoped<DemoDataSeedService>();
 
         // Hangfire jobs — data-access-heavy jobs belong in Persistence
         services.AddScoped<EmailQueueProcessorJob>();

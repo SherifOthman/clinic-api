@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260503223445_HashRefreshTokenColumns")]
-    partial class HashRefreshTokenColumns
+    [Migration("20260505142105_AddIsActiveToChronicDisease")]
+    partial class AddIsActiveToChronicDisease
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -217,6 +217,9 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<string>("DescriptionEn")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("NameAr")
                         .IsRequired()

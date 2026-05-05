@@ -1,4 +1,3 @@
-using System.Text.Json;
 using ClinicManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,51 +19,71 @@ public class SubscriptionPlanSeedService
     {
         if (await _context.Set<SubscriptionPlan>().AnyAsync()) return;
 
-        var json  = await File.ReadAllTextAsync(ResolvePath("subscription-plans.json"));
-        var items = JsonSerializer.Deserialize<PlanSeedDto[]>(json, JsonOptions)!;
-
-        _context.Set<SubscriptionPlan>().AddRange(items.Select(i => new SubscriptionPlan
-        {
-            Name = i.Name, NameAr = i.NameAr,
-            Description = i.Description, DescriptionAr = i.DescriptionAr,
-            MonthlyFee = i.MonthlyFee, YearlyFee = i.YearlyFee, SetupFee = i.SetupFee,
-            MaxBranches = i.MaxBranches, MaxStaff = i.MaxStaff,
-            MaxPatientsPerMonth = i.MaxPatientsPerMonth,
-            MaxAppointmentsPerMonth = i.MaxAppointmentsPerMonth,
-            MaxInvoicesPerMonth = i.MaxInvoicesPerMonth,
-            StorageLimitGB = i.StorageLimitGB,
-            HasInventoryManagement = i.HasInventoryManagement,
-            HasReporting = i.HasReporting, HasAdvancedReporting = i.HasAdvancedReporting,
-            HasApiAccess = i.HasApiAccess, HasMultipleBranches = i.HasMultipleBranches,
-            HasCustomBranding = i.HasCustomBranding, HasPrioritySupport = i.HasPrioritySupport,
-            HasBackupAndRestore = i.HasBackupAndRestore, HasIntegrations = i.HasIntegrations,
-            IsActive = i.IsActive, IsPopular = i.IsPopular, DisplayOrder = i.DisplayOrder,
-            EffectiveDate = DateOnly.FromDateTime(DateTime.Today),
-        }));
-
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        _context.Set<SubscriptionPlan>().AddRange(Items(today));
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Seeded {Count} subscription plans", items.Length);
+        _logger.LogInformation("Seeded {Count} subscription plans", Items(today).Length);
     }
 
-    private static string ResolvePath(string fileName)
-    {
-        var candidates = new[]
+    // ── Seed data (replaces subscription-plans.json) ──────────────────────────
+
+    private static SubscriptionPlan[] Items(DateOnly effectiveDate) =>
+    [
+        new()
         {
-            Path.Combine(AppContext.BaseDirectory, "SeedData", fileName),
-            Path.Combine(Directory.GetCurrentDirectory(), "SeedData", fileName),
-        };
-        return candidates.FirstOrDefault(File.Exists) ?? candidates[0];
-    }
-
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-
-    private record PlanSeedDto(
-        string Name, string NameAr, string Description, string DescriptionAr,
-        decimal MonthlyFee, decimal YearlyFee, decimal SetupFee,
-        int MaxBranches, int MaxStaff, int MaxPatientsPerMonth,
-        int MaxAppointmentsPerMonth, int MaxInvoicesPerMonth, int StorageLimitGB,
-        bool HasInventoryManagement, bool HasReporting, bool HasAdvancedReporting,
-        bool HasApiAccess, bool HasMultipleBranches, bool HasCustomBranding,
-        bool HasPrioritySupport, bool HasBackupAndRestore, bool HasIntegrations,
-        bool IsActive, bool IsPopular, int DisplayOrder);
+            Name = "Starter",   NameAr = "المبتدئ",
+            Description   = "Perfect for solo practitioners and small clinics just getting started",
+            DescriptionAr = "مثالي للممارسين الفرديين والعيادات الصغيرة التي بدأت للتو",
+            MonthlyFee = 199m, YearlyFee = 1990m, SetupFee = 0m,
+            MaxBranches = 1, MaxStaff = 3,
+            MaxPatientsPerMonth = 200, MaxAppointmentsPerMonth = 500, MaxInvoicesPerMonth = 200,
+            StorageLimitGB = 2,
+            HasInventoryManagement = false, HasReporting = true,  HasAdvancedReporting = false,
+            HasApiAccess = false, HasMultipleBranches = false, HasCustomBranding = false,
+            HasPrioritySupport = false, HasBackupAndRestore = true, HasIntegrations = false,
+            IsActive = true, IsPopular = false, DisplayOrder = 1, EffectiveDate = effectiveDate,
+        },
+        new()
+        {
+            Name = "Basic",     NameAr = "أساسي",
+            Description   = "Ideal for growing clinics with essential features and moderate usage",
+            DescriptionAr = "مثالي للعيادات المتنامية مع الميزات الأساسية والاستخدام المعتدل",
+            MonthlyFee = 399m, YearlyFee = 3990m, SetupFee = 0m,
+            MaxBranches = 1, MaxStaff = 8,
+            MaxPatientsPerMonth = 500, MaxAppointmentsPerMonth = 1500, MaxInvoicesPerMonth = 500,
+            StorageLimitGB = 5,
+            HasInventoryManagement = true,  HasReporting = true,  HasAdvancedReporting = false,
+            HasApiAccess = false, HasMultipleBranches = false, HasCustomBranding = false,
+            HasPrioritySupport = false, HasBackupAndRestore = true, HasIntegrations = false,
+            IsActive = true, IsPopular = false, DisplayOrder = 2, EffectiveDate = effectiveDate,
+        },
+        new()
+        {
+            Name = "Professional", NameAr = "احترافي",
+            Description   = "Advanced features for established clinics with multiple staff members",
+            DescriptionAr = "ميزات متقدمة للعيادات القائمة مع عدة موظفين",
+            MonthlyFee = 699m, YearlyFee = 6990m, SetupFee = 0m,
+            MaxBranches = 3, MaxStaff = 20,
+            MaxPatientsPerMonth = 2000, MaxAppointmentsPerMonth = 5000, MaxInvoicesPerMonth = 2000,
+            StorageLimitGB = 20,
+            HasInventoryManagement = true, HasReporting = true,  HasAdvancedReporting = true,
+            HasApiAccess = true, HasMultipleBranches = true, HasCustomBranding = true,
+            HasPrioritySupport = false, HasBackupAndRestore = true, HasIntegrations = true,
+            IsActive = true, IsPopular = true, DisplayOrder = 3, EffectiveDate = effectiveDate,
+        },
+        new()
+        {
+            Name = "Enterprise", NameAr = "المؤسسات",
+            Description   = "Complete solution for large clinics and healthcare networks",
+            DescriptionAr = "حل كامل للعيادات الكبيرة وشبكات الرعاية الصحية",
+            MonthlyFee = 1299m, YearlyFee = 12990m, SetupFee = 500m,
+            MaxBranches = 10, MaxStaff = 100,
+            MaxPatientsPerMonth = 10000, MaxAppointmentsPerMonth = 25000, MaxInvoicesPerMonth = 10000,
+            StorageLimitGB = 100,
+            HasInventoryManagement = true, HasReporting = true,  HasAdvancedReporting = true,
+            HasApiAccess = true, HasMultipleBranches = true, HasCustomBranding = true,
+            HasPrioritySupport = true, HasBackupAndRestore = true, HasIntegrations = true,
+            IsActive = true, IsPopular = false, DisplayOrder = 4, EffectiveDate = effectiveDate,
+        },
+    ];
 }

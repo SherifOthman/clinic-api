@@ -215,6 +215,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<string>("DescriptionEn")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("NameAr")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

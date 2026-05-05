@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Features.Reference.QueryModels;
+using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
@@ -8,9 +9,21 @@ namespace ClinicManagement.Application.Abstractions.Repositories;
 /// </summary>
 public interface IReferenceRepository
 {
+    // ── Reads (cached) ────────────────────────────────────────────────────────
     Task<List<ChronicDiseaseRow>> GetChronicDiseasesAsync(CancellationToken ct = default);
     Task<List<SpecializationRow>> GetSpecializationsAsync(CancellationToken ct = default);
     Task<List<SubscriptionPlanRow>> GetActiveSubscriptionPlansAsync(CancellationToken ct = default);
     Task<bool> SpecializationExistsAsync(Guid id, CancellationToken ct = default);
     Task<bool> SubscriptionPlanExistsAsync(Guid id, CancellationToken ct = default);
+
+    // ── Writes (invalidate cache after SaveChanges) ───────────────────────────
+    Task<ChronicDisease?> GetChronicDiseaseByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Specialization?> GetSpecializationByIdAsync(Guid id, CancellationToken ct = default);
+    Task<SubscriptionPlan?> GetSubscriptionPlanByIdAsync(Guid id, CancellationToken ct = default);
+
+    void AddChronicDisease(ChronicDisease entity);
+    void AddSpecialization(Specialization entity);
+    void AddSubscriptionPlan(SubscriptionPlan entity);
+
+    void InvalidateCache();
 }

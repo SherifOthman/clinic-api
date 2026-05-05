@@ -67,4 +67,27 @@ public class ReferenceRepository : IReferenceRepository
 
     public async Task<bool> SubscriptionPlanExistsAsync(Guid id, CancellationToken ct = default)
         => await _subscriptionPlans.AnyAsync(p => p.Id == id, ct);
+
+    // ── Writes ────────────────────────────────────────────────────────────────
+
+    public Task<ChronicDisease?> GetChronicDiseaseByIdAsync(Guid id, CancellationToken ct = default)
+        => _chronicDiseases.FirstOrDefaultAsync(d => d.Id == id, ct);
+
+    public Task<Specialization?> GetSpecializationByIdAsync(Guid id, CancellationToken ct = default)
+        => _specializations.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public Task<SubscriptionPlan?> GetSubscriptionPlanByIdAsync(Guid id, CancellationToken ct = default)
+        => _subscriptionPlans.FirstOrDefaultAsync(p => p.Id == id, ct);
+
+    public void AddChronicDisease(ChronicDisease entity)   => _chronicDiseases.Add(entity);
+    public void AddSpecialization(Specialization entity)   => _specializations.Add(entity);
+    public void AddSubscriptionPlan(SubscriptionPlan entity) => _subscriptionPlans.Add(entity);
+
+    /// <summary>Call after SaveChanges to bust the 24-hour cache so reads reflect the new data.</summary>
+    public void InvalidateCache()
+    {
+        _cache.Remove("ref:chronic_diseases");
+        _cache.Remove("ref:specializations");
+        _cache.Remove("ref:subscription_plans");
+    }
 }

@@ -55,6 +55,7 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MetricDate = table.Column<DateOnly>(type: "date", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     ActiveStaffCount = table.Column<int>(type: "int", nullable: false),
@@ -63,11 +64,7 @@ namespace ClinicManagement.Persistence.Migrations
                     AppointmentsCount = table.Column<int>(type: "int", nullable: false),
                     InvoicesCount = table.Column<int>(type: "int", nullable: false),
                     StorageUsedGB = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    LastAggregatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -99,6 +96,7 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     ToEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     ToName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Subject = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
@@ -110,11 +108,7 @@ namespace ClinicManagement.Persistence.Migrations
                     MaxAttempts = table.Column<int>(type: "int", nullable: false),
                     SentAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     ErrorMessage = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    ScheduledFor = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ScheduledFor = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -301,6 +295,7 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
@@ -308,11 +303,7 @@ namespace ClinicManagement.Persistence.Migrations
                     ActionUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IsRead = table.Column<bool>(type: "bit", nullable: false),
                     ReadAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -400,11 +391,7 @@ namespace ClinicManagement.Persistence.Migrations
                     NameAr = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     DescriptionEn = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     DescriptionAr = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -426,11 +413,7 @@ namespace ClinicManagement.Persistence.Migrations
                     PaymentGateway = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FailureReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RefundedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    RefundAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    RefundAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -653,18 +636,15 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ExpiryTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     IsRevoked = table.Column<bool>(type: "bit", nullable: false),
                     CreatedByIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     RevokedByIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    ReplacedByToken = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ReplacedByTokenHash = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -793,6 +773,7 @@ namespace ClinicManagement.Persistence.Migrations
                     CityGeonameId = table.Column<int>(type: "int", nullable: true),
                     IsMainBranch = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -818,6 +799,7 @@ namespace ClinicManagement.Persistence.Migrations
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     JoinedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -959,13 +941,10 @@ namespace ClinicManagement.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClinicId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AuthorName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Position = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    ClinicName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Text = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     Rating = table.Column<int>(type: "int", nullable: false),
-                    AvatarUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1300,6 +1279,7 @@ namespace ClinicManagement.Persistence.Migrations
                     DiscountPercent = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     FinalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     InvoiceId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1642,9 +1622,9 @@ namespace ClinicManagement.Persistence.Migrations
                 column: "InvoiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RefreshToken_Token",
+                name: "IX_RefreshToken_TokenHash",
                 table: "RefreshToken",
-                column: "Token",
+                column: "TokenHash",
                 unique: true);
 
             migrationBuilder.CreateIndex(

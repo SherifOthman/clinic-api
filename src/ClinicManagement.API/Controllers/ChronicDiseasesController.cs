@@ -7,21 +7,17 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClinicManagement.API.Controllers;
 
-[Authorize]
 [Route("api/chronic-diseases")]
-[EnableRateLimiting(RateLimitPolicies.UserReads)]
 public class ChronicDiseasesController : BaseApiController
 {
-    /// <summary>
-    /// Get all chronic diseases (cached for 24 hours)
-    /// </summary>
     [HttpGet]
+    [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
     [ProducesResponseType(typeof(List<ChronicDiseaseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
-        var query = new GetChronicDiseasesQuery();
-        var result = await Sender.Send(query, cancellationToken);
+        var result = await Sender.Send(new GetChronicDiseasesQuery(), ct);
         return HandleResult(result, "Failed to retrieve chronic diseases");
     }
 }

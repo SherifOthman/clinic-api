@@ -7,16 +7,13 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/subscription-plans")]
-[EnableRateLimiting(RateLimitPolicies.AnonStatic)]
 public class SubscriptionPlansController : BaseApiController
 {
-    /// <summary>
-    /// Get all subscription plans
-    /// </summary>
     [HttpGet]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AnonStatic)]
     [ProducesResponseType(typeof(List<SubscriptionPlanDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
+    public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await Sender.Send(new GetSubscriptionPlansQuery(), ct);
         return HandleResult(result, "Failed to retrieve subscription plans");

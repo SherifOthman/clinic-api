@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/specializations")]
-[EnableRateLimiting(RateLimitPolicies.AnonStatic)]
 public class SpecializationsController : BaseApiController
 {
     [HttpGet]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AnonStatic)]
     [ProducesResponseType(typeof(List<SpecializationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
