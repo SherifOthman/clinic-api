@@ -43,7 +43,8 @@ namespace ClinicManagement.Persistence.Migrations
                     NameEn = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     NameAr = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DescriptionEn = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DescriptionAr = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    DescriptionAr = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

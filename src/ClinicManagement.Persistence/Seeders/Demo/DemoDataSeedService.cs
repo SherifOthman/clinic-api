@@ -16,6 +16,8 @@ public class DemoDataSeedService
     private readonly DemoTestimonialsSeeder _testimonialsSeeder;
     private readonly DemoNotificationsSeeder _notificationsSeeder;
     private readonly DemoAuditSeeder        _auditSeeder;
+    private readonly DemoInvitationsSeeder  _invitationsSeeder;
+    private readonly DemoUsageMetricsSeeder _usageMetricsSeeder;
     private readonly ILogger<DemoDataSeedService> _logger;
 
     public DemoDataSeedService(
@@ -26,6 +28,8 @@ public class DemoDataSeedService
         DemoTestimonialsSeeder testimonialsSeeder,
         DemoNotificationsSeeder notificationsSeeder,
         DemoAuditSeeder        auditSeeder,
+        DemoInvitationsSeeder  invitationsSeeder,
+        DemoUsageMetricsSeeder usageMetricsSeeder,
         ILogger<DemoDataSeedService> logger)
     {
         _clinicSeeder        = clinicSeeder;
@@ -35,6 +39,8 @@ public class DemoDataSeedService
         _testimonialsSeeder  = testimonialsSeeder;
         _notificationsSeeder = notificationsSeeder;
         _auditSeeder         = auditSeeder;
+        _invitationsSeeder   = invitationsSeeder;
+        _usageMetricsSeeder  = usageMetricsSeeder;
         _logger              = logger;
     }
 
@@ -42,7 +48,6 @@ public class DemoDataSeedService
     {
         _logger.LogInformation("Demo data seeding started...");
 
-        // Order matters — later seeders depend on earlier ones
         var clinicContext = await _clinicSeeder.SeedAsync();
         if (clinicContext is null)
         {
@@ -56,6 +61,8 @@ public class DemoDataSeedService
         await _testimonialsSeeder.SeedAsync(clinicContext);
         await _notificationsSeeder.SeedAsync(clinicContext);
         await _auditSeeder.SeedAsync(clinicContext);
+        await _invitationsSeeder.SeedAsync(clinicContext);
+        await _usageMetricsSeeder.SeedAsync(clinicContext);
 
         _logger.LogInformation("Demo data seeding completed");
     }

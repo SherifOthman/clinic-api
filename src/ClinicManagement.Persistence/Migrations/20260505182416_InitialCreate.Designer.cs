@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260505134325_InitialCreate")]
+    [Migration("20260505182416_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -217,6 +217,9 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<string>("DescriptionEn")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("NameAr")
                         .IsRequired()

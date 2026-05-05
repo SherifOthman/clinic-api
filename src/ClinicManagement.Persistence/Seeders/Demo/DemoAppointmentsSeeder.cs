@@ -84,15 +84,19 @@ public class DemoAppointmentsSeeder
             }
         }
 
-        // Today — all statuses
+        // Today — mix of statuses including PAST-TIME Pending slots for delay dialog testing
+        // Doctor 1 starts at 9am. If they check in late (e.g. at 11am), the delay dialog
+        // will offer to shift/mark-missed the Pending appointments at 9:00 and 9:30.
         var todaySlots = new[]
         {
-            (new TimeOnly(9,  0), AppointmentStatus.Completed,  ctx.VisitTypeId,  150m),
-            (new TimeOnly(9, 30), AppointmentStatus.Completed,  ctx.VisitType2Id,  80m),
-            (new TimeOnly(10, 0), AppointmentStatus.Completed,  ctx.VisitTypeId,  150m),
-            (new TimeOnly(10,30), AppointmentStatus.InProgress, ctx.VisitTypeId,  150m),
-            (new TimeOnly(11, 0), AppointmentStatus.Waiting,    ctx.VisitType2Id,  80m),
-            (new TimeOnly(11,30), AppointmentStatus.Waiting,    ctx.VisitTypeId,  150m),
+            // Past slots — Pending (these trigger the delay dialog options)
+            (new TimeOnly(9,  0), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
+            (new TimeOnly(9, 30), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
+            // Current/near-future
+            (new TimeOnly(10, 0), AppointmentStatus.Waiting,    ctx.VisitTypeId,  150m),
+            (new TimeOnly(10,30), AppointmentStatus.Waiting,    ctx.VisitType2Id,  80m),
+            (new TimeOnly(11, 0), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
+            (new TimeOnly(11,30), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
             (new TimeOnly(14, 0), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
             (new TimeOnly(14,30), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
             (new TimeOnly(15, 0), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
