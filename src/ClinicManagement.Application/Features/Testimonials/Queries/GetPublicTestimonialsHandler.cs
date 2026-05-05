@@ -12,10 +12,11 @@ public class GetPublicTestimonialsHandler : IRequestHandler<GetPublicTestimonial
 
     public async Task<Result<List<TestimonialDto>>> Handle(GetPublicTestimonialsQuery request, CancellationToken ct)
     {
-        var testimonials = await _uow.Testimonials.GetApprovedAsync(ct);
+        // Returns a daily-stable random selection of approved testimonials.
+        // The seed is today's date — same visitors see the same set all day,
+        // but the selection rotates every day automatically.
+        var testimonials = await _uow.Testimonials.GetApprovedRandomAsync(request.Count, ct);
 
-        var list = testimonials.Select(TestimonialMapping.ToPublicDto).ToList();
-
-        return Result.Success(list);
+        return Result.Success(testimonials.Select(TestimonialMapping.ToPublicDto).ToList());
     }
 }

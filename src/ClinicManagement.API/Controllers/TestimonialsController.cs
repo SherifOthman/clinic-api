@@ -16,9 +16,9 @@ public class TestimonialsController : BaseApiController
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AnonStatic)]
     [ProducesResponseType(typeof(List<TestimonialDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPublic(CancellationToken ct)
+    public async Task<IActionResult> GetPublic([FromQuery] int count = 3, CancellationToken ct = default)
     {
-        var result = await Sender.Send(new GetPublicTestimonialsQuery(), ct);
+        var result = await Sender.Send(new GetPublicTestimonialsQuery(count), ct);
         return HandleResult(result, "Failed to retrieve testimonials");
     }
 

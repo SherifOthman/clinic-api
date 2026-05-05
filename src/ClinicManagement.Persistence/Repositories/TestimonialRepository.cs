@@ -18,6 +18,21 @@ public class TestimonialRepository : ITestimonialRepository
                .OrderByDescending(t => t.CreatedAt)
                .ToListAsync(ct);
 
+    public async Task<List<Testimonial>> GetApprovedRandomAsync(int count, CancellationToken ct = default)
+    {
+        // Seed the shuffle with today's date so the selection is stable within a day
+        // but changes every day — same result for all visitors on the same day.
+        var daySeed = int.Parse(DateTime.UtcNow.ToString("yyyyMMdd"));
+        var rng     = new Random(daySeed);
+
+        var all = await _set.Include(t => t.User)
+                            .Include(t => t.Clinic)
+                            .Where(t => t.IsApproved)
+                            .ToListAsync(ct);
+
+        return all.OrderBy(_ => rng.Next()).Take(count).ToList();
+    }
+
     public Task<List<Testimonial>> GetAllAsync(CancellationToken ct = default)
         => _set.Include(t => t.User)
                .Include(t => t.Clinic)
