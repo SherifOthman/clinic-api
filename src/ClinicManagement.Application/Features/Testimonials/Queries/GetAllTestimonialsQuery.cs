@@ -1,9 +1,11 @@
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Testimonials.Queries;
 
-public record GetAllTestimonialsQuery : IRequest<Result<List<AdminTestimonialDto>>>;
+public record GetAllTestimonialsQuery(int PageNumber = 1, int PageSize = 12)
+    : IRequest<Result<PaginatedResult<AdminTestimonialDto>>>;
 
 public record AdminTestimonialDto(
     Guid Id,

@@ -1,5 +1,6 @@
 using ClinicManagement.API.Authorization;
 using ClinicManagement.API.RateLimiting;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Testimonials.Commands;
 using ClinicManagement.Application.Features.Testimonials.Queries;
 using Microsoft.AspNetCore.Authorization;
@@ -22,14 +23,17 @@ public class TestimonialsController : BaseApiController
         return HandleResult(result, "Failed to retrieve testimonials");
     }
 
-    /// <summary>SuperAdmin — all testimonials with approval status.</summary>
+    /// <summary>SuperAdmin — all testimonials with approval status, paginated.</summary>
     [HttpGet("all")]
     [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
     [EnableRateLimiting(RateLimitPolicies.UserReads)]
-    [ProducesResponseType(typeof(List<AdminTestimonialDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
+    [ProducesResponseType(typeof(PaginatedResult<AdminTestimonialDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 12,
+        CancellationToken ct = default)
     {
-        var result = await Sender.Send(new GetAllTestimonialsQuery(), ct);
+        var result = await Sender.Send(new GetAllTestimonialsQuery(pageNumber, pageSize), ct);
         return HandleResult(result, "Failed to retrieve testimonials");
     }
 

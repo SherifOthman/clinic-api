@@ -1,20 +1,25 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Testimonials.Queries;
 
-public class GetAllTestimonialsHandler : IRequestHandler<GetAllTestimonialsQuery, Result<List<AdminTestimonialDto>>>
+public class GetAllTestimonialsHandler
+    : IRequestHandler<GetAllTestimonialsQuery, Result<PaginatedResult<AdminTestimonialDto>>>
 {
     private readonly IUnitOfWork _uow;
     public GetAllTestimonialsHandler(IUnitOfWork uow) => _uow = uow;
 
-    public async Task<Result<List<AdminTestimonialDto>>> Handle(GetAllTestimonialsQuery request, CancellationToken ct)
+    public async Task<Result<PaginatedResult<AdminTestimonialDto>>> Handle(
+        GetAllTestimonialsQuery request, CancellationToken ct)
     {
-        var list = await _uow.Testimonials.GetAllAsync(ct);
+        var (items, total) = await _uow.Testimonials.GetPagedAsync(
+            request.PageNumber, request.PageSize, ct);
 
-        var dtos = list.Select(TestimonialMapping.ToAdminDto).ToList();
+        var dtos = items.Select(TestimonialMapping.ToAdminDto).ToList();
 
-        return Result.Success(dtos);
+        return Result.Success(
+            PaginatedResult<AdminTestimonialDto>.Create(dtos, total, request.PageNumber, request.PageSize));
     }
 }

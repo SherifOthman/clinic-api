@@ -20,17 +20,29 @@ public class TestimonialRepository : ITestimonialRepository
 
     public async Task<List<Testimonial>> GetApprovedRandomAsync(int count, CancellationToken ct = default)
     {
-        // Seed the shuffle with today's date so the selection is stable within a day
-        // but changes every day — same result for all visitors on the same day.
-        var daySeed = int.Parse(DateTime.UtcNow.ToString("yyyyMMdd"));
-        var rng     = new Random(daySeed);
-
+        // No date seed — reviews are rare, just shuffle randomly each request.
         var all = await _set.Include(t => t.User)
                             .Include(t => t.Clinic)
                             .Where(t => t.IsApproved)
                             .ToListAsync(ct);
 
-        return all.OrderBy(_ => rng.Next()).Take(count).ToList();
+        return all.OrderBy(_ => Random.Shared.Next()).Take(count).ToList();
+    }
+
+    public async Task<(List<Testimonial> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = _set.Include(t => t.User)
+                        .Include(t => t.Clinic)
+                        .OrderByDescending(t => t.CreatedAt);
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, total);
     }
 
     public Task<List<Testimonial>> GetAllAsync(CancellationToken ct = default)

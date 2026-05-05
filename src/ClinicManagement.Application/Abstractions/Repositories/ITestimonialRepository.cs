@@ -7,6 +7,7 @@ public interface ITestimonialRepository
     Task<List<Testimonial>> GetApprovedAsync(CancellationToken ct = default);
     Task<List<Testimonial>> GetApprovedRandomAsync(int count, CancellationToken ct = default);
     Task<List<Testimonial>> GetAllAsync(CancellationToken ct = default);
+    Task<(List<Testimonial> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default);
     Task<Testimonial?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Testimonial?> GetByClinicIdAsync(Guid clinicId, CancellationToken ct = default);
     Task AddAsync(Testimonial testimonial, CancellationToken ct = default);
