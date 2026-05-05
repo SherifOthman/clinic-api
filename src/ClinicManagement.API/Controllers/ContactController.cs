@@ -46,4 +46,16 @@ public class ContactController : BaseApiController
         var result = await Sender.Send(new GetContactMessagesUnreadCountQuery(), ct);
         return HandleResult(result, "Failed to retrieve unread count");
     }
+
+    /// <summary>SuperAdmin only — mark a contact message as read.</summary>
+    [HttpPatch("{id:guid}/read")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkRead(Guid id, CancellationToken ct = default)
+    {
+        var result = await Sender.Send(new MarkContactMessageReadCommand(id), ct);
+        return HandleNoContent(result, "Failed to mark message as read");
+    }
 }

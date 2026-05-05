@@ -21,4 +21,7 @@ public class ContactMessageRepository : IContactMessageRepository
 
     public Task<int> CountUnreadAsync(CancellationToken ct = default)
         => _set.CountAsync(m => !m.IsRead, ct);
+
+    public Task<ContactMessage?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => _set.FirstOrDefaultAsync(m => m.Id == id, ct);
 }
