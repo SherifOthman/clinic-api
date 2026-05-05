@@ -134,7 +134,7 @@ public class AppointmentsController : BaseApiController
     public async Task<IActionResult> HandleDelay(Guid sessionId, [FromBody] HandleDelayRequest request, CancellationToken ct)
     {
         if (!Enum.TryParse<DelayHandlingOption>(request.Option, out var option))
-            return BadRequest("Invalid option. Use 'AutoShift', 'MarkMissed', or 'Manual'.");
+            return BadRequest("Invalid option. Use 'AutoShift', 'MarkMissed', 'Manual', or 'Cancel'.");
 
         var result = await Sender.Send(new HandleDelayCommand(sessionId, option), ct);
         return HandleNoContent(result, "Failed to handle delay");

@@ -47,10 +47,14 @@ public class DoctorSession : AuditableTenantEntity
         get
         {
             if (!CheckedInAt.HasValue || !ScheduledStartTime.HasValue) return null;
-            var scheduled = Date.ToDateTime(ScheduledStartTime.Value, DateTimeKind.Local);
-            var actual    = CheckedInAt.Value.LocalDateTime;
-            var diff      = (int)(actual - scheduled).TotalMinutes;
-            return diff > 0 ? diff : null; // only positive = late
+            // Use UTC throughout to avoid timezone ambiguity.
+            // ScheduledStartTime is a clock time (e.g. 09:00) — combine with the session date in UTC.
+            var scheduledUtc = new DateTimeOffset(
+                Date.Year, Date.Month, Date.Day,
+                ScheduledStartTime.Value.Hour, ScheduledStartTime.Value.Minute, 0,
+                TimeSpan.Zero);
+            var diff = (int)(CheckedInAt.Value.ToUniversalTime() - scheduledUtc).TotalMinutes;
+            return diff > 0 ? diff : null;
         }
     }
 
@@ -71,4 +75,7 @@ public enum DelayHandlingOption
 
     /// <summary>Receptionist handles each appointment manually.</summary>
     Manual,
+
+    /// <summary>Cancel the check-in — removes the session as if it never happened.</summary>
+    Cancel,
 }

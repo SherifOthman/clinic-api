@@ -25,4 +25,5 @@ public class DoctorSessionRepository : IDoctorSessionRepository
         => await _set.AddAsync(session, ct);
 
     public void Update(DoctorSession session) => _set.Update(session);
+    public void Delete(DoctorSession session) => _set.Remove(session);
 }

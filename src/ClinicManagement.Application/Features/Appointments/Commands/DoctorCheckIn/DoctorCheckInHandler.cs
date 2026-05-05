@@ -21,7 +21,10 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
     public async Task<Result<DoctorCheckInResult>> Handle(DoctorCheckInCommand request, CancellationToken ct)
     {
         var clinicId = _currentUser.GetRequiredClinicId();
-        var today    = DateOnly.FromDateTime(DateTime.Today);
+
+        // Use UTC date so the session date is consistent regardless of server timezone
+        var nowUtc = DateTimeOffset.UtcNow;
+        var today  = DateOnly.FromDateTime(nowUtc.Date);
 
         // Prevent duplicate check-in
         var existing = await _uow.DoctorSessions.GetByDoctorBranchDateAsync(
@@ -31,31 +34,41 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
             return Result.Failure<DoctorCheckInResult>(ErrorCodes.ALREADY_EXISTS, "Doctor already checked in today");
 
         // Get scheduled start time from working days
-        var schedule = await _uow.DoctorSchedules.GetScheduleAsync(request.DoctorInfoId, request.BranchId, ct);
-        var todayDow = DateTime.Today.DayOfWeek;
+        var schedule   = await _uow.DoctorSchedules.GetScheduleAsync(request.DoctorInfoId, request.BranchId, ct);
+        var todayDow   = nowUtc.DayOfWeek;
         var workingDay = schedule?.WorkingDays.FirstOrDefault(w => w.Day == todayDow && w.IsAvailable);
 
         var session = new DoctorSession
         {
-            ClinicId            = clinicId,
-            DoctorInfoId        = request.DoctorInfoId,
-            BranchId            = request.BranchId,
-            Date                = today,
-            CheckedInAt         = DateTimeOffset.UtcNow,
-            ScheduledStartTime  = workingDay?.StartTime,
+            ClinicId           = clinicId,
+            DoctorInfoId       = request.DoctorInfoId,
+            BranchId           = request.BranchId,
+            Date               = today,
+            CheckedInAt        = nowUtc,
+            ScheduledStartTime = workingDay?.StartTime,
         };
 
         await _uow.DoctorSessions.AddAsync(session, ct);
         await _uow.SaveChangesAsync(ct);
 
-        // Store computed delay so HandleDelayHandler can use it reliably
-        session.StoredDelayMinutes = session.DelayMinutes;
-        await _uow.SaveChangesAsync(ct);
+        // Compute delay using the UTC-based property
+        var delayMinutes = session.DelayMinutes;
+        var isLate       = delayMinutes.HasValue && delayMinutes > 0;
+
+        // If the doctor is not late, the session has no actionable value — remove it.
+        // The frontend will show "Session Active" only when there's a real session.
+        // Actually keep the session so hasSessionToday works — just don't store delay.
+        // Store delay for HandleDelayHandler to use
+        if (isLate)
+        {
+            session.StoredDelayMinutes = delayMinutes;
+            await _uow.SaveChangesAsync(ct);
+        }
 
         return Result.Success(new DoctorCheckInResult(
             session.Id,
-            session.IsLate,
-            session.DelayMinutes,
+            isLate,
+            delayMinutes,
             workingDay?.StartTime.ToString("HH:mm")
         ));
     }

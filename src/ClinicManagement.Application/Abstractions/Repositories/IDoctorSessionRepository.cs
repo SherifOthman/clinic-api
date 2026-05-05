@@ -9,4 +9,5 @@ public interface IDoctorSessionRepository
     Task<List<DoctorSession>> GetByBranchAndDateAsync(Guid branchId, DateOnly date, CancellationToken ct = default);
     Task AddAsync(DoctorSession session, CancellationToken ct = default);
     void Update(DoctorSession session);
+    void Delete(DoctorSession session);
 }

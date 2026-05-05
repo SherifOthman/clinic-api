@@ -22,39 +22,42 @@ public class HandleDelayHandler : IRequestHandler<HandleDelayCommand, Result>
         if (session.DelayHandling.HasValue)
             return Result.Failure(ErrorCodes.ALREADY_EXISTS, "Delay already handled");
 
+        // Cancel = user dismissed the dialog — delete the session as if check-in never happened
+        if (request.Option == DelayHandlingOption.Cancel)
+        {
+            _uow.DoctorSessions.Delete(session);
+            await _uow.SaveChangesAsync(ct);
+            return Result.Success();
+        }
+
         session.DelayHandling = request.Option;
 
-        // Use stored delay minutes (set at check-in time) — more reliable than
-        // recomputing from timestamps after the fact due to timezone differences.
         var delayMinutes = session.StoredDelayMinutes ?? session.DelayMinutes ?? 0;
+
         var appointments = await _uow.Appointments.GetByDoctorAndDateAsync(
             session.DoctorInfoId, session.Date, ct);
 
         switch (request.Option)
         {
             case DelayHandlingOption.AutoShift:
-                // Shift all pending/waiting time-based appointments forward
                 foreach (var appt in appointments.Where(a =>
                     a.Type == AppointmentType.Time &&
-                    (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Waiting)))
+                    (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Waiting) &&
+                    a.ScheduledTime.HasValue))
                 {
-                    if (appt.ScheduledTime.HasValue)
-                    {
-                        appt.ScheduledTime = appt.ScheduledTime.Value.AddMinutes(delayMinutes);
-                        if (appt.EndTime.HasValue)
-                            appt.EndTime = appt.EndTime.Value.AddMinutes(delayMinutes);
-                        _uow.Appointments.Update(appt);
-                    }
+                    appt.ScheduledTime = appt.ScheduledTime!.Value.AddMinutes(delayMinutes);
+                    if (appt.EndTime.HasValue)
+                        appt.EndTime = appt.EndTime.Value.AddMinutes(delayMinutes);
+                    _uow.Appointments.Update(appt);
                 }
                 break;
 
             case DelayHandlingOption.MarkMissed:
-                // Mark all past pending appointments as NoShow
-                var now = TimeOnly.FromDateTime(DateTime.Now);
+                var nowUtcTime = TimeOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
                 foreach (var appt in appointments.Where(a =>
                     a.Status == AppointmentStatus.Pending &&
                     a.ScheduledTime.HasValue &&
-                    a.ScheduledTime.Value < now))
+                    a.ScheduledTime.Value < nowUtcTime))
                 {
                     appt.Status = AppointmentStatus.NoShow;
                     _uow.Appointments.Update(appt);
@@ -62,7 +65,6 @@ public class HandleDelayHandler : IRequestHandler<HandleDelayCommand, Result>
                 break;
 
             case DelayHandlingOption.Manual:
-                // No automatic changes — receptionist handles each appointment
                 break;
         }
 
