@@ -6,9 +6,13 @@ using Microsoft.Extensions.Logging;
 namespace ClinicManagement.Persistence.Seeders.Demo;
 
 /// <summary>
-/// Seeds 60 appointments across the past 30 days + today.
-/// Mix of statuses: Completed, Cancelled, NoShow, Pending, Waiting, InProgress.
-/// Enough to trigger pagination (default 10/page = 6 pages).
+/// Seeds appointments for all 3 demo doctors:
+///   Doctor 1 — Time-based, 9am–5pm  (past 30 days + today)
+///   Doctor 2 — Queue-based, 8am–2pm (past 30 days + today)
+///   Doctor 3 — Time-based, 2pm–8pm  (past 30 days + today)
+///
+/// Total: ~120 appointments — enough to test multi-doctor view, pagination,
+/// and both appointment types side-by-side.
 /// </summary>
 public class DemoAppointmentsSeeder
 {
@@ -33,62 +37,55 @@ public class DemoAppointmentsSeeder
             .Select(p => p.Id)
             .ToListAsync();
 
-        if (patients.Count == 0) { _logger.LogWarning("No patients found — skipping appointments"); return; }
+        if (patients.Count == 0) { _logger.LogWarning("No patients — skipping appointments"); return; }
 
         var now   = DateTimeOffset.UtcNow;
         var today = DateOnly.FromDateTime(now.Date);
-        var appointments = new List<Appointment>();
+        var all   = new List<Appointment>();
 
-        // ── Past appointments (last 30 days) — 50 completed/cancelled/noshow ──
+        all.AddRange(SeedDoctor1(ctx, patients, today, now));  // Time-based
+        all.AddRange(SeedDoctor2(ctx, patients, today, now));  // Queue-based
+        all.AddRange(SeedDoctor3(ctx, patients, today, now));  // Time-based (afternoon)
+
+        _db.Set<Appointment>().AddRange(all);
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Seeded {Count} demo appointments across 3 doctors", all.Count);
+    }
+
+    // ── Doctor 1: Time-based, 9am–5pm ────────────────────────────────────────
+
+    private static List<Appointment> SeedDoctor1(
+        DemoClinicContext ctx, List<Guid> patients, DateOnly today, DateTimeOffset now)
+    {
+        var list = new List<Appointment>();
         var pastStatuses = new[]
         {
             AppointmentStatus.Completed, AppointmentStatus.Completed, AppointmentStatus.Completed,
-            AppointmentStatus.Completed, AppointmentStatus.Completed, AppointmentStatus.Completed,
-            AppointmentStatus.Cancelled, AppointmentStatus.NoShow,
+            AppointmentStatus.Completed, AppointmentStatus.Cancelled, AppointmentStatus.NoShow,
         };
-
         var times = new[] { new TimeOnly(9,0), new TimeOnly(9,30), new TimeOnly(10,0), new TimeOnly(10,30),
-                            new TimeOnly(11,0), new TimeOnly(11,30), new TimeOnly(14,0), new TimeOnly(14,30),
-                            new TimeOnly(15,0), new TimeOnly(15,30) };
+                            new TimeOnly(11,0), new TimeOnly(11,30), new TimeOnly(14,0), new TimeOnly(14,30) };
 
+        // Past 30 days
         for (int day = 1; day <= 30; day++)
         {
-            var date = today.AddDays(-day);
-            // 1–3 appointments per past day
-            var count = day % 3 == 0 ? 3 : day % 2 == 0 ? 2 : 1;
-
+            var date  = today.AddDays(-day);
+            var count = day % 3 == 0 ? 3 : 2;
             for (int i = 0; i < count; i++)
             {
-                var patientId = patients[(day * 3 + i) % patients.Count];
-                var status    = pastStatuses[(day + i) % pastStatuses.Length];
-                var time      = times[(day + i) % times.Length];
-                var vtId      = i % 2 == 0 ? ctx.VisitTypeId : ctx.VisitType2Id;
-                var price     = vtId == ctx.VisitTypeId ? 150m : 80m;
-
-                var appt = new Appointment
-                {
-                    ClinicId      = ctx.ClinicId,
-                    BranchId      = ctx.BranchId,
-                    PatientId     = patientId,
-                    DoctorInfoId  = ctx.DoctorInfoId,
-                    VisitTypeId   = vtId,
-                    Date          = date,
-                    Type          = AppointmentType.Time,
-                    ScheduledTime = time,
-                    EndTime       = time.AddMinutes(20),
-                    Status        = status,
-                    CreatedAt     = now.AddDays(-day),
-                    UpdatedAt     = now.AddDays(-day),
-                    CreatedBy     = ctx.OwnerUserId,
-                    UpdatedBy     = ctx.OwnerUserId,
-                };
-                appt.ApplyPrice(price);
-                appointments.Add(appt);
+                var time  = times[(day + i) % times.Length];
+                var vtId  = i % 2 == 0 ? ctx.VisitTypeId : ctx.VisitType2Id;
+                var price = vtId == ctx.VisitTypeId ? 150m : 80m;
+                var appt  = Make(ctx.ClinicId, ctx.BranchId, patients[(day * 2 + i) % patients.Count],
+                    ctx.DoctorInfoId, vtId, date, AppointmentType.Time,
+                    pastStatuses[(day + i) % pastStatuses.Length],
+                    time, time.AddMinutes(20), null, price, now.AddDays(-day), ctx.OwnerUserId);
+                list.Add(appt);
             }
         }
 
-        // ── Today's appointments — mix of all active statuses ──
-        var todayData = new[]
+        // Today — all statuses
+        var todaySlots = new[]
         {
             (new TimeOnly(9,  0), AppointmentStatus.Completed,  ctx.VisitTypeId,  150m),
             (new TimeOnly(9, 30), AppointmentStatus.Completed,  ctx.VisitType2Id,  80m),
@@ -102,34 +99,157 @@ public class DemoAppointmentsSeeder
             (new TimeOnly(15,30), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
         };
 
-        for (int i = 0; i < todayData.Length; i++)
+        for (int i = 0; i < todaySlots.Length; i++)
         {
-            var (time, status, vtId, price) = todayData[i];
-            var patientId = patients[i % patients.Count];
-
-            var appt = new Appointment
-            {
-                ClinicId      = ctx.ClinicId,
-                BranchId      = ctx.BranchId,
-                PatientId     = patientId,
-                DoctorInfoId  = ctx.DoctorInfoId,
-                VisitTypeId   = vtId,
-                Date          = today,
-                Type          = AppointmentType.Time,
-                ScheduledTime = time,
-                EndTime       = time.AddMinutes(20),
-                Status        = status,
-                CreatedAt     = now.AddHours(-2),
-                UpdatedAt     = now.AddHours(-1),
-                CreatedBy     = ctx.OwnerUserId,
-                UpdatedBy     = ctx.OwnerUserId,
-            };
-            appt.ApplyPrice(price);
-            appointments.Add(appt);
+            var (time, status, vtId, price) = todaySlots[i];
+            list.Add(Make(ctx.ClinicId, ctx.BranchId, patients[i % patients.Count],
+                ctx.DoctorInfoId, vtId, today, AppointmentType.Time,
+                status, time, time.AddMinutes(20), null, price, now.AddHours(-2), ctx.OwnerUserId));
         }
 
-        _db.Set<Appointment>().AddRange(appointments);
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Seeded {Count} demo appointments", appointments.Count);
+        return list;
+    }
+
+    // ── Doctor 2: Queue-based, 8am–2pm ───────────────────────────────────────
+
+    private static List<Appointment> SeedDoctor2(
+        DemoClinicContext ctx, List<Guid> patients, DateOnly today, DateTimeOffset now)
+    {
+        var list = new List<Appointment>();
+        var pastStatuses = new[]
+        {
+            AppointmentStatus.Completed, AppointmentStatus.Completed, AppointmentStatus.Completed,
+            AppointmentStatus.Cancelled, AppointmentStatus.NoShow,
+        };
+
+        // Past 30 days — queue appointments (no scheduled time, just queue numbers)
+        for (int day = 1; day <= 30; day++)
+        {
+            var date  = today.AddDays(-day);
+            var count = day % 2 == 0 ? 4 : 3;
+            for (int i = 0; i < count; i++)
+            {
+                var vtId  = i % 2 == 0 ? ctx.VisitType3Id : ctx.VisitType4Id;
+                var price = vtId == ctx.VisitType3Id ? 100m : 50m;
+                var appt  = Make(ctx.ClinicId, ctx.BranchId, patients[(day * 3 + i + 10) % patients.Count],
+                    ctx.Doctor2InfoId, vtId, date, AppointmentType.Queue,
+                    pastStatuses[(day + i) % pastStatuses.Length],
+                    null, null, i + 1, price, now.AddDays(-day), ctx.OwnerUserId);
+                list.Add(appt);
+            }
+        }
+
+        // Today — queue with all statuses
+        var todayQueue = new[]
+        {
+            (1,  AppointmentStatus.Completed,  ctx.VisitType3Id, 100m),
+            (2,  AppointmentStatus.Completed,  ctx.VisitType4Id,  50m),
+            (3,  AppointmentStatus.Completed,  ctx.VisitType3Id, 100m),
+            (4,  AppointmentStatus.InProgress, ctx.VisitType3Id, 100m),
+            (5,  AppointmentStatus.Waiting,    ctx.VisitType4Id,  50m),
+            (6,  AppointmentStatus.Waiting,    ctx.VisitType3Id, 100m),
+            (7,  AppointmentStatus.Pending,    ctx.VisitType4Id,  50m),
+            (8,  AppointmentStatus.Pending,    ctx.VisitType3Id, 100m),
+            (9,  AppointmentStatus.Pending,    ctx.VisitType4Id,  50m),
+            (10, AppointmentStatus.Pending,    ctx.VisitType3Id, 100m),
+            (11, AppointmentStatus.Pending,    ctx.VisitType4Id,  50m),
+            (12, AppointmentStatus.Pending,    ctx.VisitType3Id, 100m),
+        };
+
+        for (int i = 0; i < todayQueue.Length; i++)
+        {
+            var (qNum, status, vtId, price) = todayQueue[i];
+            list.Add(Make(ctx.ClinicId, ctx.BranchId, patients[(i + 5) % patients.Count],
+                ctx.Doctor2InfoId, vtId, today, AppointmentType.Queue,
+                status, null, null, qNum, price, now.AddHours(-3), ctx.OwnerUserId));
+        }
+
+        return list;
+    }
+
+    // ── Doctor 3: Time-based, 2pm–8pm ────────────────────────────────────────
+
+    private static List<Appointment> SeedDoctor3(
+        DemoClinicContext ctx, List<Guid> patients, DateOnly today, DateTimeOffset now)
+    {
+        var list = new List<Appointment>();
+        var pastStatuses = new[]
+        {
+            AppointmentStatus.Completed, AppointmentStatus.Completed,
+            AppointmentStatus.Completed, AppointmentStatus.Cancelled,
+        };
+        var times = new[] { new TimeOnly(14,0), new TimeOnly(14,30), new TimeOnly(15,0), new TimeOnly(15,30),
+                            new TimeOnly(16,0), new TimeOnly(16,30), new TimeOnly(17,0), new TimeOnly(17,30) };
+
+        // Past 30 days
+        for (int day = 1; day <= 30; day++)
+        {
+            var date  = today.AddDays(-day);
+            var count = day % 3 == 0 ? 3 : 2;
+            for (int i = 0; i < count; i++)
+            {
+                var time  = times[(day + i) % times.Length];
+                var vtId  = i % 2 == 0 ? ctx.VisitType5Id : ctx.VisitType6Id;
+                var price = vtId == ctx.VisitType5Id ? 200m : 120m;
+                var appt  = Make(ctx.ClinicId, ctx.BranchId, patients[(day * 4 + i + 20) % patients.Count],
+                    ctx.Doctor3InfoId, vtId, date, AppointmentType.Time,
+                    pastStatuses[(day + i) % pastStatuses.Length],
+                    time, time.AddMinutes(30), null, price, now.AddDays(-day), ctx.OwnerUserId);
+                list.Add(appt);
+            }
+        }
+
+        // Today — afternoon slots
+        var todaySlots = new[]
+        {
+            (new TimeOnly(14, 0), AppointmentStatus.Completed,  ctx.VisitType5Id, 200m),
+            (new TimeOnly(14,30), AppointmentStatus.Completed,  ctx.VisitType6Id, 120m),
+            (new TimeOnly(15, 0), AppointmentStatus.InProgress, ctx.VisitType5Id, 200m),
+            (new TimeOnly(15,30), AppointmentStatus.Waiting,    ctx.VisitType6Id, 120m),
+            (new TimeOnly(16, 0), AppointmentStatus.Waiting,    ctx.VisitType5Id, 200m),
+            (new TimeOnly(16,30), AppointmentStatus.Pending,    ctx.VisitType6Id, 120m),
+            (new TimeOnly(17, 0), AppointmentStatus.Pending,    ctx.VisitType5Id, 200m),
+            (new TimeOnly(17,30), AppointmentStatus.Pending,    ctx.VisitType6Id, 120m),
+        };
+
+        for (int i = 0; i < todaySlots.Length; i++)
+        {
+            var (time, status, vtId, price) = todaySlots[i];
+            list.Add(Make(ctx.ClinicId, ctx.BranchId, patients[(i + 15) % patients.Count],
+                ctx.Doctor3InfoId, vtId, today, AppointmentType.Time,
+                status, time, time.AddMinutes(30), null, price, now.AddHours(-1), ctx.OwnerUserId));
+        }
+
+        return list;
+    }
+
+    // ── Factory ───────────────────────────────────────────────────────────────
+
+    private static Appointment Make(
+        Guid clinicId, Guid branchId, Guid patientId, Guid doctorInfoId, Guid visitTypeId,
+        DateOnly date, AppointmentType type, AppointmentStatus status,
+        TimeOnly? scheduledTime, TimeOnly? endTime, int? queueNumber,
+        decimal price, DateTimeOffset createdAt, Guid createdBy)
+    {
+        var appt = new Appointment
+        {
+            ClinicId      = clinicId,
+            BranchId      = branchId,
+            PatientId     = patientId,
+            DoctorInfoId  = doctorInfoId,
+            VisitTypeId   = visitTypeId,
+            Date          = date,
+            Type          = type,
+            Status        = status,
+            ScheduledTime = scheduledTime,
+            EndTime       = endTime,
+            QueueNumber   = queueNumber,
+            CreatedAt     = createdAt,
+            UpdatedAt     = createdAt,
+            CreatedBy     = createdBy,
+            UpdatedBy     = createdBy,
+        };
+        appt.ApplyPrice(price);
+        return appt;
     }
 }

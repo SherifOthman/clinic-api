@@ -126,6 +126,16 @@ public class ToggleSubscriptionPlanHandler : IRequestHandler<ToggleSubscriptionP
         var entity = await _uow.Reference.GetSubscriptionPlanByIdAsync(req.Id, ct);
         if (entity is null) return Result.Failure(ErrorCodes.NOT_FOUND, "Subscription plan not found");
 
+        // Cannot deactivate a plan that has active subscribers
+        if (entity.IsActive)
+        {
+            var activeCount = await _uow.SubscriptionPlans.CountActiveSubscribersAsync(req.Id, ct);
+            if (activeCount > 0)
+                return Result.Failure(
+                    ErrorCodes.OPERATION_NOT_ALLOWED,
+                    $"Cannot deactivate '{entity.Name}' — {activeCount} clinic{(activeCount == 1 ? " is" : "s are")} currently subscribed to this plan.");
+        }
+
         entity.IsActive = !entity.IsActive;
         await _uow.SaveChangesAsync(ct);
         _uow.Reference.InvalidateCache();

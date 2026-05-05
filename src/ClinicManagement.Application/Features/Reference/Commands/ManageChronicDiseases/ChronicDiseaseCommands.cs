@@ -87,8 +87,14 @@ public class DeleteChronicDiseaseHandler : IRequestHandler<DeleteChronicDiseaseC
         var entity = await _uow.Reference.GetChronicDiseaseByIdAsync(req.Id, ct);
         if (entity is null) return Result.Failure(ErrorCodes.NOT_FOUND, "Chronic disease not found");
 
-        // Soft-delete by deactivating — preserves existing patient records
-        entity.IsActive = false;
+        // Check if any patient has this disease assigned
+        var patientCount = await _uow.ChronicDiseases.CountPatientsAsync(req.Id, ct);
+        if (patientCount > 0)
+            return Result.Failure(
+                ErrorCodes.OPERATION_NOT_ALLOWED,
+                $"Cannot delete '{entity.NameEn}' — it is assigned to {patientCount} patient{(patientCount == 1 ? "" : "s")}. Deactivate it instead.");
+
+        _uow.ChronicDiseases.Delete(entity);
         await _uow.SaveChangesAsync(ct);
         _uow.Reference.InvalidateCache();
 

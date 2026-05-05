@@ -87,7 +87,14 @@ public class DeleteSpecializationHandler : IRequestHandler<DeleteSpecializationC
         var entity = await _uow.Reference.GetSpecializationByIdAsync(req.Id, ct);
         if (entity is null) return Result.Failure(ErrorCodes.NOT_FOUND, "Specialization not found");
 
-        entity.IsActive = false;
+        // Check if any doctor is assigned this specialization
+        var doctorCount = await _uow.Specializations.CountDoctorsAsync(req.Id, ct);
+        if (doctorCount > 0)
+            return Result.Failure(
+                ErrorCodes.OPERATION_NOT_ALLOWED,
+                $"Cannot delete '{entity.NameEn}' — it is assigned to {doctorCount} doctor{(doctorCount == 1 ? "" : "s")}. Deactivate it instead.");
+
+        _uow.Specializations.Delete(entity);
         await _uow.SaveChangesAsync(ct);
         _uow.Reference.InvalidateCache();
 

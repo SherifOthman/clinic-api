@@ -24,9 +24,9 @@ public interface IUnitOfWork
     IPermissionRepository         Permissions         { get; }
     IPatientCounterRepository     PatientCounters     { get; }
 
-    IRepository<ChronicDisease>   ChronicDiseases   { get; }
-    IRepository<Specialization>   Specializations   { get; }
-    IRepository<SubscriptionPlan> SubscriptionPlans { get; }
+    IChronicDiseaseRepository     ChronicDiseases   { get; }
+    ISpecializationRepository     Specializations   { get; }
+    ISubscriptionPlanRepository   SubscriptionPlans { get; }
     IRefreshTokenRepository       RefreshTokens     { get; }
     ITestimonialRepository        Testimonials      { get; }
     IContactMessageRepository     ContactMessages   { get; }

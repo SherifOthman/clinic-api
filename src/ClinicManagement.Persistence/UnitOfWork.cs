@@ -36,9 +36,9 @@ public class UnitOfWork : IUnitOfWork
     public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context, _cache);
     public IPatientCounterRepository     PatientCounters    => field ??= new PatientCounterRepository(_context);
 
-    public IRepository<ChronicDisease>   ChronicDiseases   => field ??= new Repository<ChronicDisease>(_context);
-    public IRepository<Specialization>   Specializations   => field ??= new Repository<Specialization>(_context);
-    public IRepository<SubscriptionPlan> SubscriptionPlans => field ??= new Repository<SubscriptionPlan>(_context);
+    public IChronicDiseaseRepository     ChronicDiseases   => field ??= new ChronicDiseaseRepository(_context);
+    public ISpecializationRepository     Specializations   => field ??= new SpecializationRepository(_context);
+    public ISubscriptionPlanRepository   SubscriptionPlans => field ??= new SubscriptionPlanRepository(_context);
     public IRefreshTokenRepository       RefreshTokens     => field ??= new RefreshTokenRepository(_context);
     public ITestimonialRepository        Testimonials      => field ??= new TestimonialRepository(_context);
     public IContactMessageRepository     ContactMessages   => field ??= new ContactMessageRepository(_context);
