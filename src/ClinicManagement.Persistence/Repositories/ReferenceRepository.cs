@@ -68,6 +68,26 @@ public class ReferenceRepository : IReferenceRepository
     public async Task<bool> SubscriptionPlanExistsAsync(Guid id, CancellationToken ct = default)
         => await _subscriptionPlans.AnyAsync(p => p.Id == id, ct);
 
+    // ── Admin paginated reads (no cache — always fresh, includes inactive) ────
+
+    public async Task<(List<ChronicDisease> Items, int TotalCount)> GetChronicDiseasesPaginatedAsync(
+        int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query      = _chronicDiseases.OrderBy(d => d.NameEn);
+        var totalCount = await query.CountAsync(ct);
+        var items      = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, totalCount);
+    }
+
+    public async Task<(List<Specialization> Items, int TotalCount)> GetSpecializationsPaginatedAsync(
+        int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query      = _specializations.OrderBy(s => s.NameEn);
+        var totalCount = await query.CountAsync(ct);
+        var items      = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, totalCount);
+    }
+
     // ── Writes ────────────────────────────────────────────────────────────────
 
     public Task<ChronicDisease?> GetChronicDiseaseByIdAsync(Guid id, CancellationToken ct = default)
