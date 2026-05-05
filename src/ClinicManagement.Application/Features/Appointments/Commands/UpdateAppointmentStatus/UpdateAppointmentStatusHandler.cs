@@ -6,6 +6,8 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.Appointments.Commands;
 
+public record UpdateAppointmentStatusCommand(Guid Id, AppointmentStatus Status) : IRequest<Result>;
+
 public class UpdateAppointmentStatusHandler : IRequestHandler<UpdateAppointmentStatusCommand, Result>
 {
     private readonly IUnitOfWork _uow;

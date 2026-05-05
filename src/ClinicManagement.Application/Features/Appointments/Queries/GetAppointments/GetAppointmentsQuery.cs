@@ -27,5 +27,6 @@ public record AppointmentDto(
     decimal FinalPrice,
     DateTimeOffset CreatedAt,
     string? PatientGender = null,
-    DateOnly? PatientDateOfBirth = null
+    DateOnly? PatientDateOfBirth = null,
+    Guid? InvoiceId = null          // non-null = appointment has been invoiced/paid
 );

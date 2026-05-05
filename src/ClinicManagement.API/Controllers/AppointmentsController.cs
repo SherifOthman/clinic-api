@@ -139,4 +139,28 @@ public class AppointmentsController : BaseApiController
         var result = await Sender.Send(new HandleDelayCommand(sessionId, option), ct);
         return HandleNoContent(result, "Failed to handle delay");
     }
+
+    /// <summary>Mark an appointment as paid.</summary>
+    [HttpPatch("{id:guid}/paid")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkPaid(Guid id, CancellationToken ct)
+    {
+        var result = await Sender.Send(new MarkAppointmentPaidCommand(id), ct);
+        return HandleNoContent(result, "Failed to mark appointment as paid");
+    }
+
+    /// <summary>Refund an appointment (remove paid marker).</summary>
+    [HttpPatch("{id:guid}/refund")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Refund(Guid id, CancellationToken ct)
+    {
+        var result = await Sender.Send(new RefundAppointmentCommand(id), ct);
+        return HandleNoContent(result, "Failed to refund appointment");
+    }
 }

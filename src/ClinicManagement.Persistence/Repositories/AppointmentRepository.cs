@@ -37,7 +37,8 @@ public class AppointmentRepository : IAppointmentRepository
                    a.FinalPrice,
                    a.CreatedAt,
                    a.Patient != null ? a.Patient.Gender.ToString() : null,
-                   a.Patient != null ? a.Patient.DateOfBirth : null))
+                   a.Patient != null ? a.Patient.DateOfBirth : null,
+                   a.InvoiceId))
                .ToListAsync(ct);
 
     public Task<List<AppointmentDto>> GetProjectedByBranchAndDateAsync(
@@ -64,7 +65,8 @@ public class AppointmentRepository : IAppointmentRepository
                    a.FinalPrice,
                    a.CreatedAt,
                    a.Patient != null ? a.Patient.Gender.ToString() : null,
-                   a.Patient != null ? a.Patient.DateOfBirth : null))
+                   a.Patient != null ? a.Patient.DateOfBirth : null,
+                   a.InvoiceId))
                .ToListAsync(ct);
 
     // ── Entity reads — AsNoTracking for performance ───────────────────────────
@@ -125,3 +127,4 @@ public class AppointmentRepository : IAppointmentRepository
     public Task<Appointment?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
         => _set.FirstOrDefaultAsync(a => a.Id == id, ct);
 }
+
