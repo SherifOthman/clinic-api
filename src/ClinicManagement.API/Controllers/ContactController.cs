@@ -35,4 +35,15 @@ public class ContactController : BaseApiController
         var result = await Sender.Send(new GetContactMessagesQuery(pagination.PageNumber, pagination.PageSize), ct);
         return HandleResult(result, "Failed to retrieve contact messages");
     }
+
+    /// <summary>SuperAdmin only — count of unread contact messages (for sidebar badge).</summary>
+    [HttpGet("unread-count")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUnreadCount(CancellationToken ct = default)
+    {
+        var result = await Sender.Send(new GetContactMessagesUnreadCountQuery(), ct);
+        return HandleResult(result, "Failed to retrieve unread count");
+    }
 }
