@@ -53,7 +53,7 @@ public class SubscriptionExpiryNotificationJob
                     Type      = NotificationType.Warning,
                     Title     = "Subscription Expiring Soon",
                     Message   = $"Your subscription for {clinic.Name} expires on {subscription.EndDate:yyyy-MM-dd} ({daysLeft} days remaining).",
-                    ActionUrl = "/billing/renew",
+                    ActionUrl = "/usage",
                 });
 
                 _db.Set<EmailQueue>().Add(new EmailQueue

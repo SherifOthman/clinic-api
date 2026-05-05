@@ -33,6 +33,7 @@ public interface IUnitOfWork
     IAppointmentRepository        Appointments      { get; }
     IQueueCounterRepository       QueueCounters     { get; }
     IDoctorSessionRepository      DoctorSessions    { get; }
+    INotificationRepository       Notifications     { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

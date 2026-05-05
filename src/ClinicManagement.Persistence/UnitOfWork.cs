@@ -45,6 +45,7 @@ public class UnitOfWork : IUnitOfWork
     public IAppointmentRepository        Appointments      => field ??= new AppointmentRepository(_context);
     public IQueueCounterRepository       QueueCounters     => field ??= new QueueCounterRepository(_context);
     public IDoctorSessionRepository      DoctorSessions    => field ??= new DoctorSessionRepository(_context);
+    public INotificationRepository       Notifications     => field ??= new NotificationRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
         => _context.SaveChangesAsync(ct);

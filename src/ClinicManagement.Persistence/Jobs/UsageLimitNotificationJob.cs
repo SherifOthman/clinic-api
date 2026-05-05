@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Common.EmailTemplates;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
@@ -9,97 +8,50 @@ using Microsoft.Extensions.Logging;
 namespace ClinicManagement.Persistence.Jobs;
 
 /// <summary>
-/// Runs daily at 9am and notifies clinic owners when they are approaching
-/// their subscription plan limits.
+/// Runs daily at 9am. Reads today's aggregated metrics (written by UsageMetricsAggregationJob
+/// at 1am) and notifies clinic owners when they approach their plan limits.
 ///
-/// Reads today's already-aggregated metrics (written by UsageMetricsAggregationJob at 1am)
-/// and compares them against the clinic's active plan limits.
-///
-/// Two thresholds:
-///   80% — "Warning: you've used 80% of your monthly X limit"
-///   95% — "Critical: you've almost reached your monthly X limit"
-///
-/// Deduplication: one notification per clinic per limit per threshold per month.
-/// If a notification was already sent this month for the same limit + threshold, skip it.
+/// Thresholds:  80% → Warning   |   95% → Critical
+/// Dedup:       one notification per clinic × limit × threshold per calendar month.
 /// </summary>
 public class UsageLimitNotificationJob
 {
+    // ── Thresholds ────────────────────────────────────────────────────────────
+
     private const int WarnThresholdPercent     = 80;
     private const int CriticalThresholdPercent = 95;
 
+    // ── Dependencies ──────────────────────────────────────────────────────────
+
     private readonly ApplicationDbContext _db;
-    private readonly IEmailService _emailService;
     private readonly ILogger<UsageLimitNotificationJob> _logger;
 
     public UsageLimitNotificationJob(
         ApplicationDbContext db,
-        IEmailService emailService,
         ILogger<UsageLimitNotificationJob> logger)
     {
-        _db           = db;
-        _emailService = emailService;
-        _logger       = logger;
+        _db     = db;
+        _logger = logger;
     }
+
+    // ── Entry point ───────────────────────────────────────────────────────────
 
     public async Task ExecuteAsync()
     {
-        var now   = DateTimeOffset.UtcNow;
-        var today = DateOnly.FromDateTime(now.Date);
+        var now    = DateTimeOffset.UtcNow;
+        var today  = DateOnly.FromDateTime(now.Date);
 
-        // Load active clinics with their current subscription plan and today's metrics
-        var clinics = await TenantGuard.AsSystemQuery(_db.Set<Clinic>())
-            .Where(c => c.IsActive && !c.IsDeleted)
-            .ToListAsync();
-
+        var clinics = await LoadActiveClinicsAsync();
         _logger.LogInformation("Checking usage limits for {Count} clinics", clinics.Count);
 
-        var notified = 0;
+        var processed = 0;
 
         foreach (var clinic in clinics)
         {
             try
             {
-                // Get today's metrics (written by UsageMetricsAggregationJob at 1am)
-                var metrics = await TenantGuard.AsSystemQuery(_db.Set<ClinicUsageMetrics>())
-                    .FirstOrDefaultAsync(m => m.ClinicId == clinic.Id && m.MetricDate == today);
-
-                if (metrics is null) continue; // aggregation hasn't run yet today
-
-                // Get the active subscription and its plan limits
-                var subscription = await TenantGuard.AsSystemQuery(_db.Set<ClinicSubscription>())
-                    .Include(s => s.SubscriptionPlan)
-                    .Where(s => s.ClinicId == clinic.Id &&
-                                (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
-                    .OrderByDescending(s => s.StartDate)
-                    .FirstOrDefaultAsync();
-
-                if (subscription?.SubscriptionPlan is null) continue;
-
-                var plan  = subscription.SubscriptionPlan;
-                var owner = await _db.Users.FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId);
-                if (owner is null) continue;
-
-                // Check each monthly limit and notify if threshold crossed
-                var checks = new[]
-                {
-                    (Label: "patients",     Used: metrics.NewPatientsCount,   Max: plan.MaxPatientsPerMonth),
-                    (Label: "appointments", Used: metrics.AppointmentsCount,  Max: plan.MaxAppointmentsPerMonth),
-                    (Label: "invoices",     Used: metrics.InvoicesCount,      Max: plan.MaxInvoicesPerMonth),
-                };
-
-                foreach (var (label, used, max) in checks)
-                {
-                    if (max <= 0) continue; // unlimited (-1) or not configured
-
-                    var percent = (int)((double)used / max * 100);
-
-                    if (percent >= CriticalThresholdPercent)
-                        await NotifyIfNotAlreadySentAsync(clinic, owner, label, used, max, CriticalThresholdPercent, now);
-                    else if (percent >= WarnThresholdPercent)
-                        await NotifyIfNotAlreadySentAsync(clinic, owner, label, used, max, WarnThresholdPercent, now);
-                }
-
-                notified++;
+                await ProcessClinicAsync(clinic, today, now);
+                processed++;
             }
             catch (Exception ex)
             {
@@ -108,65 +60,164 @@ public class UsageLimitNotificationJob
         }
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Usage limit check complete — processed {Count} clinics", notified);
+        _logger.LogInformation("Usage limit check complete — {Count}/{Total} clinics processed", processed, clinics.Count);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Per-clinic logic ──────────────────────────────────────────────────────
+
+    private async Task ProcessClinicAsync(Clinic clinic, DateOnly today, DateTimeOffset now)
+    {
+        var metrics = await LoadTodayMetricsAsync(clinic.Id, today);
+        if (metrics is null) return; // aggregation hasn't run yet today
+
+        var plan = await LoadActivePlanAsync(clinic.Id);
+        if (plan is null) return; // no active subscription
+
+        var owner = await _db.Users.FirstOrDefaultAsync(u => u.Id == clinic.OwnerUserId);
+        if (owner is null) return;
+
+        var checks = BuildLimitChecks(metrics, plan);
+
+        foreach (var check in checks)
+            await EvaluateAndNotifyAsync(clinic, owner, check, now);
+    }
+
+    // ── Limit evaluation ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Maps each monthly metric to its plan limit.
+    /// Skips unlimited limits (max ≤ 0).
+    /// </summary>
+    private static LimitCheck[] BuildLimitChecks(ClinicUsageMetrics metrics, SubscriptionPlan plan)
+        =>
+        [
+            new("patients",     metrics.NewPatientsCount,  plan.MaxPatientsPerMonth),
+            new("appointments", metrics.AppointmentsCount, plan.MaxAppointmentsPerMonth),
+            new("invoices",     metrics.InvoicesCount,     plan.MaxInvoicesPerMonth),
+        ];
+
+    private async Task EvaluateAndNotifyAsync(
+        Clinic clinic, User owner, LimitCheck check, DateTimeOffset now)
+    {
+        if (check.Max <= 0) return; // unlimited
+
+        var percent = check.PercentUsed;
+
+        if (percent >= CriticalThresholdPercent)
+            await NotifyIfNotAlreadySentAsync(clinic, owner, check, CriticalThresholdPercent, now);
+        else if (percent >= WarnThresholdPercent)
+            await NotifyIfNotAlreadySentAsync(clinic, owner, check, WarnThresholdPercent, now);
+    }
+
+    // ── Notification creation ─────────────────────────────────────────────────
 
     private async Task NotifyIfNotAlreadySentAsync(
         Clinic clinic, User owner,
-        string limitLabel, int used, int max, int thresholdPercent,
+        LimitCheck check, int thresholdPercent,
         DateTimeOffset now)
     {
-        var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
-
-        // Dedup: skip if we already sent this exact notification this month
-        var alreadySent = await _db.Set<Notification>()
-            .AnyAsync(n =>
-                n.UserId == owner.Id &&
-                n.CreatedAt >= monthStart &&
-                n.Title.Contains(limitLabel) &&
-                n.Title.Contains(thresholdPercent.ToString()));
-
-        if (alreadySent) return;
+        if (await AlreadySentThisMonthAsync(owner.Id, check.Label, thresholdPercent, now))
+            return;
 
         var isCritical = thresholdPercent >= CriticalThresholdPercent;
-        var percent     = (int)((double)used / max * 100);
 
-        var title   = isCritical
-            ? $"Critical: {percent}% of monthly {limitLabel} limit used"
-            : $"Warning: {percent}% of monthly {limitLabel} limit used";
+        QueueInAppNotification(owner.Id, check, isCritical, now);
+        QueueEmail(clinic, owner, check, isCritical);
 
-        var message = $"You have used {used} of {max} {limitLabel} this month ({percent}%). " +
-                      (isCritical
-                          ? "You are about to reach your plan limit. Consider upgrading your plan."
-                          : "You are approaching your plan limit.");
+        _logger.LogInformation(
+            "Limit notification queued — clinic {ClinicId}, {Label} at {Percent}% ({Threshold}% threshold)",
+            clinic.Id, check.Label, check.PercentUsed, thresholdPercent);
+    }
 
-        // In-app notification
+    private void QueueInAppNotification(
+        Guid userId, LimitCheck check, bool isCritical, DateTimeOffset now)
+    {
         _db.Set<Notification>().Add(new Notification
         {
-            UserId    = owner.Id,
+            UserId    = userId,
             Type      = isCritical ? NotificationType.Error : NotificationType.Warning,
-            Title     = title,
-            Message   = message,
-            ActionUrl = "/settings/subscription",
+            Title     = BuildTitle(check, isCritical),
+            Message   = BuildMessage(check, isCritical),
+            ActionUrl = "/usage",
             ExpiresAt = now.AddDays(7),
         });
+    }
 
-        // Email via queue (processed by EmailQueueProcessorJob)
+    private void QueueEmail(Clinic clinic, User owner, LimitCheck check, bool isCritical)
+    {
         _db.Set<EmailQueue>().Add(new EmailQueue
         {
             ToEmail  = owner.Email!,
             ToName   = owner.FullName,
-            Subject  = $"[{clinic.Name}] {title}",
+            Subject  = $"[{clinic.Name}] {BuildTitle(check, isCritical)}",
             Body     = UsageLimitEmailTemplate.Build(
-                owner.FullName, clinic.Name, limitLabel, used, max, percent, isCritical),
+                           owner.FullName, clinic.Name,
+                           check.Label, check.Used, check.Max, check.PercentUsed, isCritical),
             IsHtml   = true,
             Priority = isCritical ? 1 : 2,
         });
+    }
 
-        _logger.LogInformation(
-            "Limit notification queued for clinic {ClinicId} — {Label} at {Percent}% ({Threshold}% threshold)",
-            clinic.Id, limitLabel, percent, thresholdPercent);
+    // ── Deduplication ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if a notification for this limit + threshold was already sent this month.
+    /// Matches on title content — avoids a separate dedup table.
+    /// </summary>
+    private async Task<bool> AlreadySentThisMonthAsync(
+        Guid userId, string limitLabel, int thresholdPercent, DateTimeOffset now)
+    {
+        var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+
+        return await _db.Set<Notification>()
+            .AnyAsync(n =>
+                n.UserId    == userId          &&
+                n.CreatedAt >= monthStart      &&
+                n.Title.Contains(limitLabel)   &&
+                n.Title.Contains(thresholdPercent.ToString()));
+    }
+
+    // ── Data loading ──────────────────────────────────────────────────────────
+
+    private Task<List<Clinic>> LoadActiveClinicsAsync()
+        => TenantGuard.AsSystemQuery(_db.Set<Clinic>())
+            .Where(c => c.IsActive && !c.IsDeleted)
+            .ToListAsync();
+
+    private Task<ClinicUsageMetrics?> LoadTodayMetricsAsync(Guid clinicId, DateOnly today)
+        => TenantGuard.AsSystemQuery(_db.Set<ClinicUsageMetrics>())
+            .FirstOrDefaultAsync(m => m.ClinicId == clinicId && m.MetricDate == today);
+
+    private async Task<SubscriptionPlan?> LoadActivePlanAsync(Guid clinicId)
+    {
+        var subscription = await TenantGuard.AsSystemQuery(_db.Set<ClinicSubscription>())
+            .Include(s => s.SubscriptionPlan)
+            .Where(s => s.ClinicId == clinicId &&
+                        (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
+            .OrderByDescending(s => s.StartDate)
+            .FirstOrDefaultAsync();
+
+        return subscription?.SubscriptionPlan;
+    }
+
+    // ── Text helpers ──────────────────────────────────────────────────────────
+
+    private static string BuildTitle(LimitCheck check, bool isCritical)
+        => isCritical
+            ? $"Critical: {check.PercentUsed}% of monthly {check.Label} limit used"
+            : $"Warning: {check.PercentUsed}% of monthly {check.Label} limit used";
+
+    private static string BuildMessage(LimitCheck check, bool isCritical)
+        => $"You have used {check.Used} of {check.Max} {check.Label} this month ({check.PercentUsed}%). " +
+           (isCritical
+               ? "You are about to reach your plan limit. Consider upgrading your plan."
+               : "You are approaching your plan limit.");
+
+    // ── Value object ──────────────────────────────────────────────────────────
+
+    /// <summary>Bundles a single limit check — label, current usage, and plan max.</summary>
+    private sealed record LimitCheck(string Label, int Used, int Max)
+    {
+        public int PercentUsed => Max > 0 ? (int)((double)Used / Max * 100) : 0;
     }
 }
