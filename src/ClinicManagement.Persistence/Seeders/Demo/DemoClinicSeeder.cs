@@ -55,24 +55,23 @@ public class DemoClinicSeeder
         var specPediatrics = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Pediatrics");
         var specCardiology = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
 
-        // ── Doctor 1: Time-based ─────────────────────────────────────────────
-        // StartTime = 00:01 UTC (always in the past when testing during the day).
-        // Checking in at any point during the day = always late → delay dialog appears.
+        // ── Doctor 1: Queue-based, Main Branch ──────────────────────────────
+        // StartTime = 00:01 local → always late on check-in → delay dialog appears
         var doc1 = await SetupDoctorAsync(
             email: "doctor@clinic.com", username: "doctor",
             fullName: "Dr. Demo Doctor", phone: "+201112345678",
             gender: Gender.Female, password: "Doctor123!",
             clinicId: clinic.Id, branchId: branch.Id,
             specializationId: specGeneral?.Id,
-            appointmentType: AppointmentType.Time,
-            scheduleType: AppointmentType.Time,
+            appointmentType: AppointmentType.Queue,
+            scheduleType: AppointmentType.Queue,
             workStart: new TimeOnly(0, 1), workEnd: new TimeOnly(23, 59),
             visitTypes: [("Consultation", 150m), ("Follow-up", 80m)]);
 
         if (doc1 is null) return null;
 
-        // ── Doctor 2: Queue-based ─────────────────────────────────────────────
-        // No delay dialog for queue doctors regardless of lateness.
+        // ── Doctor 2: Queue-based, Main Branch ──────────────────────────────
+        // Different specialization (Pediatrics) — tests multi-doctor view
         var doc2 = await SetupDoctorAsync(
             email: "doctor2@clinic.com", username: "doctor2",
             fullName: "Dr. Fatima Al-Zahra", phone: "+201112345679",
@@ -86,17 +85,17 @@ public class DemoClinicSeeder
 
         if (doc2 is null) return null;
 
-        // ── Doctor 3: Time-based ──────────────────────────────────────────────
-        // Assigned to Downtown Branch (branch2) — tests the branch filter.
-        // StartTime = 23:00 (always in the future) → no delay dialog on check-in.
+        // ── Doctor 3: Queue-based, Downtown Branch ───────────────────────────
+        // StartTime = 23:00 local → always on time → no delay dialog
+        // Assigned to branch2 to test the branch filter
         var doc3 = await SetupDoctorAsync(
             email: "doctor3@clinic.com", username: "doctor3",
             fullName: "Dr. Khalid Al-Rashid", phone: "+201112345680",
             gender: Gender.Male, password: "Doctor123!",
             clinicId: clinic.Id, branchId: branch2.Id,
             specializationId: specCardiology?.Id,
-            appointmentType: AppointmentType.Time,
-            scheduleType: AppointmentType.Time,
+            appointmentType: AppointmentType.Queue,
+            scheduleType: AppointmentType.Queue,
             workStart: new TimeOnly(23, 0), workEnd: new TimeOnly(23, 59),
             visitTypes: [("Cardiology Consult", 200m), ("ECG", 120m)]);
 

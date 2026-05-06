@@ -26,21 +26,15 @@ public class RescheduleAppointmentHandler : IRequestHandler<RescheduleAppointmen
         if (request.NewDate <= today)
             return Result.Failure(ErrorCodes.VALIDATION_ERROR, "New date must be in the future");
 
-        // Load existing pending/waiting appointments on the target date
-        var existing = await _uow.Appointments.GetByDoctorDatePendingForUpdateAsync(
-            appt.DoctorInfoId, request.NewDate, ct);
+        // Get the next available queue number on the target date (patient goes to END of queue)
+        var nextQueueNumber = await _uow.QueueCounters.NextAsync(appt.DoctorInfoId, request.NewDate, ct);
 
-        // The carry-over patient goes FIRST (queue #1).
-        // All existing patients on that day shift down by 1.
         appt.Date        = request.NewDate;
-        appt.QueueNumber = 1;
+        appt.QueueNumber = nextQueueNumber;
 
+        // Reset to Pending — they haven't been called yet on the new day
         if (appt.Status == AppointmentStatus.Waiting)
             appt.Status = AppointmentStatus.Pending;
-
-        // Push existing patients back: #1→#2, #2→#3, etc.
-        foreach (var e in existing.OrderBy(e => e.QueueNumber ?? 0))
-            e.QueueNumber = (e.QueueNumber ?? 0) + 1;
 
         _uow.Appointments.Update(appt);
         await _uow.SaveChangesAsync(ct);
