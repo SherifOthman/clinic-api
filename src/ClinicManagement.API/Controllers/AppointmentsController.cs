@@ -150,6 +150,18 @@ public class AppointmentsController : BaseApiController
         return result.IsFailure ? HandleResult(result, "Check-in failed") : Ok(result.Value);
     }
 
+    /// <summary>Doctor checks out for the day — ends the active session and completes any InProgress appointments.</summary>
+    [HttpPost("sessions/check-out")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CheckOut([FromBody] CheckInRequest request, CancellationToken ct)
+    {
+        var result = await Sender.Send(new DoctorCheckOutCommand(request.DoctorInfoId, request.BranchId), ct);
+        return HandleNoContent(result, "Check-out failed");
+    }
+
     /// <summary>Handle a doctor delay — auto-shift, mark missed, or manual.</summary>
     [HttpPost("sessions/{sessionId:guid}/handle-delay")]
     [RequirePermission(Permission.ManageAppointments)]

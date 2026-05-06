@@ -42,9 +42,10 @@ public static class DatabaseInitialiser
 
             Log.Information("Core database seeding completed — API is ready");
 
-            // Demo data — only in Development/Staging, never in Production
+            // Demo data — only in Development/Staging, OR when explicitly enabled via config
             var env = app.Environment;
-            if (env.IsDevelopment() || env.IsStaging())
+            var seedDemo = app.Configuration.GetValue<bool>("SeedDemoData");
+            if (env.IsDevelopment() || env.IsStaging() || seedDemo)
             {
                 await services.GetRequiredService<DemoDataSeedService>().SeedAsync();
             }
