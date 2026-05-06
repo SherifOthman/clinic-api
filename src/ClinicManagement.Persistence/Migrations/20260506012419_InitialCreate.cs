@@ -1167,6 +1167,7 @@ namespace ClinicManagement.Persistence.Migrations
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     CheckedInAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CheckedOutAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ScheduledStartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     ScheduledStartTime = table.Column<TimeOnly>(type: "time", nullable: true),
                     DelayHandling = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     StoredDelayMinutes = table.Column<int>(type: "int", nullable: true),

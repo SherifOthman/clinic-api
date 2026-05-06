@@ -87,7 +87,7 @@ public class SystemUserSeedService
             };
             _db.Set<Clinic>().Add(clinic);
 
-            // ── 3. Branch ─────────────────────────────────────────────────────
+            // ── 3. Branches ───────────────────────────────────────────────────
             var branch = new ClinicBranch
             {
                 ClinicId     = clinic.Id,
@@ -97,6 +97,16 @@ public class SystemUserSeedService
                 IsActive     = true,
             };
             _db.Set<ClinicBranch>().Add(branch);
+
+            var branch2 = new ClinicBranch
+            {
+                ClinicId     = clinic.Id,
+                Name         = "Downtown Branch",
+                AddressLine  = "456 Tahrir Square, Cairo",
+                IsMainBranch = false,
+                IsActive     = true,
+            };
+            _db.Set<ClinicBranch>().Add(branch2);
 
             // ── 4. Subscription ───────────────────────────────────────────────
             var now = DateTimeOffset.UtcNow;

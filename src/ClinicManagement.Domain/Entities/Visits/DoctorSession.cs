@@ -9,6 +9,12 @@ namespace ClinicManagement.Domain.Entities;
 /// delay-handling workflows.
 ///
 /// Design: one session per doctor per branch per date.
+///
+/// Timezone strategy: everything is stored as UTC DateTimeOffset.
+/// ScheduledStartUtc = the exact UTC moment the doctor was supposed to start.
+/// CheckedInAt       = the exact UTC moment the doctor actually checked in.
+/// Delay             = CheckedInAt - ScheduledStartUtc (pure UTC arithmetic, no timezone needed).
+/// Display           = frontend converts UTC to local for display only.
 /// </summary>
 public class DoctorSession : AuditableTenantEntity
 {
@@ -16,24 +22,32 @@ public class DoctorSession : AuditableTenantEntity
     public Guid BranchId { get; set; }
     public DateOnly Date { get; set; }
 
-    /// <summary>When the doctor actually checked in (arrived).</summary>
+    /// <summary>When the doctor actually checked in (arrived). UTC.</summary>
     public DateTimeOffset? CheckedInAt { get; set; }
 
-    /// <summary>When the doctor ended their session.</summary>
+    /// <summary>When the doctor ended their session. UTC.</summary>
     public DateTimeOffset? CheckedOutAt { get; set; }
 
-    /// <summary>Scheduled start time from working days config.</summary>
-    public TimeOnly? ScheduledStartTime { get; set; }
+    /// <summary>
+    /// The exact UTC moment the doctor was scheduled to start.
+    /// Built at check-in time from: today's date (UTC) + WorkingDay.StartTime (local clock)
+    /// converted to UTC using the server's local timezone offset.
+    /// Stored as absolute UTC so delay calculation is timezone-independent.
+    /// </summary>
+    public DateTimeOffset? ScheduledStartUtc { get; set; }
 
     /// <summary>
-    /// How the clinic chose to handle the delay.
-    /// Null = no delay or not yet decided.
+    /// The local clock time as configured (e.g. "09:00") — kept for display only.
+    /// Use ScheduledStartUtc for all calculations.
     /// </summary>
+    public TimeOnly? ScheduledStartTime { get; set; }
+
+    /// <summary>How the clinic chose to handle the delay. Null = no delay or not yet decided.</summary>
     public DelayHandlingOption? DelayHandling { get; set; }
 
     /// <summary>
-    /// Delay in minutes stored at check-in time.
-    /// More reliable than recomputing from timestamps (avoids timezone issues).
+    /// Delay in minutes, computed once at check-in and stored.
+    /// Always use this — never recompute from timestamps.
     /// </summary>
     public int? StoredDelayMinutes { get; set; }
 
@@ -41,24 +55,22 @@ public class DoctorSession : AuditableTenantEntity
 
     public bool IsActive => CheckedInAt.HasValue && !CheckedOutAt.HasValue;
 
-    /// <summary>Delay in minutes. Positive = late. Null if no scheduled time or not checked in.</summary>
+    /// <summary>
+    /// Delay in minutes using pure UTC arithmetic.
+    /// Only called once at check-in to populate StoredDelayMinutes.
+    /// After that, use StoredDelayMinutes directly.
+    /// </summary>
     public int? DelayMinutes
     {
         get
         {
-            if (!CheckedInAt.HasValue || !ScheduledStartTime.HasValue) return null;
-            // Use UTC throughout to avoid timezone ambiguity.
-            // ScheduledStartTime is a clock time (e.g. 09:00) — combine with the session date in UTC.
-            var scheduledUtc = new DateTimeOffset(
-                Date.Year, Date.Month, Date.Day,
-                ScheduledStartTime.Value.Hour, ScheduledStartTime.Value.Minute, 0,
-                TimeSpan.Zero);
-            var diff = (int)(CheckedInAt.Value.ToUniversalTime() - scheduledUtc).TotalMinutes;
+            if (!CheckedInAt.HasValue || !ScheduledStartUtc.HasValue) return null;
+            var diff = (int)(CheckedInAt.Value.ToUniversalTime() - ScheduledStartUtc.Value.ToUniversalTime()).TotalMinutes;
             return diff > 0 ? diff : null;
         }
     }
 
-    public bool IsLate => DelayMinutes.HasValue && DelayMinutes > 0;
+    public bool IsLate => StoredDelayMinutes.HasValue && StoredDelayMinutes > 0;
 
     // Navigation
     public DoctorInfo Doctor { get; set; } = null!;
@@ -67,10 +79,10 @@ public class DoctorSession : AuditableTenantEntity
 
 public enum DelayHandlingOption
 {
-    /// <summary>Shift all pending appointments forward by the delay duration.</summary>
+    /// <summary>Shift past-pending appointments to start from now, future ones by the same delay.</summary>
     AutoShift,
 
-    /// <summary>Mark all past appointments as NoShow.</summary>
+    /// <summary>Mark all past-pending appointments as NoShow.</summary>
     MarkMissed,
 
     /// <summary>Receptionist handles each appointment manually.</summary>

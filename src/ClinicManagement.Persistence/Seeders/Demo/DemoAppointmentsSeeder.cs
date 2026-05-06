@@ -6,13 +6,24 @@ using Microsoft.Extensions.Logging;
 namespace ClinicManagement.Persistence.Seeders.Demo;
 
 /// <summary>
-/// Seeds appointments for all 3 demo doctors:
-///   Doctor 1 — Time-based, 9am–5pm  (past 30 days + today)
-///   Doctor 2 — Queue-based, 8am–2pm (past 30 days + today)
-///   Doctor 3 — Time-based, 2pm–8pm  (past 30 days + today)
+/// Seeds appointments relative to UtcNow so the delay-dialog test always works:
 ///
-/// Total: ~120 appointments — enough to test multi-doctor view, pagination,
-/// and both appointment types side-by-side.
+///   Doctor 1 (Time-based):
+///     - Works from (UtcNow - 2h) to (UtcNow + 6h)
+///     - Today's appointments start at (UtcNow - 1h 30m), every 30 min
+///     - First 3 slots are Pending and in the past → perfect for AutoShift / MarkMissed
+///
+///   Doctor 2 (Queue-based):
+///     - Works from (UtcNow - 2h) to (UtcNow + 6h)
+///     - Today's queue: mix of Completed, InProgress, Waiting, Pending
+///     - No delay dialog (queue type)
+///
+///   Doctor 3 (Time-based):
+///     - Works from (UtcNow + 1h) to (UtcNow + 9h) — hasn't started yet
+///     - Today's appointments all in the future → all Pending
+///     - Check-in will NOT trigger delay dialog (on time)
+///
+/// Past 30 days: realistic historical data for all 3 doctors.
 /// </summary>
 public class DemoAppointmentsSeeder
 {
@@ -40,110 +51,127 @@ public class DemoAppointmentsSeeder
         if (patients.Count == 0) { _logger.LogWarning("No patients — skipping appointments"); return; }
 
         var now   = DateTimeOffset.UtcNow;
-        var today = DateOnly.FromDateTime(now.Date);
+        // Use local date and local time throughout so seeded appointments match
+        // what the user sees in the UI and what MarkMissed compares against.
+        var today = DateOnly.FromDateTime(now.LocalDateTime);
         var all   = new List<Appointment>();
 
-        all.AddRange(SeedDoctor1(ctx, patients, today, now));  // Time-based
-        all.AddRange(SeedDoctor2(ctx, patients, today, now));  // Queue-based
-        all.AddRange(SeedDoctor3(ctx, patients, today, now));  // Time-based (afternoon)
+        all.AddRange(SeedDoctor1(ctx, patients, today, now));
+        all.AddRange(SeedDoctor2(ctx, patients, today, now));
+        all.AddRange(SeedDoctor3(ctx, patients, today, now));
 
         _db.Set<Appointment>().AddRange(all);
         await _db.SaveChangesAsync();
         _logger.LogInformation("Seeded {Count} demo appointments across 3 doctors", all.Count);
     }
 
-    // ── Doctor 1: Time-based, 9am–5pm ────────────────────────────────────────
+    // ── Doctor 1: Time-based — starts 2h ago, appointments from 1h30m ago ────
+    // Purpose: check in NOW → doctor is 2h late → dialog appears
+    //   AutoShift: shifts the 3 past-Pending slots forward by 2h
+    //   MarkMissed: marks those 3 past-Pending slots as NoShow
 
     private static List<Appointment> SeedDoctor1(
         DemoClinicContext ctx, List<Guid> patients, DateOnly today, DateTimeOffset now)
     {
         var list = new List<Appointment>();
+
+        // ── Past 30 days ──────────────────────────────────────────────────────
         var pastStatuses = new[]
         {
             AppointmentStatus.Completed, AppointmentStatus.Completed, AppointmentStatus.Completed,
             AppointmentStatus.Completed, AppointmentStatus.Cancelled, AppointmentStatus.NoShow,
         };
-        var times = new[] { new TimeOnly(9,0), new TimeOnly(9,30), new TimeOnly(10,0), new TimeOnly(10,30),
-                            new TimeOnly(11,0), new TimeOnly(11,30), new TimeOnly(14,0), new TimeOnly(14,30) };
 
-        // Past 30 days
         for (int day = 1; day <= 30; day++)
         {
             var date  = today.AddDays(-day);
-            var count = day % 3 == 0 ? 3 : 2;
+            var count = day % 3 == 0 ? 4 : 3;
             for (int i = 0; i < count; i++)
             {
-                var time  = times[(day + i) % times.Length];
+                // Use fixed clock times for historical data — doesn't matter for testing
+                var time  = new TimeOnly(9 + i, 0);
                 var vtId  = i % 2 == 0 ? ctx.VisitTypeId : ctx.VisitType2Id;
                 var price = vtId == ctx.VisitTypeId ? 150m : 80m;
-                var appt  = Make(ctx.ClinicId, ctx.BranchId, patients[(day * 2 + i) % patients.Count],
+                list.Add(Make(ctx.ClinicId, ctx.BranchId,
+                    patients[(day * 2 + i) % patients.Count],
                     ctx.DoctorInfoId, vtId, date, AppointmentType.Time,
                     pastStatuses[(day + i) % pastStatuses.Length],
-                    time, time.AddMinutes(20), null, price, now.AddDays(-day), ctx.OwnerUserId);
-                list.Add(appt);
+                    time, time.AddMinutes(30), null, price,
+                    now.AddDays(-day), ctx.OwnerUserId));
             }
         }
 
-        // Today — mix of statuses including PAST-TIME Pending slots for delay dialog testing
-        // Doctor 1 starts at 9am. If they check in late (e.g. at 11am), the delay dialog
-        // will offer to shift/mark-missed the Pending appointments at 9:00 and 9:30.
-        var todaySlots = new[]
+        // ── Today ─────────────────────────────────────────────────────────────
+        // Slots relative to UtcNow so they're always testable:
+        //   now-1h30m  Pending  ← in the past → MarkMissed will catch this
+        //   now-1h00m  Pending  ← in the past → MarkMissed will catch this
+        //   now-0h30m  Pending  ← in the past → MarkMissed will catch this
+        //   now+0h00m  Pending  ← right now
+        //   now+0h30m  Pending
+        //   now+1h00m  Pending
+        //   now+1h30m  Pending
+        //   now+2h00m  Pending
+        //   now+2h30m  Pending
+        //   now+3h00m  Pending
+
+        var offsets = new[]
         {
-            // Past slots — Pending (these trigger the delay dialog options)
-            (new TimeOnly(9,  0), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
-            (new TimeOnly(9, 30), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
-            // Current/near-future
-            (new TimeOnly(10, 0), AppointmentStatus.Waiting,    ctx.VisitTypeId,  150m),
-            (new TimeOnly(10,30), AppointmentStatus.Waiting,    ctx.VisitType2Id,  80m),
-            (new TimeOnly(11, 0), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
-            (new TimeOnly(11,30), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
-            (new TimeOnly(14, 0), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
-            (new TimeOnly(14,30), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
-            (new TimeOnly(15, 0), AppointmentStatus.Pending,    ctx.VisitType2Id,  80m),
-            (new TimeOnly(15,30), AppointmentStatus.Pending,    ctx.VisitTypeId,  150m),
+            -90, -60, -30,   // past — these are the ones delay dialog acts on
+              0,  30,  60,
+             90, 120, 150, 180,
         };
 
-        for (int i = 0; i < todaySlots.Length; i++)
+        for (int i = 0; i < offsets.Length; i++)
         {
-            var (time, status, vtId, price) = todaySlots[i];
-            list.Add(Make(ctx.ClinicId, ctx.BranchId, patients[i % patients.Count],
+            // Use local time so display and MarkMissed comparison are consistent
+            var slotLocal = now.ToLocalTime().AddMinutes(offsets[i]);
+            var slotTime  = TimeOnly.FromDateTime(slotLocal.LocalDateTime);
+            var vtId      = i % 2 == 0 ? ctx.VisitTypeId : ctx.VisitType2Id;
+            var price     = vtId == ctx.VisitTypeId ? 150m : 80m;
+            list.Add(Make(ctx.ClinicId, ctx.BranchId,
+                patients[i % patients.Count],
                 ctx.DoctorInfoId, vtId, today, AppointmentType.Time,
-                status, time, time.AddMinutes(20), null, price, now.AddHours(-2), ctx.OwnerUserId));
+                AppointmentStatus.Pending,
+                slotTime, slotTime.AddMinutes(25), null, price,
+                now.AddHours(-3), ctx.OwnerUserId));
         }
 
         return list;
     }
 
-    // ── Doctor 2: Queue-based, 8am–2pm ───────────────────────────────────────
+    // ── Doctor 2: Queue-based — starts 2h ago ────────────────────────────────
+    // No delay dialog for queue doctors. Just realistic queue data.
 
     private static List<Appointment> SeedDoctor2(
         DemoClinicContext ctx, List<Guid> patients, DateOnly today, DateTimeOffset now)
     {
         var list = new List<Appointment>();
+
+        // Past 30 days
         var pastStatuses = new[]
         {
             AppointmentStatus.Completed, AppointmentStatus.Completed, AppointmentStatus.Completed,
             AppointmentStatus.Cancelled, AppointmentStatus.NoShow,
         };
 
-        // Past 30 days — queue appointments (no scheduled time, just queue numbers)
         for (int day = 1; day <= 30; day++)
         {
             var date  = today.AddDays(-day);
-            var count = day % 2 == 0 ? 4 : 3;
+            var count = day % 2 == 0 ? 5 : 4;
             for (int i = 0; i < count; i++)
             {
                 var vtId  = i % 2 == 0 ? ctx.VisitType3Id : ctx.VisitType4Id;
                 var price = vtId == ctx.VisitType3Id ? 100m : 50m;
-                var appt  = Make(ctx.ClinicId, ctx.BranchId, patients[(day * 3 + i + 10) % patients.Count],
+                list.Add(Make(ctx.ClinicId, ctx.BranchId,
+                    patients[(day * 3 + i + 10) % patients.Count],
                     ctx.Doctor2InfoId, vtId, date, AppointmentType.Queue,
                     pastStatuses[(day + i) % pastStatuses.Length],
-                    null, null, i + 1, price, now.AddDays(-day), ctx.OwnerUserId);
-                list.Add(appt);
+                    null, null, i + 1, price,
+                    now.AddDays(-day), ctx.OwnerUserId));
             }
         }
 
-        // Today — queue with all statuses
+        // Today — realistic queue progression
         var todayQueue = new[]
         {
             (1,  AppointmentStatus.Completed,  ctx.VisitType3Id, 100m),
@@ -156,72 +184,71 @@ public class DemoAppointmentsSeeder
             (8,  AppointmentStatus.Pending,    ctx.VisitType3Id, 100m),
             (9,  AppointmentStatus.Pending,    ctx.VisitType4Id,  50m),
             (10, AppointmentStatus.Pending,    ctx.VisitType3Id, 100m),
-            (11, AppointmentStatus.Pending,    ctx.VisitType4Id,  50m),
-            (12, AppointmentStatus.Pending,    ctx.VisitType3Id, 100m),
         };
 
         for (int i = 0; i < todayQueue.Length; i++)
         {
             var (qNum, status, vtId, price) = todayQueue[i];
-            list.Add(Make(ctx.ClinicId, ctx.BranchId, patients[(i + 5) % patients.Count],
+            list.Add(Make(ctx.ClinicId, ctx.BranchId,
+                patients[(i + 5) % patients.Count],
                 ctx.Doctor2InfoId, vtId, today, AppointmentType.Queue,
-                status, null, null, qNum, price, now.AddHours(-3), ctx.OwnerUserId));
+                status, null, null, qNum, price,
+                now.AddHours(-3), ctx.OwnerUserId));
         }
 
         return list;
     }
 
-    // ── Doctor 3: Time-based, 2pm–8pm ────────────────────────────────────────
+    // ── Doctor 3: Time-based — Downtown Branch, starts 1h from now ──────────
+    // Check-in will NOT trigger delay dialog (doctor is on time / early).
+    // All today's appointments are in the future.
+    // Assigned to Branch2 — tests the branch filter in the toolbar.
 
     private static List<Appointment> SeedDoctor3(
         DemoClinicContext ctx, List<Guid> patients, DateOnly today, DateTimeOffset now)
     {
         var list = new List<Appointment>();
+
+        // Past 30 days
         var pastStatuses = new[]
         {
             AppointmentStatus.Completed, AppointmentStatus.Completed,
             AppointmentStatus.Completed, AppointmentStatus.Cancelled,
         };
-        var times = new[] { new TimeOnly(14,0), new TimeOnly(14,30), new TimeOnly(15,0), new TimeOnly(15,30),
-                            new TimeOnly(16,0), new TimeOnly(16,30), new TimeOnly(17,0), new TimeOnly(17,30) };
 
-        // Past 30 days
         for (int day = 1; day <= 30; day++)
         {
             var date  = today.AddDays(-day);
-            var count = day % 3 == 0 ? 3 : 2;
+            var count = day % 3 == 0 ? 4 : 3;
             for (int i = 0; i < count; i++)
             {
-                var time  = times[(day + i) % times.Length];
+                var time  = new TimeOnly(14 + i, 0);
                 var vtId  = i % 2 == 0 ? ctx.VisitType5Id : ctx.VisitType6Id;
                 var price = vtId == ctx.VisitType5Id ? 200m : 120m;
-                var appt  = Make(ctx.ClinicId, ctx.BranchId, patients[(day * 4 + i + 20) % patients.Count],
+                list.Add(Make(ctx.ClinicId, ctx.Branch2Id,
+                    patients[(day * 4 + i + 20) % patients.Count],
                     ctx.Doctor3InfoId, vtId, date, AppointmentType.Time,
                     pastStatuses[(day + i) % pastStatuses.Length],
-                    time, time.AddMinutes(30), null, price, now.AddDays(-day), ctx.OwnerUserId);
-                list.Add(appt);
+                    time, time.AddMinutes(30), null, price,
+                    now.AddDays(-day), ctx.OwnerUserId));
             }
         }
 
-        // Today — afternoon slots
-        var todaySlots = new[]
-        {
-            (new TimeOnly(14, 0), AppointmentStatus.Completed,  ctx.VisitType5Id, 200m),
-            (new TimeOnly(14,30), AppointmentStatus.Completed,  ctx.VisitType6Id, 120m),
-            (new TimeOnly(15, 0), AppointmentStatus.InProgress, ctx.VisitType5Id, 200m),
-            (new TimeOnly(15,30), AppointmentStatus.Waiting,    ctx.VisitType6Id, 120m),
-            (new TimeOnly(16, 0), AppointmentStatus.Waiting,    ctx.VisitType5Id, 200m),
-            (new TimeOnly(16,30), AppointmentStatus.Pending,    ctx.VisitType6Id, 120m),
-            (new TimeOnly(17, 0), AppointmentStatus.Pending,    ctx.VisitType5Id, 200m),
-            (new TimeOnly(17,30), AppointmentStatus.Pending,    ctx.VisitType6Id, 120m),
-        };
+        // Today — all future slots (doctor hasn't started yet)
+        var futureOffsets = new[] { 60, 90, 120, 150, 180, 210, 240, 270 };
 
-        for (int i = 0; i < todaySlots.Length; i++)
+        for (int i = 0; i < futureOffsets.Length; i++)
         {
-            var (time, status, vtId, price) = todaySlots[i];
-            list.Add(Make(ctx.ClinicId, ctx.BranchId, patients[(i + 15) % patients.Count],
+            var slotLocal = now.ToLocalTime().AddMinutes(futureOffsets[i]);
+            var slotTime  = TimeOnly.FromDateTime(slotLocal.LocalDateTime);
+            var vtId      = i % 2 == 0 ? ctx.VisitType5Id : ctx.VisitType6Id;
+            var price     = vtId == ctx.VisitType5Id ? 200m : 120m;
+            list.Add(Make(ctx.ClinicId, ctx.Branch2Id,
+                patients[(i + 15) % patients.Count],
                 ctx.Doctor3InfoId, vtId, today, AppointmentType.Time,
-                status, time, time.AddMinutes(30), null, price, now.AddHours(-1), ctx.OwnerUserId));
+                AppointmentStatus.Pending,
+                slotTime, slotTime.AddMinutes(30), null, price,
+                now.AddHours(-1), ctx.OwnerUserId));
         }
 
         return list;

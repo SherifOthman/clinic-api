@@ -126,5 +126,13 @@ public class AppointmentRepository : IAppointmentRepository
     /// <summary>Tracked load for mutations — no AsNoTracking.</summary>
     public Task<Appointment?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
         => _set.FirstOrDefaultAsync(a => a.Id == id, ct);
+
+    /// <summary>Tracked bulk load for mutations — no AsNoTracking, no navigation includes.</summary>
+    public Task<List<Appointment>> GetByDoctorAndDateForUpdateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default)
+        => _set
+               .Where(a => a.DoctorInfoId == doctorInfoId && a.Date == date)
+               .OrderBy(a => a.QueueNumber ?? 0)
+               .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
+               .ToListAsync(ct);
 }
 

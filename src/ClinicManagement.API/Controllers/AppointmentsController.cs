@@ -81,6 +81,31 @@ public class AppointmentsController : BaseApiController
         return CreatedAtAction(nameof(GetAppointments), new { date = request.Date }, result.Value);
     }
 
+    /// <summary>Update an existing appointment (visit type, time, discount, duration).</summary>
+    [HttpPut("{id:guid}")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAppointmentRequest request, CancellationToken ct)
+    {
+        TimeOnly? scheduledTime = null;
+        if (request.ScheduledTime is not null)
+        {
+            if (!TimeOnly.TryParse(request.ScheduledTime, out var parsedTime))
+                return BadRequest("Invalid time format. Use HH:mm.");
+            scheduledTime = parsedTime;
+        }
+
+        var command = new UpdateAppointmentCommand(
+            id, request.VisitTypeId, scheduledTime,
+            request.DiscountPercent, request.VisitDurationMinutes);
+
+        var result = await Sender.Send(command, ct);
+        return HandleNoContent(result, "Failed to update appointment");
+    }
+
     /// <summary>Update appointment status (Pending→InProgress→Completed, etc.).</summary>
     [HttpPatch("{id:guid}/status")]
     [RequirePermission(Permission.ManageAppointments)]

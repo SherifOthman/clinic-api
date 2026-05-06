@@ -3,6 +3,9 @@ using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Application.Abstractions.Repositories;
 
+/// <summary>Lightweight projection used by UpdateAppointmentHandler to avoid EF tracking conflicts.</summary>
+public record VisitTypePriceInfo(decimal Price, int? DefaultDoctorDurationMinutes);
+
 /// <summary>
 /// Replaces IWorkingDaysRepository + IDoctorVisitTypeRepository.
 /// Works with DoctorBranchSchedule, WorkingDay, and VisitType.
@@ -28,6 +31,14 @@ public interface IDoctorScheduleRepository
 
     Task<List<VisitType>> GetVisitTypesByScheduleAsync(Guid scheduleId, CancellationToken ct = default);
     Task<VisitType?> GetVisitTypeByIdAsync(Guid visitTypeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns only the price and doctor's default duration for a visit type.
+    /// Uses AsNoTracking — safe to call alongside tracked appointment entities.
+    /// Returns null if the visit type doesn't exist or is inactive.
+    /// </summary>
+    Task<VisitTypePriceInfo?> GetVisitTypePriceAsync(Guid visitTypeId, CancellationToken ct = default);
+
     Task<bool> VisitTypeHasAppointmentsAsync(Guid visitTypeId, CancellationToken ct = default);
     void AddVisitType(VisitType visitType);
     void RemoveVisitType(VisitType visitType);

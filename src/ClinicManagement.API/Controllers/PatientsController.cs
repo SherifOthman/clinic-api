@@ -78,7 +78,7 @@ public class PatientsController : BaseApiController
         return CreatedAtAction(nameof(GetPatientDetail), new { id = result.Value }, null);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission(Permission.EditPatient)]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -96,7 +96,7 @@ public class PatientsController : BaseApiController
         return HandleNoContent(await Sender.Send(command, cancellationToken), "Failed to update patient");
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission(Permission.DeletePatient)]
     [EnableRateLimiting(RateLimitPolicies.UserDeletes)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260505222442_InitialCreate")]
+    [Migration("20260506012419_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -728,6 +728,9 @@ namespace ClinicManagement.Persistence.Migrations
 
                     b.Property<TimeOnly?>("ScheduledStartTime")
                         .HasColumnType("time");
+
+                    b.Property<DateTimeOffset?>("ScheduledStartUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("StoredDelayMinutes")
                         .HasColumnType("int");

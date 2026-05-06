@@ -109,6 +109,15 @@ public class DoctorScheduleRepository : IDoctorScheduleRepository
     public Task<VisitType?> GetVisitTypeByIdAsync(Guid visitTypeId, CancellationToken ct = default)
         => _db.Set<VisitType>().Include(v => v.Schedule).FirstOrDefaultAsync(v => v.Id == visitTypeId, ct);
 
+    public Task<VisitTypePriceInfo?> GetVisitTypePriceAsync(Guid visitTypeId, CancellationToken ct = default)
+        => _db.Set<VisitType>()
+              .AsNoTracking()
+              .Where(v => v.Id == visitTypeId && v.IsActive)
+              .Select(v => new VisitTypePriceInfo(
+                  v.Price,
+                  v.Schedule != null ? v.Schedule.DoctorInfo!.DefaultVisitDurationMinutes : (int?)null))
+              .FirstOrDefaultAsync(ct)!;
+
     public Task<bool> VisitTypeHasAppointmentsAsync(Guid visitTypeId, CancellationToken ct = default)
         => _db.Set<Appointment>().AnyAsync(a => a.VisitTypeId == visitTypeId, ct);
 

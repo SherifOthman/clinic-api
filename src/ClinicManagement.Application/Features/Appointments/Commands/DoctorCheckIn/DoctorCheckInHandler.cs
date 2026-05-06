@@ -22,9 +22,9 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
     {
         var clinicId = _currentUser.GetRequiredClinicId();
 
-        // Use UTC date so the session date is consistent regardless of server timezone
         var nowUtc = DateTimeOffset.UtcNow;
-        var today  = DateOnly.FromDateTime(nowUtc.Date);
+        // Use local date for the session so it matches what the user sees in the UI
+        var today  = DateOnly.FromDateTime(nowUtc.ToLocalTime().Date);
 
         // Prevent duplicate check-in
         var existing = await _uow.DoctorSessions.GetByDoctorBranchDateAsync(
@@ -35,8 +35,23 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
 
         // Get scheduled start time from working days
         var schedule   = await _uow.DoctorSchedules.GetScheduleAsync(request.DoctorInfoId, request.BranchId, ct);
-        var todayDow   = nowUtc.DayOfWeek;
+        var todayDow   = nowUtc.ToLocalTime().DayOfWeek;
         var workingDay = schedule?.WorkingDays.FirstOrDefault(w => w.Day == todayDow && w.IsAvailable);
+
+        // Build the absolute UTC moment the doctor was scheduled to start.
+        // WorkingDay.StartTime is a local clock time (e.g. 09:00).
+        // We combine today's local date with that clock time, then convert to UTC.
+        // This is timezone-safe: the offset is captured at the moment of check-in.
+        DateTimeOffset? scheduledStartUtc = null;
+        if (workingDay is not null)
+        {
+            var localOffset = nowUtc.ToLocalTime().Offset;
+            var scheduledLocal = new DateTimeOffset(
+                today.Year, today.Month, today.Day,
+                workingDay.StartTime.Hour, workingDay.StartTime.Minute, 0,
+                localOffset);
+            scheduledStartUtc = scheduledLocal.ToUniversalTime();
+        }
 
         var session = new DoctorSession
         {
@@ -45,20 +60,17 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
             BranchId           = request.BranchId,
             Date               = today,
             CheckedInAt        = nowUtc,
-            ScheduledStartTime = workingDay?.StartTime,
+            ScheduledStartUtc  = scheduledStartUtc,
+            ScheduledStartTime = workingDay?.StartTime,  // kept for display
         };
 
         await _uow.DoctorSessions.AddAsync(session, ct);
         await _uow.SaveChangesAsync(ct);
 
-        // Compute delay using the UTC-based property
+        // Compute and store delay once — pure UTC arithmetic
         var delayMinutes = session.DelayMinutes;
         var isLate       = delayMinutes.HasValue && delayMinutes > 0;
 
-        // If the doctor is not late, the session has no actionable value — remove it.
-        // The frontend will show "Session Active" only when there's a real session.
-        // Actually keep the session so hasSessionToday works — just don't store delay.
-        // Store delay for HandleDelayHandler to use
         if (isLate)
         {
             session.StoredDelayMinutes = delayMinutes;
@@ -69,7 +81,7 @@ public class DoctorCheckInHandler : IRequestHandler<DoctorCheckInCommand, Result
             session.Id,
             isLate,
             delayMinutes,
-            workingDay?.StartTime.ToString("HH:mm")
+            workingDay?.StartTime.ToString("HH:mm")  // local clock time for display
         ));
     }
 }

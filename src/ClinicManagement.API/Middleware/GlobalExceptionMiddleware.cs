@@ -101,12 +101,13 @@ public class GlobalExceptionMiddleware
                 TraceId = context.TraceIdentifier
             },
 
-            DbUpdateException dbEx => new ApiProblemDetails
+            DbUpdateException => new ApiProblemDetails
             {
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
                 Title = "Database Error",
                 Status = 500,
-                Detail = dbEx.InnerException?.Message ?? dbEx.Message,
+                // Never expose raw SQL error messages — they can leak table names and schema details.
+                Detail = "A database error occurred. Please try again later.",
                 TraceId = context.TraceIdentifier
             },
 

@@ -5,43 +5,36 @@ using System.Diagnostics;
 namespace ClinicManagement.Application.Behaviors;
 
 /// <summary>
-/// Pipeline behavior that monitors performance and logs slow requests.
-/// Helps identify performance bottlenecks.
+/// Pipeline behavior that logs a warning when a request exceeds 200ms.
+/// Helps identify performance bottlenecks in production.
+/// Uses Stopwatch.StartNew() per invocation — safe for any registration lifetime.
 /// </summary>
 public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
+    private const int SlowRequestThresholdMs = 200;
+
     private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
-    private readonly Stopwatch _timer;
 
     public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
-    {
-        _logger = logger;
-        _timer = new Stopwatch();
-    }
+        => _logger = logger;
 
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        _timer.Start();
-
+        var timer = Stopwatch.StartNew();
         var response = await next();
+        timer.Stop();
 
-        _timer.Stop();
-
-        var elapsedMilliseconds = _timer.ElapsedMilliseconds;
-
-        // Log warning if request takes longer than 200ms
-        if (elapsedMilliseconds > 200)
+        if (timer.ElapsedMilliseconds > SlowRequestThresholdMs)
         {
-            var requestName = typeof(TRequest).Name;
-
             _logger.LogWarning(
-                "Long Running Request: {RequestName} ({ElapsedMilliseconds} milliseconds)",
-                requestName,
-                elapsedMilliseconds);
+                "Slow request: {RequestName} took {ElapsedMilliseconds}ms (threshold: {ThresholdMs}ms)",
+                typeof(TRequest).Name,
+                timer.ElapsedMilliseconds,
+                SlowRequestThresholdMs);
         }
 
         return response;

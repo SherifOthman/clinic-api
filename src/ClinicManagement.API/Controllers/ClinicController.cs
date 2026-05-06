@@ -2,6 +2,7 @@ using ClinicManagement.API.Models;
 using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Features.ClinicSettings.Commands;
 using ClinicManagement.API.Authorization;
+using ClinicManagement.API.Contracts.Clinic;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -25,6 +26,3 @@ public class ClinicController : BaseApiController
         return HandleNoContent(result, "Failed to update clinic settings");
     }
 }
-
-/// <summary>Request body for PATCH /api/clinic/settings</summary>
-public record UpdateClinicSettingsRequest(int WeekStartDay);

@@ -726,6 +726,9 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Property<TimeOnly?>("ScheduledStartTime")
                         .HasColumnType("time");
 
+                    b.Property<DateTimeOffset?>("ScheduledStartUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<int?>("StoredDelayMinutes")
                         .HasColumnType("int");
 

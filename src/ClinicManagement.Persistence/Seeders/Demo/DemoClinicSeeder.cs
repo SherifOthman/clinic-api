@@ -40,16 +40,24 @@ public class DemoClinicSeeder
             .FirstOrDefaultAsync(c => c.OwnerUserId == owner.Id);
         if (clinic is null) { _logger.LogWarning("Demo clinic not found"); return null; }
 
-        var branch = await _db.Set<ClinicBranch>().IgnoreQueryFilters()
-            .FirstOrDefaultAsync(b => b.ClinicId == clinic.Id);
-        if (branch is null) { _logger.LogWarning("Demo branch not found"); return null; }
+        var branches = await _db.Set<ClinicBranch>().IgnoreQueryFilters()
+            .Where(b => b.ClinicId == clinic.Id)
+            .OrderBy(b => b.IsMainBranch ? 0 : 1)
+            .ToListAsync();
+
+        if (branches.Count == 0) { _logger.LogWarning("Demo branches not found"); return null; }
+
+        var branch  = branches[0];                                    // Main Branch
+        var branch2 = branches.Count > 1 ? branches[1] : branches[0]; // Downtown Branch
 
         // ── Specializations ───────────────────────────────────────────────────
         var specGeneral    = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "General Practice");
         var specPediatrics = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Pediatrics");
         var specCardiology = await _db.Set<Specialization>().FirstOrDefaultAsync(s => s.NameEn == "Cardiology");
 
-        // ── Doctor 1: Time-based (existing demo doctor) ───────────────────────
+        // ── Doctor 1: Time-based ─────────────────────────────────────────────
+        // StartTime = 00:01 UTC (always in the past when testing during the day).
+        // Checking in at any point during the day = always late → delay dialog appears.
         var doc1 = await SetupDoctorAsync(
             email: "doctor@clinic.com", username: "doctor",
             fullName: "Dr. Demo Doctor", phone: "+201112345678",
@@ -58,12 +66,13 @@ public class DemoClinicSeeder
             specializationId: specGeneral?.Id,
             appointmentType: AppointmentType.Time,
             scheduleType: AppointmentType.Time,
-            workStart: new TimeOnly(9, 0), workEnd: new TimeOnly(17, 0),
+            workStart: new TimeOnly(0, 1), workEnd: new TimeOnly(23, 59),
             visitTypes: [("Consultation", 150m), ("Follow-up", 80m)]);
 
         if (doc1 is null) return null;
 
-        // ── Doctor 2: Queue-based (new) ───────────────────────────────────────
+        // ── Doctor 2: Queue-based ─────────────────────────────────────────────
+        // No delay dialog for queue doctors regardless of lateness.
         var doc2 = await SetupDoctorAsync(
             email: "doctor2@clinic.com", username: "doctor2",
             fullName: "Dr. Fatima Al-Zahra", phone: "+201112345679",
@@ -72,21 +81,23 @@ public class DemoClinicSeeder
             specializationId: specPediatrics?.Id,
             appointmentType: AppointmentType.Queue,
             scheduleType: AppointmentType.Queue,
-            workStart: new TimeOnly(8, 0), workEnd: new TimeOnly(14, 0),
+            workStart: new TimeOnly(0, 1), workEnd: new TimeOnly(23, 59),
             visitTypes: [("General Checkup", 100m), ("Vaccination", 50m)]);
 
         if (doc2 is null) return null;
 
-        // ── Doctor 3: Time-based, different hours (new) ───────────────────────
+        // ── Doctor 3: Time-based ──────────────────────────────────────────────
+        // Assigned to Downtown Branch (branch2) — tests the branch filter.
+        // StartTime = 23:00 (always in the future) → no delay dialog on check-in.
         var doc3 = await SetupDoctorAsync(
             email: "doctor3@clinic.com", username: "doctor3",
             fullName: "Dr. Khalid Al-Rashid", phone: "+201112345680",
             gender: Gender.Male, password: "Doctor123!",
-            clinicId: clinic.Id, branchId: branch.Id,
+            clinicId: clinic.Id, branchId: branch2.Id,
             specializationId: specCardiology?.Id,
             appointmentType: AppointmentType.Time,
             scheduleType: AppointmentType.Time,
-            workStart: new TimeOnly(14, 0), workEnd: new TimeOnly(20, 0),
+            workStart: new TimeOnly(23, 0), workEnd: new TimeOnly(23, 59),
             visitTypes: [("Cardiology Consult", 200m), ("ECG", 120m)]);
 
         if (doc3 is null) return null;
@@ -97,6 +108,7 @@ public class DemoClinicSeeder
         {
             ClinicId      = clinic.Id,
             BranchId      = branch.Id,
+            Branch2Id     = branch2.Id,
             OwnerUserId   = owner.Id,
             DoctorUserId  = doc1.UserId,
             DoctorInfoId  = doc1.DoctorInfoId,

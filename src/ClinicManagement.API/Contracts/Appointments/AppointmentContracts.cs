@@ -12,7 +12,14 @@ public record CreateAppointmentRequest(
     int? VisitDurationMinutes = null
 );
 
+public record UpdateAppointmentRequest(
+    Guid VisitTypeId,
+    string? ScheduledTime,
+    decimal? DiscountPercent,
+    int? VisitDurationMinutes = null
+);
+
 public record UpdateStatusRequest(string Status);
 public record SetAppointmentTypeRequest(string AppointmentType, Guid BranchId);
 public record CheckInRequest(Guid DoctorInfoId, Guid BranchId);
-public record HandleDelayRequest(string Option); // "AutoShift" | "MarkMissed" | "Manual"
+public record HandleDelayRequest(string Option); // "AutoShift" | "MarkMissed" | "Manual" | "Cancel"

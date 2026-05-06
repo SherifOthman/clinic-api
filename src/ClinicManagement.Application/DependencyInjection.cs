@@ -1,7 +1,9 @@
 using ClinicManagement.Application.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;namespace ClinicManagement.Application;
+using System.Reflection;
+
+namespace ClinicManagement.Application;
 
 public static class DependencyInjection
 {

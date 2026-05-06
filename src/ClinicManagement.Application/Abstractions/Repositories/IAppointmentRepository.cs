@@ -24,4 +24,7 @@ public interface IAppointmentRepository
 
     /// <summary>Loads a tracked entity for mutation (no AsNoTracking).</summary>
     Task<Appointment?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Loads tracked entities for bulk mutation (no AsNoTracking, no navigation includes).</summary>
+    Task<List<Appointment>> GetByDoctorAndDateForUpdateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default);
 }
