@@ -33,7 +33,7 @@ public class QueueCounterRepository : IQueueCounterRepository
                 VALUES (
                     '{doctorInfoId}',
                     CAST('{dateStr}' AS date),
-                    ISNULL((SELECT MAX(QueueNumber) FROM Appointments
+                    ISNULL((SELECT MAX(QueueNumber) FROM Appointment
                              WHERE DoctorInfoId = '{doctorInfoId}'
                                AND Date = CAST('{dateStr}' AS date)
                                AND IsDeleted = 0), 0) + 1
