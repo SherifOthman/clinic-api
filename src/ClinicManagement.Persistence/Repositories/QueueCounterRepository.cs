@@ -15,6 +15,11 @@ public class QueueCounterRepository : IQueueCounterRepository
         // as one unit, so no explicit transaction or locking hints are needed.
         // HOLDLOCK prevents phantom inserts between the WHEN NOT MATCHED check
         // and the INSERT on the first call for a new doctor/date combination.
+        //
+        // On first call for a doctor/date, we seed LastValue from the MAX existing
+        // QueueNumber in the Appointments table. This handles the case where
+        // appointments were seeded directly (bypassing the counter) — without this,
+        // the counter would start at 1 and collide with existing rows.
         var dateStr = date.ToString("yyyy-MM-dd");
 
         var sql = $"""
@@ -24,7 +29,15 @@ public class QueueCounterRepository : IQueueCounterRepository
             WHEN MATCHED THEN
                 UPDATE SET LastValue = target.LastValue + 1
             WHEN NOT MATCHED THEN
-                INSERT (DoctorInfoId, Date, LastValue) VALUES ('{doctorInfoId}', CAST('{dateStr}' AS date), 1)
+                INSERT (DoctorInfoId, Date, LastValue)
+                VALUES (
+                    '{doctorInfoId}',
+                    CAST('{dateStr}' AS date),
+                    ISNULL((SELECT MAX(QueueNumber) FROM Appointments
+                             WHERE DoctorInfoId = '{doctorInfoId}'
+                               AND Date = CAST('{dateStr}' AS date)
+                               AND IsDeleted = 0), 0) + 1
+                )
             OUTPUT inserted.LastValue;
             """;
 
