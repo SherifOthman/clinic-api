@@ -11,8 +11,6 @@ public class User : IdentityUser<Guid>
 {
     public User()
     {
-        // Use time-ordered v7 GUID to avoid SQL Server index fragmentation,
-        // consistent with all other entities in the system.
         Id = Guid.CreateVersion7();
     }
 
