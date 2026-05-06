@@ -106,6 +106,54 @@ public class AppointmentsController : BaseApiController
         return HandleNoContent(result, "Failed to update appointment");
     }
 
+    /// <summary>Move a single appointment to a different date (e.g. doctor defers last patients to tomorrow).</summary>
+    [HttpPatch("{id:guid}/reschedule")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RescheduleAppointment(Guid id, [FromBody] RescheduleAppointmentRequest request, CancellationToken ct)
+    {
+        if (!DateOnly.TryParse(request.NewDate, out var newDate))
+            return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+
+        var result = await Sender.Send(new RescheduleAppointmentCommand(id, newDate), ct);
+        return HandleNoContent(result, "Failed to reschedule appointment");
+    }
+
+    /// <summary>Bulk-cancel all pending/waiting appointments for a doctor on a date.</summary>
+    [HttpPost("bulk-cancel")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> BulkCancel([FromBody] BulkCancelRequest request, CancellationToken ct)
+    {
+        if (!DateOnly.TryParse(request.Date, out var date))
+            return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+
+        var result = await Sender.Send(new BulkCancelAppointmentsCommand(request.DoctorInfoId, request.BranchId, date), ct);
+        return HandleResult(result, "Failed to bulk-cancel appointments");
+    }
+
+    /// <summary>
+    /// Reschedule all pending/waiting appointments for a doctor from a date onwards.
+    /// Use case: doctor is absent — move all affected appointments to the next available working days.
+    /// </summary>
+    [HttpPost("reschedule-doctor")]
+    [RequirePermission(Permission.ManageAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserWrites)]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RescheduleDoctor([FromBody] BulkCancelRequest request, CancellationToken ct)
+    {
+        if (!DateOnly.TryParse(request.Date, out var date))
+            return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+
+        var result = await Sender.Send(new RescheduleDoctorCommand(request.DoctorInfoId, request.BranchId, date), ct);
+        return HandleResult(result, "Failed to reschedule appointments");
+    }
+
     /// <summary>Update appointment status (Pending→InProgress→Completed, etc.).</summary>
     [HttpPatch("{id:guid}/status")]
     [RequirePermission(Permission.ManageAppointments)]

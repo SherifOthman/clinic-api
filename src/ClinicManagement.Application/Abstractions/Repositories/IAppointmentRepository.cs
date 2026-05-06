@@ -27,4 +27,7 @@ public interface IAppointmentRepository
 
     /// <summary>Loads tracked entities for bulk mutation (no AsNoTracking, no navigation includes).</summary>
     Task<List<Appointment>> GetByDoctorAndDateForUpdateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default);
+
+    /// <summary>Loads all tracked pending/waiting appointments for a doctor from a given date onwards.</summary>
+    Task<List<Appointment>> GetFutureByDoctorForUpdateAsync(Guid doctorInfoId, DateOnly fromDate, CancellationToken ct = default);
 }

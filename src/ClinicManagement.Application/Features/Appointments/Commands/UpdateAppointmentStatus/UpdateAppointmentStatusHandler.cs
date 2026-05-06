@@ -20,11 +20,13 @@ public class UpdateAppointmentStatusHandler : IRequestHandler<UpdateAppointmentS
         if (appt is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Appointment not found");
 
-        // Validate transitions
+        // Validate transitions — includes recovery paths for real-world scenarios:
+        // NoShow/Cancelled → Pending: patient arrived late or called back
         var valid = (appt.Status, request.Status) switch
         {
+            // Normal forward flow
             (AppointmentStatus.Pending,    AppointmentStatus.Waiting)    => true,  // patient arrived
-            (AppointmentStatus.Pending,    AppointmentStatus.InProgress) => true,  // direct to in-progress (queue)
+            (AppointmentStatus.Pending,    AppointmentStatus.InProgress) => true,  // direct (queue)
             (AppointmentStatus.Pending,    AppointmentStatus.Cancelled)  => true,
             (AppointmentStatus.Pending,    AppointmentStatus.NoShow)     => true,
             (AppointmentStatus.Waiting,    AppointmentStatus.InProgress) => true,  // called in
@@ -32,6 +34,12 @@ public class UpdateAppointmentStatusHandler : IRequestHandler<UpdateAppointmentS
             (AppointmentStatus.Waiting,    AppointmentStatus.NoShow)     => true,
             (AppointmentStatus.InProgress, AppointmentStatus.Completed)  => true,
             (AppointmentStatus.InProgress, AppointmentStatus.Cancelled)  => true,
+
+            // Recovery paths — patient arrived late or receptionist made a mistake
+            (AppointmentStatus.NoShow,     AppointmentStatus.Pending)    => true,  // patient showed up late
+            (AppointmentStatus.NoShow,     AppointmentStatus.Waiting)    => true,  // patient arrived, skip to waiting
+            (AppointmentStatus.Cancelled,  AppointmentStatus.Pending)    => true,  // patient called back
+
             _ => false,
         };
 

@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Appointments.Queries;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
@@ -132,6 +133,17 @@ public class AppointmentRepository : IAppointmentRepository
         => _set
                .Where(a => a.DoctorInfoId == doctorInfoId && a.Date == date)
                .OrderBy(a => a.QueueNumber ?? 0)
+               .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
+               .ToListAsync(ct);
+
+    /// <summary>Tracked load of all pending/waiting appointments from a date onwards.</summary>
+    public Task<List<Appointment>> GetFutureByDoctorForUpdateAsync(Guid doctorInfoId, DateOnly fromDate, CancellationToken ct = default)
+        => _set
+               .Where(a => a.DoctorInfoId == doctorInfoId
+                        && a.Date >= fromDate
+                        && (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Waiting))
+               .OrderBy(a => a.Date)
+               .ThenBy(a => a.QueueNumber ?? 0)
                .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
                .ToListAsync(ct);
 }
