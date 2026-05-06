@@ -146,5 +146,14 @@ public class AppointmentRepository : IAppointmentRepository
                .ThenBy(a => a.QueueNumber ?? 0)
                .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
                .ToListAsync(ct);
+
+    /// <summary>Tracked load of pending/waiting appointments for a doctor on a specific date, ordered by queue number.</summary>
+    public Task<List<Appointment>> GetByDoctorDatePendingForUpdateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default)
+        => _set
+               .Where(a => a.DoctorInfoId == doctorInfoId
+                        && a.Date == date
+                        && (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Waiting))
+               .OrderBy(a => a.QueueNumber ?? 0)
+               .ToListAsync(ct);
 }
 

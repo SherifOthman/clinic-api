@@ -30,4 +30,10 @@ public interface IAppointmentRepository
 
     /// <summary>Loads all tracked pending/waiting appointments for a doctor from a given date onwards.</summary>
     Task<List<Appointment>> GetFutureByDoctorForUpdateAsync(Guid doctorInfoId, DateOnly fromDate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Loads all tracked pending/waiting appointments for a doctor on a specific date.
+    /// Used when inserting carry-over patients at the front of the next day's queue.
+    /// </summary>
+    Task<List<Appointment>> GetByDoctorDatePendingForUpdateAsync(Guid doctorInfoId, DateOnly date, CancellationToken ct = default);
 }

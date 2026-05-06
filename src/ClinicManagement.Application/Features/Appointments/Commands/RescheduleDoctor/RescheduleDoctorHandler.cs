@@ -14,7 +14,6 @@ public class RescheduleDoctorHandler : IRequestHandler<RescheduleDoctorCommand, 
 
     public async Task<Result<int>> Handle(RescheduleDoctorCommand request, CancellationToken ct)
     {
-        // Load the doctor's working days for this branch
         var schedule = await _uow.DoctorSchedules.GetScheduleAsync(request.DoctorInfoId, request.BranchId, ct);
         if (schedule is null)
             return Result.Failure<int>(ErrorCodes.NOT_FOUND, "Doctor schedule not found");
@@ -34,60 +33,72 @@ public class RescheduleDoctorHandler : IRequestHandler<RescheduleDoctorCommand, 
         if (appointments.Count == 0)
             return Result.Success(0);
 
-        // Group by original date — each date's appointments move to the next available day
+        // Group by original date — each date's appointments move to the next available working day
         var byDate = appointments
             .GroupBy(a => a.Date)
             .OrderBy(g => g.Key)
             .ToList();
 
-        // Track which dates are already "used" by rescheduled appointments
-        // so we don't pile multiple groups onto the same day
-        var usedDates = new HashSet<DateOnly>();
+        // Track which target dates have already received carry-over patients in this run,
+        // so we can correctly stack multiple groups onto the same target day if needed.
+        // Key = target date, Value = how many carry-over slots are already reserved at the front.
+        var carryOverCountByDate = new Dictionary<DateOnly, int>();
 
-        // Pre-load existing appointment dates for this doctor to avoid conflicts
-        // (dates that already have appointments shouldn't receive more)
-        var existingDates = appointments
-            .Select(a => a.Date)
-            .ToHashSet();
+        // Dates that already have appointments (before this reschedule run)
+        // — used to find the next available working day.
+        // We allow landing on dates that already have appointments (we just push them back).
+        var originalDates = appointments.Select(a => a.Date).ToHashSet();
 
         int rescheduled = 0;
 
         foreach (var group in byDate)
         {
             var originalDate = group.Key;
-            var groupAppts   = group.OrderBy(a => a.QueueNumber ?? 0)
-                                    .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
-                                    .ToList();
+            var groupAppts   = group.OrderBy(a => a.QueueNumber ?? 0).ToList();
 
-            // Find the next available working day after the original date
-            var newDate = FindNextWorkingDay(originalDate, workingDays, usedDates, existingDates);
+            // Find the next working day after the original date.
+            // Unlike before, we DO allow landing on dates that already have appointments —
+            // the carry-overs go first, existing patients shift back.
+            var newDate = FindNextWorkingDay(originalDate, workingDays);
+            if (newDate is null) continue;
 
-            if (newDate is null)
+            // How many carry-over slots are already at the front of this target date?
+            carryOverCountByDate.TryGetValue(newDate.Value, out int alreadyCarriedOver);
+
+            // Load existing pending/waiting appointments on the target date
+            // (only if this is the first group landing on this date)
+            List<Appointment> existingOnTarget = new();
+            if (alreadyCarriedOver == 0)
             {
-                // No available day found within 60 days — skip this group
-                continue;
+                existingOnTarget = await _uow.Appointments.GetByDoctorDatePendingForUpdateAsync(
+                    request.DoctorInfoId, newDate.Value, ct);
             }
 
-            usedDates.Add(newDate.Value);
-
-            // For queue-based: reassign queue numbers starting from 1 on the new date
-            // (or continue from existing queue numbers on that date if any)
-            int queueOffset = 0;
+            // Assign carry-over patients queue numbers starting from (alreadyCarriedOver + 1)
+            // so they all go before the existing patients.
+            int nextCarryOverSlot = alreadyCarriedOver + 1;
 
             foreach (var appt in groupAppts)
             {
-                appt.Date = newDate.Value;
+                appt.Date        = newDate.Value;
+                appt.QueueNumber = nextCarryOverSlot++;
 
-                if (appt.Type == Domain.Enums.AppointmentType.Queue)
-                {
-                    // Keep relative queue order; actual numbers will be sequential
-                    appt.QueueNumber = (appt.QueueNumber ?? 0) + queueOffset;
-                }
-                // Time-based: keep the same time slot on the new date
-                // (the receptionist can adjust individual slots if needed)
+                if (appt.Status == Domain.Enums.AppointmentStatus.Waiting)
+                    appt.Status = Domain.Enums.AppointmentStatus.Pending;
 
                 rescheduled++;
             }
+
+            // Push existing patients on the target date back by the number of carry-overs added
+            int totalCarryOvers = nextCarryOverSlot - 1; // = alreadyCarriedOver + groupAppts.Count
+            if (existingOnTarget.Count > 0)
+            {
+                int offset = groupAppts.Count; // how many new carry-overs we just added
+                foreach (var e in existingOnTarget.OrderBy(e => e.QueueNumber ?? 0))
+                    e.QueueNumber = (e.QueueNumber ?? 0) + offset;
+            }
+
+            carryOverCountByDate[newDate.Value] = totalCarryOvers;
         }
 
         await _uow.SaveChangesAsync(ct);
@@ -95,26 +106,19 @@ public class RescheduleDoctorHandler : IRequestHandler<RescheduleDoctorCommand, 
     }
 
     /// <summary>
-    /// Finds the next working day after the given date that isn't already used
-    /// or occupied by existing appointments. Searches up to 60 days ahead.
+    /// Finds the next working day after the given date within 60 days.
+    /// Unlike the previous version, we allow landing on dates that already have appointments —
+    /// carry-overs go first, existing patients shift back.
     /// </summary>
-    private static DateOnly? FindNextWorkingDay(
-        DateOnly afterDate,
-        HashSet<DayOfWeek> workingDays,
-        HashSet<DateOnly> usedDates,
-        HashSet<DateOnly> existingDates)
+    private static DateOnly? FindNextWorkingDay(DateOnly afterDate, HashSet<DayOfWeek> workingDays)
     {
         var candidate = afterDate.AddDays(1);
         var limit     = afterDate.AddDays(60);
 
         while (candidate <= limit)
         {
-            if (workingDays.Contains(candidate.DayOfWeek)
-                && !usedDates.Contains(candidate)
-                && !existingDates.Contains(candidate))
-            {
+            if (workingDays.Contains(candidate.DayOfWeek))
                 return candidate;
-            }
             candidate = candidate.AddDays(1);
         }
 
