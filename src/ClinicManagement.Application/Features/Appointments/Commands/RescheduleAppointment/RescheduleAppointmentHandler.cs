@@ -27,9 +27,11 @@ public class RescheduleAppointmentHandler : IRequestHandler<RescheduleAppointmen
             return Result.Failure(ErrorCodes.VALIDATION_ERROR, "New date must be in the future");
 
         // Get the next available queue number on the target date (patient goes to END of queue)
+        var targetBranchId = request.NewBranchId ?? appt.BranchId;
         var nextQueueNumber = await _uow.QueueCounters.NextAsync(appt.DoctorInfoId, request.NewDate, ct);
 
         appt.Date        = request.NewDate;
+        appt.BranchId    = targetBranchId;
         appt.QueueNumber = nextQueueNumber;
 
         // Reset to Pending — they haven't been called yet on the new day

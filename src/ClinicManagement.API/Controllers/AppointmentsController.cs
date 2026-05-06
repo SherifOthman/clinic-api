@@ -117,7 +117,7 @@ public class AppointmentsController : BaseApiController
         if (!DateOnly.TryParse(request.NewDate, out var newDate))
             return BadRequest("Invalid date format. Use YYYY-MM-DD.");
 
-        var result = await Sender.Send(new RescheduleAppointmentCommand(id, newDate), ct);
+        var result = await Sender.Send(new RescheduleAppointmentCommand(id, newDate, request.NewBranchId), ct);
         return HandleNoContent(result, "Failed to reschedule appointment");
     }
 

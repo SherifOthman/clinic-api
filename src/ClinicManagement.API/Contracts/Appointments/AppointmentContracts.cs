@@ -20,7 +20,7 @@ public record UpdateAppointmentRequest(
 );
 
 public record BulkCancelRequest(Guid DoctorInfoId, Guid BranchId, string Date);
-public record RescheduleAppointmentRequest(string NewDate);
+public record RescheduleAppointmentRequest(string NewDate, Guid? NewBranchId = null);
 
 public record UpdateStatusRequest(string Status);
 public record SetAppointmentTypeRequest(string AppointmentType, Guid BranchId);
