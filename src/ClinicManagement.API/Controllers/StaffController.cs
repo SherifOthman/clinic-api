@@ -86,6 +86,21 @@ public class StaffController : BaseApiController
         return result.IsSuccess ? NoContent() : HandleResult(result, "Invitation Failed");
     }
 
+    /// <summary>
+    /// Public endpoint — returns minimal invitation info (clinic name, role, expiry)
+    /// so the website can show context before the user fills the registration form.
+    /// No authentication required.
+    /// </summary>
+    [HttpGet("invitations/{token}/detail")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(PublicInvitationDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPublicInvitationDetail(string token, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetPublicInvitationDetailQuery(token), cancellationToken);
+        return HandleResult(result, "Invitation not found");
+    }
     [RequirePermission(Permission.InviteStaff)]
     [HttpPatch("invitations/{id:guid}/cancel")]
     [EnableRateLimiting(RateLimitPolicies.UserWrites)]
