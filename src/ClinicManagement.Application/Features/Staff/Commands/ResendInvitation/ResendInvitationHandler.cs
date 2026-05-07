@@ -46,7 +46,7 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
             clinic?.Name ?? "Clinic",
             invitation.Role.ToString(),
             inviter?.FullName ?? "Clinic Administrator",
-            $"/accept-invitation/{invitation.InvitationToken}",
+            $"/en/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);

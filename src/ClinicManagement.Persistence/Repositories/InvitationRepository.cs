@@ -54,8 +54,10 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         var desc = filter.SortDirection.IsDescending();
         query = filter.SortBy?.Trim().ToLower() switch
         {
-            "email" => desc ? query.OrderByDescending(si => si.Email) : query.OrderBy(si => si.Email),
-            _       => query.OrderByDescending(si => si.CreatedAt),
+            "email"     => desc ? query.OrderByDescending(si => si.Email)     : query.OrderBy(si => si.Email),
+            "invitedat" => desc ? query.OrderByDescending(si => si.CreatedAt) : query.OrderBy(si => si.CreatedAt),
+            "expiresat" => desc ? query.OrderByDescending(si => si.ExpiresAt) : query.OrderBy(si => si.ExpiresAt),
+            _           => query.OrderByDescending(si => si.CreatedAt),
         };
 
         return await query

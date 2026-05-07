@@ -51,7 +51,7 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             clinic?.Name ?? "Clinic",
             request.Role,
             inviter?.FullName ?? "Clinic Administrator",
-            $"/accept-invitation/{invitation.InvitationToken}",
+            $"/en/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
