@@ -15,7 +15,9 @@ public class GetPublicInvitationDetailHandler
     public async Task<Result<PublicInvitationDetailDto>> Handle(
         GetPublicInvitationDetailQuery request, CancellationToken cancellationToken)
     {
-        var invitation = await _uow.Invitations.GetByTokenAsync(request.Token, cancellationToken);
+        // Use GetByIdWithSpecializationAsync pattern — load with Specialization included
+        var invitation = await _uow.Invitations.GetByTokenWithSpecializationAsync(
+            request.Token, cancellationToken);
 
         if (invitation is null)
             return Result.Failure<PublicInvitationDetailDto>(ErrorCodes.NOT_FOUND, "Invitation not found");
@@ -30,6 +32,7 @@ public class GetPublicInvitationDetailHandler
             invitation.Role.ToString(),
             clinic?.Name ?? "Clinic",
             isExpired,
-            invitation.IsAccepted));
+            invitation.IsAccepted,
+            invitation.Specialization?.NameEn));
     }
 }

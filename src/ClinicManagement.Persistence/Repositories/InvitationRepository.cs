@@ -21,6 +21,11 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
         => await TenantGuard.AsSystemQuery(DbSet)
             .FirstOrDefaultAsync(si => si.InvitationToken == token && !si.IsDeleted, ct);
 
+    public async Task<StaffInvitation?> GetByTokenWithSpecializationAsync(string token, CancellationToken ct = default)
+        => await TenantGuard.AsSystemQuery(DbSet)
+            .Include(si => si.Specialization)
+            .FirstOrDefaultAsync(si => si.InvitationToken == token && !si.IsDeleted, ct);
+
     public async Task<int> CountPendingAsync(CancellationToken ct = default)
     {
         var now = DateTimeOffset.UtcNow;

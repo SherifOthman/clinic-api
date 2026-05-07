@@ -16,4 +16,5 @@ public record PublicInvitationDetailDto(
     string Role,
     string ClinicName,
     bool IsExpired,
-    bool IsAccepted);
+    bool IsAccepted,
+    string? SpecializationName);

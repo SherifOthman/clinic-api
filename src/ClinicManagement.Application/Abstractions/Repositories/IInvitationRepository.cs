@@ -10,6 +10,7 @@ public interface IInvitationRepository : IRepository<StaffInvitation>
 {
     Task<StaffInvitation?> GetByIdWithSpecializationAsync(Guid id, CancellationToken ct = default);
     Task<StaffInvitation?> GetByTokenAsync(string token, CancellationToken ct = default);
+    Task<StaffInvitation?> GetByTokenWithSpecializationAsync(string token, CancellationToken ct = default);
 
     /// <summary>Count pending (not accepted, not canceled, not expired) invitations.</summary>
     Task<int> CountPendingAsync(CancellationToken ct = default);
