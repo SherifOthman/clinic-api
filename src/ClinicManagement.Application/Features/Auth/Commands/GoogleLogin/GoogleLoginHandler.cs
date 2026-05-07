@@ -39,8 +39,8 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
     {
         var user = await ResolveUserAsync(request, ct);
         if (user is null)
-            return Result.Failure<TokenResponseDto>(ErrorCodes.USER_CREATION_FAILED,
-                "Failed to create user from Google account");
+            return Result.Failure<TokenResponseDto>(ErrorCodes.AUTH_METHOD_MISMATCH,
+                "This email is registered with a password. Please sign in with your email and password.");
 
         await EnsureEmailConfirmedAsync(user);
         await LinkGoogleLoginIfMissingAsync(user, request.GoogleId);
@@ -73,15 +73,35 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
     private async Task<User?> ResolveUserAsync(GoogleLoginCommand request, CancellationToken ct)
     {
+        // 1. Try to find by Google login first (fastest, most specific)
         if (!string.IsNullOrEmpty(request.GoogleId))
         {
             var byLogin = await _userManager.FindByLoginAsync("Google", request.GoogleId);
             if (byLogin is not null) return byLogin;
         }
 
+        // 2. Try to find by email
         var byEmail = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, ct);
-        if (byEmail is not null) return byEmail;
+        if (byEmail is not null)
+        {
+            // Guard: if this account was registered with email/password, block Google OAuth.
+            // The user must log in with their password — mixing auth methods is not allowed.
+            var hasPassword = byEmail.PasswordHash is not null;
+            var hasGoogleLogin = (await _userManager.GetLoginsAsync(byEmail))
+                .Any(l => l.LoginProvider == "Google");
 
+            if (hasPassword && !hasGoogleLogin)
+            {
+                _logger.LogWarning(
+                    "Google OAuth blocked for {Email}: account exists with password, no Google login linked.",
+                    request.Email);
+                return null; // caller returns USER_CREATION_FAILED → redirects to login with error
+            }
+
+            return byEmail;
+        }
+
+        // 3. No existing user — create a new one from Google profile
         return await CreateUserFromGoogleAsync(request, ct);
     }
 

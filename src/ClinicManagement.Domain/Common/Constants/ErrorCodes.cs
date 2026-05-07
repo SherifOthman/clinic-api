@@ -16,6 +16,7 @@ public static class ErrorCodes
     public const string TOKEN_INVALID = "TOKEN_INVALID";
     public const string FORBIDDEN = "FORBIDDEN";
     public const string ACCOUNT_LOCKED = "ACCOUNT_LOCKED";
+    public const string AUTH_METHOD_MISMATCH = "AUTH_METHOD_MISMATCH"; // account exists with password, Google login not allowed
 
     // Not Found (404)
     public const string USER_NOT_FOUND = "USER_NOT_FOUND";
