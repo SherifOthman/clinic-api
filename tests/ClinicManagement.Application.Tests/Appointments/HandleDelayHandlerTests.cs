@@ -83,16 +83,18 @@ public class HandleDelayHandlerTests
             StoredDelayMinutes = 30,
         };
 
-        var pendingAppt = new Appointment
-        {
-            DoctorInfoId  = session.DoctorInfoId,
-            Date          = session.Date,
-            Type          = AppointmentType.Time,
-            Status        = AppointmentStatus.Pending,
-            ScheduledTime = new TimeOnly(9, 0),
-            EndTime       = new TimeOnly(9, 30),
-        };
-        pendingAppt.ApplyPrice(100);
+        var pendingAppt = Appointment.Create(
+            clinicId:             Guid.NewGuid(),
+            branchId:             Guid.NewGuid(),
+            patientId:            Guid.NewGuid(),
+            doctorInfoId:         session.DoctorInfoId,
+            visitTypeId:          Guid.NewGuid(),
+            date:                 session.Date,
+            type:                 AppointmentType.Time,
+            scheduledTime:        new TimeOnly(9, 0),
+            visitDurationMinutes: 30,
+            price:                100m);
+        // EndTime is set by Create() from scheduledTime + duration
 
         var sessionsMock = new Mock<IDoctorSessionRepository>();
         sessionsMock.Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>())).ReturnsAsync(session);
@@ -122,15 +124,17 @@ public class HandleDelayHandlerTests
             StoredDelayMinutes = 20,
         };
 
-        var pastAppt = new Appointment
-        {
-            DoctorInfoId  = session.DoctorInfoId,
-            Date          = session.Date,
-            Type          = AppointmentType.Time,
-            Status        = AppointmentStatus.Pending,
-            ScheduledTime = new TimeOnly(0, 1),
-        };
-        pastAppt.ApplyPrice(100);
+        var pastAppt = Appointment.Create(
+            clinicId:             Guid.NewGuid(),
+            branchId:             Guid.NewGuid(),
+            patientId:            Guid.NewGuid(),
+            doctorInfoId:         session.DoctorInfoId,
+            visitTypeId:          Guid.NewGuid(),
+            date:                 session.Date,
+            type:                 AppointmentType.Time,
+            scheduledTime:        new TimeOnly(0, 1),
+            visitDurationMinutes: 30,
+            price:                100m);
 
         var sessionsMock = new Mock<IDoctorSessionRepository>();
         sessionsMock.Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>())).ReturnsAsync(session);

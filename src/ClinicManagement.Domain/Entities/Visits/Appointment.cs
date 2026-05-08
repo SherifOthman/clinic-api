@@ -23,7 +23,11 @@ public class Appointment : AuditableTenantEntity, IAuditableEntity, ISoftDeletab
     public int? VisitDurationMinutes { get; set; }
 
     public AppointmentType Type { get; set; } = AppointmentType.Queue;
-    public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
+    /// <summary>
+    /// Status transitions are enforced by Transition() — never set directly.
+    /// Private set prevents handlers from bypassing the domain rule.
+    /// </summary>
+    public AppointmentStatus Status { get; private set; } = AppointmentStatus.Pending;
 
     public decimal Price { get; set; }
     public decimal? DiscountPercent { get; set; }
@@ -133,5 +137,33 @@ public class Appointment : AuditableTenantEntity, IAuditableEntity, ISoftDeletab
         FinalPrice      = discountPercent.HasValue
             ? Math.Round(price * (1 - discountPercent.Value / 100m), 2)
             : price;
+    }
+
+    /// <summary>
+    /// Force-cancels the appointment regardless of current status.
+    /// Used for bulk operations (doctor absent, session ended) where
+    /// the normal Transition() guard would block the operation.
+    /// </summary>
+    public void ForceCancel() => Status = AppointmentStatus.Cancelled;
+
+    /// <summary>
+    /// Force-completes the appointment. Used when a doctor checks out
+    /// and any InProgress appointments are auto-completed.
+    /// </summary>
+    public void ForceComplete() => Status = AppointmentStatus.Completed;
+
+    /// <summary>
+    /// Marks the appointment as NoShow. Used by delay handling (MarkMissed option).
+    /// </summary>
+    public void MarkNoShow() => Status = AppointmentStatus.NoShow;
+
+    /// <summary>
+    /// Resets a Waiting appointment back to Pending.
+    /// Used when rescheduling — the patient hasn't been called yet on the new day.
+    /// </summary>
+    public void ResetToPending()
+    {
+        if (Status == AppointmentStatus.Waiting)
+            Status = AppointmentStatus.Pending;
     }
 }

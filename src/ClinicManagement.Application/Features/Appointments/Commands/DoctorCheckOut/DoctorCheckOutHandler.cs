@@ -40,7 +40,7 @@ public class DoctorCheckOutHandler : IRequestHandler<DoctorCheckOutCommand, Resu
             request.DoctorInfoId, today, ct);
 
         foreach (var appt in appointments.Where(a => a.Status == AppointmentStatus.InProgress))
-            appt.Status = AppointmentStatus.Completed;
+            appt.ForceComplete();
 
         _sessions.Update(session);
         await _uow.SaveChangesAsync(ct);

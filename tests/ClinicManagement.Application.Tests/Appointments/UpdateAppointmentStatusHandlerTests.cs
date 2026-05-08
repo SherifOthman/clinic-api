@@ -22,19 +22,35 @@ public class UpdateAppointmentStatusHandlerTests
         _handler = new UpdateAppointmentStatusHandler(_appointmentsMock.Object, _uowMock.Object);
     }
 
-    private Appointment MakeAppointment(AppointmentStatus status) => new()
+    private static Appointment MakeAppointment(AppointmentStatus status)
     {
-        ClinicId     = Guid.NewGuid(),
-        BranchId     = Guid.NewGuid(),
-        PatientId    = Guid.NewGuid(),
-        DoctorInfoId = Guid.NewGuid(),
-        VisitTypeId  = Guid.NewGuid(),
-        Date         = DateOnly.FromDateTime(DateTime.Today),
-        Type         = AppointmentType.Queue,
-        QueueNumber  = 1,
-        Status       = status,
-        IsDeleted    = false,
-    };
+        var appt = Appointment.Create(
+            clinicId:             Guid.NewGuid(),
+            branchId:             Guid.NewGuid(),
+            patientId:            Guid.NewGuid(),
+            doctorInfoId:         Guid.NewGuid(),
+            visitTypeId:          Guid.NewGuid(),
+            date:                 DateOnly.FromDateTime(DateTime.Today),
+            type:                 AppointmentType.Queue,
+            scheduledTime:        null,
+            visitDurationMinutes: null,
+            price:                100m);
+
+        appt.QueueNumber = 1;
+
+        // Drive to the requested status via domain transitions
+        switch (status)
+        {
+            case AppointmentStatus.Waiting:    appt.Transition(AppointmentStatus.Waiting);    break;
+            case AppointmentStatus.InProgress: appt.Transition(AppointmentStatus.InProgress); break;
+            case AppointmentStatus.Completed:  appt.Transition(AppointmentStatus.InProgress); appt.Transition(AppointmentStatus.Completed); break;
+            case AppointmentStatus.Cancelled:  appt.ForceCancel();  break;
+            case AppointmentStatus.NoShow:     appt.MarkNoShow();   break;
+            // Pending is the default
+        }
+
+        return appt;
+    }
 
     [Theory]
     [InlineData(AppointmentStatus.Pending,    AppointmentStatus.Waiting,    true)]

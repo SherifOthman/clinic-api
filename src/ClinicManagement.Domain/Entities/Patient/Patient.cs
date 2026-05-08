@@ -8,7 +8,8 @@ namespace ClinicManagement.Domain.Entities;
 /// </summary>
 public class Patient : AuditableTenantEntity, ISoftDeletable, IAuditableEntity
 {
-    public string PatientCode { get; set; } = null!;
+    /// <summary>Assigned once at creation — never changes. Use init to enforce immutability.</summary>
+    public string PatientCode { get; init; } = null!;
     public bool IsDeleted { get; set; } = false;
 
     public string FullName { get; set; } = null!;

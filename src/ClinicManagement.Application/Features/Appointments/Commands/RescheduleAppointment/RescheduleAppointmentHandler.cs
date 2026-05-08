@@ -44,8 +44,7 @@ public class RescheduleAppointmentHandler : IRequestHandler<RescheduleAppointmen
         appt.BranchId    = targetBranchId;
         appt.QueueNumber = nextQueueNumber;
 
-        if (appt.Status == AppointmentStatus.Waiting)
-            appt.Status = AppointmentStatus.Pending;
+        appt.ResetToPending();
 
         _appointments.Update(appt);
         await _uow.SaveChangesAsync(ct);

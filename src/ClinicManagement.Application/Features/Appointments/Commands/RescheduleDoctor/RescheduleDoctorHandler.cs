@@ -71,8 +71,7 @@ public class RescheduleDoctorHandler : IRequestHandler<RescheduleDoctorCommand, 
                 appt.Date        = newDate.Value;
                 appt.QueueNumber = nextCarryOverSlot++;
 
-                if (appt.Status == Domain.Enums.AppointmentStatus.Waiting)
-                    appt.Status = Domain.Enums.AppointmentStatus.Pending;
+                appt.ResetToPending();
 
                 rescheduled++;
             }

@@ -65,13 +65,7 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
 
         if (existingMember is null)
         {
-            existingMember = new ClinicMember
-            {
-                UserId   = userId,
-                ClinicId = clinic.Id,
-                Role     = Domain.Enums.ClinicMemberRole.Owner,
-                IsActive = true,
-            };
+            existingMember = ClinicMember.CreateForOwner(userId, clinic.Id);
             await _members.AddAsync(existingMember);
             await _uow.SaveChangesAsync(cancellationToken);
             await _permissions.SeedDefaultsAsync(existingMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);

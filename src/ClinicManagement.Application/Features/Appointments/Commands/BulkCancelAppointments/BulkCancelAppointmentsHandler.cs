@@ -28,7 +28,7 @@ public class BulkCancelAppointmentsHandler : IRequestHandler<BulkCancelAppointme
             .ToList();
 
         foreach (var appt in cancellable)
-            appt.Status = AppointmentStatus.Cancelled;
+            appt.ForceCancel();
 
         await _uow.SaveChangesAsync(ct);
         return Result.Success(cancellable.Count);

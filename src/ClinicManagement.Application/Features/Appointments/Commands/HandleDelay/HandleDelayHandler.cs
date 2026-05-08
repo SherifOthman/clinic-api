@@ -84,7 +84,7 @@ public class HandleDelayHandler : IRequestHandler<HandleDelayCommand, Result>
                     a.ScheduledTime.HasValue &&
                     a.ScheduledTime.Value < nowLocalTime))
                 {
-                    appt.Status = AppointmentStatus.NoShow;
+                    appt.MarkNoShow();
                 }
                 break;
 

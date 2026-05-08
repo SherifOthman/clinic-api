@@ -79,14 +79,7 @@ public static class TestHandlerHelpers
         Gender gender = Gender.Male,
         ClinicMemberRole role = ClinicMemberRole.Doctor)
     {
-        return new ClinicMember
-        {
-            UserId    = userId ?? Guid.NewGuid(),
-            ClinicId  = clinicId ?? Guid.NewGuid(),
-            Role      = role,
-            IsActive  = true,
-            IsDeleted = false,
-        };
+        return ClinicMember.CreateWithRole(userId ?? Guid.NewGuid(), clinicId ?? Guid.NewGuid(), role);
     }
 
     public static DoctorInfo CreateTestDoctorInfo(Guid clinicMemberId, Guid? specializationId = null) =>
