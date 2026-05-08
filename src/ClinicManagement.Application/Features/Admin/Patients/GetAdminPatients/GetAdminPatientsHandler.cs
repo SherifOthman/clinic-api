@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Patients.Queries;
@@ -9,29 +9,24 @@ namespace ClinicManagement.Application.Features.Admin.Patients;
 
 public class GetAdminPatientsHandler : IRequestHandler<GetAdminPatientsQuery, Result<PaginatedResult<PatientDto>>>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly IPhoneNormalizer _phoneNormalizer;
+    private readonly IPatientRepository _patients;
+    private readonly IPhoneNormalizer   _phoneNormalizer;
 
-    public GetAdminPatientsHandler(IUnitOfWork uow, IPhoneNormalizer phoneNormalizer)
+    public GetAdminPatientsHandler(IPatientRepository patients, IPhoneNormalizer phoneNormalizer)
     {
-        _uow             = uow;
+        _patients        = patients;
         _phoneNormalizer = phoneNormalizer;
     }
 
     public async Task<Result<PaginatedResult<PatientDto>>> Handle(
         GetAdminPatientsQuery request, CancellationToken cancellationToken)
     {
-        // No country code for SuperAdmin — phone normalization skipped
         var nationalSearch = !string.IsNullOrWhiteSpace(request.Filter.SearchTerm)
             ? _phoneNormalizer.GetNationalNumber(request.Filter.SearchTerm, null)
             : null;
 
-        var result = await _uow.Patients.GetAdminProjectedPageAsync(
-            request.Filter,
-            nationalSearch,
-            request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+        var result = await _patients.GetAdminProjectedPageAsync(
+            request.Filter, nationalSearch, request.PageNumber, request.PageSize, cancellationToken);
 
         var dtos = result.Items.Select(p => new PatientDto
         {

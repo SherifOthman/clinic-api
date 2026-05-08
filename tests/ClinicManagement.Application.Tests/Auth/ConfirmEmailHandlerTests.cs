@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
@@ -12,16 +11,13 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class ConfirmEmailHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
+    private readonly Mock<IUserRepository>    _usersMock      = new();
     private readonly Mock<IEmailTokenService> _emailTokenMock = new();
-    private readonly ConfirmEmailHandler _handler;
+    private readonly ConfirmEmailHandler      _handler;
 
     public ConfirmEmailHandlerTests()
     {
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
-
-        _handler = new ConfirmEmailHandler(_uowMock.Object, _emailTokenMock.Object, NullLogger<ConfirmEmailHandler>.Instance);
+        _handler = new ConfirmEmailHandler(_usersMock.Object, _emailTokenMock.Object, NullLogger<ConfirmEmailHandler>.Instance);
     }
 
     [Fact]

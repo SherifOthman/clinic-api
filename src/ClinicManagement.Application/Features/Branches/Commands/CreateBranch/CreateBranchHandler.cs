@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Entities;
@@ -8,11 +9,13 @@ namespace ClinicManagement.Application.Features.Branches.Commands;
 
 public class CreateBranchHandler : IRequestHandler<CreateBranchCommand, Result<Guid>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IBranchRepository   _branches;
+    private readonly IUnitOfWork         _uow;
     private readonly ICurrentUserService _currentUser;
 
-    public CreateBranchHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public CreateBranchHandler(IBranchRepository branches, IUnitOfWork uow, ICurrentUserService currentUser)
     {
+        _branches    = branches;
         _uow         = uow;
         _currentUser = currentUser;
     }
@@ -23,20 +26,20 @@ public class CreateBranchHandler : IRequestHandler<CreateBranchCommand, Result<G
 
         var branch = new ClinicBranch
         {
-            ClinicId        = clinicId,
-            Name            = request.Name,
-            AddressLine     = request.AddressLine,
-            StateGeonameId  = request.StateGeonameId,
-            CityGeonameId   = request.CityGeonameId,
-            IsMainBranch    = false,
-            IsActive        = true,
-            PhoneNumbers    = request.PhoneNumbers
+            ClinicId       = clinicId,
+            Name           = request.Name,
+            AddressLine    = request.AddressLine,
+            StateGeonameId = request.StateGeonameId,
+            CityGeonameId  = request.CityGeonameId,
+            IsMainBranch   = false,
+            IsActive       = true,
+            PhoneNumbers   = request.PhoneNumbers
                 .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
                 .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.PhoneNumber.Trim(), Label = p.Label?.Trim() })
                 .ToList(),
         };
 
-        await _uow.Branches.AddAsync(branch);
+        await _branches.AddAsync(branch);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return Result.Success(branch.Id);

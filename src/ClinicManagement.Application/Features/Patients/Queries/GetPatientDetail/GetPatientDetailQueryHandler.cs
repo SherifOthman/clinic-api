@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
@@ -7,14 +7,14 @@ namespace ClinicManagement.Application.Features.Patients.Queries;
 
 public class GetPatientDetailHandler : IRequestHandler<GetPatientDetailQuery, Result<PatientDetailDto>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IPatientRepository _patients;
 
-    public GetPatientDetailHandler(IUnitOfWork uow) => _uow = uow;
+    public GetPatientDetailHandler(IPatientRepository patients) => _patients = patients;
 
     public async Task<Result<PatientDetailDto>> Handle(
         GetPatientDetailQuery request, CancellationToken cancellationToken)
     {
-        var data = await _uow.Patients.GetDetailAsync(request.PatientId, cancellationToken);
+        var data = await _patients.GetDetailAsync(request.PatientId, cancellationToken);
 
         if (data is null)
             return Result.Failure<PatientDetailDto>(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");

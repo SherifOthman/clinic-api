@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -9,21 +10,27 @@ namespace ClinicManagement.Application.Features.Auth.Commands.UpdateProfile;
 
 public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IUserRepository     _users;
+    private readonly IUnitOfWork         _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<UpdateProfileHandler> _logger;
 
-    public UpdateProfileHandler(IUnitOfWork uow, ICurrentUserService currentUser, ILogger<UpdateProfileHandler> logger)
+    public UpdateProfileHandler(
+        IUserRepository users,
+        IUnitOfWork uow,
+        ICurrentUserService currentUser,
+        ILogger<UpdateProfileHandler> logger)
     {
-        _uow = uow;
+        _users       = users;
+        _uow         = uow;
         _currentUser = currentUser;
-        _logger = logger;
+        _logger      = logger;
     }
 
     public async Task<Result> Handle(UpdateProfileCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+        var user   = await _users.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
         {

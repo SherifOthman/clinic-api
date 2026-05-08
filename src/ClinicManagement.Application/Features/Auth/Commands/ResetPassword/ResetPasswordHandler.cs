@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -11,17 +12,20 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ResetPassword;
 
 public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IUserRepository   _users;
+    private readonly IUnitOfWork       _uow;
     private readonly UserManager<User> _userManager;
-    private readonly IAuditWriter _audit;
+    private readonly IAuditWriter      _audit;
     private readonly ILogger<ResetPasswordHandler> _logger;
 
     public ResetPasswordHandler(
+        IUserRepository users,
         IUnitOfWork uow,
         UserManager<User> userManager,
         IAuditWriter audit,
         ILogger<ResetPasswordHandler> logger)
     {
+        _users       = users;
         _uow         = uow;
         _userManager = userManager;
         _audit       = audit;
@@ -30,7 +34,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
 
     public async Task<Result> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
+        var user = await _users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
 
         if (user is null)
         {
@@ -44,7 +48,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Result
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             _logger.LogWarning("Invalid password reset token for user: {Email} - {Errors}", request.Email, errors);
-           
+
             await _audit.WriteEventAsync("PasswordResetFailed", "Invalid or expired token",
                 overrideUserId: user.Id, overrideFullName: user.FullName,
                 overrideEmail: user.Email, ct: cancellationToken);

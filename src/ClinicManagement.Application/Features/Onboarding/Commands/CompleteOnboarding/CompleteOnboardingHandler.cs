@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -9,11 +10,31 @@ namespace ClinicManagement.Application.Features.Onboarding.Commands;
 
 public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IClinicRepository       _clinics;
+    private readonly IBranchRepository       _branches;
+    private readonly IClinicMemberRepository _members;
+    private readonly IPermissionRepository   _permissions;
+    private readonly IUserRepository         _users;
+    private readonly IReferenceRepository    _reference;
+    private readonly IUnitOfWork             _uow;
+    private readonly ICurrentUserService     _currentUserService;
 
-    public CompleteOnboardingHandler(IUnitOfWork uow, ICurrentUserService currentUserService)
+    public CompleteOnboardingHandler(
+        IClinicRepository clinics,
+        IBranchRepository branches,
+        IClinicMemberRepository members,
+        IPermissionRepository permissions,
+        IUserRepository users,
+        IReferenceRepository reference,
+        IUnitOfWork uow,
+        ICurrentUserService currentUserService)
     {
+        _clinics            = clinics;
+        _branches           = branches;
+        _members            = members;
+        _permissions        = permissions;
+        _users              = users;
+        _reference          = reference;
         _uow                = uow;
         _currentUserService = currentUserService;
     }
@@ -22,47 +43,36 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
     {
         var userId = _currentUserService.GetRequiredUserId();
 
-        if (await _uow.Clinics.ExistsByOwnerIdAsync(userId, cancellationToken))
+        if (await _clinics.ExistsByOwnerIdAsync(userId, cancellationToken))
             return Result.Failure(ErrorCodes.ALREADY_ONBOARDED, "User has already completed onboarding");
 
-        var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+        var user = await _users.GetByIdAsync(userId, cancellationToken);
         if (user is null)
             return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
 
-        if (!await _uow.Reference.SubscriptionPlanExistsAsync(request.SubscriptionPlanId, cancellationToken))
+        if (!await _reference.SubscriptionPlanExistsAsync(request.SubscriptionPlanId, cancellationToken))
             return Result.Failure(ErrorCodes.PLAN_NOT_FOUND, "The selected subscription plan does not exist");
 
-        var clinic = new Clinic
-        {
-            Name                = request.ClinicName,
-            OwnerUserId         = userId,
-            SubscriptionPlanId  = request.SubscriptionPlanId,
-            OnboardingCompleted = true,
-            IsActive            = true,
-            CountryCode         = request.CountryCode,
-        };
-        await _uow.Clinics.AddAsync(clinic);
+        // Clinic.Create() owns construction — consistent with StaffInvitation.Create() pattern
+        var clinic = Clinic.Create(request.ClinicName, userId, request.SubscriptionPlanId, request.CountryCode);
+        await _clinics.AddAsync(clinic);
 
-        await _uow.Branches.AddAsync(new ClinicBranch
-        {
-            ClinicId       = clinic.Id,
-            Name           = request.BranchName,
-            AddressLine    = request.AddressLine,
-            StateGeonameId = request.StateGeonameId,
-            CityGeonameId  = request.CityGeonameId,
-            IsMainBranch   = true,
-            IsActive       = true,
-            PhoneNumbers   = request.PhoneNumbers?
-                .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
-                .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.PhoneNumber.Trim(), Label = p.Label?.Trim() })
-                .ToList() ?? [],
-        });
+        var phoneNumbers = request.PhoneNumbers?
+            .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
+            .Select(p => new ClinicBranchPhoneNumber { PhoneNumber = p.PhoneNumber.Trim(), Label = p.Label?.Trim() })
+            .ToList();
 
-        // ClinicMember.CreateForOwner() owns the construction — no inline property assignments
+        // ClinicBranch.CreateMain() owns construction
+        var branch = ClinicBranch.CreateMain(
+            clinic.Id, request.BranchName, request.AddressLine,
+            request.StateGeonameId, request.CityGeonameId, phoneNumbers);
+        await _branches.AddAsync(branch);
+
+        // ClinicMember.CreateForOwner() owns construction
         var ownerMember = ClinicMember.CreateForOwner(userId, clinic.Id);
-        await _uow.Members.AddAsync(ownerMember);
+        await _members.AddAsync(ownerMember);
 
-        await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
+        await _permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

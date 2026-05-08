@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
@@ -6,44 +7,28 @@ using MediatR;
 
 namespace ClinicManagement.Application.Features.SubscriptionPlans.Commands;
 
-// ── Shared request body ───────────────────────────────────────────────────────
-
 public record SubscriptionPlanBody(
-    string  Name,
-    string  NameAr,
-    string  Description,
-    string  DescriptionAr,
-    decimal MonthlyFee,
-    decimal YearlyFee,
-    decimal SetupFee,
-    int     MaxBranches,
-    int     MaxStaff,
-    int     MaxPatientsPerMonth,
-    int     MaxAppointmentsPerMonth,
-    int     MaxInvoicesPerMonth,
-    int     StorageLimitGB,
-    bool    HasInventoryManagement,
-    bool    HasReporting,
-    bool    HasAdvancedReporting,
-    bool    HasApiAccess,
-    bool    HasMultipleBranches,
-    bool    HasCustomBranding,
-    bool    HasPrioritySupport,
-    bool    HasBackupAndRestore,
-    bool    HasIntegrations,
-    bool    IsActive,
-    bool    IsPopular,
-    int     DisplayOrder
-);
-
-// ── Create ────────────────────────────────────────────────────────────────────
+    string Name, string NameAr, string Description, string DescriptionAr,
+    decimal MonthlyFee, decimal YearlyFee, decimal SetupFee,
+    int MaxBranches, int MaxStaff, int MaxPatientsPerMonth,
+    int MaxAppointmentsPerMonth, int MaxInvoicesPerMonth, int StorageLimitGB,
+    bool HasInventoryManagement, bool HasReporting, bool HasAdvancedReporting,
+    bool HasApiAccess, bool HasMultipleBranches, bool HasCustomBranding,
+    bool HasPrioritySupport, bool HasBackupAndRestore, bool HasIntegrations,
+    bool IsActive, bool IsPopular, int DisplayOrder);
 
 public record CreateSubscriptionPlanCommand(SubscriptionPlanBody Plan) : IRequest<Result<Guid>>;
 
 public class CreateSubscriptionPlanHandler : IRequestHandler<CreateSubscriptionPlanCommand, Result<Guid>>
 {
-    private readonly IUnitOfWork _uow;
-    public CreateSubscriptionPlanHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly IReferenceRepository _reference;
+    private readonly IUnitOfWork          _uow;
+
+    public CreateSubscriptionPlanHandler(IReferenceRepository reference, IUnitOfWork uow)
+    {
+        _reference = reference;
+        _uow       = uow;
+    }
 
     public async Task<Result<Guid>> Handle(CreateSubscriptionPlanCommand req, CancellationToken ct)
     {
@@ -66,27 +51,29 @@ public class CreateSubscriptionPlanHandler : IRequestHandler<CreateSubscriptionP
             IsActive = p.IsActive, IsPopular = p.IsPopular, DisplayOrder = p.DisplayOrder,
             EffectiveDate = DateOnly.FromDateTime(DateTime.Today),
         };
-
-        _uow.Reference.AddSubscriptionPlan(entity);
+        _reference.AddSubscriptionPlan(entity);
         await _uow.SaveChangesAsync(ct);
-        _uow.Reference.InvalidateCache();
-
+        _reference.InvalidateCache();
         return Result.Success(entity.Id);
     }
 }
-
-// ── Update ────────────────────────────────────────────────────────────────────
 
 public record UpdateSubscriptionPlanCommand(Guid Id, SubscriptionPlanBody Plan) : IRequest<Result>;
 
 public class UpdateSubscriptionPlanHandler : IRequestHandler<UpdateSubscriptionPlanCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    public UpdateSubscriptionPlanHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly IReferenceRepository _reference;
+    private readonly IUnitOfWork          _uow;
+
+    public UpdateSubscriptionPlanHandler(IReferenceRepository reference, IUnitOfWork uow)
+    {
+        _reference = reference;
+        _uow       = uow;
+    }
 
     public async Task<Result> Handle(UpdateSubscriptionPlanCommand req, CancellationToken ct)
     {
-        var entity = await _uow.Reference.GetSubscriptionPlanByIdAsync(req.Id, ct);
+        var entity = await _reference.GetSubscriptionPlanByIdAsync(req.Id, ct);
         if (entity is null) return Result.Failure(ErrorCodes.NOT_FOUND, "Subscription plan not found");
 
         var p = req.Plan;
@@ -106,30 +93,37 @@ public class UpdateSubscriptionPlanHandler : IRequestHandler<UpdateSubscriptionP
         entity.IsActive = p.IsActive; entity.IsPopular = p.IsPopular; entity.DisplayOrder = p.DisplayOrder;
 
         await _uow.SaveChangesAsync(ct);
-        _uow.Reference.InvalidateCache();
-
+        _reference.InvalidateCache();
         return Result.Success();
     }
 }
-
-// ── Toggle active ─────────────────────────────────────────────────────────────
 
 public record ToggleSubscriptionPlanCommand(Guid Id) : IRequest<Result>;
 
 public class ToggleSubscriptionPlanHandler : IRequestHandler<ToggleSubscriptionPlanCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    public ToggleSubscriptionPlanHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly IReferenceRepository      _reference;
+    private readonly ISubscriptionPlanRepository _subscriptionPlans;
+    private readonly IUnitOfWork               _uow;
+
+    public ToggleSubscriptionPlanHandler(
+        IReferenceRepository reference,
+        ISubscriptionPlanRepository subscriptionPlans,
+        IUnitOfWork uow)
+    {
+        _reference         = reference;
+        _subscriptionPlans = subscriptionPlans;
+        _uow               = uow;
+    }
 
     public async Task<Result> Handle(ToggleSubscriptionPlanCommand req, CancellationToken ct)
     {
-        var entity = await _uow.Reference.GetSubscriptionPlanByIdAsync(req.Id, ct);
+        var entity = await _reference.GetSubscriptionPlanByIdAsync(req.Id, ct);
         if (entity is null) return Result.Failure(ErrorCodes.NOT_FOUND, "Subscription plan not found");
 
-        // Cannot deactivate a plan that has active subscribers
         if (entity.IsActive)
         {
-            var activeCount = await _uow.SubscriptionPlans.CountActiveSubscribersAsync(req.Id, ct);
+            var activeCount = await _subscriptionPlans.CountActiveSubscribersAsync(req.Id, ct);
             if (activeCount > 0)
                 return Result.Failure(
                     ErrorCodes.OPERATION_NOT_ALLOWED,
@@ -138,8 +132,7 @@ public class ToggleSubscriptionPlanHandler : IRequestHandler<ToggleSubscriptionP
 
         entity.IsActive = !entity.IsActive;
         await _uow.SaveChangesAsync(ct);
-        _uow.Reference.InvalidateCache();
-
+        _reference.InvalidateCache();
         return Result.Success();
     }
 }

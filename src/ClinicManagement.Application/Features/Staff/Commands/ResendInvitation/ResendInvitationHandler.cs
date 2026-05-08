@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -9,12 +10,24 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly IEmailService _emailService;
+    private readonly IInvitationRepository _invitations;
+    private readonly IUserRepository       _users;
+    private readonly IClinicRepository     _clinics;
+    private readonly IUnitOfWork           _uow;
+    private readonly ICurrentUserService   _currentUserService;
+    private readonly IEmailService         _emailService;
 
-    public ResendInvitationHandler(IUnitOfWork uow, ICurrentUserService currentUserService, IEmailService emailService)
+    public ResendInvitationHandler(
+        IInvitationRepository invitations,
+        IUserRepository users,
+        IClinicRepository clinics,
+        IUnitOfWork uow,
+        ICurrentUserService currentUserService,
+        IEmailService emailService)
     {
+        _invitations        = invitations;
+        _users              = users;
+        _clinics            = clinics;
         _uow                = uow;
         _currentUserService = currentUserService;
         _emailService       = emailService;
@@ -25,7 +38,7 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
         var clinicId      = _currentUserService.GetRequiredClinicId();
         var currentUserId = _currentUserService.GetRequiredUserId();
 
-        var invitation = await _uow.Invitations.GetByIdWithSpecializationAsync(request.InvitationId, cancellationToken);
+        var invitation = await _invitations.GetByIdWithSpecializationAsync(request.InvitationId, cancellationToken);
 
         if (invitation is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
@@ -38,11 +51,10 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
 
         invitation.ExpiresAt = DateTimeOffset.UtcNow.AddDays(7);
 
-        var inviter = await _uow.Users.GetByIdAsync(currentUserId, cancellationToken);
-        var clinic  = await _uow.Clinics.GetByIdAsync(clinicId, cancellationToken);
+        var inviter = await _users.GetByIdAsync(currentUserId, cancellationToken);
+        var clinic  = await _clinics.GetByIdAsync(clinicId, cancellationToken);
 
-        // Save the extended expiry first — if the DB write fails, no email is sent
-        // and the user doesn't receive a link with a stale expiry date.
+        // Save the extended expiry first
         await _uow.SaveChangesAsync(cancellationToken);
 
         await _emailService.SendStaffInvitationEmailAsync(

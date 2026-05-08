@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Abstractions.Storage;
 using ClinicManagement.Domain.Common;
@@ -10,17 +11,20 @@ namespace ClinicManagement.Application.Features.Auth.Commands;
 
 public class DeleteProfileImageHandler : IRequestHandler<DeleteProfileImageCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IUserRepository     _users;
+    private readonly IUnitOfWork         _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DeleteProfileImageHandler> _logger;
 
     public DeleteProfileImageHandler(
+        IUserRepository users,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IFileStorageService fileStorageService,
         ILogger<DeleteProfileImageHandler> logger)
     {
+        _users              = users;
         _uow                = uow;
         _currentUser        = currentUser;
         _fileStorageService = fileStorageService;
@@ -30,7 +34,7 @@ public class DeleteProfileImageHandler : IRequestHandler<DeleteProfileImageComma
     public async Task<Result> Handle(DeleteProfileImageCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var user   = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+        var user   = await _users.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
         {

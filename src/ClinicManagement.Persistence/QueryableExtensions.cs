@@ -1,6 +1,5 @@
 using ClinicManagement.Application.Common.Models;
 using Microsoft.EntityFrameworkCore;
-
 namespace ClinicManagement.Persistence;
 
 /// <summary>
@@ -35,11 +34,11 @@ public static class QueryableExtensions
     /// <summary>
     /// Returns true when sortDirection is "desc" (case-insensitive).
     /// Defaults to ascending for any other value including null.
-    ///
-    /// Usage:
-    ///   var desc = sortDirection.IsDescending();
-    ///   query = desc ? query.OrderByDescending(...) : query.OrderBy(...);
     /// </summary>
     public static bool IsDescending(this string? sortDirection)
         => string.Equals(sortDirection?.Trim(), "desc", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns true when direction is Desc.</summary>
+    public static bool IsDescending(this SortDirection direction)
+        => direction == SortDirection.Desc;
 }

@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Validators;
 using FluentValidation;
 
@@ -6,7 +6,7 @@ namespace ClinicManagement.Application.Features.Auth.Commands.Register;
 
 public class RegisterValidator : AbstractValidator<RegisterCommand>
 {
-    public RegisterValidator(IUnitOfWork uow)
+    public RegisterValidator(IUserRepository users)
     {
         RuleFor(x => x.FullName)
             .NotEmpty()
@@ -16,7 +16,7 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
             .NotEmpty()
             .MinimumLength(3)
             .MaximumLength(50)
-            .MustAsync(async (username, ct) => !await uow.Users.AnyByUsernameAsync(username, ct))
+            .MustAsync(async (username, ct) => !await users.AnyByUsernameAsync(username, ct))
             .WithErrorCode("USERNAME_ALREADY_EXISTS")
             .WithMessage("Username is already taken");
 
@@ -24,7 +24,7 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
             .NotEmpty()
             .EmailAddress(FluentValidation.Validators.EmailValidationMode.AspNetCoreCompatible)
             .MaximumLength(100)
-            .MustAsync(async (email, ct) => !await uow.Users.AnyByEmailAsync(email, ct))
+            .MustAsync(async (email, ct) => !await users.AnyByEmailAsync(email, ct))
             .WithErrorCode("EMAIL_ALREADY_EXISTS")
             .WithMessage("Email is already registered");
 

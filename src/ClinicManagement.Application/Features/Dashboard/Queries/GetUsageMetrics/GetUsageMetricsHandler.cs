@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using MediatR;
@@ -7,13 +7,13 @@ namespace ClinicManagement.Application.Features.Dashboard.Queries;
 
 public class GetUsageMetricsHandler : IRequestHandler<GetUsageMetricsQuery, Result<UsageMetricsDto>>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly IClinicSubscriptionRepository _subscriptions;
+    private readonly ICurrentUserService           _currentUser;
 
-    public GetUsageMetricsHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public GetUsageMetricsHandler(IClinicSubscriptionRepository subscriptions, ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _subscriptions = subscriptions;
+        _currentUser   = currentUser;
     }
 
     public async Task<Result<UsageMetricsDto>> Handle(
@@ -21,14 +21,9 @@ public class GetUsageMetricsHandler : IRequestHandler<GetUsageMetricsQuery, Resu
     {
         var clinicId = _currentUser.GetRequiredClinicId();
 
-        // Today's aggregated metrics (written by UsageMetricsAggregationJob at 1am)
-        var metrics = await _uow.ClinicSubscriptions.GetTodayMetricsAsync(clinicId, cancellationToken);
+        var metrics = await _subscriptions.GetTodayMetricsAsync(clinicId, cancellationToken);
+        var plan    = await _subscriptions.GetActivePlanLimitsAsync(clinicId, cancellationToken);
 
-        // Active plan limits
-        var plan = await _uow.ClinicSubscriptions.GetActivePlanLimitsAsync(clinicId, cancellationToken);
-
-        // If no metrics yet today (job hasn't run), return zeros with null LastAggregatedAt
-        // so the frontend can show "not yet available today"
         return Result.Success(new UsageMetricsDto(
             Patients:     new UsageLimitDto(metrics?.NewPatientsCount   ?? 0, plan?.MaxPatientsPerMonth     ?? 0, metrics?.LastAggregatedAt),
             Appointments: new UsageLimitDto(metrics?.AppointmentsCount  ?? 0, plan?.MaxAppointmentsPerMonth ?? 0, metrics?.LastAggregatedAt),

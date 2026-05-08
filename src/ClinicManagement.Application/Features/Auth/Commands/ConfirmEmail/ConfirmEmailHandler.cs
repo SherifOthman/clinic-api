@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -9,23 +9,23 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ConfirmEmail;
 
 public class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly IEmailTokenService _emailTokenService;
+    private readonly IUserRepository     _users;
+    private readonly IEmailTokenService  _emailTokenService;
     private readonly ILogger<ConfirmEmailHandler> _logger;
 
-    public ConfirmEmailHandler(IUnitOfWork uow, IEmailTokenService emailTokenService, ILogger<ConfirmEmailHandler> logger)
+    public ConfirmEmailHandler(
+        IUserRepository users,
+        IEmailTokenService emailTokenService,
+        ILogger<ConfirmEmailHandler> logger)
     {
-        _uow               = uow;
+        _users             = users;
         _emailTokenService = emailTokenService;
         _logger            = logger;
     }
 
     public async Task<Result> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
     {
-        // Look up by ID — the token is cryptographically bound to this user ID.
-        // Using email would require an extra lookup and would break if the user
-        // changed their email between registration and clicking the link.
-        var user = await _uow.Users.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await _users.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user is null)
         {

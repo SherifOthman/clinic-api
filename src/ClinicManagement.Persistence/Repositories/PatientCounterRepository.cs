@@ -11,10 +11,7 @@ public class PatientCounterRepository : IPatientCounterRepository
 
     public async Task<string> NextCodeAsync(Guid clinicId, CancellationToken ct = default)
     {
-        // MERGE is a single atomic statement — the read, match, and write happen
-        // as one unit, so no explicit transaction or locking hints are needed.
-        // HOLDLOCK prevents phantom inserts between the WHEN NOT MATCHED check
-        // and the INSERT on the first call for a new clinic.
+        // Parameterized with {0} — avoids string interpolation into SQL.
         var sql = """
             MERGE PatientCounters WITH (HOLDLOCK) AS target
             USING (SELECT {0} AS ClinicId) AS source ON target.ClinicId = source.ClinicId
@@ -30,8 +27,6 @@ public class PatientCounterRepository : IPatientCounterRepository
             .AsAsyncEnumerable()
             .FirstAsync(ct);
 
-        // Zero-pad to 4 digits: 1 → "0001", 9999 → "9999"
-        // Stored as string so StartsWith search works (e.g. "12" finds "0012", "0120", "0121")
         return result.ToString("D4");
     }
 }

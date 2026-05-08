@@ -33,4 +33,24 @@ public class Clinic : AuditableEntity, ISoftDeletable, IAuditableEntity
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
     public ICollection<ClinicBranch> Branches { get; set; } = new List<ClinicBranch>();
     public ICollection<ClinicMember> Members { get; set; } = new List<ClinicMember>();
+
+    // ── Domain factory ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates a new clinic during onboarding.
+    /// Consistent with StaffInvitation.Create() and Appointment.Create() patterns.
+    /// </summary>
+    public static Clinic Create(
+        string name,
+        Guid ownerUserId,
+        Guid subscriptionPlanId,
+        string? countryCode = null) => new()
+    {
+        Name                = name,
+        OwnerUserId         = ownerUserId,
+        SubscriptionPlanId  = subscriptionPlanId,
+        OnboardingCompleted = true,
+        IsActive            = true,
+        CountryCode         = countryCode,
+    };
 }

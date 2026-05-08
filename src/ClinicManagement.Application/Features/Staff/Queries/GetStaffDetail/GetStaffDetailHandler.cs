@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Staff.QueryModels;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -8,16 +8,17 @@ namespace ClinicManagement.Application.Features.Staff.Queries;
 
 public class GetStaffDetailHandler : IRequestHandler<GetStaffDetailQuery, Result<StaffDetailDto>>
 {
-    private readonly IUnitOfWork _uow;
-    public GetStaffDetailHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly IClinicMemberRepository _members;
+
+    public GetStaffDetailHandler(IClinicMemberRepository members) => _members = members;
 
     public async Task<Result<StaffDetailDto>> Handle(GetStaffDetailQuery request, CancellationToken cancellationToken)
     {
-        var member = await _uow.Members.GetDetailAsync(request.StaffId, cancellationToken);
+        var member = await _members.GetDetailAsync(request.StaffId, cancellationToken);
         if (member is null)
             return Result.Failure<StaffDetailDto>(ErrorCodes.NOT_FOUND, "Staff member not found");
 
-        var roleRows = await _uow.Members.GetRolesByUserIdsAsync([member.UserId], cancellationToken);
+        var roleRows = await _members.GetRolesByUserIdsAsync([member.UserId], cancellationToken);
         var roles    = roleRows.Select(r => new StaffRoleDto(r.RoleName)).ToList();
 
         DoctorDetailDto? doctorProfile = null;

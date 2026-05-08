@@ -1,5 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
-using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
@@ -8,13 +8,18 @@ namespace ClinicManagement.Application.Features.Patients.Commands;
 
 public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IPatientRepository _patients;
+    private readonly IUnitOfWork        _uow;
 
-    public DeletePatientCommandHandler(IUnitOfWork uow) => _uow = uow;
+    public DeletePatientCommandHandler(IPatientRepository patients, IUnitOfWork uow)
+    {
+        _patients = patients;
+        _uow      = uow;
+    }
 
     public async Task<Result> Handle(DeletePatientCommand request, CancellationToken cancellationToken)
     {
-        var patient = await _uow.Patients.GetByIdAsync(request.Id, cancellationToken);
+        var patient = await _patients.GetByIdAsync(request.Id, cancellationToken);
 
         if (patient is null)
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");

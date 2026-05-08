@@ -11,16 +11,15 @@ namespace ClinicManagement.Application.Tests.Appointments;
 
 public class UpdateAppointmentStatusHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IAppointmentRepository> _appointmentsMock = new();
-    private readonly UpdateAppointmentStatusHandler _handler;
+    private readonly Mock<IAppointmentRepository>       _appointmentsMock = new();
+    private readonly Mock<IUnitOfWork>                  _uowMock          = new();
+    private readonly UpdateAppointmentStatusHandler     _handler;
 
     public UpdateAppointmentStatusHandlerTests()
     {
-        _uowMock.Setup(u => u.Appointments).Returns(_appointmentsMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new UpdateAppointmentStatusHandler(_uowMock.Object);
+        _handler = new UpdateAppointmentStatusHandler(_appointmentsMock.Object, _uowMock.Object);
     }
 
     private Appointment MakeAppointment(AppointmentStatus status) => new()

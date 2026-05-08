@@ -10,16 +10,15 @@ namespace ClinicManagement.Application.Tests.Patients;
 
 public class RestorePatientHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IPatientRepository> _patientsMock = new();
+    private readonly Mock<IPatientRepository>    _patientsMock = new();
+    private readonly Mock<IUnitOfWork>           _uowMock      = new();
     private readonly RestorePatientCommandHandler _handler;
 
     public RestorePatientHandlerTests()
     {
-        _uowMock.Setup(u => u.Patients).Returns(_patientsMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new RestorePatientCommandHandler(_uowMock.Object);
+        _handler = new RestorePatientCommandHandler(_patientsMock.Object, _uowMock.Object);
     }
 
     [Fact]

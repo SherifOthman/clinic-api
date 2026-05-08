@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
@@ -8,12 +8,14 @@ public record GetContactMessagesUnreadCountQuery : IRequest<Result<int>>;
 
 public class GetContactMessagesUnreadCountHandler : IRequestHandler<GetContactMessagesUnreadCountQuery, Result<int>>
 {
-    private readonly IUnitOfWork _uow;
-    public GetContactMessagesUnreadCountHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly IContactMessageRepository _contactMessages;
+
+    public GetContactMessagesUnreadCountHandler(IContactMessageRepository contactMessages)
+        => _contactMessages = contactMessages;
 
     public async Task<Result<int>> Handle(GetContactMessagesUnreadCountQuery request, CancellationToken ct)
     {
-        var count = await _uow.ContactMessages.CountUnreadAsync(ct);
+        var count = await _contactMessages.CountUnreadAsync(ct);
         return Result.Success(count);
     }
 }

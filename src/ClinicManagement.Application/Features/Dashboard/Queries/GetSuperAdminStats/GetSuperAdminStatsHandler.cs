@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Enums;
 using MediatR;
@@ -7,19 +7,31 @@ namespace ClinicManagement.Application.Features.Dashboard.Queries;
 
 public class GetSuperAdminStatsHandler : IRequestHandler<GetSuperAdminStatsQuery, Result<SuperAdminStatsDto>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IClinicRepository             _clinics;
+    private readonly IPatientRepository            _patients;
+    private readonly IClinicMemberRepository       _members;
+    private readonly IClinicSubscriptionRepository _subscriptions;
 
-    public GetSuperAdminStatsHandler(IUnitOfWork uow) => _uow = uow;
+    public GetSuperAdminStatsHandler(
+        IClinicRepository clinics,
+        IPatientRepository patients,
+        IClinicMemberRepository members,
+        IClinicSubscriptionRepository subscriptions)
+    {
+        _clinics       = clinics;
+        _patients      = patients;
+        _members       = members;
+        _subscriptions = subscriptions;
+    }
 
     public async Task<Result<SuperAdminStatsDto>> Handle(
         GetSuperAdminStatsQuery request, CancellationToken cancellationToken)
     {
-        // IgnoreQueryFilters counts — these need dedicated repo methods (can't use base CountAsync)
-        var totalClinics  = await _uow.Clinics.CountIgnoreFiltersAsync(cancellationToken);
-        var totalPatients = await _uow.Patients.CountIgnoreFiltersAsync(cancellationToken);
-        var totalStaff    = await _uow.Members.CountActiveIgnoreFiltersAsync(cancellationToken);
-        var clinicsOnTrial = await _uow.ClinicSubscriptions.CountByStatusIgnoreFiltersAsync(SubscriptionStatus.Trial, cancellationToken);
-        var clinicsActive  = await _uow.ClinicSubscriptions.CountByStatusIgnoreFiltersAsync(SubscriptionStatus.Active, cancellationToken);
+        var totalClinics   = await _clinics.CountIgnoreFiltersAsync(cancellationToken);
+        var totalPatients  = await _patients.CountIgnoreFiltersAsync(cancellationToken);
+        var totalStaff     = await _members.CountActiveIgnoreFiltersAsync(cancellationToken);
+        var clinicsOnTrial = await _subscriptions.CountByStatusIgnoreFiltersAsync(SubscriptionStatus.Trial, cancellationToken);
+        var clinicsActive  = await _subscriptions.CountByStatusIgnoreFiltersAsync(SubscriptionStatus.Active, cancellationToken);
 
         return Result.Success(new SuperAdminStatsDto(
             TotalClinics:   totalClinics,

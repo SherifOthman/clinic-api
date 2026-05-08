@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -10,12 +11,30 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<User> _userManager;
+    private readonly IUserRepository         _users;
+    private readonly IClinicRepository       _clinics;
+    private readonly IClinicMemberRepository _members;
+    private readonly IDoctorInfoRepository   _doctorInfos;
+    private readonly IPermissionRepository   _permissions;
+    private readonly IUnitOfWork             _uow;
+    private readonly ICurrentUserService     _currentUserService;
+    private readonly UserManager<User>       _userManager;
 
-    public SetOwnerAsDoctorHandler(IUnitOfWork uow, ICurrentUserService currentUserService, UserManager<User> userManager)
+    public SetOwnerAsDoctorHandler(
+        IUserRepository users,
+        IClinicRepository clinics,
+        IClinicMemberRepository members,
+        IDoctorInfoRepository doctorInfos,
+        IPermissionRepository permissions,
+        IUnitOfWork uow,
+        ICurrentUserService currentUserService,
+        UserManager<User> userManager)
     {
+        _users              = users;
+        _clinics            = clinics;
+        _members            = members;
+        _doctorInfos        = doctorInfos;
+        _permissions        = permissions;
         _uow                = uow;
         _currentUserService = currentUserService;
         _userManager        = userManager;
@@ -25,21 +44,17 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
     {
         var userId = _currentUserService.GetRequiredUserId();
 
-        var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+        var user = await _users.GetByIdAsync(userId, cancellationToken);
         if (user is null) return Result.Failure(ErrorCodes.USER_NOT_FOUND, "User not found");
 
-        // Endpoint is guarded by RequireClinicOwner policy — no redundant role check needed here.
-        var clinic = await _uow.Clinics.GetByOwnerIdAsync(userId, cancellationToken);
+        var clinic = await _clinics.GetByOwnerIdAsync(userId, cancellationToken);
         if (clinic is null)
             return Result.Failure(ErrorCodes.CLINIC_NOT_FOUND, "Clinic not found. Please complete onboarding first.");
 
-        // Check if already a doctor
-        var existingMember = await _uow.Members.GetByUserIdAsync(userId, cancellationToken);
+        var existingMember = await _members.GetByUserIdAsync(userId, cancellationToken);
         if (existingMember?.DoctorInfo is not null)
             return Result.Failure(ErrorCodes.ALREADY_EXISTS, "You are already registered as a doctor");
 
-        // AddToRoleAsync is still needed — ASP.NET Identity roles are used in JWT claims
-        // for the RequireClinicOwner policy to work on subsequent requests.
         var userRoles = await _userManager.GetRolesAsync(user);
         if (!userRoles.Contains(UserRoles.Doctor))
         {
@@ -57,12 +72,12 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
                 Role     = Domain.Enums.ClinicMemberRole.Owner,
                 IsActive = true,
             };
-            await _uow.Members.AddAsync(existingMember);
+            await _members.AddAsync(existingMember);
             await _uow.SaveChangesAsync(cancellationToken);
-            await _uow.Permissions.SeedDefaultsAsync(existingMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
+            await _permissions.SeedDefaultsAsync(existingMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         }
 
-        await _uow.DoctorInfos.AddAsync(new DoctorInfo
+        await _doctorInfos.AddAsync(new DoctorInfo
         {
             ClinicMemberId   = existingMember.Id,
             SpecializationId = request.SpecializationId,
@@ -70,9 +85,7 @@ public class SetOwnerAsDoctorHandler : IRequestHandler<SetOwnerAsDoctorCommand, 
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Role changed (Doctor added) — invalidate cached permissions so the
-        // next token refresh picks up the updated set.
-        _uow.Permissions.InvalidateCache(existingMember.Id);
+        _permissions.InvalidateCache(existingMember.Id);
 
         return Result.Success();
     }

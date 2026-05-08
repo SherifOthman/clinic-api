@@ -13,9 +13,12 @@ namespace ClinicManagement.Application.Tests.Appointments;
 
 public class CreateAppointmentHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly CreateAppointmentHandler _handler;
+    private readonly Mock<IAppointmentRepository>    _appointmentsMock = new();
+    private readonly Mock<IDoctorScheduleRepository> _schedulesMock    = new();
+    private readonly Mock<IQueueCounterRepository>   _queueCounterMock = new();
+    private readonly Mock<IUnitOfWork>               _uowMock          = new();
+    private readonly Mock<ICurrentUserService>       _currentUserMock  = new();
+    private readonly CreateAppointmentHandler        _handler;
 
     private readonly Guid _clinicId  = Guid.NewGuid();
     private readonly Guid _branchId  = Guid.NewGuid();
@@ -25,48 +28,35 @@ public class CreateAppointmentHandlerTests
 
     public CreateAppointmentHandlerTests()
     {
-        _visitType = new VisitType
-        {
-            Name = "Consultation",
-            Price = 100, IsActive = true,
-        };
+        _visitType = new VisitType { Name = "Consultation", Price = 100, IsActive = true };
 
-        var apptRepoMock    = new Mock<IAppointmentRepository>();
-        var queueCounterMock = new Mock<IQueueCounterRepository>();
-        var scheduleRepoMock = new Mock<IDoctorScheduleRepository>();
-
-        // Visit type found
-        scheduleRepoMock
+        _schedulesMock
             .Setup(r => r.GetVisitTypeByIdAsync(_visitType.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_visitType);
 
-        // Visit type not found for unknown IDs
-        scheduleRepoMock
+        _schedulesMock
             .Setup(r => r.GetVisitTypeByIdAsync(It.Is<Guid>(id => id != _visitType.Id), It.IsAny<CancellationToken>()))
             .ReturnsAsync((VisitType?)null);
 
-        // Queue counter returns 1
-        queueCounterMock
+        _queueCounterMock
             .Setup(r => r.NextAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        // Time slot not taken
-        apptRepoMock
+        _appointmentsMock
             .Setup(r => r.TimeSlotTakenAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<TimeOnly>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        apptRepoMock
+        _appointmentsMock
             .Setup(r => r.AddAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
-        _uowMock.Setup(u => u.QueueCounters).Returns(queueCounterMock.Object);
-        _uowMock.Setup(u => u.DoctorSchedules).Returns(scheduleRepoMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _currentUserMock.Setup(x => x.GetRequiredClinicId()).Returns(_clinicId);
 
-        _handler = new CreateAppointmentHandler(_uowMock.Object, _currentUserMock.Object);
+        _handler = new CreateAppointmentHandler(
+            _appointmentsMock.Object, _schedulesMock.Object, _queueCounterMock.Object,
+            _uowMock.Object, _currentUserMock.Object);
     }
 
     private CreateAppointmentCommand QueueCmd(Guid? visitTypeId = null) =>
@@ -83,7 +73,7 @@ public class CreateAppointmentHandlerTests
         var result = await _handler.Handle(QueueCmd(), default);
 
         result.IsSuccess.Should().BeTrue();
-        _uowMock.Verify(u => u.QueueCounters.NextAsync(_doctorId, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
+        _queueCounterMock.Verify(u => u.NextAsync(_doctorId, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -115,11 +105,9 @@ public class CreateAppointmentHandlerTests
     [Fact]
     public async Task Handle_Time_ShouldFail_WhenSlotAlreadyTaken()
     {
-        var apptRepoMock = new Mock<IAppointmentRepository>();
-        apptRepoMock
+        _appointmentsMock
             .Setup(r => r.TimeSlotTakenAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<TimeOnly>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
 
         var result = await _handler.Handle(TimeCmd(new TimeOnly(10, 0)), default);
 
@@ -131,26 +119,21 @@ public class CreateAppointmentHandlerTests
     public async Task Handle_ShouldApplyDiscount_AndCalculateCorrectFinalPrice()
     {
         Appointment? savedAppt = null;
-        var apptRepoMock = new Mock<IAppointmentRepository>();
-        apptRepoMock
+        _appointmentsMock
             .Setup(r => r.AddAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()))
             .Callback<Appointment, CancellationToken>((a, _) => savedAppt = a)
             .Returns(Task.CompletedTask);
-        apptRepoMock
-            .Setup(r => r.TimeSlotTakenAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<TimeOnly>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
 
         var cmd = new CreateAppointmentCommand(
             _branchId, _patientId, _doctorId, _visitType.Id,
             DateOnly.FromDateTime(DateTime.Today),
-            AppointmentType.Queue, null, 10m); // 10% discount on price 100
+            AppointmentType.Queue, null, 10m);
 
         var result = await _handler.Handle(cmd, default);
 
         result.IsSuccess.Should().BeTrue();
         savedAppt.Should().NotBeNull();
-        savedAppt!.FinalPrice.Should().Be(90m); // 100 - 10% = 90
+        savedAppt!.FinalPrice.Should().Be(90m);
         savedAppt.DiscountPercent.Should().Be(10m);
     }
 }

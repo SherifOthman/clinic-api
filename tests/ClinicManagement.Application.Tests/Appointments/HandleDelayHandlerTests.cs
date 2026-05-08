@@ -12,8 +12,9 @@ namespace ClinicManagement.Application.Tests.Appointments;
 
 public class HandleDelayHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly HandleDelayHandler _handler;
+    private readonly Mock<IDoctorSessionRepository> _sessionsMock     = new();
+    private readonly Mock<IAppointmentRepository>   _appointmentsMock = new();
+    private readonly Mock<IUnitOfWork>              _uowMock          = new();
 
     private readonly DoctorSession _lateSession = new()
     {
@@ -26,33 +27,30 @@ public class HandleDelayHandlerTests
 
     public HandleDelayHandlerTests()
     {
-        var sessionRepoMock = new Mock<IDoctorSessionRepository>();
-        var apptRepoMock    = new Mock<IAppointmentRepository>();
-
-        sessionRepoMock
+        _sessionsMock
             .Setup(r => r.GetByIdAsync(_lateSession.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_lateSession);
 
-        apptRepoMock
-            .Setup(r => r.GetByDoctorAndDateAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+        _appointmentsMock
+            .Setup(r => r.GetByDoctorAndDateForUpdateAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        _uowMock.Setup(u => u.DoctorSessions).Returns(sessionRepoMock.Object);
-        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        _handler = new HandleDelayHandler(_uowMock.Object);
     }
+
+    private HandleDelayHandler MakeHandler() =>
+        new(_sessionsMock.Object, _appointmentsMock.Object, _uowMock.Object);
 
     [Fact]
     public async Task Handle_ShouldFail_WhenSessionNotFound()
     {
-        var sessionRepoMock = new Mock<IDoctorSessionRepository>();
-        sessionRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        var sessionsMock = new Mock<IDoctorSessionRepository>();
+        sessionsMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((DoctorSession?)null);
-        _uowMock.Setup(u => u.DoctorSessions).Returns(sessionRepoMock.Object);
 
-        var result = await _handler.Handle(new HandleDelayCommand(Guid.NewGuid(), DelayHandlingOption.Manual), default);
+        var handler = new HandleDelayHandler(sessionsMock.Object, _appointmentsMock.Object, _uowMock.Object);
+
+        var result = await handler.Handle(new HandleDelayCommand(Guid.NewGuid(), DelayHandlingOption.Manual), default);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be(ErrorCodes.NOT_FOUND);
@@ -62,21 +60,19 @@ public class HandleDelayHandlerTests
     [InlineData(DelayHandlingOption.AutoShift)]
     [InlineData(DelayHandlingOption.MarkMissed)]
     [InlineData(DelayHandlingOption.Manual)]
-    public async Task Handle_ShouldSucceed_WhenDelayAlreadyHandled_ReturnsFail(DelayHandlingOption option)
+    public async Task Handle_ShouldFail_WhenDelayAlreadyHandled(DelayHandlingOption option)
     {
-        // Arrange: session that already has a handling decision
         _lateSession.DelayHandling = DelayHandlingOption.Manual;
 
-        var result = await _handler.Handle(new HandleDelayCommand(_lateSession.Id, option), default);
+        var result = await MakeHandler().Handle(new HandleDelayCommand(_lateSession.Id, option), default);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be(ErrorCodes.ALREADY_EXISTS);
     }
 
     [Fact]
-    public async Task Handle_AutoShift_ShouldShiftPendingTimeAppointments_ByDelayMinutes()
+    public async Task Handle_AutoShift_ShouldShiftPendingTimeAppointments()
     {
-        // Arrange: a session with a known stored delay
         var session = new DoctorSession
         {
             DoctorInfoId       = Guid.NewGuid(),
@@ -98,28 +94,20 @@ public class HandleDelayHandlerTests
         };
         pendingAppt.ApplyPrice(100);
 
-        var sessionRepoMock = new Mock<IDoctorSessionRepository>();
-        sessionRepoMock
-            .Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(session);
+        var sessionsMock = new Mock<IDoctorSessionRepository>();
+        sessionsMock.Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>())).ReturnsAsync(session);
 
-        var apptRepoMock = new Mock<IAppointmentRepository>();
-        apptRepoMock
-            .Setup(r => r.GetByDoctorAndDateAsync(session.DoctorInfoId, session.Date, It.IsAny<CancellationToken>()))
+        var apptsMock = new Mock<IAppointmentRepository>();
+        apptsMock.Setup(r => r.GetByDoctorAndDateForUpdateAsync(session.DoctorInfoId, session.Date, It.IsAny<CancellationToken>()))
             .ReturnsAsync([pendingAppt]);
 
-        _uowMock.Setup(u => u.DoctorSessions).Returns(sessionRepoMock.Object);
-        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
+        var handler = new HandleDelayHandler(sessionsMock.Object, apptsMock.Object, _uowMock.Object);
 
-        var handler = new HandleDelayHandler(_uowMock.Object);
-
-        // Act
         var result = await handler.Handle(new HandleDelayCommand(session.Id, DelayHandlingOption.AutoShift), default);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        pendingAppt.ScheduledTime.Should().Be(new TimeOnly(9, 30)); // shifted +30 min
-        pendingAppt.EndTime.Should().Be(new TimeOnly(10, 0));       // shifted +30 min
+        pendingAppt.ScheduledTime.Should().Be(new TimeOnly(9, 30));
+        pendingAppt.EndTime.Should().Be(new TimeOnly(10, 0));
     }
 
     [Fact]
@@ -134,31 +122,24 @@ public class HandleDelayHandlerTests
             StoredDelayMinutes = 20,
         };
 
-        // An appointment scheduled in the past (before now)
         var pastAppt = new Appointment
         {
             DoctorInfoId  = session.DoctorInfoId,
             Date          = session.Date,
             Type          = AppointmentType.Time,
             Status        = AppointmentStatus.Pending,
-            ScheduledTime = new TimeOnly(0, 1), // 00:01 — always in the past
+            ScheduledTime = new TimeOnly(0, 1),
         };
         pastAppt.ApplyPrice(100);
 
-        var sessionRepoMock = new Mock<IDoctorSessionRepository>();
-        sessionRepoMock
-            .Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(session);
+        var sessionsMock = new Mock<IDoctorSessionRepository>();
+        sessionsMock.Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>())).ReturnsAsync(session);
 
-        var apptRepoMock = new Mock<IAppointmentRepository>();
-        apptRepoMock
-            .Setup(r => r.GetByDoctorAndDateAsync(session.DoctorInfoId, session.Date, It.IsAny<CancellationToken>()))
+        var apptsMock = new Mock<IAppointmentRepository>();
+        apptsMock.Setup(r => r.GetByDoctorAndDateForUpdateAsync(session.DoctorInfoId, session.Date, It.IsAny<CancellationToken>()))
             .ReturnsAsync([pastAppt]);
 
-        _uowMock.Setup(u => u.DoctorSessions).Returns(sessionRepoMock.Object);
-        _uowMock.Setup(u => u.Appointments).Returns(apptRepoMock.Object);
-
-        var handler = new HandleDelayHandler(_uowMock.Object);
+        var handler = new HandleDelayHandler(sessionsMock.Object, apptsMock.Object, _uowMock.Object);
 
         var result = await handler.Handle(new HandleDelayCommand(session.Id, DelayHandlingOption.MarkMissed), default);
 

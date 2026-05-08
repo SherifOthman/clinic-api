@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
@@ -9,13 +9,13 @@ namespace ClinicManagement.Application.Features.Notifications.Queries.GetNotific
 public class GetNotificationsHandler
     : IRequestHandler<GetNotificationsQuery, Result<PaginatedResult<NotificationDto>>>
 {
-    private readonly IUnitOfWork         _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly INotificationRepository _notifications;
+    private readonly ICurrentUserService     _currentUser;
 
-    public GetNotificationsHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public GetNotificationsHandler(INotificationRepository notifications, ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _notifications = notifications;
+        _currentUser   = currentUser;
     }
 
     public async Task<Result<PaginatedResult<NotificationDto>>> Handle(
@@ -23,18 +23,11 @@ public class GetNotificationsHandler
     {
         var userId = _currentUser.GetRequiredUserId();
 
-        var paged = await _uow.Notifications.GetPagedAsync(
-            userId, request.PageNumber, request.PageSize, ct);
+        var paged = await _notifications.GetPagedAsync(userId, request.PageNumber, request.PageSize, ct);
 
         var dtos = paged.Items
             .Select(n => new NotificationDto(
-                n.Id,
-                n.Type.ToString(),
-                n.Title,
-                n.Message,
-                n.ActionUrl,
-                n.IsRead,
-                n.CreatedAt))
+                n.Id, n.Type.ToString(), n.Title, n.Message, n.ActionUrl, n.IsRead, n.CreatedAt))
             .ToList();
 
         return Result.Success(

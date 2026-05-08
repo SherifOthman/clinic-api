@@ -10,16 +10,15 @@ namespace ClinicManagement.Application.Tests.Branches;
 
 public class UpdateBranchHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<IBranchRepository> _branchesMock = new();
-    private readonly UpdateBranchHandler _handler;
+    private readonly Mock<IUnitOfWork>       _uowMock      = new();
+    private readonly UpdateBranchHandler     _handler;
 
     public UpdateBranchHandlerTests()
     {
-        _uowMock.Setup(u => u.Branches).Returns(_branchesMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new UpdateBranchHandler(_uowMock.Object);
+        _handler = new UpdateBranchHandler(_branchesMock.Object, _uowMock.Object);
     }
 
     [Fact]

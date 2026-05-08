@@ -10,16 +10,15 @@ namespace ClinicManagement.Application.Tests.Staff;
 
 public class SetStaffActiveStatusHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<IClinicMemberRepository> _membersMock = new();
-    private readonly SetStaffActiveStatusHandler _handler;
+    private readonly Mock<IUnitOfWork>             _uowMock     = new();
+    private readonly SetStaffActiveStatusHandler   _handler;
 
     public SetStaffActiveStatusHandlerTests()
     {
-        _uowMock.Setup(u => u.Members).Returns(_membersMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new SetStaffActiveStatusHandler(_uowMock.Object);
+        _handler = new SetStaffActiveStatusHandler(_membersMock.Object, _uowMock.Object);
     }
 
     [Fact]

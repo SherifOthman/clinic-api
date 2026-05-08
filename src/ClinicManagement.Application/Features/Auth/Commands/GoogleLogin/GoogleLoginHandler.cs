@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
@@ -13,14 +14,16 @@ namespace ClinicManagement.Application.Features.Auth.Commands.GoogleLogin;
 
 public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<TokenResponseDto>>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly UserManager<User> _userManager;
-    private readonly ITokenIssuer _tokenIssuer;
-    private readonly IOAuthUserFactory _oAuthUserFactory;
-    private readonly IAuditWriter _audit;
+    private readonly IUserRepository    _users;
+    private readonly IUnitOfWork        _uow;
+    private readonly UserManager<User>  _userManager;
+    private readonly ITokenIssuer       _tokenIssuer;
+    private readonly IOAuthUserFactory  _oAuthUserFactory;
+    private readonly IAuditWriter       _audit;
     private readonly ILogger<GoogleLoginHandler> _logger;
 
     public GoogleLoginHandler(
+        IUserRepository users,
         IUnitOfWork uow,
         UserManager<User> userManager,
         ITokenIssuer tokenIssuer,
@@ -28,6 +31,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         IAuditWriter audit,
         ILogger<GoogleLoginHandler> logger)
     {
+        _users            = users;
         _uow              = uow;
         _userManager      = userManager;
         _tokenIssuer      = tokenIssuer;
@@ -71,22 +75,17 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         return Result.Success(tokens);
     }
 
-    // ── Step 1: Find existing user or create a new one ────────────────────────
-
     private async Task<User?> ResolveUserAsync(GoogleLoginCommand request, CancellationToken ct)
     {
-        // Try by Google login first — fastest, most specific
         if (!string.IsNullOrEmpty(request.GoogleId))
         {
             var byLogin = await _userManager.FindByLoginAsync("Google", request.GoogleId);
             if (byLogin is not null) return byLogin;
         }
 
-        // Try by email
-        var byEmail = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, ct);
+        var byEmail = await _users.GetByEmailOrUsernameAsync(request.Email, ct);
         if (byEmail is not null)
         {
-            // Guard: block Google OAuth for accounts registered with email/password
             var hasPassword    = byEmail.PasswordHash is not null;
             var hasGoogleLogin = (await _userManager.GetLoginsAsync(byEmail))
                 .Any(l => l.LoginProvider == "Google");
@@ -102,11 +101,8 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
             return byEmail;
         }
 
-        // No existing user — delegate creation to the factory
         return await _oAuthUserFactory.CreateAsync(request.Email, request.FullName, request.PictureUrl, ct);
     }
-
-    // ── Step 2: Google already verified the email ─────────────────────────────
 
     private async Task EnsureEmailConfirmedAsync(User user)
     {
@@ -115,8 +111,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         await _userManager.UpdateAsync(user);
     }
 
-    // ── Step 3: Record the Google login in AspNetUserLogins ──────────────────
-
     private async Task LinkGoogleLoginIfMissingAsync(User user, string? googleId)
     {
         if (string.IsNullOrEmpty(googleId)) return;
@@ -124,8 +118,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         if (!existingLogins.Any(l => l.LoginProvider == "Google" && l.ProviderKey == googleId))
             await _userManager.AddLoginAsync(user, new UserLoginInfo("Google", googleId, "Google"));
     }
-
-    // ── Step 4: Sync Google profile picture ──────────────────────────────────
 
     private static void UpdateProfilePictureIfMissing(User user, string? pictureUrl)
     {
@@ -138,8 +130,6 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         if (string.IsNullOrWhiteSpace(current) || isGooglePicture)
             user.ProfileImageUrl = pictureUrl;
     }
-
-    // ── Step 5: Assign ClinicOwner role to new users ──────────────────────────
 
     private async Task<List<string>> EnsureRolesAssignedAsync(User user)
     {

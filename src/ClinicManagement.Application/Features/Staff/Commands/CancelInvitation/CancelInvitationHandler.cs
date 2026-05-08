@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -8,11 +9,13 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public class CancelInvitationHandler : IRequestHandler<CancelInvitationCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IInvitationRepository _invitations;
+    private readonly IUnitOfWork           _uow;
+    private readonly ICurrentUserService   _currentUserService;
 
-    public CancelInvitationHandler(IUnitOfWork uow, ICurrentUserService currentUserService)
+    public CancelInvitationHandler(IInvitationRepository invitations, IUnitOfWork uow, ICurrentUserService currentUserService)
     {
+        _invitations        = invitations;
         _uow                = uow;
         _currentUserService = currentUserService;
     }
@@ -20,7 +23,7 @@ public class CancelInvitationHandler : IRequestHandler<CancelInvitationCommand, 
     public async Task<Result> Handle(CancelInvitationCommand request, CancellationToken cancellationToken)
     {
         var clinicId   = _currentUserService.GetRequiredClinicId();
-        var invitation = await _uow.Invitations.GetByIdAsync(request.InvitationId, cancellationToken);
+        var invitation = await _invitations.GetByIdAsync(request.InvitationId, cancellationToken);
 
         if (invitation is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Enums;
@@ -8,13 +9,23 @@ namespace ClinicManagement.Application.Features.Appointments.Commands;
 
 public class RescheduleAppointmentHandler : IRequestHandler<RescheduleAppointmentCommand, Result>
 {
+    private readonly IAppointmentRepository  _appointments;
+    private readonly IQueueCounterRepository _queueCounters;
     private readonly IUnitOfWork _uow;
 
-    public RescheduleAppointmentHandler(IUnitOfWork uow) => _uow = uow;
+    public RescheduleAppointmentHandler(
+        IAppointmentRepository appointments,
+        IQueueCounterRepository queueCounters,
+        IUnitOfWork uow)
+    {
+        _appointments  = appointments;
+        _queueCounters = queueCounters;
+        _uow           = uow;
+    }
 
     public async Task<Result> Handle(RescheduleAppointmentCommand request, CancellationToken ct)
     {
-        var appt = await _uow.Appointments.GetByIdForUpdateAsync(request.AppointmentId, ct);
+        var appt = await _appointments.GetByIdForUpdateAsync(request.AppointmentId, ct);
         if (appt is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Appointment not found");
 
@@ -26,19 +37,17 @@ public class RescheduleAppointmentHandler : IRequestHandler<RescheduleAppointmen
         if (request.NewDate <= today)
             return Result.Failure(ErrorCodes.VALIDATION_ERROR, "New date must be in the future");
 
-        // Get the next available queue number on the target date (patient goes to END of queue)
-        var targetBranchId = request.NewBranchId ?? appt.BranchId;
-        var nextQueueNumber = await _uow.QueueCounters.NextAsync(appt.DoctorInfoId, request.NewDate, ct);
+        var targetBranchId  = request.NewBranchId ?? appt.BranchId;
+        var nextQueueNumber = await _queueCounters.NextAsync(appt.DoctorInfoId, request.NewDate, ct);
 
         appt.Date        = request.NewDate;
         appt.BranchId    = targetBranchId;
         appt.QueueNumber = nextQueueNumber;
 
-        // Reset to Pending — they haven't been called yet on the new day
         if (appt.Status == AppointmentStatus.Waiting)
             appt.Status = AppointmentStatus.Pending;
 
-        _uow.Appointments.Update(appt);
+        _appointments.Update(appt);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }

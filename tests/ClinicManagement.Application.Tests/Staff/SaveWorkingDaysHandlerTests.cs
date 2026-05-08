@@ -11,23 +11,21 @@ namespace ClinicManagement.Application.Tests.Staff;
 
 public class SaveWorkingDaysHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IDoctorInfoRepository> _doctorInfosMock = new();
-    private readonly Mock<IDoctorScheduleRepository> _schedulesMock = new();
-    private readonly Mock<IPermissionService> _permissionsMock = new();
-    private readonly SaveWorkingDaysHandler _handler;
+    private readonly Mock<IDoctorInfoRepository>     _doctorInfosMock = new();
+    private readonly Mock<IDoctorScheduleRepository> _schedulesMock   = new();
+    private readonly Mock<IUnitOfWork>               _uowMock         = new();
+    private readonly Mock<IPermissionService>        _permissionsMock = new();
+    private readonly SaveWorkingDaysHandler          _handler;
 
-    private readonly Guid _staffId = Guid.NewGuid();
-    private readonly Guid _branchId = Guid.NewGuid();
+    private readonly Guid _staffId      = Guid.NewGuid();
+    private readonly Guid _branchId     = Guid.NewGuid();
     private readonly Guid _doctorInfoId = Guid.NewGuid();
 
     public SaveWorkingDaysHandlerTests()
     {
-        _uowMock.Setup(u => u.DoctorInfos).Returns(_doctorInfosMock.Object);
-        _uowMock.Setup(u => u.DoctorSchedules).Returns(_schedulesMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new SaveWorkingDaysHandler(_uowMock.Object, _permissionsMock.Object);
+        _handler = new SaveWorkingDaysHandler(_doctorInfosMock.Object, _schedulesMock.Object, _uowMock.Object, _permissionsMock.Object);
     }
 
     private void AllowPermission() =>

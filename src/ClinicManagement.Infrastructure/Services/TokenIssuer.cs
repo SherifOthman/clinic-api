@@ -1,5 +1,6 @@
 using ClinicManagement.Application.Abstractions.Authentication;
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
@@ -8,26 +9,25 @@ using ClinicManagement.Domain.Entities;
 
 namespace ClinicManagement.Infrastructure.Services;
 
-/// <inheritdoc cref="ITokenIssuer"/>
 public sealed class TokenIssuer : ITokenIssuer
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ITokenService _tokenService;
-    private readonly IRefreshTokenService _refreshTokenService;
+    private readonly IClinicRepository       _clinics;
+    private readonly IClinicMemberRepository _members;
+    private readonly ITokenService           _tokenService;
+    private readonly IRefreshTokenService    _refreshTokenService;
 
     public TokenIssuer(
-        IUnitOfWork uow,
+        IClinicRepository clinics,
+        IClinicMemberRepository members,
         ITokenService tokenService,
         IRefreshTokenService refreshTokenService)
     {
-        _uow                 = uow;
+        _clinics             = clinics;
+        _members             = members;
         _tokenService        = tokenService;
         _refreshTokenService = refreshTokenService;
     }
 
-    // ── Context resolution ────────────────────────────────────────────────────
-
-    /// <inheritdoc/>
     public async Task<Result<TokenContext>> ResolveContextAsync(
         Guid userId,
         IReadOnlyList<string> roles,
@@ -44,18 +44,17 @@ public sealed class TokenIssuer : ITokenIssuer
 
     private async Task<Result<TokenContext>> ResolveOwnerContextAsync(Guid userId, CancellationToken ct)
     {
-        var clinic = await _uow.Clinics.GetByOwnerIdAsync(userId, ct);
+        var clinic = await _clinics.GetByOwnerIdAsync(userId, ct);
         if (clinic is null)
             return Result.Success(TokenContext.Empty);
 
-        // Owner may also be a doctor — member record carries MemberId for the JWT.
-        var member = await _uow.Members.GetByUserIdWithClinicAsync(userId, ct);
+        var member = await _members.GetByUserIdWithClinicAsync(userId, ct);
         return Result.Success(new TokenContext(clinic.Id, member?.Id, clinic.CountryCode));
     }
 
     private async Task<Result<TokenContext>> ResolveStaffContextAsync(Guid userId, CancellationToken ct)
     {
-        var member = await _uow.Members.GetByUserIdWithClinicAsync(userId, ct);
+        var member = await _members.GetByUserIdWithClinicAsync(userId, ct);
         if (member is null)
             return Result.Success(TokenContext.Empty);
 
@@ -67,16 +66,13 @@ public sealed class TokenIssuer : ITokenIssuer
         return Result.Success(new TokenContext(member.ClinicId, member.Id, member.Clinic.CountryCode));
     }
 
-    // ── Token pair issuance ───────────────────────────────────────────────────
-
-    /// <inheritdoc/>
     public async Task<TokenResponseDto> IssueTokenPairAsync(
         User user,
         IReadOnlyList<string> roles,
         TokenContext context,
         CancellationToken ct = default)
     {
-        var accessToken  = _tokenService.GenerateAccessToken(
+        var accessToken = _tokenService.GenerateAccessToken(
             user, roles, context.MemberId, context.ClinicId, context.CountryCode);
 
         var rawRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id, null, ct);

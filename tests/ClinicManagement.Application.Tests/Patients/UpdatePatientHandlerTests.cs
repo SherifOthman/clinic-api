@@ -12,22 +12,21 @@ namespace ClinicManagement.Application.Tests.Patients;
 
 public class UpdatePatientHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IPatientRepository> _patientsMock = new();
-    private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly Mock<IPhoneNormalizer> _phoneNormalizerMock = new();
+    private readonly Mock<IPatientRepository>  _patientsMock        = new();
+    private readonly Mock<IUnitOfWork>         _uowMock             = new();
+    private readonly Mock<ICurrentUserService> _currentUserMock     = new();
+    private readonly Mock<IPhoneNormalizer>    _phoneNormalizerMock = new();
     private readonly UpdatePatientCommandHandler _handler;
 
     public UpdatePatientHandlerTests()
     {
-        _uowMock.Setup(u => u.Patients).Returns(_patientsMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         _currentUserMock.Setup(x => x.CountryCode).Returns("EG");
         _phoneNormalizerMock.Setup(x => x.GetNationalNumber(It.IsAny<string>(), It.IsAny<string?>()))
             .Returns((string p, string? _) => p);
 
-        _handler = new UpdatePatientCommandHandler(_uowMock.Object, _currentUserMock.Object, _phoneNormalizerMock.Object);
+        _handler = new UpdatePatientCommandHandler(_patientsMock.Object, _uowMock.Object, _currentUserMock.Object, _phoneNormalizerMock.Object);
     }
 
     [Fact]
@@ -61,7 +60,6 @@ public class UpdatePatientHandlerTests
     public async Task Handle_ShouldReplacePhoneNumbers_WhenProvided()
     {
         var patient = TestHandlerHelpers.CreateTestPatient();
-        // Seed an existing phone on the in-memory object
         patient.Phones.Add(new PatientPhone { PatientId = patient.Id, PhoneNumber = "+966500000000", NationalNumber = "500000000" });
         _patientsMock.Setup(x => x.GetByIdWithDetailsAsync(patient.Id, default)).ReturnsAsync(patient);
 
@@ -71,7 +69,6 @@ public class UpdatePatientHandlerTests
             null), default);
 
         result.IsSuccess.Should().BeTrue();
-        // RemovePhone called for old, AddPhone called for new ones
         _patientsMock.Verify(x => x.RemovePhone(It.IsAny<PatientPhone>()), Times.Once);
         _patientsMock.Verify(x => x.AddPhone(It.IsAny<PatientPhone>()), Times.Exactly(2));
     }

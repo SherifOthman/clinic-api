@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -10,36 +11,42 @@ namespace ClinicManagement.Application.Features.Patients.Commands;
 
 public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IPatientRepository  _patients;
+    private readonly IUnitOfWork         _uow;
     private readonly ICurrentUserService _currentUser;
-    private readonly IPhoneNormalizer _phoneNormalizer;
+    private readonly IPhoneNormalizer    _phoneNormalizer;
 
-    public UpdatePatientCommandHandler(IUnitOfWork uow, ICurrentUserService currentUser, IPhoneNormalizer phoneNormalizer)
+    public UpdatePatientCommandHandler(
+        IPatientRepository patients,
+        IUnitOfWork uow,
+        ICurrentUserService currentUser,
+        IPhoneNormalizer phoneNormalizer)
     {
-        _uow = uow;
-        _currentUser = currentUser;
+        _patients        = patients;
+        _uow             = uow;
+        _currentUser     = currentUser;
         _phoneNormalizer = phoneNormalizer;
     }
 
     public async Task<Result> Handle(UpdatePatientCommand request, CancellationToken cancellationToken)
     {
-        var patient = await _uow.Patients.GetByIdWithDetailsAsync(request.Id, cancellationToken);
+        var patient = await _patients.GetByIdWithDetailsAsync(request.Id, cancellationToken);
 
         if (patient is null)
             return Result.Failure(ErrorCodes.PATIENT_NOT_FOUND, "Patient not found");
 
-        patient.FullName = request.FullName.Trim();
-        patient.DateOfBirth = DateOnly.TryParse(request.DateOfBirth, out var dob) ? dob : patient.DateOfBirth;
-        patient.Gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
+        patient.FullName         = request.FullName.Trim();
+        patient.DateOfBirth      = DateOnly.TryParse(request.DateOfBirth, out var dob) ? dob : patient.DateOfBirth;
+        patient.Gender           = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var ug) ? ug : Domain.Enums.Gender.Male;
         patient.CountryGeonameId = request.CountryGeonameId;
-        patient.StateGeonameId = request.StateGeonameId;
-        patient.CityGeonameId = request.CityGeonameId;
-        patient.BloodType = ParseBloodType(request.BloodType);
+        patient.StateGeonameId   = request.StateGeonameId;
+        patient.CityGeonameId    = request.CityGeonameId;
+        patient.BloodType        = ParseBloodType(request.BloodType);
 
         if (request.PhoneNumbers != null)
         {
             PatientPhoneHelper.ReplacePhones(
-                _uow.Patients, _phoneNormalizer,
+                _patients, _phoneNormalizer,
                 patient.Id, request.PhoneNumbers,
                 _currentUser.CountryCode,
                 existingPhones: patient.Phones);
@@ -48,10 +55,10 @@ public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand,
         if (request.ChronicDiseaseIds != null)
         {
             foreach (var cd in patient.ChronicDiseases?.ToList() ?? [])
-                _uow.Patients.RemoveChronicDisease(cd);
+                _patients.RemoveChronicDisease(cd);
 
             foreach (var diseaseId in request.ChronicDiseaseIds)
-                _uow.Patients.AddChronicDisease(new PatientChronicDisease { PatientId = patient.Id, ChronicDiseaseId = diseaseId });
+                _patients.AddChronicDisease(new PatientChronicDisease { PatientId = patient.Id, ChronicDiseaseId = diseaseId });
         }
 
         await _uow.SaveChangesAsync(cancellationToken);

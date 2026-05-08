@@ -13,21 +13,21 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class ChangePasswordHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
-    private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
+    private readonly Mock<IUserRepository>     _usersMock = new();
+    private readonly Mock<IUnitOfWork>         _uowMock   = new();
+    private readonly Mock<UserManager<User>>   _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly Mock<IAuditWriter> _auditWriterMock = new();
-    private readonly ChangePasswordHandler _handler;
+    private readonly Mock<IAuditWriter>        _auditWriterMock = new();
+    private readonly ChangePasswordHandler     _handler;
 
     public ChangePasswordHandlerTests()
     {
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         _handler = new ChangePasswordHandler(
-            _uowMock.Object, _userManagerMock.Object, _currentUserMock.Object,
-            _auditWriterMock.Object, NullLogger<ChangePasswordHandler>.Instance);
+            _usersMock.Object, _uowMock.Object, _userManagerMock.Object,
+            _currentUserMock.Object, _auditWriterMock.Object,
+            NullLogger<ChangePasswordHandler>.Instance);
     }
 
     [Fact]

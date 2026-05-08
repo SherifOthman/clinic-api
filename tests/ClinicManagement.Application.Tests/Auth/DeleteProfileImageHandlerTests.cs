@@ -14,20 +14,19 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class DeleteProfileImageHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
+    private readonly Mock<IUserRepository>     _usersMock       = new();
+    private readonly Mock<IUnitOfWork>         _uowMock         = new();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly DeleteProfileImageHandler _handler;
 
     public DeleteProfileImageHandlerTests()
     {
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         _handler = new DeleteProfileImageHandler(
-            _uowMock.Object, _currentUserMock.Object, _fileStorageMock.Object,
-            NullLogger<DeleteProfileImageHandler>.Instance);
+            _usersMock.Object, _uowMock.Object, _currentUserMock.Object,
+            _fileStorageMock.Object, NullLogger<DeleteProfileImageHandler>.Instance);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Enums;
@@ -8,19 +8,16 @@ namespace ClinicManagement.Application.Features.Staff.Queries;
 
 public class GetInvitationsHandler : IRequestHandler<GetInvitationsQuery, Result<PaginatedResult<InvitationDto>>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IInvitationRepository _invitations;
 
-    public GetInvitationsHandler(IUnitOfWork uow) => _uow = uow;
+    public GetInvitationsHandler(IInvitationRepository invitations) => _invitations = invitations;
 
     public async Task<Result<PaginatedResult<InvitationDto>>> Handle(
         GetInvitationsQuery request, CancellationToken cancellationToken)
     {
         var now    = DateTimeOffset.UtcNow;
-        var result = await _uow.Invitations.GetProjectedPageAsync(
-            request.Filter,
-            request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+        var result = await _invitations.GetProjectedPageAsync(
+            request.Filter, request.PageNumber, request.PageSize, cancellationToken);
 
         var items = result.Items.Select(si =>
         {

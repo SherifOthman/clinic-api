@@ -13,11 +13,11 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class RegisterHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
-    private readonly Mock<IEmailTokenService> _emailTokenMock = new();
-    private readonly Mock<IAuditWriter> _auditWriterMock = new();
-    private readonly RegisterHandler _handler;
+    private readonly Mock<IUnitOfWork>         _uowMock         = new();
+    private readonly Mock<UserManager<User>>   _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
+    private readonly Mock<IEmailTokenService>  _emailTokenMock  = new();
+    private readonly Mock<IAuditWriter>        _auditWriterMock = new();
+    private readonly RegisterHandler           _handler;
 
     public RegisterHandlerTests()
     {
@@ -86,7 +86,6 @@ public class RegisterHandlerTests
 
         var result = await _handler.Handle(ValidCommand(), default);
 
-        // Email failure is non-fatal — user is still created
         result.IsSuccess.Should().BeTrue();
     }
 }

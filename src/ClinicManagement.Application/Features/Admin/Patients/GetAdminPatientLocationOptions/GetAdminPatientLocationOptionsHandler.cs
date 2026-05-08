@@ -1,4 +1,3 @@
-using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using MediatR;
@@ -8,18 +7,14 @@ namespace ClinicManagement.Application.Features.Admin.Patients;
 public class GetAdminPatientLocationOptionsHandler
     : IRequestHandler<GetAdminPatientLocationOptionsQuery, Result<List<LocationOption>>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IPatientRepository _patients;
 
-    public GetAdminPatientLocationOptionsHandler(IUnitOfWork uow) => _uow = uow;
+    public GetAdminPatientLocationOptionsHandler(IPatientRepository patients) => _patients = patients;
 
     public async Task<Result<List<LocationOption>>> Handle(
         GetAdminPatientLocationOptionsQuery request, CancellationToken ct)
     {
-        var options = await _uow.Patients.GetAdminLocationOptionsAsync(
-            request.CountryGeonameId,
-            request.StateGeonameId,
-            ct);
-
+        var options = await _patients.GetAdminLocationOptionsAsync(request.CountryGeonameId, request.StateGeonameId, ct);
         return Result.Success(options);
     }
 }

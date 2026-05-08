@@ -1,5 +1,4 @@
 using ClinicManagement.Application.Abstractions.Authentication;
-using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
@@ -17,18 +16,14 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class LoginHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
+    private readonly Mock<IUserRepository>   _usersMock       = new();
     private readonly Mock<UserManager<User>> _userManagerMock = TestHandlerHelpers.CreateMockUserManager();
-    private readonly Mock<ITokenIssuer> _tokenIssuerMock = new();
-    private readonly Mock<IAuditWriter> _auditWriterMock = new();
-    private readonly LoginHandler _handler;
+    private readonly Mock<ITokenIssuer>      _tokenIssuerMock = new();
+    private readonly Mock<IAuditWriter>      _auditWriterMock = new();
+    private readonly LoginHandler            _handler;
 
     public LoginHandlerTests()
     {
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
-
-        // Default happy-path token response
         _tokenIssuerMock
             .Setup(x => x.ResolveContextAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<string>>(), default))
             .ReturnsAsync(Result.Success(TokenContext.Empty));
@@ -39,7 +34,7 @@ public class LoginHandlerTests
             .ReturnsAsync(new TokenResponseDto("access-token", "refresh-token"));
 
         _handler = new LoginHandler(
-            _uowMock.Object, _userManagerMock.Object, _tokenIssuerMock.Object,
+            _usersMock.Object, _userManagerMock.Object, _tokenIssuerMock.Object,
             _auditWriterMock.Object, NullLogger<LoginHandler>.Instance);
     }
 

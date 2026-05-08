@@ -1,5 +1,5 @@
-using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Exceptions;
@@ -10,24 +10,26 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ResendEmailVerific
 
 public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerificationCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IUserRepository    _users;
     private readonly IEmailTokenService _emailTokenService;
     private readonly ILogger<ResendEmailVerificationHandler> _logger;
 
-    public ResendEmailVerificationHandler(IUnitOfWork uow, IEmailTokenService emailTokenService, ILogger<ResendEmailVerificationHandler> logger)
+    public ResendEmailVerificationHandler(
+        IUserRepository users,
+        IEmailTokenService emailTokenService,
+        ILogger<ResendEmailVerificationHandler> logger)
     {
-        _uow               = uow;
+        _users             = users;
         _emailTokenService = emailTokenService;
         _logger            = logger;
     }
 
     public async Task<Result> Handle(ResendEmailVerificationCommand request, CancellationToken cancellationToken)
     {
-        var user = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
+        var user = await _users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
 
         if (user is null)
         {
-            // Silent success — don't reveal whether the email is registered
             _logger.LogInformation("Resend email verification requested for non-existent email: {Email}", request.Email);
             return Result.Success();
         }

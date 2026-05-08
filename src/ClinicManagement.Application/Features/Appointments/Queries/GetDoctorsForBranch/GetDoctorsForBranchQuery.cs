@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Features.Staff.QueryModels;
 using ClinicManagement.Domain.Common;
 using MediatR;
@@ -9,12 +9,13 @@ public record GetDoctorsForBranchQuery(Guid BranchId) : IRequest<Result<List<Doc
 
 public class GetDoctorsForBranchHandler : IRequestHandler<GetDoctorsForBranchQuery, Result<List<DoctorForBranchRow>>>
 {
-    private readonly IUnitOfWork _uow;
-    public GetDoctorsForBranchHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly IDoctorScheduleRepository _schedules;
+
+    public GetDoctorsForBranchHandler(IDoctorScheduleRepository schedules) => _schedules = schedules;
 
     public async Task<Result<List<DoctorForBranchRow>>> Handle(GetDoctorsForBranchQuery request, CancellationToken ct)
     {
-        var rows = await _uow.DoctorSchedules.GetDoctorsForBranchAsync(request.BranchId, ct);
+        var rows = await _schedules.GetDoctorsForBranchAsync(request.BranchId, ct);
         return Result.Success(rows);
     }
 }

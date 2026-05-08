@@ -13,22 +13,19 @@ namespace ClinicManagement.Application.Tests.Staff;
 
 public class ResendInvitationHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<IInvitationRepository> _invitationsMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
-    private readonly Mock<IClinicRepository> _clinicsMock = new();
-    private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly Mock<IEmailService> _emailMock = new();
-    private readonly ResendInvitationHandler _handler;
+    private readonly Mock<IUserRepository>       _usersMock       = new();
+    private readonly Mock<IClinicRepository>     _clinicsMock     = new();
+    private readonly Mock<IUnitOfWork>           _uowMock         = new();
+    private readonly Mock<ICurrentUserService>   _currentUserMock = new();
+    private readonly Mock<IEmailService>         _emailMock       = new();
+    private readonly ResendInvitationHandler     _handler;
 
     private readonly Guid _clinicId = Guid.NewGuid();
-    private readonly Guid _userId = Guid.NewGuid();
+    private readonly Guid _userId   = Guid.NewGuid();
 
     public ResendInvitationHandlerTests()
     {
-        _uowMock.Setup(u => u.Invitations).Returns(_invitationsMock.Object);
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
-        _uowMock.Setup(u => u.Clinics).Returns(_clinicsMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         _currentUserMock.Setup(x => x.GetRequiredClinicId()).Returns(_clinicId);
@@ -39,7 +36,9 @@ public class ResendInvitationHandlerTests
         _clinicsMock.Setup(x => x.GetByIdAsync(_clinicId, default))
             .ReturnsAsync(TestHandlerHelpers.CreateTestClinic(ownerUserId: _userId));
 
-        _handler = new ResendInvitationHandler(_uowMock.Object, _currentUserMock.Object, _emailMock.Object);
+        _handler = new ResendInvitationHandler(
+            _invitationsMock.Object, _usersMock.Object, _clinicsMock.Object,
+            _uowMock.Object, _currentUserMock.Object, _emailMock.Object);
     }
 
     private StaffInvitation MakePendingInvitation(Guid clinicId) =>
@@ -61,7 +60,7 @@ public class ResendInvitationHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenInvitationBelongsToDifferentClinic()
     {
-        var invitation = MakePendingInvitation(Guid.NewGuid()); // different clinic
+        var invitation = MakePendingInvitation(Guid.NewGuid());
         _invitationsMock.Setup(x => x.GetByIdWithSpecializationAsync(invitation.Id, default))
             .ReturnsAsync(invitation);
 
