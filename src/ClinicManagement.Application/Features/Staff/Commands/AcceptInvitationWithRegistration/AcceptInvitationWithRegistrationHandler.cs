@@ -57,13 +57,8 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var acceptResult = invitation.Accept(user.Id, DateTimeOffset.UtcNow);
         if (acceptResult.IsFailure) { await _userManager.DeleteAsync(user); return acceptResult; }
 
-        var member = new ClinicMember
-        {
-            UserId   = user.Id,
-            ClinicId = invitation.ClinicId,
-            Role     = invitation.Role,
-            IsActive = true,
-        };
+        // ClinicMember.CreateFromInvitation() owns the construction — role and clinicId come from the invitation
+        var member = ClinicMember.CreateFromInvitation(user.Id, invitation);
         await _uow.Members.AddAsync(member);
 
         if (invitation.Role == ClinicMemberRole.Doctor)

@@ -58,21 +58,13 @@ public class CompleteOnboardingHandler : IRequestHandler<CompleteOnboarding, Res
                 .ToList() ?? [],
         });
 
-        var ownerMember = CreateOwnerMember(user, clinic.Id);
+        // ClinicMember.CreateForOwner() owns the construction — no inline property assignments
+        var ownerMember = ClinicMember.CreateForOwner(userId, clinic.Id);
         await _uow.Members.AddAsync(ownerMember);
 
         await _uow.Permissions.SeedDefaultsAsync(ownerMember.Id, Domain.Enums.ClinicMemberRole.Owner, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Audit captured automatically by SaveChanges interceptor (Clinic + Branch creation)
         return Result.Success();
     }
-
-    private static ClinicMember CreateOwnerMember(User user, Guid clinicId) => new()
-    {
-        UserId   = user.Id,
-        ClinicId = clinicId,
-        Role     = Domain.Enums.ClinicMemberRole.Owner,
-        IsActive = true,
-    };
 }

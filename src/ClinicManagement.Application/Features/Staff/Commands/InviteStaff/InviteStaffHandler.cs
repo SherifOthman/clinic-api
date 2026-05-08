@@ -46,6 +46,10 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
         var inviter = await _uow.Users.GetByIdAsync(currentUserId, cancellationToken);
         var clinic  = await _uow.Clinics.GetByIdAsync(clinicId, cancellationToken);
 
+        // Save first — if the DB write fails, no email is sent and the user doesn't
+        // receive a link to an invitation that doesn't exist.
+        await _uow.SaveChangesAsync(cancellationToken);
+
         await _emailService.SendStaffInvitationEmailAsync(
             request.Email,
             clinic?.Name ?? "Clinic",
@@ -54,9 +58,6 @@ public class InviteStaffHandler : IRequestHandler<InviteStaffCommand, Result<Inv
             $"/en/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 
-        await _uow.SaveChangesAsync(cancellationToken);
-
-        // Manual audit — business context ("who was invited as what role") is more useful than the row creation diff
         await _audit.WriteEventAsync("StaffInvited", $"Invited {request.Email} as {request.Role}", ct: cancellationToken);
 
         return Result.Success(new InviteStaffResponseDto(invitation.Id, invitation.InvitationToken, invitation.ExpiresAt));

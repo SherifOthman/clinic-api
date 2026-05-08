@@ -5,7 +5,6 @@ using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
-using ClinicManagement.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -17,6 +16,7 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
     private readonly IUnitOfWork _uow;
     private readonly UserManager<User> _userManager;
     private readonly ITokenIssuer _tokenIssuer;
+    private readonly IOAuthUserFactory _oAuthUserFactory;
     private readonly IAuditWriter _audit;
     private readonly ILogger<GoogleLoginHandler> _logger;
 
@@ -24,14 +24,16 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
         IUnitOfWork uow,
         UserManager<User> userManager,
         ITokenIssuer tokenIssuer,
+        IOAuthUserFactory oAuthUserFactory,
         IAuditWriter audit,
         ILogger<GoogleLoginHandler> logger)
     {
-        _uow         = uow;
-        _userManager = userManager;
-        _tokenIssuer = tokenIssuer;
-        _audit       = audit;
-        _logger      = logger;
+        _uow              = uow;
+        _userManager      = userManager;
+        _tokenIssuer      = tokenIssuer;
+        _oAuthUserFactory = oAuthUserFactory;
+        _audit            = audit;
+        _logger           = logger;
     }
 
     public async Task<Result<TokenResponseDto>> Handle(
@@ -73,20 +75,19 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
 
     private async Task<User?> ResolveUserAsync(GoogleLoginCommand request, CancellationToken ct)
     {
-        // 1. Try to find by Google login first (fastest, most specific)
+        // Try by Google login first — fastest, most specific
         if (!string.IsNullOrEmpty(request.GoogleId))
         {
             var byLogin = await _userManager.FindByLoginAsync("Google", request.GoogleId);
             if (byLogin is not null) return byLogin;
         }
 
-        // 2. Try to find by email
+        // Try by email
         var byEmail = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, ct);
         if (byEmail is not null)
         {
-            // Guard: if this account was registered with email/password, block Google OAuth.
-            // The user must log in with their password — mixing auth methods is not allowed.
-            var hasPassword = byEmail.PasswordHash is not null;
+            // Guard: block Google OAuth for accounts registered with email/password
+            var hasPassword    = byEmail.PasswordHash is not null;
             var hasGoogleLogin = (await _userManager.GetLoginsAsync(byEmail))
                 .Any(l => l.LoginProvider == "Google");
 
@@ -95,14 +96,14 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
                 _logger.LogWarning(
                     "Google OAuth blocked for {Email}: account exists with password, no Google login linked.",
                     request.Email);
-                return null; // caller returns USER_CREATION_FAILED → redirects to login with error
+                return null;
             }
 
             return byEmail;
         }
 
-        // 3. No existing user — create a new one from Google profile
-        return await CreateUserFromGoogleAsync(request, ct);
+        // No existing user — delegate creation to the factory
+        return await _oAuthUserFactory.CreateAsync(request.Email, request.FullName, request.PictureUrl, ct);
     }
 
     // ── Step 2: Google already verified the email ─────────────────────────────
@@ -149,43 +150,5 @@ public class GoogleLoginHandler : IRequestHandler<GoogleLoginCommand, Result<Tok
             roles = [UserRoles.ClinicOwner];
         }
         return roles;
-    }
-
-    // ── Create: brand new user from Google profile ────────────────────────────
-
-    private async Task<User?> CreateUserFromGoogleAsync(GoogleLoginCommand request, CancellationToken ct)
-    {
-        var user = new User
-        {
-            Email           = request.Email,
-            UserName        = await GenerateUniqueUsernameAsync(request.Email),
-            EmailConfirmed  = true,
-            FullName        = request.FullName,
-            Gender          = Gender.Male,
-            ProfileImageUrl = request.PictureUrl,
-        };
-
-        var result = await _userManager.CreateAsync(user);
-        if (!result.Succeeded)
-        {
-            _logger.LogError("Failed to create user from Google OAuth {Email}: {Errors}",
-                request.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
-            return null;
-        }
-
-        _logger.LogInformation("Created new user from Google OAuth: {Email}", request.Email);
-        return user;
-    }
-
-    private async Task<string> GenerateUniqueUsernameAsync(string email)
-    {
-        var baseUsername = email.Split('@')[0];
-        var candidate    = baseUsername;
-        var suffix       = 1;
-
-        while (await _userManager.FindByNameAsync(candidate) is not null)
-            candidate = $"{baseUsername}{suffix++}";
-
-        return candidate;
     }
 }

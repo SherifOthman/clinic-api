@@ -30,4 +30,28 @@ public class ClinicMember : AuditableTenantEntity, IAuditableEntity, ISoftDeleta
     public Clinic Clinic { get; set; } = null!;
     public DoctorInfo? DoctorInfo { get; set; }
     public ICollection<ClinicMemberPermission> Permissions { get; set; } = new List<ClinicMemberPermission>();
+
+    // ── Domain factories ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates the owner membership record during clinic onboarding.
+    /// </summary>
+    public static ClinicMember CreateForOwner(Guid userId, Guid clinicId) => new()
+    {
+        UserId   = userId,
+        ClinicId = clinicId,
+        Role     = ClinicMemberRole.Owner,
+        IsActive = true,
+    };
+
+    /// <summary>
+    /// Creates a staff membership record when a user accepts an invitation.
+    /// </summary>
+    public static ClinicMember CreateFromInvitation(Guid userId, StaffInvitation invitation) => new()
+    {
+        UserId   = userId,
+        ClinicId = invitation.ClinicId,
+        Role     = invitation.Role,
+        IsActive = true,
+    };
 }

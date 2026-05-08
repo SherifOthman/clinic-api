@@ -41,6 +41,10 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
         var inviter = await _uow.Users.GetByIdAsync(currentUserId, cancellationToken);
         var clinic  = await _uow.Clinics.GetByIdAsync(clinicId, cancellationToken);
 
+        // Save the extended expiry first — if the DB write fails, no email is sent
+        // and the user doesn't receive a link with a stale expiry date.
+        await _uow.SaveChangesAsync(cancellationToken);
+
         await _emailService.SendStaffInvitationEmailAsync(
             invitation.Email,
             clinic?.Name ?? "Clinic",
@@ -49,7 +53,6 @@ public class ResendInvitationHandler : IRequestHandler<ResendInvitationCommand, 
             $"/en/accept-invitation/{invitation.InvitationToken}",
             cancellationToken);
 
-        await _uow.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }

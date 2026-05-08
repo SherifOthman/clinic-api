@@ -25,7 +25,9 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         var clinicId = _currentUser.GetRequiredClinicId();
         var patientCode = await _uow.PatientCounters.NextCodeAsync(clinicId, cancellationToken);
         var gender = Enum.TryParse<Domain.Enums.Gender>(request.Gender, out var pg) ? pg : Domain.Enums.Gender.Male;
-        var dob = DateOnly.Parse(request.DateOfBirth);
+        // InvariantCulture: the validator already enforces YYYY-MM-DD format,
+        // so we parse with a fixed culture to avoid server-locale surprises.
+        var dob = DateOnly.Parse(request.DateOfBirth, System.Globalization.CultureInfo.InvariantCulture);
 
         var patient = new Patient
         {
