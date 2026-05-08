@@ -1,51 +1,96 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Repositories;
-using ClinicManagement.Application.Abstractions.Services;
-using ClinicManagement.Domain.Entities;
-using ClinicManagement.Persistence.Repositories;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace ClinicManagement.Persistence;
 
+/// <summary>
+/// Aggregates all repositories and owns SaveChangesAsync.
+/// Repositories are injected by DI — UnitOfWork never news them up directly.
+/// This means swapping any repository (e.g. EF → Dapper) is a one-line change
+/// in DependencyInjection.cs with zero changes here.
+/// </summary>
 public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
-    private readonly IMemoryCache _cache;
-    private readonly ICurrentUserService _currentUser;
 
-    public UnitOfWork(ApplicationDbContext context, IMemoryCache cache, ICurrentUserService currentUser)
+    public IPatientRepository            Patients            { get; }
+    public IClinicMemberRepository       Members             { get; }
+    public IDoctorInfoRepository         DoctorInfos         { get; }
+    public IDoctorScheduleRepository     DoctorSchedules     { get; }
+    public IInvitationRepository         Invitations         { get; }
+    public IClinicRepository             Clinics             { get; }
+    public IBranchRepository             Branches            { get; }
+    public IUserRepository               Users               { get; }
+    public IAuditLogRepository           AuditLogs           { get; }
+    public IReferenceRepository          Reference           { get; }
+    public IClinicSubscriptionRepository ClinicSubscriptions { get; }
+    public IGeoLocationRepository        GeoLocations        { get; }
+    public IPermissionRepository         Permissions         { get; }
+    public IPatientCounterRepository     PatientCounters     { get; }
+    public IChronicDiseaseRepository     ChronicDiseases     { get; }
+    public ISpecializationRepository     Specializations     { get; }
+    public ISubscriptionPlanRepository   SubscriptionPlans   { get; }
+    public IRefreshTokenRepository       RefreshTokens       { get; }
+    public ITestimonialRepository        Testimonials        { get; }
+    public IContactMessageRepository     ContactMessages     { get; }
+    public IAppointmentRepository        Appointments        { get; }
+    public IQueueCounterRepository       QueueCounters       { get; }
+    public IDoctorSessionRepository      DoctorSessions      { get; }
+    public INotificationRepository       Notifications       { get; }
+
+    public UnitOfWork(
+        ApplicationDbContext context,
+        IPatientRepository            patients,
+        IClinicMemberRepository       members,
+        IDoctorInfoRepository         doctorInfos,
+        IDoctorScheduleRepository     doctorSchedules,
+        IInvitationRepository         invitations,
+        IClinicRepository             clinics,
+        IBranchRepository             branches,
+        IUserRepository               users,
+        IAuditLogRepository           auditLogs,
+        IReferenceRepository          reference,
+        IClinicSubscriptionRepository clinicSubscriptions,
+        IGeoLocationRepository        geoLocations,
+        IPermissionRepository         permissions,
+        IPatientCounterRepository     patientCounters,
+        IChronicDiseaseRepository     chronicDiseases,
+        ISpecializationRepository     specializations,
+        ISubscriptionPlanRepository   subscriptionPlans,
+        IRefreshTokenRepository       refreshTokens,
+        ITestimonialRepository        testimonials,
+        IContactMessageRepository     contactMessages,
+        IAppointmentRepository        appointments,
+        IQueueCounterRepository       queueCounters,
+        IDoctorSessionRepository      doctorSessions,
+        INotificationRepository       notifications)
     {
-        _context     = context;
-        _cache       = cache;
-        _currentUser = currentUser;
+        _context            = context;
+        Patients            = patients;
+        Members             = members;
+        DoctorInfos         = doctorInfos;
+        DoctorSchedules     = doctorSchedules;
+        Invitations         = invitations;
+        Clinics             = clinics;
+        Branches            = branches;
+        Users               = users;
+        AuditLogs           = auditLogs;
+        Reference           = reference;
+        ClinicSubscriptions = clinicSubscriptions;
+        GeoLocations        = geoLocations;
+        Permissions         = permissions;
+        PatientCounters     = patientCounters;
+        ChronicDiseases     = chronicDiseases;
+        Specializations     = specializations;
+        SubscriptionPlans   = subscriptionPlans;
+        RefreshTokens       = refreshTokens;
+        Testimonials        = testimonials;
+        ContactMessages     = contactMessages;
+        Appointments        = appointments;
+        QueueCounters       = queueCounters;
+        DoctorSessions      = doctorSessions;
+        Notifications       = notifications;
     }
-
-    public IPatientRepository            Patients           => field ??= new PatientRepository(_context, _currentUser);
-    public IClinicMemberRepository       Members            => field ??= new ClinicMemberRepository(_context);
-    public IDoctorInfoRepository         DoctorInfos        => field ??= new DoctorInfoRepository(_context);
-    public IDoctorScheduleRepository     DoctorSchedules    => field ??= new DoctorScheduleRepository(_context);
-    public IInvitationRepository         Invitations        => field ??= new InvitationRepository(_context);
-    public IClinicRepository             Clinics            => field ??= new ClinicRepository(_context);
-    public IBranchRepository             Branches           => field ??= new BranchRepository(_context);
-    public IUserRepository               Users              => field ??= new UserRepository(_context, _cache);
-    public IAuditLogRepository           AuditLogs          => field ??= new AuditLogRepository(_context);
-    public IReferenceRepository          Reference          => field ??= new ReferenceRepository(_context, _cache);
-    public IClinicSubscriptionRepository ClinicSubscriptions => field ??= new ClinicSubscriptionRepository(_context);
-    public IGeoLocationRepository        GeoLocations       => field ??= new GeoLocationRepository(_context);
-
-    public IPermissionRepository         Permissions        => field ??= new PermissionRepository(_context, _cache);
-    public IPatientCounterRepository     PatientCounters    => field ??= new PatientCounterRepository(_context);
-
-    public IChronicDiseaseRepository     ChronicDiseases   => field ??= new ChronicDiseaseRepository(_context);
-    public ISpecializationRepository     Specializations   => field ??= new SpecializationRepository(_context);
-    public ISubscriptionPlanRepository   SubscriptionPlans => field ??= new SubscriptionPlanRepository(_context);
-    public IRefreshTokenRepository       RefreshTokens     => field ??= new RefreshTokenRepository(_context);
-    public ITestimonialRepository        Testimonials      => field ??= new TestimonialRepository(_context);
-    public IContactMessageRepository     ContactMessages   => field ??= new ContactMessageRepository(_context);
-    public IAppointmentRepository        Appointments      => field ??= new AppointmentRepository(_context);
-    public IQueueCounterRepository       QueueCounters     => field ??= new QueueCounterRepository(_context);
-    public IDoctorSessionRepository      DoctorSessions    => field ??= new DoctorSessionRepository(_context);
-    public INotificationRepository       Notifications     => field ??= new NotificationRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
         => _context.SaveChangesAsync(ct);

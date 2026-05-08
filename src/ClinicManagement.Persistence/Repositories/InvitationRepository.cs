@@ -10,8 +10,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepository
+public class InvitationRepository : EfRepository<StaffInvitation>, IInvitationRepository
 {
+    // Adding a new sortable column = one new line here, no method changes.
+    private static readonly Dictionary<string, System.Linq.Expressions.Expression<Func<StaffInvitation, object>>> SortMap = new()
+    {
+        ["email"]     = si => si.Email,
+        ["invitedat"] = si => si.CreatedAt,
+        ["expiresat"] = si => si.ExpiresAt,
+    };
+
     public InvitationRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<StaffInvitation?> GetByIdWithSpecializationAsync(Guid id, CancellationToken ct = default)
@@ -57,13 +65,9 @@ public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepo
             query = query.Where(si => si.Role == roleEnum);
 
         var desc = filter.SortDirection.IsDescending();
-        query = filter.SortBy?.Trim().ToLower() switch
-        {
-            "email"     => desc ? query.OrderByDescending(si => si.Email)     : query.OrderBy(si => si.Email),
-            "invitedat" => desc ? query.OrderByDescending(si => si.CreatedAt) : query.OrderBy(si => si.CreatedAt),
-            "expiresat" => desc ? query.OrderByDescending(si => si.ExpiresAt) : query.OrderBy(si => si.ExpiresAt),
-            _           => query.OrderByDescending(si => si.CreatedAt),
-        };
+        query = SortMap.TryGetValue(filter.SortBy?.Trim().ToLower() ?? "", out var sortExpr)
+            ? (desc ? query.OrderByDescending(sortExpr) : query.OrderBy(sortExpr))
+            : query.OrderByDescending(si => si.CreatedAt);
 
         return await query
             .Select(si => new InvitationListRow(

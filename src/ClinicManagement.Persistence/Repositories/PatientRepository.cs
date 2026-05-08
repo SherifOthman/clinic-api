@@ -12,7 +12,7 @@ using static ClinicManagement.Domain.Enums.BloodTypeExtensions;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class PatientRepository : Repository<Patient>, IPatientRepository
+public class PatientRepository : EfRepository<Patient>, IPatientRepository
 {
     private readonly ICurrentUserService _currentUser;
 
@@ -251,11 +251,21 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         return query;
     }
 
+    // Adding a new sortable column = one new line here, no method changes.
+    private static readonly Dictionary<string, System.Linq.Expressions.Expression<Func<Patient, object>>> SortMap = new()
+    {
+        ["fullname"]            = p => p.FullName,
+        ["age"]                 = p => p.DateOfBirth!,
+        ["createdat"]           = p => p.CreatedAt,
+        ["chronicdiseasecount"] = p => p.ChronicDiseases.Count,
+    };
+
     private static IQueryable<Patient> ApplyPatientSort(
         IQueryable<Patient> query, string? searchTerm, string? sortBy, string? sortDirection)
     {
         var desc = sortDirection.IsDescending();
 
+        // When there's a search term and no explicit sort, rank by relevance
         if (!string.IsNullOrWhiteSpace(searchTerm) && sortBy == null)
             return query
                 .OrderByDescending(p => p.PatientCode == searchTerm)
@@ -264,14 +274,9 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 .ThenByDescending(p => p.FullName.StartsWith(searchTerm))
                 .ThenByDescending(p => p.CreatedAt);
 
-        return sortBy?.Trim().ToLower() switch
-        {
-            "fullname"           => desc ? query.OrderByDescending(p => p.FullName)              : query.OrderBy(p => p.FullName),
-            "age"                => desc ? query.OrderByDescending(p => p.DateOfBirth)           : query.OrderBy(p => p.DateOfBirth),
-            "createdat"          => desc ? query.OrderByDescending(p => p.CreatedAt)             : query.OrderBy(p => p.CreatedAt),
-            "chronicdiseasecount"=> desc ? query.OrderByDescending(p => p.ChronicDiseases.Count) : query.OrderBy(p => p.ChronicDiseases.Count),
-            _                    => query.OrderByDescending(p => p.CreatedAt),
-        };
+        return SortMap.TryGetValue(sortBy?.Trim().ToLower() ?? "", out var expr)
+            ? (desc ? query.OrderByDescending(expr) : query.OrderBy(expr))
+            : query.OrderByDescending(p => p.CreatedAt);
     }
 
     private static async Task<(List<PatientListRaw> Items, int TotalCount)> ProjectPatientList(

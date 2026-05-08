@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class ClinicMemberRepository : Repository<ClinicMember>, IClinicMemberRepository
+public class ClinicMemberRepository : EfRepository<ClinicMember>, IClinicMemberRepository
 {
     private readonly DbSet<IdentityUserRole<Guid>> _userRoles;
     private readonly DbSet<Role> _roles;
