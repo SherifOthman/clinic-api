@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class RefreshTokenRepository : EfRepository<RefreshToken>, IRefreshTokenRepository
+public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRepository
 {
     public RefreshTokenRepository(ApplicationDbContext context) : base(context) { }
 

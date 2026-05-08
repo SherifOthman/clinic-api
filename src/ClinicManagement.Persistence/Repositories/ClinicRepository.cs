@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class ClinicRepository : EfRepository<Clinic>, IClinicRepository
+public class ClinicRepository : Repository<Clinic>, IClinicRepository
 {
     public ClinicRepository(ApplicationDbContext context) : base(context) { }
 

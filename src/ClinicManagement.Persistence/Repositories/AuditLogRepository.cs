@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class AuditLogRepository : EfRepository<AuditLog>, IAuditLogRepository
+public class AuditLogRepository : Repository<AuditLog>, IAuditLogRepository
 {
     private readonly DbSet<Clinic> _clinics;
 

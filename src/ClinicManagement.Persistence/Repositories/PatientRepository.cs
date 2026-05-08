@@ -12,7 +12,7 @@ using static ClinicManagement.Domain.Enums.BloodTypeExtensions;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class PatientRepository : EfRepository<Patient>, IPatientRepository
+public class PatientRepository : Repository<Patient>, IPatientRepository
 {
     private readonly ICurrentUserService _currentUser;
 

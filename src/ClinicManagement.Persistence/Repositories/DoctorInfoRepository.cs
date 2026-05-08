@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class DoctorInfoRepository : EfRepository<DoctorInfo>, IDoctorInfoRepository
+public class DoctorInfoRepository : Repository<DoctorInfo>, IDoctorInfoRepository
 {
     public DoctorInfoRepository(ApplicationDbContext context) : base(context) { }
 

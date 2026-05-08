@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class InvitationRepository : EfRepository<StaffInvitation>, IInvitationRepository
+public class InvitationRepository : Repository<StaffInvitation>, IInvitationRepository
 {
     // Adding a new sortable column = one new line here, no method changes.
     private static readonly Dictionary<string, System.Linq.Expressions.Expression<Func<StaffInvitation, object>>> SortMap = new()

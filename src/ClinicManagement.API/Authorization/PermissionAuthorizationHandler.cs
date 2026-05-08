@@ -15,17 +15,17 @@ namespace ClinicManagement.API.Authorization;
 /// Cache hit  = zero DB queries per request (same performance as JWT claims).
 /// Cache miss = one DB query, then cached for 10 minutes.
 ///
-/// IServiceProvider is used instead of injecting IPermissionRepository directly
+/// IServiceScopeFactory is injected instead of IPermissionRepository directly
 /// because this handler is registered as Singleton while IPermissionRepository
-/// is Scoped (EF Core). A new scope is created per authorization call.
+/// is Scoped (EF Core). IServiceScopeFactory is more explicit than IServiceProvider
+/// about the intent: we need a new scope per authorization call.
 /// </summary>
-public class PermissionAuthorizationHandler
-    : AuthorizationHandler<PermissionRequirement>
+public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
 {
-    private readonly IServiceProvider _services;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public PermissionAuthorizationHandler(IServiceProvider services)
-        => _services = services;
+    public PermissionAuthorizationHandler(IServiceScopeFactory scopeFactory)
+        => _scopeFactory = scopeFactory;
 
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
@@ -47,8 +47,10 @@ public class PermissionAuthorizationHandler
         if (!Enum.TryParse<Permission>(requirement.Permission, out var permission))
             return;
 
-        // Create a short-lived scope to resolve the scoped IPermissionRepository
-        await using var scope = _services.CreateAsyncScope();
+        // Create a short-lived scope to resolve the scoped IPermissionRepository.
+        // IServiceScopeFactory is the correct abstraction here — it makes the
+        // intent explicit and avoids the Service Locator anti-pattern of IServiceProvider.
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var repo = scope.ServiceProvider.GetRequiredService<IPermissionRepository>();
 
         var memberPermissions = await repo.GetByMemberIdAsync(memberId);

@@ -85,16 +85,23 @@ public class UsageLimitNotificationJob
     // ── Limit evaluation ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Maps each monthly metric to its plan limit.
-    /// Skips unlimited limits (max ≤ 0).
+    /// Defines which metrics to check against plan limits.
+    /// Adding a new metric = one new entry here, no method changes (OCP).
+    /// Each entry is (label, metrics selector, plan limit selector).
     /// </summary>
+    private static readonly IReadOnlyList<(string Label,
+        Func<ClinicUsageMetrics, int> GetUsed,
+        Func<SubscriptionPlan, int>   GetMax)> LimitDefinitions =
+    [
+        ("patients",     m => m.NewPatientsCount,  p => p.MaxPatientsPerMonth),
+        ("appointments", m => m.AppointmentsCount, p => p.MaxAppointmentsPerMonth),
+        ("invoices",     m => m.InvoicesCount,     p => p.MaxInvoicesPerMonth),
+    ];
+
     private static LimitCheck[] BuildLimitChecks(ClinicUsageMetrics metrics, SubscriptionPlan plan)
-        =>
-        [
-            new("patients",     metrics.NewPatientsCount,  plan.MaxPatientsPerMonth),
-            new("appointments", metrics.AppointmentsCount, plan.MaxAppointmentsPerMonth),
-            new("invoices",     metrics.InvoicesCount,     plan.MaxInvoicesPerMonth),
-        ];
+        => LimitDefinitions
+            .Select(d => new LimitCheck(d.Label, d.GetUsed(metrics), d.GetMax(plan)))
+            .ToArray();
 
     private async Task EvaluateAndNotifyAsync(
         Clinic clinic, User owner, LimitCheck check, DateTimeOffset now)
