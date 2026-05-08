@@ -64,8 +64,7 @@ public class InvitationRepository : EfRepository<StaffInvitation>, IInvitationRe
             Enum.TryParse<ClinicMemberRole>(filter.Role, ignoreCase: true, out var roleEnum))
             query = query.Where(si => si.Role == roleEnum);
 
-        var desc = filter.SortDirection.IsDescending();
-        query = SortMap.TryGetValue(filter.SortBy?.Trim().ToLower() ?? "", out var sortExpr)
+        var desc = filter.SortDirection.IsDescending();        query = SortMap.TryGetValue(filter.SortBy?.Trim().ToLower() ?? "", out var sortExpr)
             ? (desc ? query.OrderByDescending(sortExpr) : query.OrderBy(sortExpr))
             : query.OrderByDescending(si => si.CreatedAt);
 

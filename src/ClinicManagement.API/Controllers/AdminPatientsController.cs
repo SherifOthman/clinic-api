@@ -36,7 +36,7 @@ public class AdminPatientsController : BaseApiController
     {
         var query = new GetAdminPatientsQuery(
             new(searchTerm, gender, countryGeonameId, stateGeonameId, cityGeonameId,
-                pagination.SortBy, pagination.SortDirection ?? "asc", clinicSearch, includeDeleted),
+                pagination.SortBy, pagination.SortDirection, clinicSearch, includeDeleted),
             pagination.PageNumber, pagination.PageSize);
         var result = await Sender.Send(query, cancellationToken);
         return HandleResult(result, "Failed to retrieve patients");

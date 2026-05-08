@@ -9,15 +9,18 @@ using System.Text.Json;
 namespace ClinicManagement.Persistence.Audit;
 
 /// <summary>
-/// Responsible for capturing AuditLog entries from EF change tracker entries.
+/// Captures AuditLog entries from the EF change tracker.
 /// Extracted from ApplicationDbContext to keep the context focused on
 /// configuration and query filters only.
+///
+/// Instance class (not static) so it can be injected, mocked in tests,
+/// and extended without modifying ApplicationDbContext.
 ///
 /// Called by ApplicationDbContext.SaveChangesAsync — before the main save
 /// (so OriginalValues are still available) and written after (so a failed
 /// main save produces no audit entry).
 /// </summary>
-public static class AuditChangeTracker
+public class AuditChangeTracker
 {
     /// <summary>
     /// Fields that must never appear in audit diffs.
@@ -36,7 +39,7 @@ public static class AuditChangeTracker
     /// AuditLog objects. Must be called BEFORE base.SaveChangesAsync so
     /// that OriginalValues are still available for Update diffs.
     /// </summary>
-    public static List<AuditLog> Capture(
+    public List<AuditLog> Capture(
         ChangeTracker changeTracker,
         ICurrentUserService? currentUser,
         DateTimeOffset now)

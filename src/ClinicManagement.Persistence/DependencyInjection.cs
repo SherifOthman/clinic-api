@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Persistence.Audit;
 using ClinicManagement.Persistence.Jobs;
 using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
@@ -26,6 +27,10 @@ public static class DependencyInjection
 
         // Unit of Work (aggregates all repositories — receives them via DI constructor injection)
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // AuditChangeTracker is an instance class so it can be injected into ApplicationDbContext,
+        // mocked in tests, and extended without modifying the DbContext.
+        services.AddScoped<AuditChangeTracker>();
 
         // All repositories registered individually so:
         // 1. UnitOfWork receives them via constructor injection (no `new` inside UoW)

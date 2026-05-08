@@ -52,46 +52,48 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
-    /// Maps domain error codes to the correct HTTP status code.
-    /// Every error code must map to a semantically correct status — returning
-    /// 400 for a NOT_FOUND is wrong and breaks client error handling.
+    /// Maps domain error codes to HTTP status codes.
+    /// Dictionary lookup — adding a new error code is a one-line data change here,
+    /// not a code change in the switch (OCP: open for extension, closed for modification).
     /// </summary>
-    private static int MapErrorCodeToStatus(string? errorCode) => errorCode switch
+    private static readonly Dictionary<string, int> ErrorStatusMap = new()
     {
-        // 401 Unauthorized — authentication required or credentials invalid
-        ErrorCodes.INVALID_CREDENTIALS  => StatusCodes.Status401Unauthorized,
-        ErrorCodes.TOKEN_INVALID        => StatusCodes.Status401Unauthorized,
-        ErrorCodes.ACCOUNT_LOCKED       => StatusCodes.Status401Unauthorized,
-        ErrorCodes.EMAIL_NOT_CONFIRMED  => StatusCodes.Status401Unauthorized,
+        // 401 Unauthorized
+        [ErrorCodes.INVALID_CREDENTIALS] = StatusCodes.Status401Unauthorized,
+        [ErrorCodes.TOKEN_INVALID]       = StatusCodes.Status401Unauthorized,
+        [ErrorCodes.ACCOUNT_LOCKED]      = StatusCodes.Status401Unauthorized,
+        [ErrorCodes.EMAIL_NOT_CONFIRMED] = StatusCodes.Status401Unauthorized,
 
-        // 403 Forbidden — authenticated but not allowed
-        ErrorCodes.FORBIDDEN            => StatusCodes.Status403Forbidden,
-        ErrorCodes.STAFF_INACTIVE       => StatusCodes.Status403Forbidden,
+        // 403 Forbidden
+        [ErrorCodes.FORBIDDEN]      = StatusCodes.Status403Forbidden,
+        [ErrorCodes.STAFF_INACTIVE] = StatusCodes.Status403Forbidden,
 
         // 404 Not Found
-        ErrorCodes.NOT_FOUND            => StatusCodes.Status404NotFound,
-        ErrorCodes.USER_NOT_FOUND       => StatusCodes.Status404NotFound,
-        ErrorCodes.PATIENT_NOT_FOUND    => StatusCodes.Status404NotFound,
-        ErrorCodes.PLAN_NOT_FOUND       => StatusCodes.Status404NotFound,
-        ErrorCodes.CLINIC_NOT_FOUND     => StatusCodes.Status404NotFound,
+        [ErrorCodes.NOT_FOUND]       = StatusCodes.Status404NotFound,
+        [ErrorCodes.USER_NOT_FOUND]  = StatusCodes.Status404NotFound,
+        [ErrorCodes.PATIENT_NOT_FOUND] = StatusCodes.Status404NotFound,
+        [ErrorCodes.PLAN_NOT_FOUND]  = StatusCodes.Status404NotFound,
+        [ErrorCodes.CLINIC_NOT_FOUND] = StatusCodes.Status404NotFound,
 
-        // 409 Conflict — resource already exists or state conflict
-        ErrorCodes.ALREADY_EXISTS           => StatusCodes.Status409Conflict,
-        ErrorCodes.EMAIL_ALREADY_EXISTS     => StatusCodes.Status409Conflict,
-        ErrorCodes.USERNAME_ALREADY_EXISTS  => StatusCodes.Status409Conflict,
-        ErrorCodes.ALREADY_ONBOARDED        => StatusCodes.Status409Conflict,
-        ErrorCodes.EMAIL_ALREADY_CONFIRMED  => StatusCodes.Status409Conflict,
-        ErrorCodes.CONFLICT                 => StatusCodes.Status409Conflict,
-        ErrorCodes.INVITATION_ALREADY_ACCEPTED => StatusCodes.Status409Conflict,
-        ErrorCodes.INVITATION_ALREADY_CANCELED => StatusCodes.Status409Conflict,
+        // 409 Conflict
+        [ErrorCodes.ALREADY_EXISTS]              = StatusCodes.Status409Conflict,
+        [ErrorCodes.EMAIL_ALREADY_EXISTS]        = StatusCodes.Status409Conflict,
+        [ErrorCodes.USERNAME_ALREADY_EXISTS]     = StatusCodes.Status409Conflict,
+        [ErrorCodes.ALREADY_ONBOARDED]           = StatusCodes.Status409Conflict,
+        [ErrorCodes.EMAIL_ALREADY_CONFIRMED]     = StatusCodes.Status409Conflict,
+        [ErrorCodes.CONFLICT]                    = StatusCodes.Status409Conflict,
+        [ErrorCodes.INVITATION_ALREADY_ACCEPTED] = StatusCodes.Status409Conflict,
+        [ErrorCodes.INVITATION_ALREADY_CANCELED] = StatusCodes.Status409Conflict,
 
-        // 422 Unprocessable — request is well-formed but business rules reject it
-        ErrorCodes.OPERATION_NOT_ALLOWED    => StatusCodes.Status422UnprocessableEntity,
-        ErrorCodes.INVITATION_CANCELED      => StatusCodes.Status422UnprocessableEntity,
-        ErrorCodes.INVITATION_EXPIRED       => StatusCodes.Status422UnprocessableEntity,
-        ErrorCodes.PATIENT_NOT_DELETED      => StatusCodes.Status422UnprocessableEntity,
-
-        // 400 Bad Request — validation errors and everything else
-        _ => StatusCodes.Status400BadRequest,
+        // 422 Unprocessable
+        [ErrorCodes.OPERATION_NOT_ALLOWED] = StatusCodes.Status422UnprocessableEntity,
+        [ErrorCodes.INVITATION_CANCELED]   = StatusCodes.Status422UnprocessableEntity,
+        [ErrorCodes.INVITATION_EXPIRED]    = StatusCodes.Status422UnprocessableEntity,
+        [ErrorCodes.PATIENT_NOT_DELETED]   = StatusCodes.Status422UnprocessableEntity,
     };
+
+    private static int MapErrorCodeToStatus(string? errorCode)
+        => errorCode is not null && ErrorStatusMap.TryGetValue(errorCode, out var code)
+            ? code
+            : StatusCodes.Status400BadRequest;
 }

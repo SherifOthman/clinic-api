@@ -11,11 +11,11 @@ namespace ClinicManagement.Application.Features.Patients.Commands;
 
 public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand, Result<Guid>>
 {
-    private readonly IPatientRepository      _patients;
+    private readonly IPatientRepository        _patients;
     private readonly IPatientCounterRepository _patientCounters;
-    private readonly IUnitOfWork             _uow;
-    private readonly ICurrentUserService     _currentUser;
-    private readonly IPhoneNormalizer        _phoneNormalizer;
+    private readonly IUnitOfWork               _uow;
+    private readonly ICurrentUserService       _currentUser;
+    private readonly IPhoneNormalizer          _phoneNormalizer;
 
     public CreatePatientCommandHandler(
         IPatientRepository patients,
@@ -39,19 +39,18 @@ public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand,
         // InvariantCulture: validator enforces YYYY-MM-DD format
         var dob = DateOnly.Parse(request.DateOfBirth, CultureInfo.InvariantCulture);
 
-        var patient = new Patient
-        {
-            ClinicId         = clinicId,
-            PatientCode      = patientCode,
-            FullName         = request.FullName.Trim(),
-            Gender           = gender,
-            DateOfBirth      = dob,
-            CountryGeonameId = request.CountryGeonameId,
-            StateGeonameId   = request.StateGeonameId,
-            CityGeonameId    = request.CityGeonameId,
-            BloodType        = ParseBloodType(request.BloodType),
-            CreatedAt        = DateTimeOffset.UtcNow,
-        };
+        // Patient.Create() owns construction — consistent with Appointment.Create(),
+        // StaffInvitation.Create(), Clinic.Create(), ClinicMember.CreateForOwner() patterns.
+        var patient = Patient.Create(
+            clinicId:         clinicId,
+            patientCode:      patientCode,
+            fullName:         request.FullName,
+            gender:           gender,
+            dateOfBirth:      dob,
+            bloodType:        ParseBloodType(request.BloodType),
+            countryGeonameId: request.CountryGeonameId,
+            stateGeonameId:   request.StateGeonameId,
+            cityGeonameId:    request.CityGeonameId);
 
         await _patients.AddAsync(patient);
 

@@ -31,7 +31,7 @@ public class PatientsController : BaseApiController
     {
         var query = new GetPatientsQuery(
             new(searchTerm, gender, countryGeonameId, stateGeonameId, cityGeonameId,
-                pagination.SortBy, pagination.SortDirection ?? "asc"),
+                pagination.SortBy, pagination.SortDirection),
             pagination.PageNumber, pagination.PageSize);
 
         var result = await Sender.Send(query, cancellationToken);

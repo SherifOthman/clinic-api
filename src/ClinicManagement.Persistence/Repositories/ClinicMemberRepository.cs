@@ -68,8 +68,7 @@ public class ClinicMemberRepository : EfRepository<ClinicMember>, IClinicMemberR
             ProfileImageUrl = m.User!.ProfileImageUrl,
         });
 
-        var desc = filter.SortDirection.IsDescending();
-        projected = filter.SortBy?.Trim().ToLower() switch
+        var desc = filter.SortDirection.IsDescending();        projected = filter.SortBy?.Trim().ToLower() switch
         {
             "fullname" => desc
                 ? projected.OrderByDescending(m => m.FullName)

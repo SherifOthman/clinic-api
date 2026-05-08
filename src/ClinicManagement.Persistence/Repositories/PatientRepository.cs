@@ -261,7 +261,7 @@ public class PatientRepository : EfRepository<Patient>, IPatientRepository
     };
 
     private static IQueryable<Patient> ApplyPatientSort(
-        IQueryable<Patient> query, string? searchTerm, string? sortBy, string? sortDirection)
+        IQueryable<Patient> query, string? searchTerm, string? sortBy, SortDirection sortDirection)
     {
         var desc = sortDirection.IsDescending();
 

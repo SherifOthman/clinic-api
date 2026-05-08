@@ -1,6 +1,7 @@
 using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Infrastructure.Services.Emails;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,29 +11,30 @@ namespace ClinicManagement.Infrastructure.Services;
 public class EmailTokenService : IEmailTokenService
 {
     private readonly UserManager<User> _userManager;
-    private readonly SmtpEmailSender   _emailSender;
+    private readonly IEmailService     _emailService;
     private readonly AppOptions        _appOptions;
     private readonly ILogger<EmailTokenService> _logger;
 
     public EmailTokenService(
         UserManager<User> userManager,
-        SmtpEmailSender emailSender,
+        IEmailService emailService,
         IOptions<AppOptions> appOptions,
         ILogger<EmailTokenService> logger)
     {
-        _userManager = userManager;
-        _emailSender = emailSender;
-        _appOptions  = appOptions.Value;
-        _logger      = logger;
+        _userManager  = userManager;
+        _emailService = emailService;
+        _appOptions   = appOptions.Value;
+        _logger       = logger;
     }
 
     public async Task SendConfirmationEmailAsync(User user, CancellationToken cancellationToken = default)
     {
         var token            = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var confirmationLink = $"{_appOptions.DashboardUrl}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
-        var emailBody        = EmailTemplates.GetEmailConfirmationTemplate(user.FullName, confirmationLink);
 
-        await _emailSender.SendEmailAsync(user.Email!, "Confirm your email address", emailBody, cancellationToken);
+        await _emailService.SendAsync(
+            new EmailConfirmationEmail(user.Email!, user.FullName, confirmationLink),
+            cancellationToken);
     }
 
     public async Task ConfirmEmailAsync(User user, string token, CancellationToken cancellationToken = default)
