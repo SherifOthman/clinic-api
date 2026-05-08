@@ -1,11 +1,11 @@
 using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Entities;
+using ClinicManagement.Persistence.Audit;
 using ClinicManagement.Persistence.Jobs;
 using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
-using ClinicManagement.Persistence.Seeders.Demo;
-using Microsoft.AspNetCore.Identity;
+using ClinicManagement.Persistence.Seeders.Demo;using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -25,13 +25,43 @@ public static class DependencyInjection
                 .ConfigureWarnings(w => w.Ignore(
                     CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
 
-        // Unit of Work (contains all repositories)
+        // Unit of Work (aggregates all repositories — receives them via DI constructor injection)
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // IPermissionRepository registered separately so PermissionAuthorizationHandler
-        // can resolve it directly (it runs outside MediatR, before IUnitOfWork is created).
-        // Both this instance and the one inside UnitOfWork share the same IMemoryCache singleton.
-        services.AddScoped<IPermissionRepository, PermissionRepository>();
+        // AuditChangeTracker is an instance class so it can be injected into ApplicationDbContext,
+        // mocked in tests, and extended without modifying the DbContext.
+        services.AddScoped<AuditChangeTracker>();
+
+        // All repositories registered individually so:
+        // 1. UnitOfWork receives them via constructor injection (no `new` inside UoW)
+        // 2. Any repo can be swapped to a different implementation (Dapper, ADO.NET, etc.)
+        //    by changing only this file — nothing else needs to change.
+        // 3. IPermissionRepository is also resolved directly by PermissionAuthorizationHandler
+        //    (which runs outside MediatR, before IUnitOfWork is created).
+        services.AddScoped<IPatientRepository,            PatientRepository>();
+        services.AddScoped<IClinicMemberRepository,       ClinicMemberRepository>();
+        services.AddScoped<IDoctorInfoRepository,         DoctorInfoRepository>();
+        services.AddScoped<IDoctorScheduleRepository,     DoctorScheduleRepository>();
+        services.AddScoped<IInvitationRepository,         InvitationRepository>();
+        services.AddScoped<IClinicRepository,             ClinicRepository>();
+        services.AddScoped<IBranchRepository,             BranchRepository>();
+        services.AddScoped<IUserRepository,               UserRepository>();
+        services.AddScoped<IAuditLogRepository,           AuditLogRepository>();
+        services.AddScoped<IReferenceRepository,          ReferenceRepository>();
+        services.AddScoped<IClinicSubscriptionRepository, ClinicSubscriptionRepository>();
+        services.AddScoped<IGeoLocationRepository,        GeoLocationRepository>();
+        services.AddScoped<IPermissionRepository,         PermissionRepository>();
+        services.AddScoped<IPatientCounterRepository,     PatientCounterRepository>();
+        services.AddScoped<IChronicDiseaseRepository,     ChronicDiseaseRepository>();
+        services.AddScoped<ISpecializationRepository,     SpecializationRepository>();
+        services.AddScoped<ISubscriptionPlanRepository,   SubscriptionPlanRepository>();
+        services.AddScoped<IRefreshTokenRepository,       RefreshTokenRepository>();
+        services.AddScoped<ITestimonialRepository,        TestimonialRepository>();
+        services.AddScoped<IContactMessageRepository,     ContactMessageRepository>();
+        services.AddScoped<IAppointmentRepository,        AppointmentRepository>();
+        services.AddScoped<IQueueCounterRepository,       QueueCounterRepository>();
+        services.AddScoped<IDoctorSessionRepository,      DoctorSessionRepository>();
+        services.AddScoped<INotificationRepository,       NotificationRepository>();
 
         services.AddIdentity<User, Role>(options =>
         {

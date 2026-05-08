@@ -1,12 +1,10 @@
+using ClinicManagement.Application.Common.Models;
+
 namespace ClinicManagement.API.Models;
 
 /// <summary>
 /// Base class for paginated [FromQuery] requests.
-/// ASP.NET Core model binding maps query string params to these properties automatically.
-///
-/// Guards:
-///   PageNumber — minimum 1 (negative/zero silently corrected)
-///   PageSize   — clamped to [1, 100] (prevents ?pageSize=999999 DoS)
+/// Guards: PageNumber >= 1, PageSize clamped to [1, 100].
 /// </summary>
 public class PaginationRequest
 {
@@ -25,6 +23,10 @@ public class PaginationRequest
 
 public class SortedPaginationRequest : PaginationRequest
 {
-    public string? SortBy        { get; init; }
-    public string? SortDirection { get; init; }
+    public string?      SortBy        { get; init; }
+    /// <summary>
+    /// Accepts "asc" or "desc" (case-insensitive). Defaults to Asc for any other value.
+    /// Parsed to the strongly-typed SortDirection enum so callers never deal with raw strings.
+    /// </summary>
+    public SortDirection SortDirection { get; init; } = SortDirection.Asc;
 }

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
@@ -14,19 +15,24 @@ public record MarkAppointmentPaidCommand(Guid Id) : IRequest<Result>;
 
 public class MarkAppointmentPaidHandler : IRequestHandler<MarkAppointmentPaidCommand, Result>
 {
+    private readonly IAppointmentRepository _appointments;
     private readonly IUnitOfWork _uow;
-    public MarkAppointmentPaidHandler(IUnitOfWork uow) => _uow = uow;
+
+    public MarkAppointmentPaidHandler(IAppointmentRepository appointments, IUnitOfWork uow)
+    {
+        _appointments = appointments;
+        _uow          = uow;
+    }
 
     public async Task<Result> Handle(MarkAppointmentPaidCommand request, CancellationToken ct)
     {
-        var appointment = await _uow.Appointments.GetByIdForUpdateAsync(request.Id, ct);
+        var appointment = await _appointments.GetByIdForUpdateAsync(request.Id, ct);
         if (appointment is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Appointment not found");
 
         if (appointment.InvoiceId.HasValue)
             return Result.Failure(ErrorCodes.ALREADY_EXISTS, "Appointment is already marked as paid");
 
-        // Use a non-empty GUID as a "paid" marker until a full invoicing system is built
         appointment.InvoiceId = Guid.NewGuid();
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
@@ -38,12 +44,18 @@ public record RefundAppointmentCommand(Guid Id) : IRequest<Result>;
 
 public class RefundAppointmentHandler : IRequestHandler<RefundAppointmentCommand, Result>
 {
+    private readonly IAppointmentRepository _appointments;
     private readonly IUnitOfWork _uow;
-    public RefundAppointmentHandler(IUnitOfWork uow) => _uow = uow;
+
+    public RefundAppointmentHandler(IAppointmentRepository appointments, IUnitOfWork uow)
+    {
+        _appointments = appointments;
+        _uow          = uow;
+    }
 
     public async Task<Result> Handle(RefundAppointmentCommand request, CancellationToken ct)
     {
-        var appointment = await _uow.Appointments.GetByIdForUpdateAsync(request.Id, ct);
+        var appointment = await _appointments.GetByIdForUpdateAsync(request.Id, ct);
         if (appointment is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Appointment not found");
 

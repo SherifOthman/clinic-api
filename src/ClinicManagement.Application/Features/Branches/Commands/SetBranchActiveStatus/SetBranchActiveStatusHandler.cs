@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
@@ -7,13 +8,18 @@ namespace ClinicManagement.Application.Features.Branches.Commands;
 
 public class SetBranchActiveStatusHandler : IRequestHandler<SetBranchActiveStatusCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IBranchRepository _branches;
+    private readonly IUnitOfWork       _uow;
 
-    public SetBranchActiveStatusHandler(IUnitOfWork uow) => _uow = uow;
+    public SetBranchActiveStatusHandler(IBranchRepository branches, IUnitOfWork uow)
+    {
+        _branches = branches;
+        _uow      = uow;
+    }
 
     public async Task<Result> Handle(SetBranchActiveStatusCommand request, CancellationToken cancellationToken)
     {
-        var branch = await _uow.Branches.GetByIdAsync(request.Id, cancellationToken);
+        var branch = await _branches.GetByIdAsync(request.Id, cancellationToken);
 
         if (branch is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Branch not found");

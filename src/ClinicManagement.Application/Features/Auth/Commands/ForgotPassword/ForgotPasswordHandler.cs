@@ -1,5 +1,5 @@
-using ClinicManagement.Application.Abstractions.Data;
 using ClinicManagement.Application.Abstractions.Email;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Domain.Common;
@@ -13,22 +13,22 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ForgotPassword;
 
 public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly UserManager<User> _userManager;
-    private readonly IEmailService _emailService;
-    private readonly AppOptions _appOptions;
-    private readonly IAuditWriter _audit;
+    private readonly IUserRepository     _users;
+    private readonly UserManager<User>   _userManager;
+    private readonly IEmailService       _emailService;
+    private readonly AppOptions          _appOptions;
+    private readonly IAuditWriter        _audit;
     private readonly ILogger<ForgotPasswordHandler> _logger;
 
     public ForgotPasswordHandler(
-        IUnitOfWork uow,
+        IUserRepository users,
         UserManager<User> userManager,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
         IAuditWriter audit,
         ILogger<ForgotPasswordHandler> logger)
     {
-        _uow          = uow;
+        _users        = users;
         _userManager  = userManager;
         _emailService = emailService;
         _appOptions   = appOptions.Value;
@@ -38,7 +38,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Resu
 
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _uow.Users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
+        var user = await _users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
 
         if (user is null)
         {

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Persistence.Audit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -19,7 +20,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         optionsBuilder.UseSqlServer(connectionString);
 
-        return new ApplicationDbContext(optionsBuilder.Options, new DesignTimeCurrentUserService());
+        return new ApplicationDbContext(optionsBuilder.Options, new DesignTimeCurrentUserService(), new AuditChangeTracker());
     }
 
     /// <summary>

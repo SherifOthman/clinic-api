@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Domain.Common;
@@ -8,13 +8,16 @@ namespace ClinicManagement.Application.Features.Patients.Queries;
 
 public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<PaginatedResult<PatientDto>>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IPatientRepository  _patients;
     private readonly ICurrentUserService _currentUser;
-    private readonly IPhoneNormalizer _phoneNormalizer;
+    private readonly IPhoneNormalizer    _phoneNormalizer;
 
-    public GetPatientsQueryHandler(IUnitOfWork uow, ICurrentUserService currentUser, IPhoneNormalizer phoneNormalizer)
+    public GetPatientsQueryHandler(
+        IPatientRepository patients,
+        ICurrentUserService currentUser,
+        IPhoneNormalizer phoneNormalizer)
     {
-        _uow             = uow;
+        _patients        = patients;
         _currentUser     = currentUser;
         _phoneNormalizer = phoneNormalizer;
     }
@@ -26,12 +29,8 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, Result<
             ? _phoneNormalizer.GetNationalNumber(request.Filter.SearchTerm, _currentUser.CountryCode)
             : null;
 
-        var result = await _uow.Patients.GetProjectedPageAsync(
-            request.Filter,
-            nationalSearch,
-            request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+        var result = await _patients.GetProjectedPageAsync(
+            request.Filter, nationalSearch, request.PageNumber, request.PageSize, cancellationToken);
 
         var dtos = result.Items.Select(p => new PatientDto
         {

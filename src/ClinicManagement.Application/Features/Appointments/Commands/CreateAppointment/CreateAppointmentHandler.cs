@@ -1,8 +1,8 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
 using MediatR;
 
@@ -10,72 +10,65 @@ namespace ClinicManagement.Application.Features.Appointments.Commands;
 
 public class CreateAppointmentHandler : IRequestHandler<CreateAppointmentCommand, Result<Guid>>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly IAppointmentRepository  _appointments;
+    private readonly IDoctorScheduleRepository _schedules;
+    private readonly IQueueCounterRepository _queueCounters;
+    private readonly IUnitOfWork            _uow;
+    private readonly ICurrentUserService    _currentUser;
 
-    public CreateAppointmentHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public CreateAppointmentHandler(
+        IAppointmentRepository appointments,
+        IDoctorScheduleRepository schedules,
+        IQueueCounterRepository queueCounters,
+        IUnitOfWork uow,
+        ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _appointments  = appointments;
+        _schedules     = schedules;
+        _queueCounters = queueCounters;
+        _uow           = uow;
+        _currentUser   = currentUser;
     }
 
     public async Task<Result<Guid>> Handle(CreateAppointmentCommand request, CancellationToken ct)
     {
         var clinicId = _currentUser.GetRequiredClinicId();
 
-        // Validate visit type belongs to this doctor
-        var visitType = await _uow.DoctorSchedules.GetVisitTypeByIdAsync(request.VisitTypeId, ct);
+        var visitType = await _schedules.GetVisitTypeByIdAsync(request.VisitTypeId, ct);
         if (visitType is null || !visitType.IsActive)
             return Result.Failure<Guid>(ErrorCodes.NOT_FOUND, "Visit type not found or inactive");
 
-        // Validate time slot for time-based appointments
         if (request.Type == AppointmentType.Time)
         {
             if (request.ScheduledTime is null)
                 return Result.Failure<Guid>(ErrorCodes.VALIDATION_ERROR, "Scheduled time is required");
 
-            var taken = await _uow.Appointments.TimeSlotTakenAsync(
+            var taken = await _appointments.TimeSlotTakenAsync(
                 request.DoctorInfoId, request.Date, request.ScheduledTime.Value, null, ct);
             if (taken)
                 return Result.Failure<Guid>(ErrorCodes.CONFLICT, "This time slot is already booked");
         }
 
-        // Get doctor's default visit duration for endTime calculation
-        var doctorInfo = await _uow.DoctorSchedules.GetScheduleAsync(request.DoctorInfoId, request.BranchId, ct);
-        // Load DoctorInfo for defaultVisitDuration
-        var doctorInfoEntity = visitType.Schedule?.DoctorInfo;
+        var defaultDuration = visitType.Schedule?.DoctorInfo?.DefaultVisitDurationMinutes;
+        var visitDuration   = request.VisitDurationMinutes ?? defaultDuration;
 
-        var appointment = new Appointment
-        {
-            ClinicId             = clinicId,
-            BranchId             = request.BranchId,
-            PatientId            = request.PatientId,
-            DoctorInfoId         = request.DoctorInfoId,
-            VisitTypeId          = request.VisitTypeId,
-            Date                 = request.Date,
-            Type                 = request.Type,
-            ScheduledTime        = request.Type == AppointmentType.Time ? request.ScheduledTime : null,
-            VisitDurationMinutes = request.VisitDurationMinutes,
-            Status               = AppointmentStatus.Pending,
-        };
+        var appointment = Domain.Entities.Appointment.Create(
+            clinicId:             clinicId,
+            branchId:             request.BranchId,
+            patientId:            request.PatientId,
+            doctorInfoId:         request.DoctorInfoId,
+            visitTypeId:          request.VisitTypeId,
+            date:                 request.Date,
+            type:                 request.Type,
+            scheduledTime:        request.ScheduledTime,
+            visitDurationMinutes: visitDuration,
+            price:                visitType.Price,
+            discountPercent:      request.DiscountPercent);
 
-        // Calculate endTime for time-based appointments
-        if (request.Type == AppointmentType.Time && request.ScheduledTime.HasValue)
-        {
-            var duration = request.VisitDurationMinutes
-                ?? doctorInfoEntity?.DefaultVisitDurationMinutes
-                ?? 30;
-            appointment.EndTime = request.ScheduledTime.Value.AddMinutes(duration);
-        }
-
-        // Auto-assign queue number for queue-based using atomic counter
         if (request.Type == AppointmentType.Queue)
-            appointment.QueueNumber = await _uow.QueueCounters.NextAsync(
-                request.DoctorInfoId, request.Date, ct);
+            appointment.QueueNumber = await _queueCounters.NextAsync(request.DoctorInfoId, request.Date, ct);
 
-        appointment.ApplyPrice(visitType.Price, request.DiscountPercent);
-
-        await _uow.Appointments.AddAsync(appointment, ct);
+        await _appointments.AddAsync(appointment, ct);
         await _uow.SaveChangesAsync(ct);
 
         return Result.Success(appointment.Id);

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -11,19 +12,22 @@ namespace ClinicManagement.Application.Features.Auth.Commands.ChangePassword;
 
 public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly UserManager<User> _userManager;
+    private readonly IUserRepository     _users;
+    private readonly IUnitOfWork         _uow;
+    private readonly UserManager<User>   _userManager;
     private readonly ICurrentUserService _currentUser;
-    private readonly IAuditWriter _audit;
+    private readonly IAuditWriter        _audit;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
+        IUserRepository users,
         IUnitOfWork uow,
         UserManager<User> userManager,
         ICurrentUserService currentUser,
         IAuditWriter audit,
         ILogger<ChangePasswordHandler> logger)
     {
+        _users       = users;
         _uow         = uow;
         _userManager = userManager;
         _currentUser = currentUser;
@@ -34,7 +38,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
     public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var user   = await _uow.Users.GetByIdAsync(userId, cancellationToken);
+        var user   = await _users.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -46,7 +50,6 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         if (!result.Succeeded)
         {
             _logger.LogWarning("Failed to change password for user {UserId}", user.Id);
-            // Audit failure — no entity change, must be manual
             await _audit.WriteEventAsync("PasswordChangeFailed", "Incorrect current password",
                 overrideUserId: user.Id, overrideEmail: user.Email, ct: cancellationToken);
             return Result.Failure(ErrorCodes.INVALID_CREDENTIALS, "Current password is incorrect");
@@ -55,7 +58,6 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Resu
         user.LastPasswordChangeAt = DateTimeOffset.UtcNow;
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Manual audit — UserManager handles the password hash; no entity diff is captured by SaveChanges
         await _audit.WriteEventAsync("PasswordChanged", ct: cancellationToken);
 
         _logger.LogInformation("Password changed successfully for user: {UserId}", user.Id);

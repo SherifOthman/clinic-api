@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -9,13 +10,15 @@ namespace ClinicManagement.Application.Features.Testimonials.Commands;
 
 public class SubmitTestimonialHandler : IRequestHandler<SubmitTestimonialCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly ITestimonialRepository _testimonials;
+    private readonly IUnitOfWork            _uow;
+    private readonly ICurrentUserService    _currentUser;
 
-    public SubmitTestimonialHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public SubmitTestimonialHandler(ITestimonialRepository testimonials, IUnitOfWork uow, ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _testimonials = testimonials;
+        _uow          = uow;
+        _currentUser  = currentUser;
     }
 
     public async Task<Result> Handle(SubmitTestimonialCommand request, CancellationToken ct)
@@ -26,18 +29,17 @@ public class SubmitTestimonialHandler : IRequestHandler<SubmitTestimonialCommand
         var clinicId = _currentUser.GetRequiredClinicId();
         var userId   = _currentUser.GetRequiredUserId();
 
-        // One testimonial per clinic — update if exists, create if not
-        var existing = await _uow.Testimonials.GetByClinicIdAsync(clinicId, ct);
+        var existing = await _testimonials.GetByClinicIdAsync(clinicId, ct);
         if (existing is not null)
         {
             existing.Text       = request.Text;
             existing.Rating     = request.Rating;
-            existing.IsApproved = false; // re-submit resets approval — admin must re-approve
-            _uow.Testimonials.Update(existing);
+            existing.IsApproved = false;
+            _testimonials.Update(existing);
         }
         else
         {
-            await _uow.Testimonials.AddAsync(new Testimonial
+            await _testimonials.AddAsync(new Testimonial
             {
                 ClinicId   = clinicId,
                 UserId     = userId,

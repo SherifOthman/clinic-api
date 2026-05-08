@@ -13,17 +13,16 @@ namespace ClinicManagement.Application.Tests.Auth;
 
 public class UpdateProfileHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
+    private readonly Mock<IUserRepository>     _usersMock       = new();
+    private readonly Mock<IUnitOfWork>         _uowMock         = new();
     private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly UpdateProfileHandler _handler;
+    private readonly UpdateProfileHandler      _handler;
 
     public UpdateProfileHandlerTests()
     {
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new UpdateProfileHandler(_uowMock.Object, _currentUserMock.Object, NullLogger<UpdateProfileHandler>.Instance);
+        _handler = new UpdateProfileHandler(_usersMock.Object, _uowMock.Object, _currentUserMock.Object, NullLogger<UpdateProfileHandler>.Instance);
     }
 
     [Fact]

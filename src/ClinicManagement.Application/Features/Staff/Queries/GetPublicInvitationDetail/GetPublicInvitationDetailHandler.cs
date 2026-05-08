@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using MediatR;
@@ -8,21 +8,24 @@ namespace ClinicManagement.Application.Features.Staff.Queries;
 public class GetPublicInvitationDetailHandler
     : IRequestHandler<GetPublicInvitationDetailQuery, Result<PublicInvitationDetailDto>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IInvitationRepository _invitations;
+    private readonly IClinicRepository     _clinics;
 
-    public GetPublicInvitationDetailHandler(IUnitOfWork uow) => _uow = uow;
+    public GetPublicInvitationDetailHandler(IInvitationRepository invitations, IClinicRepository clinics)
+    {
+        _invitations = invitations;
+        _clinics     = clinics;
+    }
 
     public async Task<Result<PublicInvitationDetailDto>> Handle(
         GetPublicInvitationDetailQuery request, CancellationToken cancellationToken)
     {
-        // Use GetByIdWithSpecializationAsync pattern — load with Specialization included
-        var invitation = await _uow.Invitations.GetByTokenWithSpecializationAsync(
-            request.Token, cancellationToken);
+        var invitation = await _invitations.GetByTokenWithSpecializationAsync(request.Token, cancellationToken);
 
         if (invitation is null)
             return Result.Failure<PublicInvitationDetailDto>(ErrorCodes.NOT_FOUND, "Invitation not found");
 
-        var clinic = await _uow.Clinics.GetByIdAsync(invitation.ClinicId, cancellationToken);
+        var clinic = await _clinics.GetByIdAsync(invitation.ClinicId, cancellationToken);
 
         var isExpired = !invitation.IsAccepted && !invitation.IsCanceled
                         && invitation.ExpiresAt <= DateTimeOffset.UtcNow;

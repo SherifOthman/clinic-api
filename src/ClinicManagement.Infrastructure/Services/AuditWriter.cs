@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Entities;
 using ClinicManagement.Domain.Enums;
@@ -13,11 +14,13 @@ namespace ClinicManagement.Infrastructure.Services;
 /// </summary>
 public class AuditWriter : IAuditWriter
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IAuditLogRepository _auditLogs;
+    private readonly IUnitOfWork         _uow;
     private readonly ICurrentUserService _currentUser;
 
-    public AuditWriter(IUnitOfWork uow, ICurrentUserService currentUser)
+    public AuditWriter(IAuditLogRepository auditLogs, IUnitOfWork uow, ICurrentUserService currentUser)
     {
+        _auditLogs   = auditLogs;
         _uow         = uow;
         _currentUser = currentUser;
     }
@@ -32,12 +35,11 @@ public class AuditWriter : IAuditWriter
         Guid? overrideClinicId = null,
         CancellationToken ct = default)
     {
-        // Build the Changes JSON: { "event": "LoginFailed", "detail": "..." }
         var payload = new Dictionary<string, string?> { ["event"] = eventName };
         if (!string.IsNullOrEmpty(detail))
             payload["detail"] = detail;
 
-        await _uow.AuditLogs.AddAsync(new AuditLog
+        await _auditLogs.AddAsync(new AuditLog
         {
             Timestamp  = DateTimeOffset.UtcNow,
             ClinicId   = overrideClinicId  ?? _currentUser.ClinicId,

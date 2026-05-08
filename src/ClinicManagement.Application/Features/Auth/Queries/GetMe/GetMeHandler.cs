@@ -1,25 +1,30 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Entities;
 using MediatR;
 
 namespace ClinicManagement.Application.Features.Auth.Queries;
 
-public class GetMeHandler(IUnitOfWork uow) : IRequestHandler<GetMeQuery, Result<GetMeDto>>
+public class GetMeHandler : IRequestHandler<GetMeQuery, Result<GetMeDto>>
 {
+    private readonly IUserRepository       _users;
+    private readonly IPermissionRepository _permissions;
+
+    public GetMeHandler(IUserRepository users, IPermissionRepository permissions)
+    {
+        _users       = users;
+        _permissions = permissions;
+    }
+
     public async Task<Result<GetMeDto>> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
-        // Single query: profile + member + clinic week start day + doctor info
-        var projection = await uow.Users.GetMeProjectionAsync(request.UserId, cancellationToken);
+        var projection = await _users.GetMeProjectionAsync(request.UserId, cancellationToken);
         if (projection is null)
             return Result.Failure<GetMeDto>(ErrorCodes.NOT_FOUND, "User not found");
 
-        // Roles and permissions are in separate tables — run sequentially
-        // (DbContext is not thread-safe; Task.WhenAll on the same instance causes concurrency errors)
-        var roles       = await uow.Users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
+        var roles       = await _users.GetRolesByUserIdAsync(request.UserId, cancellationToken);
         var permissions = projection.MemberId.HasValue
-            ? await uow.Permissions.GetByMemberIdAsync(projection.MemberId.Value, cancellationToken)
+            ? await _permissions.GetByMemberIdAsync(projection.MemberId.Value, cancellationToken)
             : new List<Domain.Enums.Permission>();
 
         return Result.Success(new GetMeDto(

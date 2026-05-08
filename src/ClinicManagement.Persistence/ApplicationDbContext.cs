@@ -13,13 +13,16 @@ namespace ClinicManagement.Persistence;
 public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 {
     private readonly ICurrentUserService _currentUserService;
+    private readonly AuditChangeTracker  _auditTracker;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        AuditChangeTracker auditTracker)
         : base(options)
     {
         _currentUserService = currentUserService;
+        _auditTracker       = auditTracker;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -29,7 +32,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         StampAuditFields(now);
 
         // Capture diffs BEFORE saving — OriginalValues are only available here
-        var auditLogs = AuditChangeTracker.Capture(ChangeTracker, _currentUserService, now);
+        var auditLogs = _auditTracker.Capture(ChangeTracker, _currentUserService, now);
 
         var result = await base.SaveChangesAsync(cancellationToken);
 

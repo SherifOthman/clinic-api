@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Enums;
@@ -8,43 +9,47 @@ namespace ClinicManagement.Application.Features.Appointments.Commands;
 
 public class UpdateAppointmentHandler : IRequestHandler<UpdateAppointmentCommand, Result>
 {
+    private readonly IAppointmentRepository    _appointments;
+    private readonly IDoctorScheduleRepository _schedules;
     private readonly IUnitOfWork _uow;
 
-    public UpdateAppointmentHandler(IUnitOfWork uow) => _uow = uow;
+    public UpdateAppointmentHandler(
+        IAppointmentRepository appointments,
+        IDoctorScheduleRepository schedules,
+        IUnitOfWork uow)
+    {
+        _appointments = appointments;
+        _schedules    = schedules;
+        _uow          = uow;
+    }
 
     public async Task<Result> Handle(UpdateAppointmentCommand request, CancellationToken ct)
     {
-        var appointment = await _uow.Appointments.GetByIdForUpdateAsync(request.AppointmentId, ct);
+        var appointment = await _appointments.GetByIdForUpdateAsync(request.AppointmentId, ct);
         if (appointment is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Appointment not found");
 
-        // Only allow editing active appointments
         if (appointment.Status is AppointmentStatus.Completed
             or AppointmentStatus.Cancelled
             or AppointmentStatus.NoShow)
             return Result.Failure(ErrorCodes.VALIDATION_ERROR, "Cannot edit a completed, cancelled, or no-show appointment");
 
-        // Load visit type as a read-only projection to avoid EF tracking conflicts
-        // (the appointment entity is already tracked; loading VisitType as a tracked entity
-        //  would cause a duplicate-key error if the appointment's navigation is already cached)
-        var visitTypeInfo = await _uow.DoctorSchedules.GetVisitTypePriceAsync(request.VisitTypeId, ct);
+        var visitTypeInfo = await _schedules.GetVisitTypePriceAsync(request.VisitTypeId, ct);
         if (visitTypeInfo is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Visit type not found or inactive");
 
-        // Validate time slot for time-based appointments (exclude self)
         if (appointment.Type == AppointmentType.Time)
         {
             if (request.ScheduledTime is null)
                 return Result.Failure(ErrorCodes.VALIDATION_ERROR, "Scheduled time is required for time-based appointments");
 
-            var taken = await _uow.Appointments.TimeSlotTakenAsync(
+            var taken = await _appointments.TimeSlotTakenAsync(
                 appointment.DoctorInfoId, appointment.Date, request.ScheduledTime.Value,
                 appointment.Id, ct);
             if (taken)
                 return Result.Failure(ErrorCodes.CONFLICT, "This time slot is already booked");
         }
 
-        // Apply changes
         appointment.VisitTypeId          = request.VisitTypeId;
         appointment.VisitDurationMinutes = request.VisitDurationMinutes;
 
@@ -59,7 +64,7 @@ public class UpdateAppointmentHandler : IRequestHandler<UpdateAppointmentCommand
 
         appointment.ApplyPrice(visitTypeInfo.Price, request.DiscountPercent);
 
-        _uow.Appointments.Update(appointment);
+        _appointments.Update(appointment);
         await _uow.SaveChangesAsync(ct);
 
         return Result.Success();

@@ -12,32 +12,25 @@ namespace ClinicManagement.Application.Tests.Onboarding;
 
 public class CompleteOnboardingHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
-    private readonly Mock<IClinicRepository> _clinicsMock = new();
-    private readonly Mock<IUserRepository> _usersMock = new();
-    private readonly Mock<IBranchRepository> _branchesMock = new();
-    private readonly Mock<IClinicMemberRepository> _membersMock = new();
-    private readonly Mock<IPermissionRepository> _permissionsMock = new();
-    private readonly Mock<IReferenceRepository> _referenceMock = new();
-    private readonly Mock<ICurrentUserService> _currentUserMock = new();
-    private readonly CompleteOnboardingHandler _handler;
+    private readonly Mock<IClinicRepository>       _clinicsMock     = new();
+    private readonly Mock<IBranchRepository>       _branchesMock    = new();
+    private readonly Mock<IClinicMemberRepository> _membersMock     = new();
+    private readonly Mock<IPermissionRepository>   _permissionsMock = new();
+    private readonly Mock<IUserRepository>         _usersMock       = new();
+    private readonly Mock<IReferenceRepository>    _referenceMock   = new();
+    private readonly Mock<IUnitOfWork>             _uowMock         = new();
+    private readonly Mock<ICurrentUserService>     _currentUserMock = new();
+    private readonly CompleteOnboardingHandler     _handler;
 
     private readonly User _owner = TestHandlerHelpers.CreateTestUser("owner@test.com");
     private readonly Guid _planId = Guid.NewGuid();
 
     public CompleteOnboardingHandlerTests()
     {
-        _uowMock.Setup(u => u.Clinics).Returns(_clinicsMock.Object);
-        _uowMock.Setup(u => u.Users).Returns(_usersMock.Object);
-        _uowMock.Setup(u => u.Branches).Returns(_branchesMock.Object);
-        _uowMock.Setup(u => u.Members).Returns(_membersMock.Object);
-        _uowMock.Setup(u => u.Permissions).Returns(_permissionsMock.Object);
-        _uowMock.Setup(u => u.Reference).Returns(_referenceMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         _currentUserMock.Setup(x => x.GetRequiredUserId()).Returns(_owner.Id);
 
-        // Default happy-path setup
         _clinicsMock.Setup(x => x.ExistsByOwnerIdAsync(_owner.Id, default)).ReturnsAsync(false);
         _usersMock.Setup(x => x.GetByIdAsync(_owner.Id, default)).ReturnsAsync(_owner);
         _referenceMock.Setup(x => x.SubscriptionPlanExistsAsync(_planId, default)).ReturnsAsync(true);
@@ -47,7 +40,10 @@ public class CompleteOnboardingHandlerTests
         _permissionsMock.Setup(x => x.SeedDefaultsAsync(It.IsAny<Guid>(), It.IsAny<Domain.Enums.ClinicMemberRole>(), default))
             .Returns(Task.CompletedTask);
 
-        _handler = new CompleteOnboardingHandler(_uowMock.Object, _currentUserMock.Object);
+        _handler = new CompleteOnboardingHandler(
+            _clinicsMock.Object, _branchesMock.Object, _membersMock.Object,
+            _permissionsMock.Object, _usersMock.Object, _referenceMock.Object,
+            _uowMock.Object, _currentUserMock.Object);
     }
 
     private CompleteOnboarding MakeCommand() =>

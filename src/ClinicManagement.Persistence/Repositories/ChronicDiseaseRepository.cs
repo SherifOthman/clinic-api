@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class ChronicDiseaseRepository : Repository<ChronicDisease>, IChronicDiseaseRepository
+public class ChronicDiseaseRepository : EfRepository<ChronicDisease>, IChronicDiseaseRepository
 {
     public ChronicDiseaseRepository(ApplicationDbContext context) : base(context) { }
 

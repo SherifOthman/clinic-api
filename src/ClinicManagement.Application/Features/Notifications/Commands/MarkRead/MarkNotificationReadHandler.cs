@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -8,13 +9,18 @@ namespace ClinicManagement.Application.Features.Notifications.Commands.MarkRead;
 
 public class MarkNotificationReadHandler : IRequestHandler<MarkNotificationReadCommand, Result>
 {
-    private readonly IUnitOfWork         _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly INotificationRepository _notifications;
+    private readonly IUnitOfWork             _uow;
+    private readonly ICurrentUserService     _currentUser;
 
-    public MarkNotificationReadHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public MarkNotificationReadHandler(
+        INotificationRepository notifications,
+        IUnitOfWork uow,
+        ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _notifications = notifications;
+        _uow           = uow;
+        _currentUser   = currentUser;
     }
 
     public async Task<Result> Handle(MarkNotificationReadCommand request, CancellationToken ct)
@@ -24,8 +30,7 @@ public class MarkNotificationReadHandler : IRequestHandler<MarkNotificationReadC
 
         if (request.NotificationId is null)
         {
-            // Mark all unread notifications for this user
-            var paged = await _uow.Notifications.GetPagedAsync(userId, 1, 200, ct);
+            var paged = await _notifications.GetPagedAsync(userId, 1, 200, ct);
             foreach (var n in paged.Items.Where(n => !n.IsRead))
             {
                 n.IsRead = true;
@@ -34,7 +39,7 @@ public class MarkNotificationReadHandler : IRequestHandler<MarkNotificationReadC
         }
         else
         {
-            var notification = await _uow.Notifications.GetByIdAsync(request.NotificationId.Value, ct);
+            var notification = await _notifications.GetByIdAsync(request.NotificationId.Value, ct);
 
             if (notification is null)
                 return Result.Failure(ErrorCodes.NOT_FOUND, "Notification not found");

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -9,11 +10,19 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public class SaveWorkingDaysHandler : IRequestHandler<SaveWorkingDaysCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly IPermissionService _permissions;
+    private readonly IDoctorInfoRepository     _doctorInfos;
+    private readonly IDoctorScheduleRepository _schedules;
+    private readonly IUnitOfWork               _uow;
+    private readonly IPermissionService        _permissions;
 
-    public SaveWorkingDaysHandler(IUnitOfWork uow, IPermissionService permissions)
+    public SaveWorkingDaysHandler(
+        IDoctorInfoRepository doctorInfos,
+        IDoctorScheduleRepository schedules,
+        IUnitOfWork uow,
+        IPermissionService permissions)
     {
+        _doctorInfos = doctorInfos;
+        _schedules   = schedules;
         _uow         = uow;
         _permissions = permissions;
     }
@@ -24,17 +33,17 @@ public class SaveWorkingDaysHandler : IRequestHandler<SaveWorkingDaysCommand, Re
         if (!permission.IsAllowed)
             return Result.Failure(ErrorCodes.FORBIDDEN, permission.DeniedReason!);
 
-        var doctorInfoId = await _uow.DoctorInfos.GetIdByMemberIdAsync(request.StaffId, cancellationToken);
+        var doctorInfoId = await _doctorInfos.GetIdByMemberIdAsync(request.StaffId, cancellationToken);
         if (doctorInfoId == Guid.Empty)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Doctor profile not found for this staff member");
 
-        var schedule = await _uow.DoctorSchedules.GetOrCreateScheduleAsync(doctorInfoId, request.BranchId, cancellationToken);
-        var existing = await _uow.DoctorSchedules.GetWorkingDayEntitiesAsync(schedule.Id, cancellationToken);
-        _uow.DoctorSchedules.RemoveWorkingDays(existing);
+        var schedule = await _schedules.GetOrCreateScheduleAsync(doctorInfoId, request.BranchId, cancellationToken);
+        var existing = await _schedules.GetWorkingDayEntitiesAsync(schedule.Id, cancellationToken);
+        _schedules.RemoveWorkingDays(existing);
 
         foreach (var day in request.Days)
         {
-            _uow.DoctorSchedules.AddWorkingDay(new WorkingDay
+            _schedules.AddWorkingDay(new WorkingDay
             {
                 DoctorBranchScheduleId = schedule.Id,
                 Day         = (DayOfWeek)day.Day,

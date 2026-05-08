@@ -175,13 +175,7 @@ public class SystemUserSeedService
 
         if (exists) return;
 
-        var member = new ClinicMember
-        {
-            UserId   = userId,
-            ClinicId = clinicId,
-            Role     = role,
-            IsActive = true,
-        };
+        var member = ClinicMember.CreateWithRole(userId, clinicId, role);
         _db.Set<ClinicMember>().Add(member);
         await _db.SaveChangesAsync();
 

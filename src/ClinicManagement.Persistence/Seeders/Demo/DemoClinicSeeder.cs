@@ -145,13 +145,7 @@ public class DemoClinicSeeder
 
         if (member is null)
         {
-            member = new ClinicMember
-            {
-                UserId   = user.Id,
-                ClinicId = clinicId,
-                Role     = ClinicMemberRole.Doctor,
-                IsActive = true,
-            };
+            member = ClinicMember.CreateWithRole(user.Id, clinicId, ClinicMemberRole.Doctor);
             _db.Set<ClinicMember>().Add(member);
             await _db.SaveChangesAsync();
 

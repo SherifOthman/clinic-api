@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using MediatR;
 
@@ -6,14 +6,14 @@ namespace ClinicManagement.Application.Features.SubscriptionPlans.Queries;
 
 public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQuery, Result<List<SubscriptionPlanDto>>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IReferenceRepository _reference;
 
-    public GetSubscriptionPlansHandler(IUnitOfWork uow) => _uow = uow;
+    public GetSubscriptionPlansHandler(IReferenceRepository reference) => _reference = reference;
 
     public async Task<Result<List<SubscriptionPlanDto>>> Handle(
         GetSubscriptionPlansQuery request, CancellationToken cancellationToken)
     {
-        var rows = await _uow.Reference.GetActiveSubscriptionPlansAsync(cancellationToken);
+        var rows = await _reference.GetActiveSubscriptionPlansAsync(cancellationToken);
 
         var list = rows.Select(p => new SubscriptionPlanDto(
             p.Id, p.Name, p.NameAr, p.Description, p.DescriptionAr,

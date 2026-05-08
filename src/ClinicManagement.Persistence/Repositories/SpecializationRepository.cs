@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class SpecializationRepository : Repository<Specialization>, ISpecializationRepository
+public class SpecializationRepository : EfRepository<Specialization>, ISpecializationRepository
 {
     public SpecializationRepository(ApplicationDbContext context) : base(context) { }
 

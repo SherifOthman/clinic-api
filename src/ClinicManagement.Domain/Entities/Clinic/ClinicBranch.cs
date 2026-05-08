@@ -22,4 +22,27 @@ public class ClinicBranch : AuditableTenantEntity, IAuditableEntity, ISoftDeleta
     public ICollection<ClinicBranchPhoneNumber> PhoneNumbers { get; set; } = new List<ClinicBranchPhoneNumber>();
     public ICollection<Appointment> Appointment { get; set; } = new List<Appointment>();
     public ICollection<DoctorBranchSchedule> DoctorSchedules { get; set; } = new List<DoctorBranchSchedule>();
+
+    // ── Domain factory ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates the main branch during clinic onboarding.
+    /// </summary>
+    public static ClinicBranch CreateMain(
+        Guid clinicId,
+        string name,
+        string? addressLine,
+        int? stateGeonameId,
+        int? cityGeonameId,
+        IEnumerable<ClinicBranchPhoneNumber>? phoneNumbers = null) => new()
+    {
+        ClinicId       = clinicId,
+        Name           = name,
+        AddressLine    = addressLine,
+        StateGeonameId = stateGeonameId,
+        CityGeonameId  = cityGeonameId,
+        IsMainBranch   = true,
+        IsActive       = true,
+        PhoneNumbers   = phoneNumbers?.ToList() ?? [],
+    };
 }

@@ -13,7 +13,8 @@ public class ClinicMember : AuditableTenantEntity, IAuditableEntity, ISoftDeleta
     /// <summary>Nullable — set when the invitation is accepted and the user account is created.</summary>
     public Guid? UserId { get; set; }
 
-    public ClinicMemberRole Role { get; set; }
+    /// <summary>Role is set at creation via factory methods — use private set to prevent direct mutation.</summary>
+    public ClinicMemberRole Role { get; private set; }
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
     public DateTimeOffset JoinedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -30,4 +31,40 @@ public class ClinicMember : AuditableTenantEntity, IAuditableEntity, ISoftDeleta
     public Clinic Clinic { get; set; } = null!;
     public DoctorInfo? DoctorInfo { get; set; }
     public ICollection<ClinicMemberPermission> Permissions { get; set; } = new List<ClinicMemberPermission>();
+
+    // ── Domain factories ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates the owner membership record during clinic onboarding.
+    /// </summary>
+    public static ClinicMember CreateForOwner(Guid userId, Guid clinicId) => new()
+    {
+        UserId   = userId,
+        ClinicId = clinicId,
+        Role     = ClinicMemberRole.Owner,
+        IsActive = true,
+    };
+
+    /// <summary>
+    /// Creates a staff membership record when a user accepts an invitation.
+    /// </summary>
+    public static ClinicMember CreateFromInvitation(Guid userId, StaffInvitation invitation) => new()
+    {
+        UserId   = userId,
+        ClinicId = invitation.ClinicId,
+        Role     = invitation.Role,
+        IsActive = true,
+    };
+
+    /// <summary>
+    /// Creates a membership with an explicit role. Used by seeders and system operations
+    /// where the role is known at construction time but no invitation exists.
+    /// </summary>
+    public static ClinicMember CreateWithRole(Guid userId, Guid clinicId, ClinicMemberRole role) => new()
+    {
+        UserId   = userId,
+        ClinicId = clinicId,
+        Role     = role,
+        IsActive = true,
+    };
 }

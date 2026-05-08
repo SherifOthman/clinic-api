@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
@@ -11,15 +12,27 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInvitationWithRegistrationCommand, Result>
 {
-    private readonly IUnitOfWork _uow;
-    private readonly UserManager<User> _userManager;
-    private readonly IAuditWriter _audit;
+    private readonly IInvitationRepository   _invitations;
+    private readonly IClinicMemberRepository _members;
+    private readonly IDoctorInfoRepository   _doctorInfos;
+    private readonly IPermissionRepository   _permissions;
+    private readonly IUnitOfWork             _uow;
+    private readonly UserManager<User>       _userManager;
+    private readonly IAuditWriter            _audit;
 
     public AcceptInvitationWithRegistrationHandler(
+        IInvitationRepository invitations,
+        IClinicMemberRepository members,
+        IDoctorInfoRepository doctorInfos,
+        IPermissionRepository permissions,
         IUnitOfWork uow,
         UserManager<User> userManager,
         IAuditWriter audit)
     {
+        _invitations = invitations;
+        _members     = members;
+        _doctorInfos = doctorInfos;
+        _permissions = permissions;
         _uow         = uow;
         _userManager = userManager;
         _audit       = audit;
@@ -27,7 +40,7 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
 
     public async Task<Result> Handle(AcceptInvitationWithRegistrationCommand request, CancellationToken cancellationToken)
     {
-        var invitation = await _uow.Invitations.GetByTokenAsync(request.Token, cancellationToken);
+        var invitation = await _invitations.GetByTokenAsync(request.Token, cancellationToken);
         if (invitation is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Invitation not found");
 
@@ -57,25 +70,19 @@ public class AcceptInvitationWithRegistrationHandler : IRequestHandler<AcceptInv
         var acceptResult = invitation.Accept(user.Id, DateTimeOffset.UtcNow);
         if (acceptResult.IsFailure) { await _userManager.DeleteAsync(user); return acceptResult; }
 
-        var member = new ClinicMember
-        {
-            UserId   = user.Id,
-            ClinicId = invitation.ClinicId,
-            Role     = invitation.Role,
-            IsActive = true,
-        };
-        await _uow.Members.AddAsync(member);
+        var member = ClinicMember.CreateFromInvitation(user.Id, invitation);
+        await _members.AddAsync(member);
 
         if (invitation.Role == ClinicMemberRole.Doctor)
         {
-            await _uow.DoctorInfos.AddAsync(new DoctorInfo
+            await _doctorInfos.AddAsync(new DoctorInfo
             {
                 ClinicMemberId   = member.Id,
                 SpecializationId = invitation.SpecializationId,
             });
         }
 
-        await _uow.Permissions.SeedDefaultsAsync(member.Id, invitation.Role, cancellationToken);
+        await _permissions.SeedDefaultsAsync(member.Id, invitation.Role, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         await _audit.WriteEventAsync("StaffInvitationAccepted", $"Role: {invitation.Role}",

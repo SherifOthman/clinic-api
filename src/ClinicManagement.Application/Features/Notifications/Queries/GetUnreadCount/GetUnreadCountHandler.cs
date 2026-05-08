@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Domain.Common;
 using MediatR;
@@ -7,19 +7,19 @@ namespace ClinicManagement.Application.Features.Notifications.Queries.GetUnreadC
 
 public class GetUnreadCountHandler : IRequestHandler<GetUnreadCountQuery, Result<int>>
 {
-    private readonly IUnitOfWork         _uow;
-    private readonly ICurrentUserService _currentUser;
+    private readonly INotificationRepository _notifications;
+    private readonly ICurrentUserService     _currentUser;
 
-    public GetUnreadCountHandler(IUnitOfWork uow, ICurrentUserService currentUser)
+    public GetUnreadCountHandler(INotificationRepository notifications, ICurrentUserService currentUser)
     {
-        _uow         = uow;
-        _currentUser = currentUser;
+        _notifications = notifications;
+        _currentUser   = currentUser;
     }
 
     public async Task<Result<int>> Handle(GetUnreadCountQuery request, CancellationToken ct)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var count  = await _uow.Notifications.CountUnreadAsync(userId, ct);
+        var count  = await _notifications.CountUnreadAsync(userId, ct);
         return Result.Success(count);
     }
 }

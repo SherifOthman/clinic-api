@@ -1,4 +1,4 @@
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Entities;
 using FluentValidation;
@@ -7,7 +7,7 @@ namespace ClinicManagement.Application.Features.Staff.Commands;
 
 public class InviteStaffValidator : AbstractValidator<InviteStaffCommand>
 {
-    public InviteStaffValidator(IUnitOfWork uow)
+    public InviteStaffValidator(IReferenceRepository reference)
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")
@@ -26,7 +26,7 @@ public class InviteStaffValidator : AbstractValidator<InviteStaffCommand>
         When(x => x.Role == UserRoles.Doctor && x.SpecializationId.HasValue, () =>
         {
             RuleFor(x => x.SpecializationId!.Value)
-                .MustAsync(async (id, ct) => await uow.Reference.SpecializationExistsAsync(id, ct))
+                .MustAsync(async (id, ct) => await reference.SpecializationExistsAsync(id, ct))
                 .WithErrorCode("NOT_FOUND")
                 .WithMessage("Specialization not found");
         });

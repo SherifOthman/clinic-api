@@ -89,14 +89,7 @@ public static class ClinicHelper
             IsDeleted = false,
         });
 
-        var member = new ClinicMember
-        {
-            UserId = user.Id,
-            ClinicId = clinic.Id,
-            Role = ClinicMemberRole.Owner,
-            IsActive = true,
-            IsDeleted = false,
-        };
+        var member = ClinicMember.CreateForOwner(user.Id, clinic.Id);
         db.Set<ClinicMember>().Add(member);
 
         await db.SaveChangesAsync();

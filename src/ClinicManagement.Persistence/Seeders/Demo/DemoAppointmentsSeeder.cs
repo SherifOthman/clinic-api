@@ -210,23 +210,33 @@ public class DemoAppointmentsSeeder
         DateOnly date, AppointmentStatus status, int queueNumber,
         decimal price, DateTimeOffset createdAt, Guid createdBy)
     {
-        var appt = new Appointment
+        var appt = Appointment.Create(
+            clinicId:             clinicId,
+            branchId:             branchId,
+            patientId:            patientId,
+            doctorInfoId:         doctorInfoId,
+            visitTypeId:          visitTypeId,
+            date:                 date,
+            type:                 AppointmentType.Queue,
+            scheduledTime:        null,
+            visitDurationMinutes: null,
+            price:                price);
+
+        appt.QueueNumber = queueNumber;
+        appt.CreatedAt   = createdAt;
+        appt.UpdatedAt   = createdAt;
+        appt.CreatedBy   = createdBy;
+        appt.UpdatedBy   = createdBy;
+
+        // Apply the seeded status using domain methods
+        switch (status)
         {
-            ClinicId     = clinicId,
-            BranchId     = branchId,
-            PatientId    = patientId,
-            DoctorInfoId = doctorInfoId,
-            VisitTypeId  = visitTypeId,
-            Date         = date,
-            Type         = AppointmentType.Queue,
-            Status       = status,
-            QueueNumber  = queueNumber,
-            CreatedAt    = createdAt,
-            UpdatedAt    = createdAt,
-            CreatedBy    = createdBy,
-            UpdatedBy    = createdBy,
-        };
-        appt.ApplyPrice(price);
+            case AppointmentStatus.Cancelled: appt.ForceCancel();   break;
+            case AppointmentStatus.Completed: appt.ForceComplete(); break;
+            case AppointmentStatus.NoShow:    appt.MarkNoShow();    break;
+            // Pending is the default from Create() — no action needed
+        }
+
         return appt;
     }
 }

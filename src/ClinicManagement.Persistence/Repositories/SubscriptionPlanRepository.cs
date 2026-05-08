@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagement.Persistence.Repositories;
 
-public class SubscriptionPlanRepository : Repository<SubscriptionPlan>, ISubscriptionPlanRepository
+public class SubscriptionPlanRepository : EfRepository<SubscriptionPlan>, ISubscriptionPlanRepository
 {
     public SubscriptionPlanRepository(ApplicationDbContext context) : base(context) { }
 

@@ -1,4 +1,5 @@
 using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
 using ClinicManagement.Domain.Enums;
@@ -10,45 +11,25 @@ public record UpdateAppointmentStatusCommand(Guid Id, AppointmentStatus Status) 
 
 public class UpdateAppointmentStatusHandler : IRequestHandler<UpdateAppointmentStatusCommand, Result>
 {
+    private readonly IAppointmentRepository _appointments;
     private readonly IUnitOfWork _uow;
 
-    public UpdateAppointmentStatusHandler(IUnitOfWork uow) => _uow = uow;
+    public UpdateAppointmentStatusHandler(IAppointmentRepository appointments, IUnitOfWork uow)
+    {
+        _appointments = appointments;
+        _uow          = uow;
+    }
 
     public async Task<Result> Handle(UpdateAppointmentStatusCommand request, CancellationToken ct)
     {
-        var appt = await _uow.Appointments.GetByIdForUpdateAsync(request.Id, ct);
+        var appt = await _appointments.GetByIdForUpdateAsync(request.Id, ct);
         if (appt is null)
             return Result.Failure(ErrorCodes.NOT_FOUND, "Appointment not found");
 
-        // Validate transitions — includes recovery paths for real-world scenarios:
-        // NoShow/Cancelled → Pending: patient arrived late or called back
-        var valid = (appt.Status, request.Status) switch
-        {
-            // Normal forward flow
-            (AppointmentStatus.Pending,    AppointmentStatus.Waiting)    => true,  // patient arrived
-            (AppointmentStatus.Pending,    AppointmentStatus.InProgress) => true,  // direct (queue)
-            (AppointmentStatus.Pending,    AppointmentStatus.Cancelled)  => true,
-            (AppointmentStatus.Pending,    AppointmentStatus.NoShow)     => true,
-            (AppointmentStatus.Waiting,    AppointmentStatus.InProgress) => true,  // called in
-            (AppointmentStatus.Waiting,    AppointmentStatus.Cancelled)  => true,
-            (AppointmentStatus.Waiting,    AppointmentStatus.NoShow)     => true,
-            (AppointmentStatus.InProgress, AppointmentStatus.Completed)  => true,
-            (AppointmentStatus.InProgress, AppointmentStatus.Cancelled)  => true,
+        var result = appt.Transition(request.Status);
+        if (result.IsFailure) return result;
 
-            // Recovery paths — patient arrived late or receptionist made a mistake
-            (AppointmentStatus.NoShow,     AppointmentStatus.Pending)    => true,  // patient showed up late
-            (AppointmentStatus.NoShow,     AppointmentStatus.Waiting)    => true,  // patient arrived, skip to waiting
-            (AppointmentStatus.Cancelled,  AppointmentStatus.Pending)    => true,  // patient called back
-
-            _ => false,
-        };
-
-        if (!valid)
-            return Result.Failure(ErrorCodes.OPERATION_NOT_ALLOWED,
-                $"Cannot transition from {appt.Status} to {request.Status}");
-
-        appt.Status = request.Status;
-        _uow.Appointments.Update(appt);
+        _appointments.Update(appt);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }

@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddSingleton<IPhoneNormalizer, PhoneNormalizer>();
+        services.AddScoped<IOAuthUserFactory, OAuthUserFactory>();
 
         services.AddHttpClient<GeoNamesService>(client =>
         {

@@ -11,16 +11,15 @@ namespace ClinicManagement.Application.Tests.Patients;
 
 public class DeletePatientHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<IPatientRepository> _patientsMock = new();
+    private readonly Mock<IUnitOfWork>        _uowMock      = new();
     private readonly DeletePatientCommandHandler _handler;
 
     public DeletePatientHandlerTests()
     {
-        _uowMock.Setup(u => u.Patients).Returns(_patientsMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        _handler = new DeletePatientCommandHandler(_uowMock.Object);
+        _handler = new DeletePatientCommandHandler(_patientsMock.Object, _uowMock.Object);
     }
 
     [Fact]
@@ -44,7 +43,6 @@ public class DeletePatientHandlerTests
         var result = await _handler.Handle(new DeletePatientCommand(patient.Id), default);
 
         result.IsSuccess.Should().BeTrue();
-        // SoftDelete() sets IsDeleted = true on the in-memory object
         patient.IsDeleted.Should().BeTrue();
         _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }

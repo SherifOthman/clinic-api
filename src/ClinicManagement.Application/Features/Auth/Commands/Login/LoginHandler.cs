@@ -1,5 +1,5 @@
 using ClinicManagement.Application.Abstractions.Authentication;
-using ClinicManagement.Application.Abstractions.Data;
+using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Application.Abstractions.Services;
 using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Features.Auth.QueryModels;
@@ -14,20 +14,20 @@ namespace ClinicManagement.Application.Features.Auth.Commands.Login;
 
 public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDto>>
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IUserRepository   _users;
     private readonly UserManager<User> _userManager;
-    private readonly ITokenIssuer _tokenIssuer;
-    private readonly IAuditWriter _audit;
+    private readonly ITokenIssuer      _tokenIssuer;
+    private readonly IAuditWriter      _audit;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
-        IUnitOfWork uow,
+        IUserRepository users,
         UserManager<User> userManager,
         ITokenIssuer tokenIssuer,
         IAuditWriter audit,
         ILogger<LoginHandler> logger)
     {
-        _uow         = uow;
+        _users       = users;
         _userManager = userManager;
         _tokenIssuer = tokenIssuer;
         _audit       = audit;
@@ -58,11 +58,9 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         return Result.Success(tokens);
     }
 
-    // ── Authentication ────────────────────────────────────────────────────────
-
     private async Task<Result<UserWithRoles>> AuthenticateAsync(LoginCommand request, CancellationToken ct)
     {
-        var result = await _uow.Users.GetByEmailOrUsernameWithRolesAsync(request.EmailOrUsername, ct);
+        var result = await _users.GetByEmailOrUsernameWithRolesAsync(request.EmailOrUsername, ct);
         if (result is null)
         {
             _logger.LogWarning("Login failed — user not found: {Input}", request.EmailOrUsername);
@@ -78,8 +76,6 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
             return await FailWrongPasswordAsync(user, ct);
 
-        // Stamp LastLoginAt first — UserManager.ResetAccessFailedCountAsync calls
-        // UpdateAsync internally, which saves all dirty properties in one UPDATE.
         user.LastLoginAt = DateTimeOffset.UtcNow;
         await _userManager.ResetAccessFailedCountAsync(user);
 
@@ -116,8 +112,6 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         await AuditAsync("LoginFailed", "Invalid password", user, clinicId: null, ct);
         return Result.Failure<UserWithRoles>(ErrorCodes.INVALID_CREDENTIALS, "Invalid email/username or password");
     }
-
-    // ── Audit helper ──────────────────────────────────────────────────────────
 
     private Task AuditAsync(
         string eventName, string? detail,
