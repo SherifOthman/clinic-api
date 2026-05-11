@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
-
 namespace ClinicManagement.API.Controllers;
 
 [Route("api/auth")]
@@ -156,6 +155,39 @@ public class AuthController : BaseApiController
     {
         var result = await Sender.Send(request, ct);
         return HandleNoContent(result, "Email Confirmation Failed");
+    }
+
+    /// <summary>
+    /// Verify email address with a 6-digit OTP code.
+    /// Works on web and mobile — no redirect links needed.
+    /// </summary>
+    [HttpPost("verify-email-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthConfirmEmail)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmailOtp([FromBody] VerifyEmailOtpRequest request, CancellationToken ct)
+    {
+        var result = await Sender.Send(new VerifyEmailOtpCommand(request.Email, request.Otp), ct);
+        return HandleNoContent(result, "Email verification failed");
+    }
+
+    /// <summary>
+    /// Verify password reset OTP. Returns a short-lived reset token to use with /reset-password.
+    /// Step 1 of the OTP-based password reset flow.
+    /// </summary>
+    [HttpPost("verify-reset-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthResetPassword)]
+    [ProducesResponseType(typeof(ResetTokenDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyResetOtp([FromBody] VerifyResetOtpRequest request, CancellationToken ct)
+    {
+        var result = await Sender.Send(new VerifyResetOtpCommand(request.Email, request.Otp), ct);
+        if (result.IsFailure)
+            return HandleResult(result, "OTP verification failed");
+
+        return Ok(new ResetTokenDto(request.Email, result.Value!));
     }
 
     /// <summary>

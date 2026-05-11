@@ -17,7 +17,9 @@ public class ConfirmEmailHandlerTests
 
     public ConfirmEmailHandlerTests()
     {
-        _handler = new ConfirmEmailHandler(_usersMock.Object, _emailTokenMock.Object, NullLogger<ConfirmEmailHandler>.Instance);
+        _handler = new ConfirmEmailHandler(
+            _usersMock.Object, _emailTokenMock.Object,
+            NullLogger<ConfirmEmailHandler>.Instance);
     }
 
     [Fact]
@@ -26,9 +28,10 @@ public class ConfirmEmailHandlerTests
         var userId = Guid.NewGuid();
         _usersMock.Setup(x => x.GetByIdAsync(userId, default)).ReturnsAsync((User?)null);
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(userId, "token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(userId, "123456"), default);
 
         result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be("USER_NOT_FOUND");
     }
 
     [Fact]
@@ -38,34 +41,37 @@ public class ConfirmEmailHandlerTests
         _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
         _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(user, default)).ReturnsAsync(true);
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "123456"), default);
 
         result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be("EMAIL_ALREADY_CONFIRMED");
     }
 
     [Fact]
-    public async Task Handle_ShouldFail_WhenTokenIsInvalid()
+    public async Task Handle_ShouldFail_WhenOtpIsInvalid()
     {
         var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: false);
         _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
         _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(user, default)).ReturnsAsync(false);
-        _emailTokenMock.Setup(x => x.ConfirmEmailAsync(user, "bad-token", default))
-            .ThrowsAsync(new InvalidOperationException("Invalid token"));
+        _emailTokenMock.Setup(x => x.VerifyConfirmationOtpAsync(user, "000000", default))
+            .ReturnsAsync(false);
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "bad-token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "000000"), default);
 
         result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be("TOKEN_INVALID");
     }
 
     [Fact]
-    public async Task Handle_ShouldSucceed_WhenTokenIsValid()
+    public async Task Handle_ShouldSucceed_WhenOtpIsValid()
     {
         var user = TestHandlerHelpers.CreateTestUser(emailConfirmed: false);
         _usersMock.Setup(x => x.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
         _emailTokenMock.Setup(x => x.IsEmailConfirmedAsync(user, default)).ReturnsAsync(false);
-        _emailTokenMock.Setup(x => x.ConfirmEmailAsync(user, "valid-token", default)).Returns(Task.CompletedTask);
+        _emailTokenMock.Setup(x => x.VerifyConfirmationOtpAsync(user, "123456", default))
+            .ReturnsAsync(true);
 
-        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "valid-token"), default);
+        var result = await _handler.Handle(new ConfirmEmailCommand(user.Id, "123456"), default);
 
         result.IsSuccess.Should().BeTrue();
     }

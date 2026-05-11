@@ -81,7 +81,7 @@ public class RegisterHandlerTests
             .ReturnsAsync(IdentityResult.Success);
         _userManagerMock.Setup(x => x.AddToRoleAsync(It.IsAny<User>(), "ClinicOwner"))
             .ReturnsAsync(IdentityResult.Success);
-        _emailTokenMock.Setup(x => x.SendConfirmationEmailAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+        _emailTokenMock.Setup(x => x.SendConfirmationOtpAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("SMTP error"));
 
         var result = await _handler.Handle(ValidCommand(), default);

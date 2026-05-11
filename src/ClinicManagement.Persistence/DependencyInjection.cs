@@ -5,7 +5,8 @@ using ClinicManagement.Persistence.Audit;
 using ClinicManagement.Persistence.Jobs;
 using ClinicManagement.Persistence.Repositories;
 using ClinicManagement.Persistence.Seeders;
-using ClinicManagement.Persistence.Seeders.Demo;using Microsoft.AspNetCore.Identity;
+using ClinicManagement.Persistence.Seeders.Demo;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -56,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<ISpecializationRepository,     SpecializationRepository>();
         services.AddScoped<ISubscriptionPlanRepository,   SubscriptionPlanRepository>();
         services.AddScoped<IRefreshTokenRepository,       RefreshTokenRepository>();
+        services.AddScoped<IUserTokenRepository,          UserTokenRepository>();
         services.AddScoped<ITestimonialRepository,        TestimonialRepository>();
         services.AddScoped<IContactMessageRepository,     ContactMessageRepository>();
         services.AddScoped<IAppointmentRepository,        AppointmentRepository>();

@@ -2,6 +2,77 @@ namespace ClinicManagement.Infrastructure.Services;
 
 public static class EmailTemplates
 {
+    public static string GetEmailConfirmationOtpTemplate(string firstName, string otp)
+    {
+        // Split OTP into individual digits for the big-digit display
+        var digits = string.Join("</td><td style='width:44px;height:52px;text-align:center;vertical-align:middle;font-size:28px;font-weight:700;color:#2563eb;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;'>", otp.ToCharArray());
+
+        return $@"<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width,initial-scale=1.0'>
+</head>
+<body style='font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:520px;margin:0 auto;padding:20px;'>
+  <div style='background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);padding:28px 30px;text-align:center;border-radius:12px 12px 0 0;'>
+    <h1 style='color:white;margin:0;font-size:22px;'>Verify your email address</h1>
+  </div>
+  <div style='background:#ffffff;padding:32px 30px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;'>
+    <p style='margin-top:0;'>Hi <strong>{firstName}</strong>,</p>
+    <p>Use the code below to confirm your email address. It expires in <strong>15 minutes</strong>.</p>
+
+    <table role='presentation' cellpadding='0' cellspacing='8' style='margin:28px auto;'>
+      <tr>
+        <td style='width:44px;height:52px;text-align:center;vertical-align:middle;font-size:28px;font-weight:700;color:#2563eb;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;'>{digits}</td>
+      </tr>
+    </table>
+
+    <div style='background:#fef9c3;padding:14px 16px;border-radius:8px;border-left:4px solid #eab308;margin-top:24px;'>
+      <p style='margin:0;font-size:14px;'><strong>Do not share this code.</strong> If you didn't create an account, ignore this email.</p>
+    </div>
+  </div>
+  <div style='text-align:center;padding:18px;color:#9ca3af;font-size:12px;'>
+    <p style='margin:0;'>© 2025 ClinicCare. All rights reserved.</p>
+  </div>
+</body>
+</html>";
+    }
+
+    public static string GetPasswordResetOtpTemplate(string firstName, string otp)
+    {
+        var digits = string.Join("</td><td style='width:44px;height:52px;text-align:center;vertical-align:middle;font-size:28px;font-weight:700;color:#dc2626;background:#fef2f2;border:2px solid #fecaca;border-radius:10px;'>", otp.ToCharArray());
+
+        return $@"<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width,initial-scale=1.0'>
+</head>
+<body style='font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:520px;margin:0 auto;padding:20px;'>
+  <div style='background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%);padding:28px 30px;text-align:center;border-radius:12px 12px 0 0;'>
+    <h1 style='color:white;margin:0;font-size:22px;'>Password reset code</h1>
+  </div>
+  <div style='background:#ffffff;padding:32px 30px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;'>
+    <p style='margin-top:0;'>Hi <strong>{firstName}</strong>,</p>
+    <p>Use the code below to reset your password. It expires in <strong>10 minutes</strong>.</p>
+
+    <table role='presentation' cellpadding='0' cellspacing='8' style='margin:28px auto;'>
+      <tr>
+        <td style='width:44px;height:52px;text-align:center;vertical-align:middle;font-size:28px;font-weight:700;color:#dc2626;background:#fef2f2;border:2px solid #fecaca;border-radius:10px;'>{digits}</td>
+      </tr>
+    </table>
+
+    <div style='background:#fef9c3;padding:14px 16px;border-radius:8px;border-left:4px solid #eab308;margin-top:24px;'>
+      <p style='margin:0;font-size:14px;'><strong>Do not share this code.</strong> If you didn't request a reset, ignore this email — your password is unchanged.</p>
+    </div>
+  </div>
+  <div style='text-align:center;padding:18px;color:#9ca3af;font-size:12px;'>
+    <p style='margin:0;'>© 2025 ClinicCare. All rights reserved.</p>
+  </div>
+</body>
+</html>";
+    }
+
     public static string GetEmailConfirmationTemplate(string firstName, string confirmationLink)
     {
         return $@"

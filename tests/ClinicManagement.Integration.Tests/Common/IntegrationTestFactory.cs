@@ -170,11 +170,11 @@ internal sealed class NoOpEmailService : IEmailService
 
 internal sealed class NoOpEmailTokenService : IEmailTokenService
 {
-    public Task SendConfirmationEmailAsync(User user, CancellationToken ct = default) => Task.CompletedTask;
-    public Task ConfirmEmailAsync(User user, string token, CancellationToken ct = default) => Task.CompletedTask;
+    public Task SendConfirmationOtpAsync(User user, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<bool> VerifyConfirmationOtpAsync(User user, string otp, CancellationToken ct = default) => Task.FromResult(true);
     public Task<bool> IsEmailConfirmedAsync(User user, CancellationToken ct = default) => Task.FromResult(true);
-    public string GeneratePasswordResetToken(Guid userId, string email, string passwordHash) => "test-token";
-    public bool ValidatePasswordResetToken(Guid userId, string email, string passwordHash, string token) => true;
+    public Task SendPasswordResetOtpAsync(User user, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<string?> VerifyPasswordResetOtpAsync(User user, string otp, CancellationToken ct = default) => Task.FromResult<string?>("test-identity-token");
 }
 
 // SmtpEmailSender is a concrete class injected into EmailService/EmailTokenService.

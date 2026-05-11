@@ -62,7 +62,7 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Result>
             return Result.Failure(ErrorCodes.ROLE_ASSIGNMENT_FAILED, $"Failed to assign role: {errors}");
         }
 
-        try { await _emailTokenService.SendConfirmationEmailAsync(user, cancellationToken); }
+        try { await _emailTokenService.SendConfirmationOtpAsync(user, cancellationToken); }
         catch (Exception ex)
         {
             _logger.LogError(ex, "SMTP ERROR: Failed to send confirmation email to {Email}. Error: {Message}",

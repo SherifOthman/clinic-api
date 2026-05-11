@@ -2,7 +2,6 @@ using ClinicManagement.Application.Abstractions.Email;
 using ClinicManagement.Application.Abstractions.Repositories;
 using ClinicManagement.Domain.Common;
 using ClinicManagement.Domain.Common.Constants;
-using ClinicManagement.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -24,32 +23,29 @@ public class ResendEmailVerificationHandler : IRequestHandler<ResendEmailVerific
         _logger            = logger;
     }
 
-    public async Task<Result> Handle(ResendEmailVerificationCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(ResendEmailVerificationCommand request, CancellationToken ct)
     {
-        var user = await _users.GetByEmailOrUsernameAsync(request.Email, cancellationToken);
+        var user = await _users.GetByEmailOrUsernameAsync(request.Email, ct);
 
         if (user is null)
         {
-            _logger.LogInformation("Resend email verification requested for non-existent email: {Email}", request.Email);
-            return Result.Success();
+            _logger.LogInformation("Resend OTP requested for non-existent email: {Email}", request.Email);
+            return Result.Success(); // no enumeration
         }
 
         if (user.EmailConfirmed)
-        {
-            _logger.LogInformation("Resend email verification attempted for already confirmed email: {Email}", request.Email);
             return Result.Failure(ErrorCodes.EMAIL_ALREADY_CONFIRMED, "Email is already confirmed");
-        }
 
         try
         {
-            await _emailTokenService.SendConfirmationEmailAsync(user, cancellationToken);
-            _logger.LogInformation("Verification email resent to: {Email}", request.Email);
+            await _emailTokenService.SendConfirmationOtpAsync(user, ct);
+            _logger.LogInformation("Verification OTP resent to: {Email}", request.Email);
             return Result.Success();
         }
-        catch (DomainException ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to resend verification email to: {Email}", request.Email);
-            return Result.Failure(ex.ErrorCode, ex.Message);
+            _logger.LogError(ex, "Failed to resend verification OTP to: {Email}", request.Email);
+            return Result.Failure(ErrorCodes.OPERATION_FAILED, "Failed to send verification code");
         }
     }
 }

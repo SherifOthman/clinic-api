@@ -25,6 +25,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         _auditTracker       = auditTracker;
     }
 
+    public DbSet<UserToken> OtpTokens => Set<UserToken>();
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
