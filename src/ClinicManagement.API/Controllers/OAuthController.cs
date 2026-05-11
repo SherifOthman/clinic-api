@@ -1,25 +1,32 @@
+using ClinicManagement.API.Contracts.Auth;
+using ClinicManagement.API.Models;
+using ClinicManagement.API.RateLimiting;
 using ClinicManagement.Application.Abstractions.Services;
+using ClinicManagement.Application.Common.Models;
 using ClinicManagement.Application.Common.Options;
 using ClinicManagement.Application.Features.Auth.Commands.GoogleLogin;
 using ClinicManagement.Infrastructure.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace ClinicManagement.API.Controllers;
 
 /// <summary>
-/// Thin controller — only handles the OAuth redirect/callback.
-/// All business logic (find/create user, generate tokens) lives in GoogleLoginHandler.
+/// Handles OAuth flows for both web and mobile clients.
 ///
-/// Flow:
-///   1. GET /api/auth/oauth/google          → Challenge Google → Google redirects to CallbackPath
-///   2. ASP.NET Google handler handles CallbackPath internally, exchanges code for tokens,
-///      signs in via the Cookie scheme, then redirects to RedirectUri
-///   3. GET /api/auth/oauth/google/complete  → reads Cookie principal → issues JWT cookies → redirect to dashboard
+/// Web flow (browser redirect + cookies):
+///   1. GET  /api/auth/oauth/google          → Challenge Google
+///   2. GET  /api/auth/oauth/google/complete → reads Cookie principal → sets JWT cookies → redirect
+///
+/// Mobile flow (native SDK + id_token):
+///   1. Mobile app uses Google Sign-In SDK → gets id_token
+///   2. POST /api/auth/oauth/google/mobile  → verifies id_token → returns JWT tokens in body
 /// </summary>
 [Route("api/auth/oauth")]
 public class OAuthController : BaseApiController
@@ -41,16 +48,13 @@ public class OAuthController : BaseApiController
         _accessTokenExpiryMinutes = jwtOptions.Value.AccessTokenExpirationMinutes;
     }
 
-    // ── Step 1: Redirect to Google ────────────────────────────────────────────
+    // ── Web: Step 1 — Redirect to Google ─────────────────────────────────────
 
     [HttpGet("google")]
     public IActionResult GoogleLogin([FromQuery] string? returnUrl = null)
     {
         var dashboardUrl = _appOptions.DashboardUrl ?? "http://localhost:3000";
-
-        // RedirectUri points to our /complete endpoint (not the CallbackPath)
-        // returnUrl is passed as a query param to /complete
-        var completeUrl = Url.Action(nameof(GoogleComplete), "OAuth",
+        var completeUrl  = Url.Action(nameof(GoogleComplete), "OAuth",
             new { returnUrl = returnUrl ?? dashboardUrl }, Request.Scheme)!;
 
         return Challenge(
@@ -58,10 +62,7 @@ public class OAuthController : BaseApiController
             GoogleDefaults.AuthenticationScheme);
     }
 
-    // ── Step 3: After Google handler signs in via Cookie, we land here ─────────
-    // The Google handler has already validated the code and signed the user into
-    // the Cookie scheme. We read the principal from the cookie, issue JWT cookies,
-    // then sign out of the temporary cookie.
+    // ── Web: Step 3 — After Google callback, issue JWT cookies ───────────────
 
     [HttpGet("google/complete")]
     public async Task<IActionResult> GoogleComplete(
@@ -70,7 +71,6 @@ public class OAuthController : BaseApiController
         var dashboardUrl = returnUrl ?? _appOptions.DashboardUrl ?? "http://localhost:3000";
         var loginUrl     = GetLoginUrl();
 
-        // Read the principal that the Google handler stored in the Cookie scheme
         var auth = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
         if (!auth.Succeeded || auth.Principal is null)
@@ -79,10 +79,9 @@ public class OAuthController : BaseApiController
             return Redirect($"{loginUrl}?error=oauth_failed");
         }
 
-        var email    = auth.Principal.FindFirstValue(ClaimTypes.Email);
-        var fullName = auth.Principal.FindFirstValue(ClaimTypes.Name) ?? "Google User";
-        var googleId = auth.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-        // Google sends the profile picture as a custom claim
+        var email      = auth.Principal.FindFirstValue(ClaimTypes.Email);
+        var fullName   = auth.Principal.FindFirstValue(ClaimTypes.Name) ?? "Google User";
+        var googleId   = auth.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
         var pictureUrl = auth.Principal.FindFirstValue("urn:google:picture");
 
         if (string.IsNullOrEmpty(email))
@@ -91,10 +90,8 @@ public class OAuthController : BaseApiController
             return Redirect($"{loginUrl}?error=no_email");
         }
 
-        // Clean up the temporary OAuth cookie
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        // Delegate all business logic to the handler
         var result = await Sender.Send(new GoogleLoginCommand(email, fullName, googleId, pictureUrl), ct);
 
         if (result.IsFailure)
@@ -103,12 +100,51 @@ public class OAuthController : BaseApiController
             return Redirect($"{loginUrl}?error={result.ErrorCode?.ToLower() ?? "unknown"}");
         }
 
-        // Set both tokens as HttpOnly cookies — same as credentials login
         _cookieService.SetAccessTokenCookie(result.Value!.AccessToken!, _accessTokenExpiryMinutes);
         _cookieService.SetRefreshTokenCookie(result.Value.RefreshToken!);
 
         _logger.LogInformation("Google OAuth complete — redirecting to {Url}", dashboardUrl);
         return Redirect(dashboardUrl);
+    }
+
+    // ── Mobile: Verify id_token, return JWT tokens in body ───────────────────
+
+    /// <summary>
+    /// Google Sign-In for mobile apps.
+    ///
+    /// The mobile app uses the Google Sign-In SDK to obtain an id_token,
+    /// then sends it here. We verify it with Google's tokeninfo endpoint,
+    /// extract the user profile, and return JWT tokens in the response body.
+    ///
+    /// Requires X-Client-Type: mobile header.
+    /// </summary>
+    [HttpPost("google/mobile")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
+    [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GoogleMobileLogin(
+        [FromBody] GoogleMobileLoginRequest request, CancellationToken ct)
+    {
+        var clientType = HttpContext.Request.Headers["X-Client-Type"].ToString();
+        if (!clientType.Equals("mobile", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("This endpoint is for mobile clients only.");
+
+        if (string.IsNullOrWhiteSpace(request.IdToken))
+            return BadRequest("id_token is required.");
+
+        var result = await Sender.Send(new GoogleMobileLoginCommand(request.IdToken), ct);
+
+        if (result.IsFailure)
+        {
+            _logger.LogWarning("Google mobile login failed: {Code} — {Message}",
+                result.ErrorCode, result.ErrorMessage);
+            return HandleResult(result, "Google Sign-In failed");
+        }
+
+        _logger.LogInformation("Google mobile login successful");
+        return Ok(new TokenResponseDto(result.Value!.AccessToken, result.Value.RefreshToken));
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

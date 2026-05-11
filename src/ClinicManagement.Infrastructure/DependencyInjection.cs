@@ -28,12 +28,20 @@ public static class DependencyInjection
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddSingleton<IPhoneNormalizer, PhoneNormalizer>();
         services.AddScoped<IOAuthUserFactory, OAuthUserFactory>();
+        services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
 
         services.AddHttpClient<GeoNamesService>(client =>
         {
             client.Timeout = TimeSpan.FromMinutes(10);
         });
         services.AddScoped<IGeoNamesService>(sp => sp.GetRequiredService<GeoNamesService>());
+
+        // Named HttpClient for Google token verification (mobile OAuth)
+        services.AddHttpClient("Google", client =>
+        {
+            client.BaseAddress = new Uri("https://oauth2.googleapis.com/");
+            client.Timeout     = TimeSpan.FromSeconds(10);
+        });
 
         // Hangfire jobs (scoped — resolved per execution by Hangfire's DI scope)
         services.AddScoped<RefreshTokenCleanupService>();

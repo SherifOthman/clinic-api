@@ -19,3 +19,9 @@ public record RefreshTokenRequest(
 public record LogoutRequest(
     string? RefreshToken
 );
+
+/// <summary>
+/// Request body for POST /api/auth/oauth/google/mobile.
+/// The mobile app obtains this id_token from the Google Sign-In SDK.
+/// </summary>
+public record GoogleMobileLoginRequest(string IdToken);
