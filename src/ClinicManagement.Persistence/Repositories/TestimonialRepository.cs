@@ -21,12 +21,12 @@ public class TestimonialRepository : ITestimonialRepository
     public async Task<List<Testimonial>> GetApprovedRandomAsync(int count, CancellationToken ct = default)
     {
         // No date seed — reviews are rare, just shuffle randomly each request.
-        var all = await _set.Include(t => t.User)
+        return await _set.Include(t => t.User)
                             .Include(t => t.Clinic)
                             .Where(t => t.IsApproved)
+                            .OrderBy(t=> Guid.NewGuid())
+                            .Take(count)
                             .ToListAsync(ct);
-
-        return all.OrderBy(_ => Random.Shared.Next()).Take(count).ToList();
     }
 
     public async Task<(List<Testimonial> Items, int TotalCount)> GetPagedAsync(
