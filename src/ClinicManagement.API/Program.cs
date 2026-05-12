@@ -3,6 +3,7 @@ using ClinicManagement.API.Hangfire;
 using ClinicManagement.Application;
 using ClinicManagement.Infrastructure;
 using ClinicManagement.Persistence;
+using Hangfire;
 using Serilog;
 // ── Bootstrap logger (before DI is built) ────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
@@ -36,12 +37,12 @@ try
     app.UseAppConfigurations();
 
     // ── Hangfire recurring jobs ───────────────────────────────────────────────
-    // Only register if Hangfire was configured (connection string present in AddHangfire)
-    var hangfireConfigured = !string.IsNullOrEmpty(
-        app.Configuration.GetConnectionString("DefaultConnection"));
-    if (hangfireConfigured)
+    // Resolve IRecurringJobManager from DI — avoids the static RecurringJob API
+    // which requires JobStorage.Current and fails if Hangfire isn't configured.
+    var jobManager = app.Services.GetService<IRecurringJobManager>();
+    if (jobManager is not null)
     {
-        try   { HangfireJobRegistration.RegisterAll(); }
+        try   { HangfireJobRegistration.RegisterAll(jobManager); }
         catch (Exception ex) { Log.Warning(ex, "Hangfire job registration failed — check the connection string"); }
     }
 
