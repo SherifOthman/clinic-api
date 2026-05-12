@@ -163,7 +163,6 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
 internal sealed class NoOpEmailService : IEmailService
 {
     public Task SendAsync(IEmail email, CancellationToken ct = default) => Task.CompletedTask;
-    public Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetLink, CancellationToken ct = default) => Task.CompletedTask;
     public Task SendStaffInvitationEmailAsync(string toEmail, string clinicName, string role, string invitedBy, string invitationLink, CancellationToken ct = default) => Task.CompletedTask;
     public Task SendEmailAsync(string toEmail, string? toName, string subject, string body, bool isHtml = true, CancellationToken ct = default) => Task.CompletedTask;
 }

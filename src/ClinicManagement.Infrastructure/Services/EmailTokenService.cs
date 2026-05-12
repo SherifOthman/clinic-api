@@ -22,8 +22,8 @@ namespace ClinicManagement.Infrastructure.Services;
 /// </summary>
 public class EmailTokenService : IEmailTokenService
 {
-    private static readonly TimeSpan EmailConfirmationExpiry = TimeSpan.FromMinutes(15);
-    private static readonly TimeSpan PasswordResetExpiry     = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan EmailConfirmationExpiry = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan PasswordResetExpiry     = TimeSpan.FromMinutes(5);
 
     private readonly UserManager<User>    _userManager;
     private readonly IEmailService        _emailService;

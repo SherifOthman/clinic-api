@@ -7,9 +7,7 @@ namespace ClinicManagement.Infrastructure.Services;
 
 /// <summary>
 /// Sends emails via SMTP. Delegates template building to IEmail implementations.
-///
-/// Adding a new email type = create a new IEmail class in Services/Emails/.
-/// EmailService itself never needs to change (OCP).
+/// Adding a new email type = create a new IEmail class in Services/Emails/ — this class never changes (OCP).
 /// </summary>
 public class EmailService : IEmailService
 {
@@ -22,21 +20,8 @@ public class EmailService : IEmailService
         _appOptions = appOptions.Value;
     }
 
-    // ── Preferred entry point ─────────────────────────────────────────────────
-
-    /// <summary>
-    /// Send any IEmail implementation. This is the single place that touches SMTP.
-    /// All named methods below delegate here.
-    /// </summary>
     public Task SendAsync(IEmail email, CancellationToken cancellationToken = default)
         => _smtp.SendEmailAsync(email.ToEmail, email.Subject, email.Body, cancellationToken);
-
-    // ── Named convenience methods (backward compatible) ───────────────────────
-
-    public Task SendPasswordResetEmailAsync(
-        string toEmail, string userName, string resetLink,
-        CancellationToken cancellationToken = default)
-        => SendAsync(new PasswordResetEmail(toEmail, userName, resetLink), cancellationToken);
 
     public Task SendStaffInvitationEmailAsync(
         string toEmail, string clinicName, string role, string invitedBy,
