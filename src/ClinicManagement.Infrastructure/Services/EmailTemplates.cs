@@ -12,19 +12,15 @@ public static class EmailTemplates
     // ── Shared helpers ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Renders a 6-digit OTP as a row of styled digit boxes.
-    /// Each digit gets its own properly-opened and closed &lt;td&gt;.
+    /// Renders the full OTP as a single selectable code block (not individual digit boxes)
+    /// so users can copy it easily from the email.
     /// </summary>
     private static string RenderOtpDigits(string otp, string color, string bg, string border)
     {
-        var cells = string.Concat(otp.Select(d =>
-            $"<td style='width:44px;height:52px;text-align:center;vertical-align:middle;" +
-            $"font-size:28px;font-weight:700;color:{color};background:{bg};" +
-            $"border:2px solid {border};border-radius:10px;padding:0;'>{d}</td>"));
-
-        return $"<table role='presentation' cellpadding='0' cellspacing='8' " +
-               $"style='margin:28px auto;border-collapse:separate;border-spacing:8px 0;'>" +
-               $"<tr>{cells}</tr></table>";
+        return $"<div style='margin:28px auto;padding:16px 24px;max-width:280px;" +
+               $"text-align:center;font-family:monospace;font-size:32px;font-weight:700;" +
+               $"letter-spacing:12px;color:{color};background:{bg};" +
+               $"border:2px solid {border};border-radius:12px;'>{otp}</div>";
     }
 
     private static string Footer() =>

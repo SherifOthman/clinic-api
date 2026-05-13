@@ -1,6 +1,6 @@
 using ClinicManagement.Persistence;
 using ClinicManagement.Persistence.Seeders;
-using ClinicManagement.Persistence.Seeders.Demo;
+
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -42,13 +42,6 @@ public static class DatabaseInitialiser
 
             Log.Information("Core database seeding completed — API is ready");
 
-            // Demo data — only in Development/Staging, OR when explicitly enabled via config
-            var env = app.Environment;
-            var seedDemo = app.Configuration.GetValue<bool>("SeedDemoData");
-            if (env.IsDevelopment() || env.IsStaging() || seedDemo)
-            {
-                await services.GetRequiredService<DemoDataSeedService>().SeedAsync();
-            }
         }
         catch (Exception ex)
         {

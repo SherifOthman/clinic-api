@@ -33,7 +33,7 @@ public static class DependencyInjection
         AddCors(services, configuration);
         AddSwagger(services);
 
-        services.AddRateLimiting();
+        // services.AddRateLimiting(); // disabled for testing
 
         services.AddControllers();
 
@@ -209,7 +209,7 @@ public static class DependencyInjection
         app.UseStaticFiles();
         app.UseRouting();
 
-        app.UseRateLimiter();
+        // app.UseRateLimiter(); // disabled for testing
         app.UseMiddleware<CookieTokenMiddleware>(); // inject cookie access token as Bearer header
         app.UseAuthentication();
         app.UseAuthorization();

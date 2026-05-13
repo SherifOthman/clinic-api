@@ -76,6 +76,13 @@ public class LoginHandler : IRequestHandler<LoginCommand, Result<TokenResponseDt
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
             return await FailWrongPasswordAsync(user, ct);
 
+        if (!user.EmailConfirmed)
+        {
+            _logger.LogWarning("Login blocked — email not confirmed: {UserId}", user.Id);
+            await AuditAsync("LoginBlocked", "Email not confirmed", user, clinicId: null, ct);
+            return Result.Failure<UserWithRoles>(ErrorCodes.EMAIL_NOT_CONFIRMED, user.Email!);
+        }
+
         user.LastLoginAt = DateTimeOffset.UtcNow;
         await _userManager.ResetAccessFailedCountAsync(user);
 

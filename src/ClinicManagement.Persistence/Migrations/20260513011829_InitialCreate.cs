@@ -633,6 +633,31 @@ namespace ClinicManagement.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OtpTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TokenType = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false),
+                    UsedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OtpTokens", x => x.Id);
+                    table.CheckConstraint("CK_OtpTokens_TokenType", "[TokenType] IN ('EmailConfirmation', 'PasswordReset')");
+                    table.ForeignKey(
+                        name: "FK_OtpTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RefreshToken",
                 columns: table => new
                 {
@@ -1572,6 +1597,22 @@ namespace ClinicManagement.Persistence.Migrations
                 columns: new[] { "UserId", "IsRead", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_OtpTokens_ExpiresAt",
+                table: "OtpTokens",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OtpTokens_TokenHash",
+                table: "OtpTokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OtpTokens_UserId_TokenType",
+                table: "OtpTokens",
+                columns: new[] { "UserId", "TokenType" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Patient_CityGeonameId",
                 table: "Patient",
                 column: "CityGeonameId");
@@ -1768,6 +1809,9 @@ namespace ClinicManagement.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notification");
+
+            migrationBuilder.DropTable(
+                name: "OtpTokens");
 
             migrationBuilder.DropTable(
                 name: "PatientChronicDisease");

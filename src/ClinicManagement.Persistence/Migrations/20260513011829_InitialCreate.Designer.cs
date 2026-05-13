@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManagement.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260506012419_InitialCreate")]
+    [Migration("20260513011829_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -2149,6 +2149,52 @@ namespace ClinicManagement.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.UserToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("TokenType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "TokenType");
+
+                    b.ToTable("OtpTokens", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OtpTokens_TokenType", "[TokenType] IN ('EmailConfirmation', 'PasswordReset')");
+                        });
+                });
+
             modelBuilder.Entity("ClinicManagement.Domain.Entities.VisitType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2687,6 +2733,15 @@ namespace ClinicManagement.Persistence.Migrations
                     b.Navigation("Clinic");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ClinicManagement.Domain.Entities.UserToken", b =>
+                {
+                    b.HasOne("ClinicManagement.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ClinicManagement.Domain.Entities.VisitType", b =>

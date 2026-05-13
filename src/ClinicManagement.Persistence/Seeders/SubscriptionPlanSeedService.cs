@@ -71,19 +71,6 @@ public class SubscriptionPlanSeedService
             HasPrioritySupport = false, HasBackupAndRestore = true, HasIntegrations = true,
             IsActive = true, IsPopular = true, DisplayOrder = 3, EffectiveDate = effectiveDate,
         },
-        new()
-        {
-            Name = "Enterprise", NameAr = "المؤسسات",
-            Description   = "Complete solution for large clinics and healthcare networks",
-            DescriptionAr = "حل كامل للعيادات الكبيرة وشبكات الرعاية الصحية",
-            MonthlyFee = 1299m, YearlyFee = 12990m, SetupFee = 500m,
-            MaxBranches = 10, MaxStaff = 100,
-            MaxPatientsPerMonth = 10000, MaxAppointmentsPerMonth = 25000, MaxInvoicesPerMonth = 10000,
-            StorageLimitGB = 100,
-            HasInventoryManagement = true, HasReporting = true,  HasAdvancedReporting = true,
-            HasApiAccess = true, HasMultipleBranches = true, HasCustomBranding = true,
-            HasPrioritySupport = true, HasBackupAndRestore = true, HasIntegrations = true,
-            IsActive = true, IsPopular = false, DisplayOrder = 4, EffectiveDate = effectiveDate,
-        },
+
     ];
 }
