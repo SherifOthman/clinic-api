@@ -3,6 +3,7 @@ using ClinicManagement.Application.Features.Auth.Commands;
 using ClinicManagement.Infrastructure.Options;
 using ClinicManagement.Infrastructure.Services;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
@@ -42,8 +43,8 @@ public class CookieTokenMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var path = context.Request.Path.Value ?? "";
-        if (path.StartsWith("/api/auth/oauth", StringComparison.OrdinalIgnoreCase))
+        // Skip endpoints with [AllowAnonymous] — no cookie token injection needed
+        if (context.GetEndpoint()?.Metadata.GetMetadata<IAllowAnonymous>() is not null)
         {
             await _next(context);
             return;

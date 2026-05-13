@@ -173,24 +173,6 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
-    /// Verify password reset OTP. Returns a short-lived reset token to use with /reset-password.
-    /// Step 1 of the OTP-based password reset flow.
-    /// </summary>
-    [HttpPost("verify-reset-otp")]
-    [AllowAnonymous]
-    [EnableRateLimiting(RateLimitPolicies.AuthResetPassword)]
-    [ProducesResponseType(typeof(ResetTokenDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> VerifyResetOtp([FromBody] VerifyResetOtpRequest request, CancellationToken ct)
-    {
-        var result = await Sender.Send(new VerifyResetOtpCommand(request.Email, request.Otp), ct);
-        if (result.IsFailure)
-            return HandleResult(result, "OTP verification failed");
-
-        return Ok(new ResetTokenDto(request.Email, result.Value!));
-    }
-
-    /// <summary>
     /// Request password reset
     /// </summary>
     [HttpPost("forgot-password")]
@@ -205,7 +187,22 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
-    /// Reset password with token
+    /// Validate password reset OTP without consuming it.
+    /// Step 2 of the OTP flow — validates the code, then step 3 calls /reset-password.
+    /// </summary>
+    [HttpPost("verify-reset-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthResetPassword)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyResetOtp([FromBody] VerifyResetOtpCommand request, CancellationToken ct)
+    {
+        var result = await Sender.Send(request, ct);
+        return HandleNoContent(result, "OTP verification failed");
+    }
+
+    /// <summary>
+    /// Reset password with OTP code
     /// </summary>
     [HttpPost("reset-password")]
     [AllowAnonymous]

@@ -12,9 +12,9 @@ public class ResetPasswordValidator : AbstractValidator<ResetPasswordCommand>
             .EmailAddress()
             .WithMessage("Invalid email format");
 
-        RuleFor(x => x.Token)
+        RuleFor(x => x.Otp)
             .NotEmpty()
-            .WithMessage("Token is required");
+            .WithMessage("OTP is required");
 
         RuleFor(x => x.NewPassword)
             .NotEmpty()

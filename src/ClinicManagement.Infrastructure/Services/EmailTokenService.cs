@@ -16,9 +16,6 @@ namespace ClinicManagement.Infrastructure.Services;
 ///   2. Generate a new 6-digit OTP (stored as SHA-256 hash)
 ///   3. Send the OTP by email
 ///   4. On verify: look up by hash, check validity, mark used
-///
-/// Password reset additionally generates an Identity reset token on verify,
-/// so UserManager.ResetPasswordAsync can be called with it.
 /// </summary>
 public class EmailTokenService : IEmailTokenService
 {
@@ -105,7 +102,7 @@ public class EmailTokenService : IEmailTokenService
         _logger.LogInformation("Password reset OTP sent to {Email}", user.Email);
     }
 
-    public async Task<string?> VerifyPasswordResetOtpAsync(User user, string otp, CancellationToken ct = default)
+    public async Task<bool> ValidatePasswordResetOtpAsync(User user, string otp, CancellationToken ct = default)
     {
         var hash  = UserToken.Hash(otp);
         var token = await _userTokens.GetActiveByHashAsync(hash, DateTimeOffset.UtcNow, ct);
@@ -113,16 +110,27 @@ public class EmailTokenService : IEmailTokenService
         if (token is null || token.UserId != user.Id || token.TokenType != TokenTypes.PasswordReset)
         {
             _logger.LogWarning("Invalid password reset OTP for {Email}", user.Email);
-            return null;
+            return false;
+        }
+
+        return true;
+    }
+
+    public async Task<bool> VerifyPasswordResetOtpAsync(User user, string otp, CancellationToken ct = default)
+    {
+        var hash  = UserToken.Hash(otp);
+        var token = await _userTokens.GetActiveByHashAsync(hash, DateTimeOffset.UtcNow, ct);
+
+        if (token is null || token.UserId != user.Id || token.TokenType != TokenTypes.PasswordReset)
+        {
+            _logger.LogWarning("Invalid password reset OTP for {Email}", user.Email);
+            return false;
         }
 
         token.MarkUsed();
         await _uow.SaveChangesAsync(ct);
 
-        // Generate the Identity reset token now that the OTP is verified
-        var identityToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-
         _logger.LogInformation("Password reset OTP verified for {Email}", user.Email);
-        return identityToken;
+        return true;
     }
 }

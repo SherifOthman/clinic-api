@@ -35,9 +35,14 @@ public interface IEmailTokenService
     Task SendPasswordResetOtpAsync(User user, CancellationToken ct = default);
 
     /// <summary>
-    /// Verifies the OTP. Returns the raw Identity reset token if valid,
-    /// so the caller can pass it to UserManager.ResetPasswordAsync.
-    /// Returns null if the OTP is invalid, expired, or already used.
+    /// Checks whether the OTP is valid without marking it as used.
+    /// Returns true if valid, false if invalid/expired/already used.
     /// </summary>
-    Task<string?> VerifyPasswordResetOtpAsync(User user, string otp, CancellationToken ct = default);
+    Task<bool> ValidatePasswordResetOtpAsync(User user, string otp, CancellationToken ct = default);
+
+    /// <summary>
+    /// Verifies the OTP and marks it as used.
+    /// Returns true if valid, false if invalid/expired/already used.
+    /// </summary>
+    Task<bool> VerifyPasswordResetOtpAsync(User user, string otp, CancellationToken ct = default);
 }
