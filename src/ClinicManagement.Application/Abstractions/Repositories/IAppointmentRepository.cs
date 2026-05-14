@@ -15,6 +15,7 @@ public interface IAppointmentRepository
     Task<List<Appointment>> GetByDoctorsAndDateAsync(List<Guid> doctorInfoIds, DateOnly date, CancellationToken ct = default);
     Task<List<Appointment>> GetByBranchAndDateAsync(Guid branchId, DateOnly date, CancellationToken ct = default);
     Task<bool> TimeSlotTakenAsync(Guid doctorInfoId, DateOnly date, TimeOnly time, Guid? excludeId, CancellationToken ct = default);
+    Task<bool> PatientHasAppointmentOnDateAsync(Guid patientId, DateOnly date, CancellationToken ct = default);
 
     // ── Writes ────────────────────────────────────────────────────────────────
     Task AddAsync(Appointment appointment, CancellationToken ct = default);

@@ -109,6 +109,14 @@ public class AppointmentRepository : IAppointmentRepository
                .ThenBy(a => a.ScheduledTime ?? TimeOnly.MinValue)
                .ToListAsync(ct);
 
+    public Task<bool> PatientHasAppointmentOnDateAsync(Guid patientId, DateOnly date, CancellationToken ct = default)
+        => _set.AsNoTracking()
+               .AnyAsync(a =>
+                   a.PatientId == patientId &&
+                   a.Date == date &&
+                   a.Status != AppointmentStatus.Cancelled &&
+                   a.Status != AppointmentStatus.NoShow, ct);
+
     public Task<bool> TimeSlotTakenAsync(Guid doctorInfoId, DateOnly date, TimeOnly time, Guid? excludeId, CancellationToken ct = default)
         => _set.AsNoTracking()
                .AnyAsync(a =>

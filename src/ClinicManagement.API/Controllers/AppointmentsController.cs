@@ -47,6 +47,23 @@ public class AppointmentsController : BaseApiController
         return HandleResult(result, "Failed to retrieve doctors");
     }
 
+    /// <summary>Check whether a patient already has an active appointment on a given date.</summary>
+    [HttpGet("check-patient")]
+    [RequirePermission(Permission.ViewAppointments)]
+    [EnableRateLimiting(RateLimitPolicies.UserReads)]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CheckPatientAppointment(
+        [FromQuery] Guid patientId,
+        [FromQuery] string date,
+        CancellationToken ct)
+    {
+        if (!DateOnly.TryParse(date, out var parsedDate))
+            return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+
+        var result = await Sender.Send(new PatientHasAppointmentOnDateQuery(patientId, parsedDate), ct);
+        return HandleResult(result, "Failed to check patient appointment");
+    }
+
     // ── Commands ──────────────────────────────────────────────────────────────
 
     /// <summary>Book a new appointment (queue or time-based).</summary>
@@ -74,7 +91,7 @@ public class AppointmentsController : BaseApiController
         var command = new CreateAppointmentCommand(
             request.BranchId, request.PatientId, request.DoctorInfoId,
             request.VisitTypeId, date, type, scheduledTime, request.DiscountPercent,
-            request.VisitDurationMinutes);
+            request.MarkAsPaid ?? false, request.VisitDurationMinutes);
 
         var result = await Sender.Send(command, ct);
         if (result.IsFailure) return HandleResult(result, "Failed to create appointment");

@@ -9,6 +9,7 @@ public record CreateAppointmentRequest(
     string Type,
     string? ScheduledTime,
     decimal? DiscountPercent,
+    bool? MarkAsPaid = null,
     int? VisitDurationMinutes = null
 );
 

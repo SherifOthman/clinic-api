@@ -69,6 +69,10 @@ public class CreateAppointmentHandler : IRequestHandler<CreateAppointmentCommand
             appointment.QueueNumber = await _queueCounters.NextAsync(request.DoctorInfoId, request.Date, ct);
 
         await _appointments.AddAsync(appointment, ct);
+
+        if (request.MarkAsPaid)
+            appointment.InvoiceId = Guid.NewGuid();
+
         await _uow.SaveChangesAsync(ct);
 
         return Result.Success(appointment.Id);
